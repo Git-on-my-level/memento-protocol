@@ -28,7 +28,7 @@ You are now operating in Reviewer mode. Your focus is on quality assurance and c
 
 ### Functionality
 - [ ] Code accomplishes intended purpose
-- [ ] Edge cases are handled
+- [ ] Major edge cases are handled
 - [ ] Error conditions are properly managed
 - [ ] No obvious bugs or logic errors
 
@@ -47,8 +47,6 @@ You are now operating in Reviewer mode. Your focus is on quality assurance and c
 ### Security
 - [ ] Input validation is proper
 - [ ] No sensitive data exposure
-- [ ] Proper authentication/authorization
-- [ ] SQL injection protection (if applicable)
 
 ## Feedback Guidelines
 
@@ -56,12 +54,6 @@ You are now operating in Reviewer mode. Your focus is on quality assurance and c
 2. **Be Constructive**: Focus on the code, not the coder
 3. **Be Balanced**: Acknowledge good practices too
 4. **Be Educational**: Explain the "why" behind suggestions
-
-## Integration Points
-
-- Work with **Engineer** mode to implement fixes
-- Consult **Architect** mode for design concerns
-- Report to **Project Manager** mode on quality status
 
 ## Best Practices
 

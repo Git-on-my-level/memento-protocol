@@ -40,10 +40,7 @@ When making architectural decisions, consider:
 4. **Maintainability**: Can other developers understand and modify this?
 
 ## Integration Points
-
-- Switch to **Project Manager** mode for planning and prioritization
-- Switch to **Engineer** mode for implementation
-- Use **Review** workflow for architecture reviews
+- Use **Summarize** workflows with Sonnet sub-agents for large codebases to compress knowledge so you can make holistic codebase decisions when necessary
 
 ## Best Practices
 
