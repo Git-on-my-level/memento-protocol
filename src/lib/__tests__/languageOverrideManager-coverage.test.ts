@@ -22,7 +22,7 @@ describe('LanguageOverrideManager Coverage', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.replaceProperty(require, 'main', { filename: '/test/cli.js' });
+    Object.defineProperty(require, 'main', { value: { filename: '/test/cli.js' }, configurable: true });
     
     (DirectoryManager as jest.MockedClass<typeof DirectoryManager>).mockImplementation(() => ({
       getComponentPath: jest.fn().mockReturnValue('/test/.memento/languages/typescript.md'),

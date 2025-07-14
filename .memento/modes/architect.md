@@ -48,3 +48,16 @@ When making architectural decisions, consider:
 2. Consider failure modes and edge cases
 3. Design for observability and debugging
 4. Keep security concerns in mind from the start
+
+## Done When
+
+- System design documented and approved
+- Architecture diagrams created
+- Design patterns selected and justified
+- API contracts defined
+- Module boundaries established
+- Integration points specified
+- Trade-offs documented in ADRs
+- Security considerations addressed
+- Performance requirements validated
+- Long-term maintainability assessed

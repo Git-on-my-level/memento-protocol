@@ -28,6 +28,8 @@ describe('Config Command', () => {
     mockConfigManager = {
       get: jest.fn(),
       set: jest.fn(),
+      unset: jest.fn(),
+      list: jest.fn(),
       load: jest.fn(),
       save: jest.fn()
     } as any;
@@ -43,8 +45,8 @@ describe('Config Command', () => {
     process.exit = originalExit;
   });
 
-  describe('show all config', () => {
-    it('should display all configuration when no key provided', async () => {
+  describe('list subcommand', () => {
+    it('should display all configuration', async () => {
       const mockConfig = {
         defaultMode: 'architect',
         components: {
@@ -52,112 +54,133 @@ describe('Config Command', () => {
           workflows: ['review']
         }
       };
-      mockConfigManager.load.mockResolvedValue(mockConfig);
+      mockConfigManager.list.mockResolvedValue(mockConfig);
 
-      await configCommand.parseAsync(['node', 'test']);
+      await configCommand.parseAsync(['node', 'test', 'list']);
 
-      expect(logger.info).toHaveBeenCalledWith('\nCurrent Configuration:');
+      expect(mockConfigManager.list).toHaveBeenCalledWith(false);
       expect(logger.info).toHaveBeenCalledWith(JSON.stringify(mockConfig, null, 2));
     });
 
     it('should handle empty config', async () => {
-      mockConfigManager.load.mockResolvedValue({});
+      mockConfigManager.list.mockResolvedValue({});
 
-      await configCommand.parseAsync(['node', 'test']);
+      await configCommand.parseAsync(['node', 'test', 'list']);
 
-      expect(logger.info).toHaveBeenCalledWith('\nCurrent Configuration:');
-      expect(logger.info).toHaveBeenCalledWith('{}');
+      expect(logger.info).toHaveBeenCalledWith('No configuration values set');
+    });
+
+    it('should handle global flag for list', async () => {
+      const mockConfig = { theme: 'dark' };
+      mockConfigManager.list.mockResolvedValue(mockConfig);
+
+      await configCommand.parseAsync(['node', 'test', 'list', '--global']);
+
+      expect(mockConfigManager.list).toHaveBeenCalledWith(true);
     });
   });
 
-  describe('get specific config', () => {
+  describe('get subcommand', () => {
     it('should get a specific config value', async () => {
       mockConfigManager.get.mockResolvedValue('architect');
 
-      await configCommand.parseAsync(['node', 'test', 'defaultMode']);
+      await configCommand.parseAsync(['node', 'test', 'get', 'defaultMode']);
 
       expect(mockConfigManager.get).toHaveBeenCalledWith('defaultMode');
-      expect(logger.info).toHaveBeenCalledWith('defaultMode: architect');
+      expect(logger.info).toHaveBeenCalledWith('defaultMode = "architect"');
     });
 
     it('should handle undefined config values', async () => {
       mockConfigManager.get.mockResolvedValue(undefined);
 
-      await configCommand.parseAsync(['node', 'test', 'nonexistent']);
+      await configCommand.parseAsync(['node', 'test', 'get', 'nonexistent']);
 
-      expect(logger.info).toHaveBeenCalledWith('nonexistent: undefined');
+      expect(logger.info).toHaveBeenCalledWith("Configuration key 'nonexistent' is not set");
     });
 
     it('should display complex values as JSON', async () => {
       mockConfigManager.get.mockResolvedValue({ modes: ['architect', 'engineer'] });
 
-      await configCommand.parseAsync(['node', 'test', 'components']);
+      await configCommand.parseAsync(['node', 'test', 'get', 'components']);
 
-      expect(logger.info).toHaveBeenCalledWith('components: {"modes":["architect","engineer"]}');
+      expect(logger.info).toHaveBeenCalledWith('components = {\n  "modes": [\n    "architect",\n    "engineer"\n  ]\n}');
     });
   });
 
-  describe('set config', () => {
+  describe('set subcommand', () => {
     it('should set a config value', async () => {
-      await configCommand.parseAsync(['node', 'test', 'defaultMode', 'engineer']);
+      await configCommand.parseAsync(['node', 'test', 'set', 'defaultMode', 'engineer']);
 
-      expect(mockConfigManager.set).toHaveBeenCalledWith('defaultMode', 'engineer');
-      expect(mockConfigManager.save).toHaveBeenCalled();
-      expect(logger.success).toHaveBeenCalledWith('Configuration updated: defaultMode = engineer');
+      expect(mockConfigManager.set).toHaveBeenCalledWith('defaultMode', 'engineer', false);
+      expect(logger.success).toHaveBeenCalledWith('Configuration updated: defaultMode = "engineer"');
     });
 
     it('should handle JSON values', async () => {
-      await configCommand.parseAsync(['node', 'test', 'components.modes', '["architect","reviewer"]']);
+      await configCommand.parseAsync(['node', 'test', 'set', 'components.modes', '["architect","reviewer"]']);
 
-      expect(mockConfigManager.set).toHaveBeenCalledWith('components.modes', ['architect', 'reviewer']);
+      expect(mockConfigManager.set).toHaveBeenCalledWith('components.modes', ['architect', 'reviewer'], false);
+      expect(logger.success).toHaveBeenCalledWith('Configuration updated: components.modes = ["architect","reviewer"]');
     });
 
     it('should handle boolean values', async () => {
-      await configCommand.parseAsync(['node', 'test', 'experimental.enabled', 'true']);
+      await configCommand.parseAsync(['node', 'test', 'set', 'experimental.enabled', 'true']);
 
-      expect(mockConfigManager.set).toHaveBeenCalledWith('experimental.enabled', true);
+      expect(mockConfigManager.set).toHaveBeenCalledWith('experimental.enabled', true, false);
     });
 
     it('should handle numeric values', async () => {
-      await configCommand.parseAsync(['node', 'test', 'maxTickets', '10']);
+      await configCommand.parseAsync(['node', 'test', 'set', 'maxTickets', '10']);
 
-      expect(mockConfigManager.set).toHaveBeenCalledWith('maxTickets', 10);
-    });
-  });
-
-  describe('global config', () => {
-    it('should handle global flag for get', async () => {
-      mockConfigManager.get.mockResolvedValue('dark');
-
-      await configCommand.parseAsync(['node', 'test', 'theme', '--global']);
-
-      expect(mockConfigManager.get).toHaveBeenCalledWith('theme', true);
+      expect(mockConfigManager.set).toHaveBeenCalledWith('maxTickets', 10, false);
     });
 
     it('should handle global flag for set', async () => {
-      await configCommand.parseAsync(['node', 'test', 'theme', 'light', '--global']);
+      await configCommand.parseAsync(['node', 'test', 'set', 'theme', 'light', '--global']);
 
       expect(mockConfigManager.set).toHaveBeenCalledWith('theme', 'light', true);
-      expect(mockConfigManager.save).toHaveBeenCalledWith(expect.anything(), true);
+    });
+  });
+
+  describe('unset subcommand', () => {
+    it('should unset a config value', async () => {
+      await configCommand.parseAsync(['node', 'test', 'unset', 'defaultMode']);
+
+      expect(mockConfigManager.unset).toHaveBeenCalledWith('defaultMode', false);
+      expect(logger.success).toHaveBeenCalledWith("Configuration key 'defaultMode' removed");
+    });
+
+    it('should handle global flag for unset', async () => {
+      await configCommand.parseAsync(['node', 'test', 'unset', 'theme', '--global']);
+
+      expect(mockConfigManager.unset).toHaveBeenCalledWith('theme', true);
     });
   });
 
   describe('error handling', () => {
-    it('should error when not initialized', async () => {
-      mockDirManager.isInitialized.mockReturnValue(false);
+    it('should handle errors in get operations', async () => {
+      mockConfigManager.get.mockRejectedValue(new Error('File not found'));
 
-      await configCommand.parseAsync(['node', 'test']);
+      await configCommand.parseAsync(['node', 'test', 'get', 'someKey']);
 
-      expect(logger.error).toHaveBeenCalledWith('Memento Protocol is not initialized. Run "memento init" first.');
+      expect(logger.error).toHaveBeenCalledWith('Failed to get configuration: Error: File not found');
       expect(process.exit).toHaveBeenCalledWith(1);
     });
 
-    it('should handle errors in config operations', async () => {
-      mockConfigManager.load.mockRejectedValue(new Error('File not found'));
+    it('should handle errors in set operations', async () => {
+      mockConfigManager.set.mockRejectedValue(new Error('Permission denied'));
 
-      await configCommand.parseAsync(['node', 'test']);
+      await configCommand.parseAsync(['node', 'test', 'set', 'key', 'value']);
 
-      expect(logger.error).toHaveBeenCalledWith('Failed to manage configuration: File not found');
+      expect(logger.error).toHaveBeenCalledWith('Failed to set configuration: Error: Permission denied');
+      expect(process.exit).toHaveBeenCalledWith(1);
+    });
+
+    it('should handle errors in list operations', async () => {
+      mockConfigManager.list.mockRejectedValue(new Error('Config error'));
+
+      await configCommand.parseAsync(['node', 'test', 'list']);
+
+      expect(logger.error).toHaveBeenCalledWith('Failed to list configuration: Error: Config error');
       expect(process.exit).toHaveBeenCalledWith(1);
     });
   });

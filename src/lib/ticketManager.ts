@@ -7,9 +7,10 @@ export interface TicketMetadata {
   name: string;
   createdAt: string;
   updatedAt: string;
-  status: 'active' | 'closed';
   description?: string;
 }
+
+export type TicketStatus = 'next' | 'in-progress' | 'done';
 
 export class TicketManager {
   private mementoDir: string;
@@ -18,6 +19,20 @@ export class TicketManager {
   constructor(projectRoot: string) {
     this.mementoDir = path.join(projectRoot, '.memento');
     this.ticketsDir = path.join(this.mementoDir, 'tickets');
+    this.ensureStatusDirectories();
+  }
+
+  /**
+   * Ensure status directories exist
+   */
+  private ensureStatusDirectories(): void {
+    const statusDirs = ['next', 'in-progress', 'done'];
+    statusDirs.forEach(status => {
+      const statusDir = path.join(this.ticketsDir, status);
+      if (!fs.existsSync(statusDir)) {
+        fs.mkdirSync(statusDir, { recursive: true });
+      }
+    });
   }
 
   /**
@@ -30,15 +45,43 @@ export class TicketManager {
   }
 
   /**
+   * Get the current status of a ticket by checking which directory it's in
+   */
+  private async getTicketStatus(ticketId: string): Promise<TicketStatus | null> {
+    const statusDirs: TicketStatus[] = ['next', 'in-progress', 'done'];
+    
+    for (const status of statusDirs) {
+      const ticketPath = path.join(this.ticketsDir, status, ticketId);
+      if (fs.existsSync(ticketPath)) {
+        return status;
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Get the full path to a ticket (searching across all status directories)
+   */
+  private async getTicketPath(ticketId: string): Promise<string | null> {
+    const status = await this.getTicketStatus(ticketId);
+    if (!status) {
+      return null;
+    }
+    return path.join(this.ticketsDir, status, ticketId);
+  }
+
+  /**
    * Create a new ticket
    */
   async create(name: string, description?: string): Promise<string> {
     const ticketId = this.generateTicketId(name);
-    const ticketPath = path.join(this.ticketsDir, ticketId);
+    const ticketPath = path.join(this.ticketsDir, 'next', ticketId);
 
-    // Check if ticket already exists
-    if (fs.existsSync(ticketPath)) {
-      throw new Error(`Ticket ${ticketId} already exists`);
+    // Check if ticket already exists in any status directory
+    const existingStatus = await this.getTicketStatus(ticketId);
+    if (existingStatus) {
+      throw new Error(`Ticket ${ticketId} already exists in ${existingStatus}`);
     }
 
     // Create ticket directory structure
@@ -51,7 +94,6 @@ export class TicketManager {
       name,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      status: 'active',
       description
     };
 
@@ -100,28 +142,49 @@ Document key design decisions made during this ticket.
   /**
    * List all tickets with optional filtering
    */
-  async list(status: 'active' | 'closed' | 'all' = 'active'): Promise<TicketMetadata[]> {
+  async list(status: TicketStatus | 'active' | 'closed' | 'all' = 'active'): Promise<(TicketMetadata & { status: TicketStatus })[]> {
     if (!fs.existsSync(this.ticketsDir)) {
       return [];
     }
 
-    const tickets: TicketMetadata[] = [];
-    const ticketDirs = fs.readdirSync(this.ticketsDir);
+    const tickets: (TicketMetadata & { status: TicketStatus })[] = [];
+    
+    // Map legacy status values to new directory structure
+    let statusDirs: TicketStatus[];
+    if (status === 'all') {
+      statusDirs = ['next', 'in-progress', 'done'];
+    } else if (status === 'active') {
+      statusDirs = ['next', 'in-progress'];
+    } else if (status === 'closed') {
+      statusDirs = ['done'];
+    } else {
+      statusDirs = [status];
+    }
 
-    for (const ticketDir of ticketDirs) {
-      const metadataPath = path.join(this.ticketsDir, ticketDir, 'metadata.json');
-      
-      if (fs.existsSync(metadataPath)) {
-        try {
-          const metadata: TicketMetadata = JSON.parse(
-            fs.readFileSync(metadataPath, 'utf-8')
-          );
-          
-          if (status === 'all' || metadata.status === status) {
-            tickets.push(metadata);
+    for (const statusDir of statusDirs) {
+      const statusPath = path.join(this.ticketsDir, statusDir);
+      if (!fs.existsSync(statusPath)) {
+        continue;
+      }
+
+      const ticketDirs = fs.readdirSync(statusPath);
+
+      for (const ticketDir of ticketDirs) {
+        const metadataPath = path.join(statusPath, ticketDir, 'metadata.json');
+        
+        if (fs.existsSync(metadataPath)) {
+          try {
+            const metadata: TicketMetadata = JSON.parse(
+              fs.readFileSync(metadataPath, 'utf-8')
+            );
+            
+            tickets.push({
+              ...metadata,
+              status: statusDir
+            });
+          } catch (error) {
+            logger.warn(`Failed to read metadata for ticket ${ticketDir}`);
           }
-        } catch (error) {
-          logger.warn(`Failed to read metadata for ticket ${ticketDir}`);
         }
       }
     }
@@ -135,15 +198,25 @@ Document key design decisions made during this ticket.
   /**
    * Get ticket details
    */
-  async get(ticketId: string): Promise<TicketMetadata | null> {
-    const metadataPath = path.join(this.ticketsDir, ticketId, 'metadata.json');
+  async get(ticketId: string): Promise<(TicketMetadata & { status: TicketStatus }) | null> {
+    const ticketPath = await this.getTicketPath(ticketId);
+    if (!ticketPath) {
+      return null;
+    }
+
+    const metadataPath = path.join(ticketPath, 'metadata.json');
     
     if (!fs.existsSync(metadataPath)) {
       return null;
     }
 
     try {
-      return JSON.parse(fs.readFileSync(metadataPath, 'utf-8'));
+      const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf-8'));
+      const status = await this.getTicketStatus(ticketId);
+      return {
+        ...metadata,
+        status: status!
+      };
     } catch (error) {
       logger.error(`Failed to read ticket metadata: ${error}`);
       return null;
@@ -154,11 +227,14 @@ Document key design decisions made during this ticket.
    * Update ticket metadata
    */
   async update(ticketId: string, updates: Partial<TicketMetadata>): Promise<void> {
-    const metadata = await this.get(ticketId);
+    const ticketPath = await this.getTicketPath(ticketId);
     
-    if (!metadata) {
+    if (!ticketPath) {
       throw new Error(`Ticket ${ticketId} not found`);
     }
+
+    const metadataPath = path.join(ticketPath, 'metadata.json');
+    const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf-8'));
 
     const updatedMetadata = {
       ...metadata,
@@ -166,41 +242,79 @@ Document key design decisions made during this ticket.
       updatedAt: new Date().toISOString()
     };
 
-    fs.writeFileSync(
-      path.join(this.ticketsDir, ticketId, 'metadata.json'),
-      JSON.stringify(updatedMetadata, null, 2)
-    );
+    fs.writeFileSync(metadataPath, JSON.stringify(updatedMetadata, null, 2));
 
     logger.success(`Updated ticket: ${ticketId}`);
   }
 
   /**
-   * Close a ticket
+   * Move ticket to a different status
    */
-  async close(ticketId: string): Promise<void> {
-    await this.update(ticketId, { status: 'closed' });
+  async moveToStatus(ticketId: string, newStatus: TicketStatus): Promise<void> {
+    const currentStatus = await this.getTicketStatus(ticketId);
     
-    // Append closure to progress file
-    const progressPath = path.join(this.ticketsDir, ticketId, 'progress.md');
+    if (!currentStatus) {
+      throw new Error(`Ticket ${ticketId} not found`);
+    }
+
+    if (currentStatus === newStatus) {
+      logger.info(`Ticket ${ticketId} is already in ${newStatus}`);
+      return;
+    }
+
+    const oldPath = path.join(this.ticketsDir, currentStatus, ticketId);
+    const newPath = path.join(this.ticketsDir, newStatus, ticketId);
+
+    // Move the ticket directory
+    fs.renameSync(oldPath, newPath);
+
+    // Update the metadata
+    await this.update(ticketId, {});
+
+    // Append status change to progress file
+    const progressPath = path.join(newPath, 'progress.md');
     if (fs.existsSync(progressPath)) {
       const content = fs.readFileSync(progressPath, 'utf-8');
-      const closureNote = `\n## Closure\n- ${new Date().toISOString()}: Ticket closed\n`;
-      fs.writeFileSync(progressPath, content + closureNote);
+      const statusNote = `\n- ${new Date().toISOString()}: Moved to ${newStatus}\n`;
+      fs.writeFileSync(progressPath, content + statusNote);
+    }
+
+    logger.success(`Moved ticket ${ticketId} from ${currentStatus} to ${newStatus}`);
+  }
+
+  /**
+   * Close a ticket (move to done)
+   */
+  async close(ticketId: string): Promise<void> {
+    await this.moveToStatus(ticketId, 'done');
+    
+    // Append closure to progress file
+    const ticketPath = await this.getTicketPath(ticketId);
+    if (ticketPath) {
+      const progressPath = path.join(ticketPath, 'progress.md');
+      if (fs.existsSync(progressPath)) {
+        const content = fs.readFileSync(progressPath, 'utf-8');
+        const closureNote = `\n## Closure\n- ${new Date().toISOString()}: Ticket closed\n`;
+        fs.writeFileSync(progressPath, content + closureNote);
+      }
     }
   }
 
   /**
-   * Resume a ticket (mark as active)
+   * Resume a ticket (move to in-progress)
    */
   async resume(ticketId: string): Promise<void> {
-    await this.update(ticketId, { status: 'active' });
+    await this.moveToStatus(ticketId, 'in-progress');
     
     // Append resumption to progress file
-    const progressPath = path.join(this.ticketsDir, ticketId, 'progress.md');
-    if (fs.existsSync(progressPath)) {
-      const content = fs.readFileSync(progressPath, 'utf-8');
-      const resumeNote = `\n- ${new Date().toISOString()}: Ticket resumed\n`;
-      fs.writeFileSync(progressPath, content + resumeNote);
+    const ticketPath = await this.getTicketPath(ticketId);
+    if (ticketPath) {
+      const progressPath = path.join(ticketPath, 'progress.md');
+      if (fs.existsSync(progressPath)) {
+        const content = fs.readFileSync(progressPath, 'utf-8');
+        const resumeNote = `\n- ${new Date().toISOString()}: Ticket resumed\n`;
+        fs.writeFileSync(progressPath, content + resumeNote);
+      }
     }
   }
 
@@ -208,13 +322,25 @@ Document key design decisions made during this ticket.
    * Get the workspace directory for a ticket
    */
   getWorkspacePath(ticketId: string): string {
+    // For backward compatibility, return the expected path structure
+    // The actual location will be determined by searching status directories
+    const statusDirs: TicketStatus[] = ['next', 'in-progress', 'done'];
+    
+    for (const status of statusDirs) {
+      const ticketPath = path.join(this.ticketsDir, status, ticketId);
+      if (fs.existsSync(ticketPath)) {
+        return path.join(ticketPath, 'workspace');
+      }
+    }
+    
+    // If not found, return the expected path (for consistency with tests)
     return path.join(this.ticketsDir, ticketId, 'workspace');
   }
 
   /**
    * Search tickets by name or description
    */
-  async search(query: string): Promise<TicketMetadata[]> {
+  async search(query: string): Promise<(TicketMetadata & { status: TicketStatus })[]> {
     const allTickets = await this.list('all');
     const lowerQuery = query.toLowerCase();
     
@@ -222,5 +348,66 @@ Document key design decisions made during this ticket.
       ticket.name.toLowerCase().includes(lowerQuery) ||
       (ticket.description && ticket.description.toLowerCase().includes(lowerQuery))
     );
+  }
+
+  /**
+   * Migrate existing tickets to the new directory structure
+   */
+  async migrate(): Promise<void> {
+    // Check for tickets in the old flat structure
+    if (!fs.existsSync(this.ticketsDir)) {
+      return;
+    }
+
+    const items = fs.readdirSync(this.ticketsDir);
+    let migratedCount = 0;
+
+    for (const item of items) {
+      const itemPath = path.join(this.ticketsDir, item);
+      const stats = fs.statSync(itemPath);
+
+      // Skip if it's already a status directory
+      if (stats.isDirectory() && ['next', 'in-progress', 'done'].includes(item)) {
+        continue;
+      }
+
+      // Check if it's a ticket directory
+      const metadataPath = path.join(itemPath, 'metadata.json');
+      if (stats.isDirectory() && fs.existsSync(metadataPath)) {
+        try {
+          const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf-8'));
+          
+          // Determine target directory based on old status
+          let targetDir = 'next';
+          if ('status' in metadata) {
+            if (metadata.status === 'closed') {
+              targetDir = 'done';
+            } else if (metadata.status === 'active') {
+              targetDir = 'in-progress';
+            }
+          }
+
+          // Move to appropriate directory
+          const newPath = path.join(this.ticketsDir, targetDir, item);
+          fs.renameSync(itemPath, newPath);
+          
+          // Remove the status field from metadata
+          delete metadata.status;
+          fs.writeFileSync(
+            path.join(newPath, 'metadata.json'),
+            JSON.stringify(metadata, null, 2)
+          );
+
+          migratedCount++;
+          logger.info(`Migrated ticket ${item} to ${targetDir}`);
+        } catch (error) {
+          logger.error(`Failed to migrate ticket ${item}: ${error}`);
+        }
+      }
+    }
+
+    if (migratedCount > 0) {
+      logger.success(`Migration complete: ${migratedCount} tickets migrated`);
+    }
   }
 }

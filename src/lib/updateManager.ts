@@ -188,12 +188,8 @@ export class UpdateManager {
   /**
    * Extract version from template metadata
    */
-  private async extractVersionFromTemplate(type: 'mode' | 'workflow', name: string): Promise<string> {
-    const metadataPath = path.join(
-      this.templatesDir,
-      type === 'mode' ? 'modes' : 'workflows',
-      'metadata.json'
-    );
+  private async extractVersionFromTemplate(_type: 'mode' | 'workflow', _name: string): Promise<string> {
+    const metadataPath = path.join(this.templatesDir, 'metadata.json');
 
     if (!existsSync(metadataPath)) {
       return '1.0.0';
@@ -202,8 +198,8 @@ export class UpdateManager {
     const content = await fs.readFile(metadataPath, 'utf-8');
     const metadata = JSON.parse(content);
     
-    const component = metadata.components.find((c: any) => c.name === name);
-    return component?.version || metadata.version || '1.0.0';
+    // Use global version for all templates
+    return metadata.version || '1.0.0';
   }
 
   /**

@@ -71,3 +71,16 @@ Switch to:
 - **Engineer** when implementation details require attention
 - **Reviewer** when code quality assessment is required
 - **Summarize** workflow when context needs compression
+
+## Done When
+
+- Requirements broken into actionable tasks
+- Tickets created for complex work
+- Acceptance criteria defined
+- Priorities established (MoSCoW)
+- Critical path identified
+- Blockers documented and communicated
+- Progress tracked and reported
+- Risks identified and mitigated
+- Stakeholders aligned
+- Deliverables shipped incrementally

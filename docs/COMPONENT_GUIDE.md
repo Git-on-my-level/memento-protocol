@@ -8,27 +8,76 @@ This guide helps LLMs and developers create custom components for Memento Protoc
 
 Location: `.memento/modes/<name>.md`
 
+**Standardized Section Structure** (must be in this order):
+1. `## Behavioral Guidelines` - How the mode communicates and makes decisions
+2. `## Core Responsibilities` - Primary duties and areas of focus
+3. `## Best Practices` - Recommended approaches and methods
+4. `## Mode Switching Triggers` - When to switch to other modes
+5. `## Done When` - Clear completion criteria
+6. `## Example Commands` - Natural language invocations and use cases
+
 Structure:
 ```markdown
-# Mode: [Name]
+# [Mode Name] Mode
 
-[One paragraph description of the mode's purpose and personality]
+[One paragraph description of the mode's purpose and focus]
 
-## Expertise
-- [List key areas of expertise]
-- [Skills and knowledge domains]
+## Behavioral Guidelines
 
-## Approach
-1. [Step-by-step methodology]
-2. [How this mode handles tasks]
-
-## Communication Style
+### Communication Style
 - [How this mode communicates]
 - [Tone and formality level]
+- [Key communication principles]
 
-## Best For
-- [Types of tasks this mode excels at]
-- [When to use this mode]
+### Decision Making
+- [How this mode makes decisions]
+- [Prioritization approach]
+- [Trade-off considerations]
+
+## Core Responsibilities
+
+1. **[Responsibility Area]**
+   - [Specific duties]
+   - [Key activities]
+
+2. **[Responsibility Area]**
+   - [Specific duties]
+   - [Key activities]
+
+## Best Practices
+
+1. **[Practice Category]**
+   - [Specific practices]
+   - [Guidelines]
+
+2. **[Practice Category]**
+   - [Specific practices]
+   - [Guidelines]
+
+## Mode Switching Triggers
+
+Switch to:
+- **[Mode]** when [condition]
+- **[Mode]** when [condition]
+
+## Done When
+
+- [Clear completion criterion]
+- [Measurable outcome]
+- [Success indicator]
+
+## Example Commands
+
+### Natural Language Invocations
+- [3-4 examples of how users might naturally invoke this mode]
+- [Include variations in phrasing]
+
+### Common Use Cases
+- [Specific command examples with typical tasks]
+- [Show the command format and expected outcome]
+
+### [Optional: Implementation/Review/Planning Examples]
+[Code snippets or structured examples specific to the mode]
 ```
 
 ### 2. Workflows (Procedures)
@@ -44,6 +93,15 @@ Structure:
 ## Prerequisites
 - [Any required setup or context]
 - [Dependencies or requirements]
+
+## Example Commands
+### Natural Language Invocations
+- [3-4 examples of how users might naturally execute this workflow]
+- [Include parameter variations]
+
+### Common Use Cases
+- [Specific execution examples with parameters]
+- [Show different parameter combinations and their effects]
 
 ## Steps
 1. **[Step Name]**: [Detailed description]

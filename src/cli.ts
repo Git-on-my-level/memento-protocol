@@ -20,8 +20,22 @@ program
   .version(version)
   .option('-v, --verbose', 'enable verbose output')
   .option('-d, --debug', 'enable debug output')
-  .addHelpText('after', '\nFor more information, visit: https://github.com/memento-protocol/memento-protocol')
-  .addHelpText('after', 'Documentation: https://github.com/memento-protocol/memento-protocol#readme')
+  .addHelpText('after', `
+Examples:
+  $ memento init                    # Initialize Memento Protocol in a project
+  $ memento add mode architect      # Add the architect mode
+  $ memento add workflow review     # Add the code review workflow
+  $ memento ticket create "auth"    # Create a ticket for authentication work
+  $ memento list --installed        # Show installed components
+  $ memento language                # Auto-detect and install language overrides
+
+For Claude Code users:
+  Say "act as architect" to switch to architect mode
+  Say "execute review" to run the code review workflow
+  Say "create ticket X" to start persistent work
+
+For more information, visit: https://github.com/memento-protocol/memento-protocol
+Documentation: https://github.com/memento-protocol/memento-protocol#readme`)
   .hook('preAction', (thisCommand) => {
     const options = thisCommand.opts();
     if (options.verbose) {

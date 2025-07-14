@@ -88,18 +88,37 @@ memento list installed
 ```
 
 ### `memento ticket`
-Manage development tickets.
+Manage development tickets with directory-based status tracking.
 
 ```bash
-# Create a new ticket
-memento ticket create "Add user authentication"
+# Create a new ticket (placed in 'next' directory)
+memento ticket create "Add user authentication" -d "Implement OAuth2"
 
 # List tickets
-memento ticket list
+memento ticket list                    # List active tickets (next + in-progress)
+memento ticket list --status all       # List all tickets
+memento ticket list --status closed    # List done tickets
 
-# Update ticket status
-memento ticket update TICKET-001 --status in-progress
+# Move ticket between statuses
+memento ticket move ticket-id next        # Move to next (backlog)
+memento ticket move ticket-id in-progress # Start working on ticket
+memento ticket move ticket-id done        # Mark as completed
+
+# Shortcut commands
+memento ticket resume ticket-id  # Move to in-progress
+memento ticket close ticket-id   # Move to done
+
+# Search tickets
+memento ticket search "auth"
+
+# Migrate existing tickets to new structure
+memento ticket migrate
 ```
+
+Tickets are organized in directories:
+- `.memento/tickets/next/` - Backlog tickets
+- `.memento/tickets/in-progress/` - Active work
+- `.memento/tickets/done/` - Completed tickets
 
 ### `memento config`
 Manage configuration.
@@ -125,6 +144,33 @@ memento update --check
 # Update all components
 memento update
 ```
+
+## Examples for Claude Code
+
+When using Claude Code with Memento Protocol, you can use natural language commands:
+
+### Mode Switching
+- "act as architect to design the database schema"
+- "switch to engineer mode and implement the auth feature"
+- "I need a project manager to help plan this sprint"
+- "review this pull request as a senior engineer"
+
+### Workflow Execution
+- "execute review on the authentication module"
+- "run the summarize workflow on src/"
+- "perform a security-focused code review"
+- "summarize the recent changes and create a report"
+
+### Ticket Management
+- "create ticket for implementing user dashboard"
+- "show me all active tickets"
+- "move ticket-001 to in-progress"
+- "close the authentication ticket"
+
+### Combined Commands
+- "act as architect, design the API, then create tickets for each endpoint"
+- "review this code and create tickets for any issues found"
+- "summarize the codebase then act as PM to plan next steps"
 
 ## Creating Custom Components
 

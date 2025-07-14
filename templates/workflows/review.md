@@ -17,6 +17,25 @@ A structured approach to code review that ensures quality, security, and maintai
 - Prioritized list of issues and suggestions
 - Actionable improvement recommendations
 
+## Example Commands
+
+### Natural Language Invocations
+- "execute review on the authentication module"
+- "run a security-focused review of the API"
+- "perform a deep code review on PR #456"
+- "review the latest commit for performance issues"
+
+### Common Use Cases
+- `execute review --target PR#123 --type general` → Standard PR review
+- `execute review --target src/api --type security --depth deep` → Security audit
+- `execute review --target HEAD~5..HEAD --type performance` → Performance review of recent commits
+- `execute review --target src/components --depth quick` → Quick component review
+
+### Workflow Integration Examples
+- "execute review then summarize the findings" → Review + Summary
+- "review this code and create tickets for critical issues" → Review + Task creation
+- "run the review workflow before deployment" → Pre-deployment check
+
 ## Workflow Steps
 
 ### 1. Preparation Phase

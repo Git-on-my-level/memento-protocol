@@ -50,7 +50,7 @@ describe('Language Command', () => {
   describe('main command', () => {
     it('should auto-detect and install language override', async () => {
       mockLanguageManager.detectProjectLanguage.mockResolvedValue('typescript');
-      (inquirer.prompt as jest.Mock).mockResolvedValue({ install: true });
+      (inquirer.prompt as unknown as jest.Mock).mockResolvedValue({ install: true });
 
       const cmd = createLanguageCommand();
       await cmd.parseAsync(['node', 'test']);
@@ -62,7 +62,7 @@ describe('Language Command', () => {
     it('should handle when no language is detected', async () => {
       mockLanguageManager.detectProjectLanguage.mockResolvedValue(null);
       mockLanguageManager.listAvailableOverrides.mockResolvedValue(['typescript', 'python']);
-      (inquirer.prompt as jest.Mock).mockResolvedValue({ language: 'python' });
+      (inquirer.prompt as unknown as jest.Mock).mockResolvedValue({ language: 'python' });
 
       const cmd = createLanguageCommand();
       await cmd.parseAsync(['node', 'test']);
@@ -73,7 +73,7 @@ describe('Language Command', () => {
 
     it('should handle when user declines installation', async () => {
       mockLanguageManager.detectProjectLanguage.mockResolvedValue('typescript');
-      (inquirer.prompt as jest.Mock).mockResolvedValue({ install: false });
+      (inquirer.prompt as unknown as jest.Mock).mockResolvedValue({ install: false });
 
       const cmd = createLanguageCommand();
       await cmd.parseAsync(['node', 'test']);
@@ -95,7 +95,7 @@ describe('Language Command', () => {
       mockLanguageManager.detectProjectLanguage.mockResolvedValue('typescript');
       mockLanguageManager.installLanguageOverride.mockRejectedValue(new Error('Not found'));
       mockLanguageManager.listAvailableOverrides.mockResolvedValue(['python', 'javascript']);
-      (inquirer.prompt as jest.Mock).mockResolvedValue({ install: true });
+      (inquirer.prompt as unknown as jest.Mock).mockResolvedValue({ install: true });
 
       const cmd = createLanguageCommand();
       await cmd.parseAsync(['node', 'test']);

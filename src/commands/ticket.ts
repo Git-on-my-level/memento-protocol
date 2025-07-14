@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { TicketManager } from '../lib/ticketManager';
+import { TicketManager, TicketStatus } from '../lib/ticketManager';
 import { logger } from '../lib/logger';
 
 const ticketCommand = new Command('ticket')
@@ -16,7 +16,8 @@ ticketCommand
       const ticketId = await ticketManager.create(name, options.description);
       logger.info(`Ticket created successfully!`);
       logger.info(`ID: ${ticketId}`);
-      logger.info(`Workspace: .memento/tickets/${ticketId}/workspace/`);
+      logger.info(`Status: next`);
+      logger.info(`Workspace: .memento/tickets/next/${ticketId}/workspace/`);
     } catch (error) {
       logger.error(`Failed to create ticket: ${error}`);
       process.exit(1);
@@ -41,9 +42,10 @@ ticketCommand
       logger.info(`\n${options.status === 'all' ? 'All' : options.status.charAt(0).toUpperCase() + options.status.slice(1)} tickets:\n`);
       
       tickets.forEach(ticket => {
-        const status = ticket.status === 'active' ? '🟢' : '⚪';
-        logger.info(`${status} ${ticket.id}`);
+        const statusIcon = ticket.status === 'done' ? '✅' : ticket.status === 'in-progress' ? '🔄' : '📋';
+        logger.info(`${statusIcon} ${ticket.id}`);
         logger.info(`   Name: ${ticket.name}`);
+        logger.info(`   Status: ${ticket.status}`);
         if (ticket.description) {
           logger.info(`   Description: ${ticket.description}`);
         }
@@ -71,17 +73,21 @@ ticketCommand
         process.exit(1);
       }
 
-      if (ticket.status === 'active') {
-        logger.info(`Ticket ${ticketId} is already active`);
+      if (ticket.status === 'in-progress') {
+        logger.info(`Ticket ${ticketId} is already in progress`);
       } else {
         await ticketManager.resume(ticketId);
         logger.success(`Resumed ticket: ${ticketId}`);
       }
 
-      logger.info(`\nTicket: ${ticket.name}`);
-      logger.info(`Workspace: .memento/tickets/${ticketId}/workspace/`);
-      logger.info(`Progress: .memento/tickets/${ticketId}/progress.md`);
-      logger.info(`Decisions: .memento/tickets/${ticketId}/decisions.md`);
+      // Get updated ticket info after resume
+      const updatedTicket = await ticketManager.get(ticketId);
+      
+      logger.info(`\nTicket: ${updatedTicket!.name}`);
+      logger.info(`Status: ${updatedTicket!.status}`);
+      logger.info(`Workspace: .memento/tickets/${updatedTicket!.status}/${ticketId}/workspace/`);
+      logger.info(`Progress: .memento/tickets/${updatedTicket!.status}/${ticketId}/progress.md`);
+      logger.info(`Decisions: .memento/tickets/${updatedTicket!.status}/${ticketId}/decisions.md`);
     } catch (error) {
       logger.error(`Failed to resume ticket: ${error}`);
       process.exit(1);
@@ -102,8 +108,8 @@ ticketCommand
         process.exit(1);
       }
 
-      if (ticket.status === 'closed') {
-        logger.info(`Ticket ${ticketId} is already closed`);
+      if (ticket.status === 'done') {
+        logger.info(`Ticket ${ticketId} is already done`);
       } else {
         await ticketManager.close(ticketId);
         logger.success(`Closed ticket: ${ticketId}`);
@@ -131,9 +137,10 @@ ticketCommand
       logger.info(`\nFound ${tickets.length} ticket(s) matching "${query}":\n`);
       
       tickets.forEach(ticket => {
-        const status = ticket.status === 'active' ? '🟢' : '⚪';
-        logger.info(`${status} ${ticket.id}`);
+        const statusIcon = ticket.status === 'done' ? '✅' : ticket.status === 'in-progress' ? '🔄' : '📋';
+        logger.info(`${statusIcon} ${ticket.id}`);
         logger.info(`   Name: ${ticket.name}`);
+        logger.info(`   Status: ${ticket.status}`);
         if (ticket.description) {
           logger.info(`   Description: ${ticket.description}`);
         }
@@ -141,6 +148,51 @@ ticketCommand
       });
     } catch (error) {
       logger.error(`Failed to search tickets: ${error}`);
+      process.exit(1);
+    }
+  });
+
+// Move subcommand
+ticketCommand
+  .command('move <id> <status>')
+  .description('Move a ticket to a different status (next, in-progress, done)')
+  .action(async (ticketId: string, status: string) => {
+    try {
+      const ticketManager = new TicketManager(process.cwd());
+      
+      // Validate status
+      if (!['next', 'in-progress', 'done'].includes(status)) {
+        logger.error(`Invalid status: ${status}. Must be one of: next, in-progress, done`);
+        process.exit(1);
+      }
+      
+      const ticket = await ticketManager.get(ticketId);
+      
+      if (!ticket) {
+        logger.error(`Ticket ${ticketId} not found`);
+        process.exit(1);
+      }
+
+      await ticketManager.moveToStatus(ticketId, status as TicketStatus);
+      logger.success(`Moved ticket ${ticketId} to ${status}`);
+      logger.info(`Workspace: .memento/tickets/${status}/${ticketId}/workspace/`);
+    } catch (error) {
+      logger.error(`Failed to move ticket: ${error}`);
+      process.exit(1);
+    }
+  });
+
+// Migrate subcommand
+ticketCommand
+  .command('migrate')
+  .description('Migrate existing tickets to the new directory structure')
+  .action(async () => {
+    try {
+      const ticketManager = new TicketManager(process.cwd());
+      await ticketManager.migrate();
+      logger.info('Migration complete');
+    } catch (error) {
+      logger.error(`Failed to migrate tickets: ${error}`);
       process.exit(1);
     }
   });

@@ -27,7 +27,7 @@ describe('TicketManager', () => {
       
       expect(ticketId).toMatch(/^test-feature-\d{4}-\d{2}-\d{2}$/);
       
-      const ticketPath = path.join(tempDir, '.memento', 'tickets', ticketId);
+      const ticketPath = path.join(tempDir, '.memento', 'tickets', 'next', ticketId);
       expect(fs.existsSync(ticketPath)).toBe(true);
       expect(fs.existsSync(path.join(ticketPath, 'metadata.json'))).toBe(true);
       expect(fs.existsSync(path.join(ticketPath, 'progress.md'))).toBe(true);
@@ -42,7 +42,7 @@ describe('TicketManager', () => {
       expect(metadata).toBeTruthy();
       expect(metadata!.name).toBe('test-feature');
       expect(metadata!.description).toBe('Test description');
-      expect(metadata!.status).toBe('active');
+      expect(metadata!.status).toBe('next');
       expect(metadata!.id).toBe(ticketId);
     });
 
@@ -66,22 +66,22 @@ describe('TicketManager', () => {
       const tickets = await ticketManager.list();
       
       expect(tickets).toHaveLength(2);
-      expect(tickets.every(t => t.status === 'active')).toBe(true);
+      expect(tickets.every(t => t.status === 'next' || t.status === 'in-progress')).toBe(true);
     });
 
     it('should list all tickets when requested', async () => {
       const tickets = await ticketManager.list('all');
       
       expect(tickets).toHaveLength(3);
-      expect(tickets.filter(t => t.status === 'active')).toHaveLength(2);
-      expect(tickets.filter(t => t.status === 'closed')).toHaveLength(1);
+      expect(tickets.filter(t => t.status === 'next' || t.status === 'in-progress')).toHaveLength(2);
+      expect(tickets.filter(t => t.status === 'done')).toHaveLength(1);
     });
 
     it('should list only closed tickets when requested', async () => {
       const tickets = await ticketManager.list('closed');
       
       expect(tickets).toHaveLength(1);
-      expect(tickets[0].status).toBe('closed');
+      expect(tickets[0].status).toBe('done');
     });
 
     it('should sort tickets by updatedAt descending', async () => {
@@ -123,10 +123,10 @@ describe('TicketManager', () => {
       await ticketManager.close(ticketId);
       
       const metadata = await ticketManager.get(ticketId);
-      expect(metadata!.status).toBe('closed');
+      expect(metadata!.status).toBe('done');
       
       // Check progress file was updated
-      const progressPath = path.join(tempDir, '.memento', 'tickets', ticketId, 'progress.md');
+      const progressPath = path.join(tempDir, '.memento', 'tickets', 'done', ticketId, 'progress.md');
       const progress = fs.readFileSync(progressPath, 'utf-8');
       expect(progress).toContain('Ticket closed');
     });
@@ -137,10 +137,10 @@ describe('TicketManager', () => {
       await ticketManager.resume(ticketId);
       
       const metadata = await ticketManager.get(ticketId);
-      expect(metadata!.status).toBe('active');
+      expect(metadata!.status).toBe('in-progress');
       
       // Check progress file was updated
-      const progressPath = path.join(tempDir, '.memento', 'tickets', ticketId, 'progress.md');
+      const progressPath = path.join(tempDir, '.memento', 'tickets', 'in-progress', ticketId, 'progress.md');
       const progress = fs.readFileSync(progressPath, 'utf-8');
       expect(progress).toContain('Ticket resumed');
     });
@@ -182,13 +182,100 @@ describe('TicketManager', () => {
   });
 
   describe('getWorkspacePath', () => {
-    it('should return correct workspace path', () => {
-      const ticketId = 'test-feature-2025-01-13';
+    it('should return correct workspace path', async () => {
+      const ticketId = await ticketManager.create('test-feature');
       const workspacePath = ticketManager.getWorkspacePath(ticketId);
       
       expect(workspacePath).toBe(
-        path.join(tempDir, '.memento', 'tickets', ticketId, 'workspace')
+        path.join(tempDir, '.memento', 'tickets', 'next', ticketId, 'workspace')
       );
+    });
+  });
+
+  describe('migrate', () => {
+    it('should migrate tickets from old structure to new directory structure', async () => {
+      // Create tickets in old structure manually
+      const ticketsDir = path.join(tempDir, '.memento', 'tickets');
+      
+      // Create active ticket in old structure
+      const activeTicketId = 'old-active-2025-01-13';
+      const activeTicketPath = path.join(ticketsDir, activeTicketId);
+      fs.mkdirSync(activeTicketPath, { recursive: true });
+      fs.writeFileSync(
+        path.join(activeTicketPath, 'metadata.json'),
+        JSON.stringify({
+          id: activeTicketId,
+          name: 'old-active',
+          status: 'active',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }, null, 2)
+      );
+      
+      // Create closed ticket in old structure
+      const closedTicketId = 'old-closed-2025-01-13';
+      const closedTicketPath = path.join(ticketsDir, closedTicketId);
+      fs.mkdirSync(closedTicketPath, { recursive: true });
+      fs.writeFileSync(
+        path.join(closedTicketPath, 'metadata.json'),
+        JSON.stringify({
+          id: closedTicketId,
+          name: 'old-closed',
+          status: 'closed',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }, null, 2)
+      );
+      
+      // Run migration
+      await ticketManager.migrate();
+      
+      // Verify tickets are in new locations
+      expect(fs.existsSync(path.join(ticketsDir, 'in-progress', activeTicketId))).toBe(true);
+      expect(fs.existsSync(path.join(ticketsDir, 'done', closedTicketId))).toBe(true);
+      
+      // Verify old locations are gone
+      expect(fs.existsSync(activeTicketPath)).toBe(false);
+      expect(fs.existsSync(closedTicketPath)).toBe(false);
+      
+      // Verify metadata no longer has status field
+      const migratedActive = await ticketManager.get(activeTicketId);
+      const migratedClosed = await ticketManager.get(closedTicketId);
+      
+      expect(migratedActive!.status).toBe('in-progress');
+      expect(migratedClosed!.status).toBe('done');
+    });
+  });
+
+  describe('moveToStatus', () => {
+    it('should move ticket between status directories', async () => {
+      const ticketId = await ticketManager.create('test-feature');
+      
+      // Move from next to in-progress
+      await ticketManager.moveToStatus(ticketId, 'in-progress');
+      expect(fs.existsSync(path.join(tempDir, '.memento', 'tickets', 'in-progress', ticketId))).toBe(true);
+      expect(fs.existsSync(path.join(tempDir, '.memento', 'tickets', 'next', ticketId))).toBe(false);
+      
+      const inProgressTicket = await ticketManager.get(ticketId);
+      expect(inProgressTicket!.status).toBe('in-progress');
+      
+      // Move from in-progress to done
+      await ticketManager.moveToStatus(ticketId, 'done');
+      expect(fs.existsSync(path.join(tempDir, '.memento', 'tickets', 'done', ticketId))).toBe(true);
+      expect(fs.existsSync(path.join(tempDir, '.memento', 'tickets', 'in-progress', ticketId))).toBe(false);
+      
+      const doneTicket = await ticketManager.get(ticketId);
+      expect(doneTicket!.status).toBe('done');
+    });
+    
+    it('should handle moving to same status gracefully', async () => {
+      const ticketId = await ticketManager.create('test-feature');
+      
+      // Move to same status
+      await ticketManager.moveToStatus(ticketId, 'next');
+      
+      const ticket = await ticketManager.get(ticketId);
+      expect(ticket!.status).toBe('next');
     });
   });
 });

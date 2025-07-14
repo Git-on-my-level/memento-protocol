@@ -54,6 +54,23 @@ When creating new component templates:
 - Include usage examples
 - Document any dependencies
 
+### Mode Files
+
+All mode files must include these sections:
+- **Core Responsibilities**: What the mode focuses on
+- **Done When**: Clear, testable completion criteria
+- Other sections as appropriate for the mode
+
+Example "Done When" section:
+```markdown
+## Done When
+
+- Feature implementation complete
+- All tests written and passing
+- Code coverage above 80%
+- Documentation updated
+```
+
 ## Questions?
 
 Feel free to open an issue for any questions or discussions.

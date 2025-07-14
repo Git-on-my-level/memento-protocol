@@ -39,6 +39,11 @@ Behavioral patterns that define how Claude approaches tasks:
 - **Engineer**: Implementation, coding, debugging
 - **Reviewer**: Code review, quality assurance, feedback
 
+Each mode must include:
+- **Core Responsibilities**: Primary focus areas and tasks
+- **Done When**: Clear, testable completion criteria
+- **Mode-specific sections**: Additional guidance as needed
+
 #### Workflows (Procedures, sub-Agents)
 Step-by-step procedures for common tasks:
 - **Summarize**: Summarize some logic, directories, or topic, to compress context

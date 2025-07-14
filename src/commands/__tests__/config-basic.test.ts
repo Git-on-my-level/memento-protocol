@@ -46,17 +46,16 @@ describe('Config Command Basic', () => {
   it('should handle basic get operations', async () => {
     mockConfigManager.get.mockResolvedValue('test-value');
     
-    await configCommand.parseAsync(['node', 'test', 'someKey']);
+    await configCommand.parseAsync(['node', 'test', 'get', 'someKey']);
     
     expect(mockConfigManager.get).toHaveBeenCalledWith('someKey');
-    expect(logger.info).toHaveBeenCalledWith('someKey: test-value');
+    expect(logger.info).toHaveBeenCalledWith('someKey = "test-value"');
   });
 
   it('should handle basic set operations', async () => {
-    await configCommand.parseAsync(['node', 'test', 'someKey', 'someValue']);
+    await configCommand.parseAsync(['node', 'test', 'set', 'someKey', 'someValue']);
     
-    expect(mockConfigManager.set).toHaveBeenCalledWith('someKey', 'someValue');
-    expect(mockConfigManager.save).toHaveBeenCalled();
-    expect(logger.success).toHaveBeenCalledWith('Configuration updated: someKey = someValue');
+    expect(mockConfigManager.set).toHaveBeenCalledWith('someKey', 'someValue', false);
+    expect(logger.success).toHaveBeenCalledWith('Configuration updated: someKey = "someValue"');
   });
 });

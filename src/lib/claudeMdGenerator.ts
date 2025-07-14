@@ -51,14 +51,6 @@ export class ClaudeMdGenerator {
     }
   }
 
-  /**
-   * Generate the minimal router content
-   * Keep it under 50 lines as per Design.md
-   */
-  private generateRouterContent(): string {
-    // Deprecated: This method is retained for backward compatibility but is no longer used.
-    return "";
-  }
 
   /**
    * Merge router content with existing CLAUDE.md

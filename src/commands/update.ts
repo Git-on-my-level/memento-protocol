@@ -45,11 +45,11 @@ export function createUpdateCommand(): Command {
           }
 
           logger.info(`Updating ${type} '${name}'...`);
-          await updateManager.updateComponent(type as 'mode' | 'workflow', name, options.force);
+          await updateManager.updateComponent(type as 'mode' | 'workflow', name, options.force || false);
         } else {
           // Update all components
           logger.info('Updating all components...');
-          await updateManager.updateAll(options.force);
+          await updateManager.updateAll(options.force || false);
         }
 
       } catch (error: any) {

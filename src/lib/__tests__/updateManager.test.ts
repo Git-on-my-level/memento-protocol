@@ -23,8 +23,12 @@ describe('UpdateManager', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Mock require.main before creating the instance
-    jest.replaceProperty(require, 'main', { filename: '/test/cli.js' });
+    Object.defineProperty(require, 'main', { value: { filename: '/test/cli.js' }, configurable: true });
     updateManager = new UpdateManager(mockProjectRoot);
+  });
+
+  afterEach(() => {
+    delete (require as any).main;
   });
 
   describe('checkForUpdates', () => {

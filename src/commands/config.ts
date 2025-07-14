@@ -42,7 +42,7 @@ configCommand
         // Keep as string if not valid JSON
       }
       
-      await configManager.set(key, parsedValue, options.global);
+      await configManager.set(key, parsedValue, options.global || false);
       logger.success(`Configuration updated: ${key} = ${JSON.stringify(parsedValue)}`);
     } catch (error) {
       logger.error(`Failed to set configuration: ${error}`);
@@ -58,7 +58,7 @@ configCommand
   .action(async (key: string, options: { global: boolean }) => {
     try {
       const configManager = new ConfigManager(process.cwd());
-      await configManager.unset(key, options.global);
+      await configManager.unset(key, options.global || false);
       logger.success(`Configuration key '${key}' removed`);
     } catch (error) {
       logger.error(`Failed to unset configuration: ${error}`);
@@ -74,7 +74,7 @@ configCommand
   .action(async (options: { global: boolean }) => {
     try {
       const configManager = new ConfigManager(process.cwd());
-      const config = await configManager.list(options.global);
+      const config = await configManager.list(options.global || false);
       
       if (Object.keys(config).length === 0) {
         logger.info('No configuration values set');

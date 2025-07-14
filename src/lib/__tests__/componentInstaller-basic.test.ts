@@ -19,7 +19,7 @@ describe('ComponentInstaller Basic', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.replaceProperty(require, 'main', { filename: '/test/cli.js' });
+    Object.defineProperty(require, 'main', { value: { filename: '/test/cli.js' }, configurable: true });
     
     (DirectoryManager as jest.MockedClass<typeof DirectoryManager>).mockImplementation(() => ({
       getManifest: jest.fn().mockResolvedValue({ components: { modes: [], workflows: [] } }),

@@ -27,12 +27,12 @@ describe('Ticket Command', () => {
     } as any;
 
     mockTicketManager = {
-      createTicket: jest.fn(),
-      listTickets: jest.fn(),
-      continueTicket: jest.fn(),
-      updateTicket: jest.fn(),
-      closeTicket: jest.fn(),
-      showTicket: jest.fn()
+      create: jest.fn(),
+      list: jest.fn(),
+      get: jest.fn(),
+      resume: jest.fn(),
+      close: jest.fn(),
+      search: jest.fn()
     } as any;
 
     (DirectoryManager as jest.MockedClass<typeof DirectoryManager>).mockImplementation(() => mockDirManager);
@@ -48,222 +48,200 @@ describe('Ticket Command', () => {
 
   describe('create ticket', () => {
     it('should create a new ticket', async () => {
-      mockTicketManager.createTicket.mockResolvedValue('feature-123');
+      mockTicketManager.create.mockResolvedValue('feature-123');
 
       await ticketCommand.parseAsync(['node', 'test', 'create', 'Add new feature']);
 
-      expect(mockTicketManager.createTicket).toHaveBeenCalledWith(
+      expect(mockTicketManager.create).toHaveBeenCalledWith(
         'Add new feature',
-        undefined,
         undefined
       );
-      expect(logger.success).toHaveBeenCalledWith('Created ticket: feature-123');
+      expect(logger.info).toHaveBeenCalledWith('Ticket created successfully!');
+      expect(logger.info).toHaveBeenCalledWith('ID: feature-123');
+      expect(logger.info).toHaveBeenCalledWith('Workspace: .memento/tickets/feature-123/workspace/');
     });
 
-    it('should create ticket with type and assignee', async () => {
-      mockTicketManager.createTicket.mockResolvedValue('bug-456');
+    it('should create ticket with description', async () => {
+      mockTicketManager.create.mockResolvedValue('bug-456');
 
       await ticketCommand.parseAsync([
         'node', 'test', 'create', 'Fix bug',
-        '--type', 'bug',
-        '--assignee', 'john'
+        '--description', 'Critical bug in payment system'
       ]);
 
-      expect(mockTicketManager.createTicket).toHaveBeenCalledWith(
+      expect(mockTicketManager.create).toHaveBeenCalledWith(
         'Fix bug',
-        'bug',
-        'john'
+        'Critical bug in payment system'
       );
     });
   });
 
   describe('list tickets', () => {
-    it('should list all tickets', async () => {
+    it('should list all active tickets', async () => {
       const mockTickets = [
         {
           id: 'feature-123',
-          title: 'Add feature',
-          status: 'in_progress',
-          type: 'feature',
-          assignee: 'alice',
-          created: new Date('2024-01-01'),
-          updated: new Date('2024-01-02')
+          name: 'Add feature',
+          status: 'active',
+          description: 'Add new dashboard',
+          createdAt: new Date('2024-01-01').toISOString(),
+          updatedAt: new Date('2024-01-02').toISOString()
         },
         {
           id: 'bug-456',
-          title: 'Fix bug',
-          status: 'open',
-          type: 'bug',
-          created: new Date('2024-01-03'),
-          updated: new Date('2024-01-03')
+          name: 'Fix bug',
+          status: 'active',
+          createdAt: new Date('2024-01-03').toISOString(),
+          updatedAt: new Date('2024-01-03').toISOString()
         }
       ];
-
-      mockTicketManager.listTickets.mockResolvedValue(mockTickets);
+      mockTicketManager.list.mockResolvedValue(mockTickets);
 
       await ticketCommand.parseAsync(['node', 'test', 'list']);
 
-      expect(logger.info).toHaveBeenCalledWith('\nActive Tickets:\n');
-      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('feature-123'));
-      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('[in_progress]'));
-      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('Alice'));
+      expect(mockTicketManager.list).toHaveBeenCalledWith('active');
+      expect(logger.info).toHaveBeenCalledWith('\nActive tickets:\n');
+      expect(logger.info).toHaveBeenCalledWith('🟢 feature-123');
+      expect(logger.info).toHaveBeenCalledWith('   Name: Add feature');
+      expect(logger.info).toHaveBeenCalledWith('   Description: Add new dashboard');
     });
 
     it('should filter tickets by status', async () => {
-      mockTicketManager.listTickets.mockResolvedValue([
-        {
-          id: 'feature-123',
-          title: 'Closed feature',
-          status: 'closed',
-          created: new Date(),
-          updated: new Date()
-        }
-      ]);
+      const mockTickets = [{
+        id: 'old-123',
+        name: 'Old feature',
+        status: 'closed',
+        createdAt: new Date('2024-01-01').toISOString(),
+        updatedAt: new Date('2024-01-02').toISOString()
+      }];
+      mockTicketManager.list.mockResolvedValue(mockTickets);
 
       await ticketCommand.parseAsync(['node', 'test', 'list', '--status', 'closed']);
 
-      expect(mockTicketManager.listTickets).toHaveBeenCalledWith('closed');
+      expect(mockTicketManager.list).toHaveBeenCalledWith('closed');
+      expect(logger.info).toHaveBeenCalledWith('\nClosed tickets:\n');
+      expect(logger.info).toHaveBeenCalledWith('⚪ old-123');
     });
 
     it('should handle no tickets', async () => {
-      mockTicketManager.listTickets.mockResolvedValue([]);
+      mockTicketManager.list.mockResolvedValue([]);
 
       await ticketCommand.parseAsync(['node', 'test', 'list']);
 
-      expect(logger.info).toHaveBeenCalledWith('No tickets found.');
+      expect(logger.info).toHaveBeenCalledWith('No active tickets found.');
     });
   });
 
-  describe('continue ticket', () => {
-    it('should continue a ticket', async () => {
+  describe('resume ticket', () => {
+    it('should resume an inactive ticket', async () => {
       const mockTicket = {
         id: 'feature-123',
-        title: 'Add feature',
-        status: 'in_progress',
-        context: 'Working on authentication',
-        created: new Date(),
-        updated: new Date()
+        name: 'Add feature',
+        status: 'closed'
       };
+      mockTicketManager.get.mockResolvedValue(mockTicket);
 
-      mockTicketManager.continueTicket.mockResolvedValue(mockTicket);
+      await ticketCommand.parseAsync(['node', 'test', 'resume', 'feature-123']);
 
-      await ticketCommand.parseAsync(['node', 'test', 'continue', 'feature-123']);
+      expect(mockTicketManager.get).toHaveBeenCalledWith('feature-123');
+      expect(mockTicketManager.resume).toHaveBeenCalledWith('feature-123');
+      expect(logger.success).toHaveBeenCalledWith('Resumed ticket: feature-123');
+      expect(logger.info).toHaveBeenCalledWith('\nTicket: Add feature');
+      expect(logger.info).toHaveBeenCalledWith('Workspace: .memento/tickets/feature-123/workspace/');
+    });
 
-      expect(mockTicketManager.continueTicket).toHaveBeenCalledWith('feature-123');
-      expect(logger.success).toHaveBeenCalledWith('Continuing ticket: feature-123');
-      expect(logger.info).toHaveBeenCalledWith('Title: Add feature');
-      expect(logger.info).toHaveBeenCalledWith('Status: in_progress');
-      expect(logger.info).toHaveBeenCalledWith('\nContext:\nWorking on authentication');
+    it('should handle already active ticket', async () => {
+      const mockTicket = {
+        id: 'feature-123',
+        name: 'Add feature',
+        status: 'active'
+      };
+      mockTicketManager.get.mockResolvedValue(mockTicket);
+
+      await ticketCommand.parseAsync(['node', 'test', 'resume', 'feature-123']);
+
+      expect(logger.info).toHaveBeenCalledWith('Ticket feature-123 is already active');
+      expect(mockTicketManager.resume).not.toHaveBeenCalled();
     });
 
     it('should handle ticket not found', async () => {
-      mockTicketManager.continueTicket.mockResolvedValue(null);
+      mockTicketManager.get.mockResolvedValue(null);
 
-      await ticketCommand.parseAsync(['node', 'test', 'continue', 'nonexistent']);
+      await ticketCommand.parseAsync(['node', 'test', 'resume', 'nonexistent']);
 
-      expect(logger.error).toHaveBeenCalledWith('Ticket not found: nonexistent');
-    });
-  });
-
-  describe('update ticket', () => {
-    it('should update ticket context', async () => {
-      await ticketCommand.parseAsync([
-        'node', 'test', 'update', 'feature-123',
-        '--context', 'Updated progress notes'
-      ]);
-
-      expect(mockTicketManager.updateTicket).toHaveBeenCalledWith('feature-123', {
-        context: 'Updated progress notes'
-      });
-      expect(logger.success).toHaveBeenCalledWith('Updated ticket: feature-123');
-    });
-
-    it('should update ticket status', async () => {
-      await ticketCommand.parseAsync([
-        'node', 'test', 'update', 'feature-123',
-        '--status', 'resolved'
-      ]);
-
-      expect(mockTicketManager.updateTicket).toHaveBeenCalledWith('feature-123', {
-        status: 'resolved'
-      });
-    });
-
-    it('should update multiple fields', async () => {
-      await ticketCommand.parseAsync([
-        'node', 'test', 'update', 'feature-123',
-        '--status', 'in_progress',
-        '--assignee', 'bob',
-        '--context', 'New context'
-      ]);
-
-      expect(mockTicketManager.updateTicket).toHaveBeenCalledWith('feature-123', {
-        status: 'in_progress',
-        assignee: 'bob',
-        context: 'New context'
-      });
+      expect(logger.error).toHaveBeenCalledWith('Ticket nonexistent not found');
+      expect(process.exit).toHaveBeenCalledWith(1);
     });
   });
 
   describe('close ticket', () => {
-    it('should close a ticket', async () => {
+    it('should close an active ticket', async () => {
+      const mockTicket = {
+        id: 'feature-123',
+        name: 'Add feature',
+        status: 'active'
+      };
+      mockTicketManager.get.mockResolvedValue(mockTicket);
+
       await ticketCommand.parseAsync(['node', 'test', 'close', 'feature-123']);
 
-      expect(mockTicketManager.closeTicket).toHaveBeenCalledWith('feature-123');
+      expect(mockTicketManager.close).toHaveBeenCalledWith('feature-123');
       expect(logger.success).toHaveBeenCalledWith('Closed ticket: feature-123');
+    });
+
+    it('should handle already closed ticket', async () => {
+      const mockTicket = {
+        id: 'feature-123',
+        name: 'Add feature',
+        status: 'closed'
+      };
+      mockTicketManager.get.mockResolvedValue(mockTicket);
+
+      await ticketCommand.parseAsync(['node', 'test', 'close', 'feature-123']);
+
+      expect(logger.info).toHaveBeenCalledWith('Ticket feature-123 is already closed');
+      expect(mockTicketManager.close).not.toHaveBeenCalled();
     });
   });
 
-  describe('show ticket', () => {
-    it('should show ticket details', async () => {
-      const mockTicket = {
-        id: 'feature-123',
-        title: 'Add feature',
-        status: 'open',
-        type: 'feature',
-        assignee: 'alice',
-        context: 'Detailed context',
-        created: new Date('2024-01-01'),
-        updated: new Date('2024-01-02')
-      };
+  describe('search tickets', () => {
+    it('should search tickets by query', async () => {
+      const mockTickets = [
+        {
+          id: 'feature-123',
+          name: 'Add dashboard feature',
+          status: 'active',
+          description: 'Dashboard improvements',
+          createdAt: new Date('2024-01-01').toISOString(),
+          updatedAt: new Date('2024-01-02').toISOString()
+        }
+      ];
+      mockTicketManager.search.mockResolvedValue(mockTickets);
 
-      mockTicketManager.showTicket.mockResolvedValue(mockTicket);
+      await ticketCommand.parseAsync(['node', 'test', 'search', 'dashboard']);
 
-      await ticketCommand.parseAsync(['node', 'test', 'show', 'feature-123']);
-
-      expect(logger.info).toHaveBeenCalledWith('\nTicket Details:\n');
-      expect(logger.info).toHaveBeenCalledWith('ID: feature-123');
-      expect(logger.info).toHaveBeenCalledWith('Title: Add feature');
-      expect(logger.info).toHaveBeenCalledWith('Status: open');
-      expect(logger.info).toHaveBeenCalledWith('Type: feature');
-      expect(logger.info).toHaveBeenCalledWith('Assignee: alice');
+      expect(mockTicketManager.search).toHaveBeenCalledWith('dashboard');
+      expect(logger.info).toHaveBeenCalledWith('\nFound 1 ticket(s) matching "dashboard":\n');
+      expect(logger.info).toHaveBeenCalledWith('🟢 feature-123');
+      expect(logger.info).toHaveBeenCalledWith('   Name: Add dashboard feature');
     });
 
-    it('should handle ticket not found', async () => {
-      mockTicketManager.showTicket.mockResolvedValue(null);
+    it('should handle no search results', async () => {
+      mockTicketManager.search.mockResolvedValue([]);
 
-      await ticketCommand.parseAsync(['node', 'test', 'show', 'nonexistent']);
+      await ticketCommand.parseAsync(['node', 'test', 'search', 'nonexistent']);
 
-      expect(logger.error).toHaveBeenCalledWith('Ticket not found: nonexistent');
+      expect(logger.info).toHaveBeenCalledWith('No tickets found matching: nonexistent');
     });
   });
 
   describe('error handling', () => {
-    it('should error when not initialized', async () => {
-      mockDirManager.isInitialized.mockReturnValue(false);
-
-      await ticketCommand.parseAsync(['node', 'test', 'list']);
-
-      expect(logger.error).toHaveBeenCalledWith('Memento Protocol is not initialized. Run "memento init" first.');
-      expect(process.exit).toHaveBeenCalledWith(1);
-    });
-
     it('should handle errors in ticket operations', async () => {
-      mockTicketManager.createTicket.mockRejectedValue(new Error('Write error'));
+      mockTicketManager.create.mockRejectedValue(new Error('Write error'));
 
       await ticketCommand.parseAsync(['node', 'test', 'create', 'New ticket']);
 
-      expect(logger.error).toHaveBeenCalledWith('Failed to manage ticket: Write error');
+      expect(logger.error).toHaveBeenCalledWith('Failed to create ticket: Error: Write error');
       expect(process.exit).toHaveBeenCalledWith(1);
     });
   });

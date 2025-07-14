@@ -13,7 +13,11 @@ interface ComponentMetadata {
 
 interface TemplateMetadata {
   version: string;
-  components: ComponentMetadata[];
+  templates: {
+    claude_router?: ComponentMetadata;
+    modes: ComponentMetadata[];
+    workflows: ComponentMetadata[];
+  };
 }
 
 export class ComponentInstaller {
@@ -48,12 +52,11 @@ export class ComponentInstaller {
     modes: ComponentMetadata[];
     workflows: ComponentMetadata[];
   }> {
-    const modesMetadata = await this.loadMetadata("modes");
-    const workflowsMetadata = await this.loadMetadata("workflows");
+    const metadata = await this.loadGlobalMetadata();
 
     return {
-      modes: modesMetadata?.components || [],
-      workflows: workflowsMetadata?.components || [],
+      modes: metadata?.templates.modes || [],
+      workflows: metadata?.templates.workflows || [],
     };
   }
 
@@ -103,10 +106,9 @@ export class ComponentInstaller {
     }
 
     // Check dependencies
-    const metadata = await this.loadMetadata(
-      type === "mode" ? "modes" : "workflows"
-    );
-    const component = metadata?.components.find((c) => c.name === name);
+    const metadata = await this.loadGlobalMetadata();
+    const components = type === "mode" ? metadata?.templates.modes : metadata?.templates.workflows;
+    const component = components?.find((c) => c.name === name);
 
     if (component?.dependencies && component.dependencies.length > 0) {
       for (const dep of component.dependencies) {
@@ -168,12 +170,10 @@ export class ComponentInstaller {
   }
 
   /**
-   * Load metadata for a component type
+   * Load global metadata for all templates
    */
-  private async loadMetadata(
-    type: "modes" | "workflows"
-  ): Promise<TemplateMetadata | null> {
-    const metadataPath = path.join(this.templatesDir, type, "metadata.json");
+  private async loadGlobalMetadata(): Promise<TemplateMetadata | null> {
+    const metadataPath = path.join(this.templatesDir, "metadata.json");
 
     if (!existsSync(metadataPath)) {
       return null;
@@ -194,10 +194,10 @@ export class ComponentInstaller {
     const missing: { component: string; dependencies: string[] }[] = [];
 
     // Check workflow dependencies
-    const workflowsMetadata = await this.loadMetadata("workflows");
+    const metadata = await this.loadGlobalMetadata();
 
     for (const workflow of manifest.components.workflows) {
-      const meta = workflowsMetadata?.components.find(
+      const meta = metadata?.templates.workflows.find(
         (c) => c.name === workflow
       );
       if (meta?.dependencies && meta.dependencies.length > 0) {

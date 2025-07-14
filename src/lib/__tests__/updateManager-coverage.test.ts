@@ -23,7 +23,7 @@ describe('UpdateManager Coverage', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.replaceProperty(require, 'main', { filename: '/test/cli.js' });
+    Object.defineProperty(require, 'main', { value: { filename: '/test/cli.js' }, configurable: true });
     
     mockDirManager = {
       getManifest: jest.fn().mockResolvedValue({ 
@@ -37,6 +37,10 @@ describe('UpdateManager Coverage', () => {
     (DirectoryManager as jest.MockedClass<typeof DirectoryManager>).mockImplementation(() => mockDirManager);
     
     updateManager = new UpdateManager(mockProjectRoot);
+  });
+
+  afterEach(() => {
+    delete (require as any).main;
   });
 
   it('should handle missing version info in manifest', async () => {

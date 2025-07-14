@@ -1,4 +1,3 @@
-import * as fs from 'fs/promises';
 import { UpdateManager } from '../updateManager';
 import { DirectoryManager } from '../directoryManager';
 
@@ -20,8 +19,12 @@ describe('UpdateManager Basic', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.replaceProperty(require, 'main', { filename: '/test/cli.js' });
+    Object.defineProperty(require, 'main', { value: { filename: '/test/cli.js' }, configurable: true });
     updateManager = new UpdateManager(mockProjectRoot);
+  });
+
+  afterEach(() => {
+    delete (require as any).main;
   });
 
   it('should create instance correctly', () => {

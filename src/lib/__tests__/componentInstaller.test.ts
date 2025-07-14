@@ -32,38 +32,34 @@ describe('ComponentInstaller', () => {
 
     (DirectoryManager as jest.MockedClass<typeof DirectoryManager>).mockImplementation(() => mockDirManager);
     
-    // Mock require.main before creating the instance
-    jest.replaceProperty(require, 'main', { filename: '/test/cli.js' });
+    // Mock existsSync to return false for repo templates dir
+    (existsSync as jest.Mock).mockImplementation((path: string) => {
+      if (path.includes('/test/project/templates')) {
+        return false;
+      }
+      return true;
+    });
+    
     installer = new ComponentInstaller(mockProjectRoot);
   });
 
   describe('listAvailableComponents', () => {
     it('should list available modes and workflows', async () => {
-      const modesMetadata = {
+      const globalMetadata = {
         version: '1.0.0',
-        components: [
-          { name: 'architect', description: 'System design', tags: ['design'], dependencies: [] },
-          { name: 'engineer', description: 'Implementation', tags: ['code'], dependencies: [] }
-        ]
-      };
-
-      const workflowsMetadata = {
-        version: '1.0.0',
-        components: [
-          { name: 'review', description: 'Code review', tags: ['quality'], dependencies: ['reviewer'] }
-        ]
+        templates: {
+          modes: [
+            { name: 'architect', description: 'System design', tags: ['design'], dependencies: [] },
+            { name: 'engineer', description: 'Implementation', tags: ['code'], dependencies: [] }
+          ],
+          workflows: [
+            { name: 'review', description: 'Code review', tags: ['quality'], dependencies: ['reviewer'] }
+          ]
+        }
       };
 
       (existsSync as jest.Mock).mockReturnValue(true);
-      (fs.readFile as jest.Mock).mockImplementation((path: string) => {
-        if (path.includes('modes/metadata.json')) {
-          return Promise.resolve(JSON.stringify(modesMetadata));
-        }
-        if (path.includes('workflows/metadata.json')) {
-          return Promise.resolve(JSON.stringify(workflowsMetadata));
-        }
-        return Promise.resolve('{}');
-      });
+      (fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(globalMetadata));
 
       const result = await installer.listAvailableComponents();
 
@@ -122,8 +118,28 @@ describe('ComponentInstaller', () => {
         }
       };
 
-      (existsSync as jest.Mock).mockReturnValue(true);
-      (fs.readFile as jest.Mock).mockResolvedValue('# Architect Mode\nContent');
+      const globalMetadata = {
+        version: '1.0.0',
+        templates: {
+          modes: [
+            { name: 'architect', description: 'System design', tags: ['design'], dependencies: [] }
+          ],
+          workflows: []
+        }
+      };
+
+      (existsSync as jest.Mock).mockImplementation((path: string) => {
+        if (path.includes('/test/project/templates')) {
+          return false;
+        }
+        return true;
+      });
+      (fs.readFile as jest.Mock).mockImplementation((path: string) => {
+        if (path.includes('metadata.json')) {
+          return Promise.resolve(JSON.stringify(globalMetadata));
+        }
+        return Promise.resolve('# Architect Mode\nContent');
+      });
       (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
       mockDirManager.getManifest.mockResolvedValue(mockManifest);
       mockDirManager.getComponentPath.mockReturnValue('/test/.memento/modes/architect.md');
@@ -148,9 +164,12 @@ describe('ComponentInstaller', () => {
 
       const metadata = {
         version: '1.0.0',
-        components: [
-          { name: 'review', dependencies: ['reviewer'] }
-        ]
+        templates: {
+          modes: [],
+          workflows: [
+            { name: 'review', dependencies: ['reviewer'] }
+          ]
+        }
       };
 
       (existsSync as jest.Mock).mockReturnValue(true);
@@ -208,9 +227,12 @@ describe('ComponentInstaller', () => {
 
       const metadata = {
         version: '1.0.0',
-        components: [
-          { name: 'review', dependencies: ['reviewer'] }
-        ]
+        templates: {
+          modes: [],
+          workflows: [
+            { name: 'review', dependencies: ['reviewer'] }
+          ]
+        }
       };
 
       mockDirManager.getManifest.mockResolvedValue(mockManifest);
@@ -233,9 +255,12 @@ describe('ComponentInstaller', () => {
 
       const metadata = {
         version: '1.0.0',
-        components: [
-          { name: 'review', dependencies: ['reviewer'] }
-        ]
+        templates: {
+          modes: [],
+          workflows: [
+            { name: 'review', dependencies: ['reviewer'] }
+          ]
+        }
       };
 
       mockDirManager.getManifest.mockResolvedValue(mockManifest);
@@ -257,9 +282,12 @@ describe('ComponentInstaller', () => {
     it('should display available components', async () => {
       const metadata = {
         version: '1.0.0',
-        components: [
-          { name: 'architect', description: 'System design', tags: [], dependencies: [] }
-        ]
+        templates: {
+          modes: [
+            { name: 'architect', description: 'System design', tags: [], dependencies: [] }
+          ],
+          workflows: []
+        }
       };
 
       (existsSync as jest.Mock).mockReturnValue(true);

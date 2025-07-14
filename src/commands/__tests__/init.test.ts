@@ -73,7 +73,7 @@ describe('Init Command', () => {
       mockClaudeMdGen.exists.mockResolvedValue(false);
       mockProjectDetector.detect.mockResolvedValue({
         type: 'fullstack',
-        framework: 'Next.js',
+        framework: 'nextjs',
         languages: ['typescript'],
         suggestedModes: ['architect', 'engineer'],
         suggestedWorkflows: ['review'],
@@ -125,7 +125,7 @@ describe('Init Command', () => {
       mockDirManager.isInitialized.mockReturnValue(false);
       mockClaudeMdGen.exists.mockResolvedValue(true);
       mockClaudeMdGen.readExisting.mockResolvedValue('# Existing content\nProject docs');
-      (inquirer.prompt as jest.Mock).mockResolvedValue({ preserveExisting: true });
+      (inquirer.prompt as unknown as jest.Mock).mockResolvedValue({ preserveExisting: true });
       
       mockProjectDetector.detect.mockResolvedValue({
         type: 'unknown',

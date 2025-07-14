@@ -127,3 +127,16 @@ Switch to:
 - **Project Manager** when scope or requirements need clarification
 - **Reviewer** when code is ready for quality assessment
 - **Debug** workflow when facing complex bugs
+
+## Done When
+
+- Feature implementation complete
+- All tests written and passing
+- Code coverage above 80%
+- Linters and formatters applied
+- Error handling implemented
+- Edge cases addressed
+- Documentation updated
+- Code follows project conventions
+- Pull request created
+- Self-review completed
