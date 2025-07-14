@@ -12,7 +12,6 @@
     "dev": "tsx src/cli.ts",
     "test": "jest",
     "test:coverage": "jest --coverage",
-    "package": "npm run build && node scripts/package.js",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run test && npm run build",
     "postinstall": "echo 'Thank you for installing Memento Protocol! Run \"memento --help\" to get started.'"

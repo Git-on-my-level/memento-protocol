@@ -1,0 +1,29 @@
+# Development files
+src/
+tsconfig.json
+jest.config.js
+.gitignore
+
+# Test files
+**/__tests__/
+**/*.test.ts
+**/*.test.js
+coverage/
+
+# Build artifacts
+dist/packaged/
+test-init/
+test-project/
+
+# Development directories
+node_modules/
+.git/
+.memento/
+
+# Documentation (keep only essential)
+docs/
+CONTRIBUTING.md
+Design.md
+
+# Scripts (keep only build)
+scripts/test-metadata.js

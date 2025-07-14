@@ -17,13 +17,17 @@ All through a simple `CLAUDE.md` file that acts as a minimal router.
 ### Installation
 
 ```bash
-# Using npm
+# Using npm (recommended)
 npm install -g memento-protocol
 
-# Using homebrew (coming soon)
-brew install memento-protocol
+# Using npx (no installation required)
+npx memento-protocol init
 
-# Or download the standalone executable from GitHub releases
+# Using git for development
+git clone https://github.com/memento-protocol/memento-protocol.git
+cd memento-protocol
+npm install
+npm link
 ```
 
 ### Initialize in Your Project
