@@ -12,6 +12,25 @@ A systematic approach to compressing context and extracting essential informatio
 - **depth**: Level of detail needed (high-level, detailed, exhaustive)
 - **focus**: Specific aspects to emphasize (architecture, implementation, etc.)
 
+## Example Commands
+
+### Natural Language Invocations
+- "execute summarize on the entire codebase"
+- "summarize the authentication module for me"
+- "create a high-level overview of our React components"
+- "compress the context of this directory"
+
+### Common Use Cases
+- `execute summarize --scope src/ --depth high-level` → Quick codebase overview
+- `execute summarize --scope src/auth --depth detailed --focus security` → Detailed security summary
+- `execute summarize --scope . --focus architecture` → Architecture documentation
+- `execute summarize --scope src/components --depth exhaustive` → Complete component analysis
+
+### Workflow Integration Examples
+- "summarize the codebase before the architecture review" → Pre-review documentation
+- "execute summarize then act as architect" → Context compression before design
+- "summarize recent changes from git history" → Change summary
+
 ## Workflow Steps
 
 ### 1. Scope Definition
@@ -164,14 +183,3 @@ Depth: [level of detail]
 - When onboarding team members
 - Before architectural discussions
 
-## Examples
-
-**Summarizing a React application:**
-```
-execute summarize --scope src/ --depth high-level --focus components
-```
-
-**Summarizing a specific feature:**
-```
-execute summarize --scope src/auth --depth detailed --focus security
-```

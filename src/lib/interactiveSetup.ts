@@ -12,6 +12,7 @@ export interface SetupOptions {
   selectedLanguages: string[];
   defaultMode?: string;
   skipRecommended?: boolean;
+  force?: boolean;
 }
 
 export class InteractiveSetup {
@@ -29,7 +30,9 @@ export class InteractiveSetup {
    * Run interactive setup flow
    */
   async run(projectInfo: ProjectInfo): Promise<SetupOptions> {
-    logger.info('\n🚀 Welcome to Memento Protocol Interactive Setup!\n');
+    logger.space();
+    logger.info('🚀 Welcome to Memento Protocol Interactive Setup!');
+    logger.space();
 
     // Confirm project type
     const projectTypeConfirmed = await this.confirmProjectType(projectInfo);
@@ -68,7 +71,9 @@ export class InteractiveSetup {
    * Quick setup with all recommended components
    */
   async quickSetup(projectInfo: ProjectInfo): Promise<SetupOptions> {
-    logger.info('\n⚡ Running quick setup with recommended components...\n');
+    logger.space();
+    logger.info('⚡ Running quick setup with recommended components...');
+    logger.space();
 
     return {
       projectInfo,
@@ -255,7 +260,8 @@ export class InteractiveSetup {
     const detectedLanguage = await this.languageManager.detectProjectLanguage();
     
     if (detectedLanguage) {
-      logger.info(`\n🔍 Detected project language: ${detectedLanguage}`);
+      logger.space();
+      logger.info(`🔍 Detected project language: ${detectedLanguage}`);
       
       const { installOverride } = await inquirer.prompt([
         {
@@ -281,12 +287,15 @@ export class InteractiveSetup {
    * Show setup summary and confirm
    */
   private async confirmSetup(options: SetupOptions): Promise<boolean> {
-    logger.info('\n📋 Setup Summary:\n');
+    logger.space();
+    logger.info('📋 Setup Summary:');
+    logger.space();
     logger.info(`Project Type: ${options.projectInfo.type}`);
     if (options.projectInfo.framework) {
       logger.info(`Framework: ${options.projectInfo.framework}`);
     }
-    logger.info(`\nModes: ${options.selectedModes.join(', ') || 'None'}`);
+    logger.space();
+    logger.info(`Modes: ${options.selectedModes.join(', ') || 'None'}`);
     logger.info(`Workflows: ${options.selectedWorkflows.join(', ') || 'None'}`);
     logger.info(`Languages: ${options.selectedLanguages.join(', ') || 'None'}`);
     if (options.defaultMode) {
@@ -297,7 +306,7 @@ export class InteractiveSetup {
       {
         type: 'confirm',
         name: 'confirmed',
-        message: '\nProceed with this configuration?',
+        message: 'Proceed with this configuration?',
         default: true
       }
     ]);
@@ -360,12 +369,12 @@ export class InteractiveSetup {
   async applySetup(options: SetupOptions): Promise<void> {
     // Install selected modes
     for (const mode of options.selectedModes) {
-      await this.componentInstaller.installComponent('mode', mode);
+      await this.componentInstaller.installComponent('mode', mode, options.force);
     }
 
     // Install selected workflows
     for (const workflow of options.selectedWorkflows) {
-      await this.componentInstaller.installComponent('workflow', workflow);
+      await this.componentInstaller.installComponent('workflow', workflow, options.force);
     }
 
     // Install selected language overrides

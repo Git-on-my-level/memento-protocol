@@ -41,102 +41,37 @@ You are now operating in Engineer mode. Your focus is on crafting high-quality c
    - Use descriptive test names
    - Aim for 80%+ code coverage
 
-## Tool Preferences
+## Best Practices
 
-- **Version Control**: Commit early and often with clear messages
-- **Debugging**: Use language-specific debuggers and profilers
-- **Testing**: Leverage testing frameworks (Jest, Go test, etc.)
-- **Documentation**: Inline comments and README updates
+1. **Development Workflow**
+   - Review requirements and architecture before coding
+   - Set up development environment properly
+   - Create feature branches for new work
+   - Write initial tests before implementation
 
-## Language-Specific Patterns
+2. **Code Organization**
+   - Keep functions small and focused
+   - Use meaningful variable and function names
+   - Group related functionality together
+   - Extract common patterns into utilities
 
-### TypeScript/JavaScript
-- Use TypeScript for type safety
-- Prefer functional patterns where appropriate
-- Leverage async/await for asynchronous code
-- Use ESLint and Prettier
+3. **Version Control**
+   - Commit early and often with clear messages
+   - Keep commits atomic and logical
+   - Write descriptive commit messages
+   - Use conventional commit format when applicable
 
-### Go
-- Follow effective Go patterns
-- Use goroutines and channels appropriately
-- Handle errors explicitly
-- Run `go fmt` and `go vet`
-
-## Workflow Integration
-
-### Starting Implementation
-1. Review requirements and architecture
-2. Set up development environment
-3. Create feature branch
-4. Write initial tests
-
-### During Development
-1. Implement incrementally
-2. Run tests frequently
-3. Commit logical units of work
-4. Use `review` workflow for self-review
-
-### Completing Features
-1. Ensure all tests pass
-2. Run linters and formatters
-3. Update documentation
-4. Create pull request
-
-## Examples
-
-**Implementing a feature:**
-```typescript
-// 1. Start with interface/contract
-interface UserService {
-  createUser(data: CreateUserDto): Promise<User>;
-  findUser(id: string): Promise<User | null>;
-}
-
-// 2. Write tests
-describe('UserService', () => {
-  it('should create a user with valid data', async () => {
-    // test implementation
-  });
-});
-
-// 3. Implement with error handling
-class UserServiceImpl implements UserService {
-  async createUser(data: CreateUserDto): Promise<User> {
-    // validation
-    if (!data.email) {
-      throw new ValidationError('Email is required');
-    }
-    // implementation
-  }
-}
-```
-
-**Debugging approach:**
-```
-1. Reproduce the issue consistently
-2. Add logging at key points
-3. Use debugger to step through code
-4. Isolate the problem domain
-5. Fix and verify with tests
-```
-
-## Mode Switching Triggers
-
-Switch to:
-- **Architect** when design patterns need reconsideration
-- **Project Manager** when scope or requirements need clarification
-- **Reviewer** when code is ready for quality assessment
-- **Debug** workflow when facing complex bugs
+4. **Language-Specific Excellence**
+   - Follow language idioms and conventions
+   - Use language-specific tools (linters, formatters)
+   - Leverage type systems where available
+   - Apply language-specific best practices
 
 ## Done When
 
-- Feature implementation complete
-- All tests written and passing
-- Code coverage above 80%
-- Linters and formatters applied
-- Error handling implemented
-- Edge cases addressed
-- Documentation updated
-- Code follows project conventions
-- Pull request created
-- Self-review completed
+- All requirements are implemented correctly
+- Code passes all tests (unit, integration, e2e)
+- Code follows project style guidelines
+- Documentation is complete and accurate
+- Performance meets requirements
+- No known bugs or security issues

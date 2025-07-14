@@ -1,7 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run dev init:*)",
+      "Bash(node:*)",
+      "Bash(npx tsx:*)",
+      "Bash(rm:*)",
+      "Bash(timeout 15 npm run dev init -- --force --quick)",
+      "Bash(gtimeout 15 npm run dev init -- --force --quick)",
+      "Bash(npm run dev:*)"
     ],
     "deny": []
   }

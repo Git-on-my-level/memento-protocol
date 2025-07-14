@@ -27,6 +27,7 @@ export const logger = {
     debugMode = debug;
   },
   
+  // Core logging methods - content only, no formatting
   info: (message: string, ...args: any[]) => {
     console.log(`${colors.blue}ℹ${colors.reset} ${message}`, ...args);
   },
@@ -70,6 +71,15 @@ export const logger = {
     if (verboseMode) {
       console.log(`${colors.dim}${message}${colors.reset}`, ...args);
     }
+  },
+  
+  // Spacing methods - explicit formatting control
+  space: () => {
+    console.log();
+  },
+  
+  newline: () => {
+    console.log();
   },
   
   progress: (message: string) => {

@@ -60,21 +60,29 @@ export const initCommand = new Command('init')
       if (setupOptions.selectedModes.length > 0 || 
           setupOptions.selectedWorkflows.length > 0 || 
           setupOptions.selectedLanguages.length > 0) {
-        logger.info('\nInstalling selected components...');
-        await interactiveSetup.applySetup(setupOptions);
+        logger.space();
+        logger.info('Installing selected components...');
+        await interactiveSetup.applySetup({
+          ...setupOptions,
+          force: options.force
+        });
       }
       
       // Generate or update CLAUDE.md
-      logger.info('\nGenerating CLAUDE.md router...');
+      logger.space();
+      logger.info('Generating CLAUDE.md router...');
       const existingClaudeMd = await claudeMdGenerator.readExisting();
       await claudeMdGenerator.generate(existingClaudeMd || undefined);
       
-      logger.success('\nMemento Protocol initialized successfully!');
-      logger.info('\nTo use with Claude Code:');
+      logger.space();
+      logger.success('Memento Protocol initialized successfully!');
+      logger.space();
+      logger.info('To use with Claude Code:');
       logger.info('  - Say "act as [mode]" to switch behavioral patterns');
       logger.info('  - Say "execute [workflow]" to run procedures');
       logger.info('  - Say "create ticket [name]" to start persistent work');
-      logger.info('\nRun "memento --help" to see all available commands.');
+      logger.space();
+      logger.info('Run "memento --help" to see all available commands.');
     } catch (error) {
       logger.error('Failed to initialize Memento Protocol:', error);
       process.exit(1);

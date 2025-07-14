@@ -80,7 +80,8 @@ export class ComponentInstaller {
    */
   async installComponent(
     type: "mode" | "workflow",
-    name: string
+    name: string,
+    force = false
   ): Promise<void> {
     // Check if component exists in templates
     const componentPath = path.join(
@@ -100,7 +101,7 @@ export class ComponentInstaller {
         ? manifest.components.modes
         : manifest.components.workflows;
 
-    if (componentList.includes(name)) {
+    if (componentList.includes(name) && !force) {
       logger.warn(`${type} '${name}' is already installed`);
       return;
     }
@@ -112,9 +113,9 @@ export class ComponentInstaller {
 
     if (component?.dependencies && component.dependencies.length > 0) {
       for (const dep of component.dependencies) {
-        if (!manifest.components.modes.includes(dep)) {
+        if (!manifest.components.modes.includes(dep) || force) {
           logger.info(`Installing required dependency: mode '${dep}'`);
-          await this.installComponent("mode", dep);
+          await this.installComponent("mode", dep, force);
         }
       }
     }
@@ -142,7 +143,11 @@ export class ComponentInstaller {
     manifest.components.updated = new Date().toISOString();
     await this.dirManager.updateManifest(manifest);
 
-    logger.success(`Installed ${type} '${name}'`);
+    if (force && componentList.includes(name)) {
+      logger.success(`Reinstalled ${type} '${name}'`);
+    } else {
+      logger.success(`Installed ${type} '${name}'`);
+    }
   }
 
   /**
