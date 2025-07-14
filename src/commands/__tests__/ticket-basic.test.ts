@@ -58,7 +58,7 @@ describe('Ticket Command Basic Coverage', () => {
     mockTicketManager.search.mockResolvedValue([{
       id: 'test-123',
       name: 'Test ticket',
-      status: 'active',
+      status: 'next',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }]);
@@ -67,7 +67,7 @@ describe('Ticket Command Basic Coverage', () => {
     
     expect(mockTicketManager.search).toHaveBeenCalledWith('test');
     expect(logger.info).toHaveBeenCalledWith('\nFound 1 ticket(s) matching "test":\n');
-    expect(logger.info).toHaveBeenCalledWith('🟢 test-123');
+    expect(logger.info).toHaveBeenCalledWith('📋 test-123');
   });
 
   it('should handle close command', async () => {
@@ -93,10 +93,16 @@ describe('Ticket Command Basic Coverage', () => {
   });
 
   it('should handle resume command with existing ticket', async () => {
-    mockTicketManager.get.mockResolvedValue({
+    mockTicketManager.get.mockResolvedValueOnce({
       id: 'test-123',
       name: 'Test',
-      status: 'closed'
+      status: 'done'
+    });
+    // Mock the second get call after resume with updated status
+    mockTicketManager.get.mockResolvedValueOnce({
+      id: 'test-123',
+      name: 'Test',
+      status: 'in-progress'
     });
 
     await ticketCommand.parseAsync(['node', 'test', 'resume', 'test-123']);
@@ -105,6 +111,7 @@ describe('Ticket Command Basic Coverage', () => {
     expect(mockTicketManager.resume).toHaveBeenCalledWith('test-123');
     expect(logger.success).toHaveBeenCalledWith('Resumed ticket: test-123');
     expect(logger.info).toHaveBeenCalledWith('\nTicket: Test');
-    expect(logger.info).toHaveBeenCalledWith('Workspace: .memento/tickets/test-123/workspace/');
+    expect(logger.info).toHaveBeenCalledWith('Status: in-progress');
+    expect(logger.info).toHaveBeenCalledWith('Workspace: .memento/tickets/in-progress/test-123/workspace/');
   });
 });

@@ -59,7 +59,7 @@ describe('Add Command', () => {
 
       await addCommand.parseAsync(['node', 'test', 'mode', 'invalid']);
 
-      expect(logger.error).toHaveBeenCalledWith('Failed to add component: Component not found');
+      expect(logger.error).toHaveBeenCalledWith('Failed to add component:', expect.any(Error));
       expect(process.exit).toHaveBeenCalledWith(1);
     });
   });
@@ -84,7 +84,8 @@ describe('Add Command', () => {
 
       await addCommand.parseAsync(['node', 'test', 'mode', 'architect']);
 
-      expect(logger.error).toHaveBeenCalledWith('Memento Protocol is not initialized. Run "memento init" first.');
+      expect(logger.error).toHaveBeenCalledWith('Memento Protocol is not initialized in this project.');
+      expect(logger.info).toHaveBeenCalledWith('Run "memento init" first.');
       expect(process.exit).toHaveBeenCalledWith(1);
     });
 

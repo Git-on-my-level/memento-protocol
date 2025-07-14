@@ -1,6 +1,6 @@
 import { configCommand } from '../config';
 import { DirectoryManager } from '../../lib/directoryManager';
-import { ConfigManager } from '../../lib/configManager';
+import { ConfigManager, MementoConfig } from '../../lib/configManager';
 import { logger } from '../../lib/logger';
 
 jest.mock('../../lib/directoryManager');
@@ -71,7 +71,7 @@ describe('Config Command', () => {
     });
 
     it('should handle global flag for list', async () => {
-      const mockConfig = { theme: 'dark' };
+      const mockConfig: MementoConfig = { defaultMode: 'architect' };
       mockConfigManager.list.mockResolvedValue(mockConfig);
 
       await configCommand.parseAsync(['node', 'test', 'list', '--global']);

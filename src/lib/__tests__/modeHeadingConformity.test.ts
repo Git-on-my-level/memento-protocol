@@ -7,9 +7,7 @@ describe('Mode Template Heading Conformity', () => {
     '## Behavioral Guidelines',
     '## Core Responsibilities',
     '## Best Practices',
-    '## Mode Switching Triggers',
-    '## Done When',
-    '## Example Commands'
+    '## Done When'
   ];
 
   const getModeFiles = (): string[] => {

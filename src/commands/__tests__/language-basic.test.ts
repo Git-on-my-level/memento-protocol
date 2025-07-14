@@ -1,3 +1,8 @@
+// Mock inquirer before any imports
+jest.mock('inquirer', () => ({
+  prompt: jest.fn()
+}));
+
 import { createLanguageCommand } from '../language';
 import { LanguageOverrideManager } from '../../lib/languageOverrideManager';
 import { DirectoryManager } from '../../lib/directoryManager';
@@ -13,7 +18,6 @@ jest.mock('../../lib/logger', () => ({
     error: jest.fn(),
   }
 }));
-jest.mock('inquirer');
 
 describe('Language Command Basic', () => {
   let mockLanguageManager: any;
