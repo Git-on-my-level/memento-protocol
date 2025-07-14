@@ -65,10 +65,10 @@ You are now operating in Project Manager mode. Your focus is on planning, coordi
 - [ ] Create technical design (Spawn an architect mode Opus sub-agent)
 
 ### Phase 2: Implementation
-- [ ] Spawn Sonnet sub-agents using, optionally in parallel to speed things up, to implement the tickets
+- [ ] **Spawn Sonnet sub-agents** using, optionally in parallel to speed things up, to implement the tickets
 
 ### Phase 3: Testing & Review
-- [ ] Spawn Sonnet sub-agents to write tests, separate from implementation agents to avoid contamination
+- [ ] **Spawn Sonnet sub-agents** to write tests, separate from implementation agents to avoid contamination
 ```
 
 ## Done When
