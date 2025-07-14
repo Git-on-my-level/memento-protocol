@@ -1,8 +1,8 @@
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { existsSync } from 'fs';
-import { DirectoryManager } from './directoryManager';
-import { logger } from './logger';
+import * as fs from "fs/promises";
+import * as path from "path";
+import { existsSync } from "fs";
+import { DirectoryManager } from "./directoryManager";
+import { logger } from "./logger";
 
 interface ComponentMetadata {
   name: string;
@@ -22,9 +22,23 @@ export class ComponentInstaller {
 
   constructor(projectRoot: string) {
     this.dirManager = new DirectoryManager(projectRoot);
-    // Templates are bundled with the CLI for now
-    // They are copied to dist/templates during build
-    this.templatesDir = path.join(path.dirname(require.main?.filename || __dirname), 'templates');
+
+    // Determine where the bundled templates live.
+    // 1. Prefer a top-level <projectRoot>/templates directory – this exists when running the CLI
+    //    directly from the source repository during development.
+    // 2. Fallback to <dist>/templates next to the compiled entrypoint – this is the location used
+    //    in the packaged build that is published to npm.
+
+    const repoTemplatesDir = path.join(projectRoot, "templates");
+
+    if (existsSync(repoTemplatesDir)) {
+      this.templatesDir = repoTemplatesDir;
+    } else {
+      this.templatesDir = path.join(
+        path.dirname(require.main?.filename || __dirname),
+        "templates"
+      );
+    }
   }
 
   /**
@@ -34,12 +48,12 @@ export class ComponentInstaller {
     modes: ComponentMetadata[];
     workflows: ComponentMetadata[];
   }> {
-    const modesMetadata = await this.loadMetadata('modes');
-    const workflowsMetadata = await this.loadMetadata('workflows');
+    const modesMetadata = await this.loadMetadata("modes");
+    const workflowsMetadata = await this.loadMetadata("workflows");
 
     return {
       modes: modesMetadata?.components || [],
-      workflows: workflowsMetadata?.components || []
+      workflows: workflowsMetadata?.components || [],
     };
   }
 
@@ -51,21 +65,24 @@ export class ComponentInstaller {
     workflows: string[];
   }> {
     const manifest = await this.dirManager.getManifest();
-    
+
     return {
       modes: manifest.components.modes || [],
-      workflows: manifest.components.workflows || []
+      workflows: manifest.components.workflows || [],
     };
   }
 
   /**
    * Install a specific component
    */
-  async installComponent(type: 'mode' | 'workflow', name: string): Promise<void> {
+  async installComponent(
+    type: "mode" | "workflow",
+    name: string
+  ): Promise<void> {
     // Check if component exists in templates
     const componentPath = path.join(
       this.templatesDir,
-      type === 'mode' ? 'modes' : 'workflows',
+      type === "mode" ? "modes" : "workflows",
       `${name}.md`
     );
 
@@ -75,9 +92,10 @@ export class ComponentInstaller {
 
     // Check if already installed
     let manifest = await this.dirManager.getManifest();
-    let componentList = type === 'mode' 
-      ? manifest.components.modes 
-      : manifest.components.workflows;
+    let componentList =
+      type === "mode"
+        ? manifest.components.modes
+        : manifest.components.workflows;
 
     if (componentList.includes(name)) {
       logger.warn(`${type} '${name}' is already installed`);
@@ -85,33 +103,36 @@ export class ComponentInstaller {
     }
 
     // Check dependencies
-    const metadata = await this.loadMetadata(type === 'mode' ? 'modes' : 'workflows');
-    const component = metadata?.components.find(c => c.name === name);
-    
+    const metadata = await this.loadMetadata(
+      type === "mode" ? "modes" : "workflows"
+    );
+    const component = metadata?.components.find((c) => c.name === name);
+
     if (component?.dependencies && component.dependencies.length > 0) {
       for (const dep of component.dependencies) {
         if (!manifest.components.modes.includes(dep)) {
           logger.info(`Installing required dependency: mode '${dep}'`);
-          await this.installComponent('mode', dep);
+          await this.installComponent("mode", dep);
         }
       }
     }
 
     // Copy component file
-    const content = await fs.readFile(componentPath, 'utf-8');
+    const content = await fs.readFile(componentPath, "utf-8");
     const destPath = this.dirManager.getComponentPath(
-      type === 'mode' ? 'modes' : 'workflows',
+      type === "mode" ? "modes" : "workflows",
       name
     );
-    
+
     await fs.writeFile(destPath, content);
 
     // Reload manifest to get any updates from dependency installation
     manifest = await this.dirManager.getManifest();
-    componentList = type === 'mode' 
-      ? manifest.components.modes 
-      : manifest.components.workflows;
-    
+    componentList =
+      type === "mode"
+        ? manifest.components.modes
+        : manifest.components.workflows;
+
     // Update manifest
     if (!componentList.includes(name)) {
       componentList.push(name);
@@ -125,9 +146,9 @@ export class ComponentInstaller {
   /**
    * Interactive component installation
    */
-  async interactiveInstall(type: 'mode' | 'workflow'): Promise<void> {
+  async interactiveInstall(type: "mode" | "workflow"): Promise<void> {
     const available = await this.listAvailableComponents();
-    const components = type === 'mode' ? available.modes : available.workflows;
+    const components = type === "mode" ? available.modes : available.workflows;
 
     if (components.length === 0) {
       logger.error(`No ${type}s available for installation`);
@@ -137,24 +158,28 @@ export class ComponentInstaller {
     // For now, we'll list components and ask user to specify
     // In a full implementation, this would use inquirer or similar
     logger.info(`Available ${type}s:`);
-    components.forEach(comp => {
+    components.forEach((comp) => {
       logger.info(`  - ${comp.name}: ${comp.description}`);
     });
-    logger.info('');
-    logger.info(`Run "memento add ${type} <name>" to install a specific ${type}`);
+    logger.info("");
+    logger.info(
+      `Run "memento add ${type} <name>" to install a specific ${type}`
+    );
   }
 
   /**
    * Load metadata for a component type
    */
-  private async loadMetadata(type: 'modes' | 'workflows'): Promise<TemplateMetadata | null> {
-    const metadataPath = path.join(this.templatesDir, type, 'metadata.json');
-    
+  private async loadMetadata(
+    type: "modes" | "workflows"
+  ): Promise<TemplateMetadata | null> {
+    const metadataPath = path.join(this.templatesDir, type, "metadata.json");
+
     if (!existsSync(metadataPath)) {
       return null;
     }
 
-    const content = await fs.readFile(metadataPath, 'utf-8');
+    const content = await fs.readFile(metadataPath, "utf-8");
     return JSON.parse(content);
   }
 
@@ -169,19 +194,21 @@ export class ComponentInstaller {
     const missing: { component: string; dependencies: string[] }[] = [];
 
     // Check workflow dependencies
-    const workflowsMetadata = await this.loadMetadata('workflows');
-    
+    const workflowsMetadata = await this.loadMetadata("workflows");
+
     for (const workflow of manifest.components.workflows) {
-      const meta = workflowsMetadata?.components.find(c => c.name === workflow);
+      const meta = workflowsMetadata?.components.find(
+        (c) => c.name === workflow
+      );
       if (meta?.dependencies && meta.dependencies.length > 0) {
         const missingDeps = meta.dependencies.filter(
-          dep => !manifest.components.modes.includes(dep)
+          (dep) => !manifest.components.modes.includes(dep)
         );
-        
+
         if (missingDeps.length > 0) {
           missing.push({
             component: `workflow:${workflow}`,
-            dependencies: missingDeps
+            dependencies: missingDeps,
           });
         }
       }
@@ -189,7 +216,7 @@ export class ComponentInstaller {
 
     return {
       valid: missing.length === 0,
-      missing
+      missing,
     };
   }
 }
