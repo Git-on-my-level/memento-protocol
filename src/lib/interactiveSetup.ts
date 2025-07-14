@@ -2,6 +2,7 @@ import inquirer from 'inquirer';
 import { ProjectInfo } from './projectDetector';
 import { ComponentInstaller } from './componentInstaller';
 import { ConfigManager } from './configManager';
+import { LanguageOverrideManager } from './languageOverrideManager';
 import { logger } from './logger';
 
 export interface SetupOptions {
@@ -16,10 +17,12 @@ export interface SetupOptions {
 export class InteractiveSetup {
   private componentInstaller: ComponentInstaller;
   private configManager: ConfigManager;
+  private languageManager: LanguageOverrideManager;
 
   constructor(projectRoot: string) {
     this.componentInstaller = new ComponentInstaller(projectRoot);
     this.configManager = new ConfigManager(projectRoot);
+    this.languageManager = new LanguageOverrideManager(projectRoot);
   }
 
   /**
@@ -36,6 +39,9 @@ export class InteractiveSetup {
 
     // Select components
     const componentSelections = await this.selectComponents(projectInfo);
+
+    // Check for language overrides
+    await this.checkLanguageOverrides();
 
     // Configure default mode
     const defaultMode = await this.selectDefaultMode(componentSelections.selectedModes);
@@ -243,6 +249,35 @@ export class InteractiveSetup {
   }
 
   /**
+   * Check and suggest language overrides
+   */
+  private async checkLanguageOverrides(): Promise<void> {
+    const detectedLanguage = await this.languageManager.detectProjectLanguage();
+    
+    if (detectedLanguage) {
+      logger.info(`\n🔍 Detected project language: ${detectedLanguage}`);
+      
+      const { installOverride } = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'installOverride',
+          message: `Would you like to install language-specific enhancements for ${detectedLanguage}?`,
+          default: true
+        }
+      ]);
+      
+      if (installOverride) {
+        try {
+          await this.languageManager.installLanguageOverride(detectedLanguage);
+          logger.success(`Installed ${detectedLanguage} language enhancements`);
+        } catch (error: any) {
+          logger.warn(`Could not install ${detectedLanguage} enhancements: ${error.message}`);
+        }
+      }
+    }
+  }
+
+  /**
    * Show setup summary and confirm
    */
   private async confirmSetup(options: SetupOptions): Promise<boolean> {
@@ -333,10 +368,13 @@ export class InteractiveSetup {
       await this.componentInstaller.installComponent('workflow', workflow);
     }
 
-    // Note: Language overrides are not yet implemented in componentInstaller
-    // They would be handled differently as they are not simple components
-    if (options.selectedLanguages.length > 0) {
-      logger.info('Language-specific enhancements will be available in a future update.');
+    // Install selected language overrides
+    for (const language of options.selectedLanguages) {
+      try {
+        await this.languageManager.installLanguageOverride(language);
+      } catch (error: any) {
+        logger.warn(`Could not install language override for ${language}: ${error.message}`);
+      }
     }
 
     // Save configuration

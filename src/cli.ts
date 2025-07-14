@@ -4,6 +4,8 @@ import { addCommand } from './commands/add';
 import { listCommand } from './commands/list';
 import { ticketCommand } from './commands/ticket';
 import { configCommand } from './commands/config';
+import { createUpdateCommand } from './commands/update';
+import { createLanguageCommand } from './commands/language';
 
 // Version will be injected during build
 const version = '0.1.0';
@@ -21,6 +23,8 @@ program.addCommand(addCommand);
 program.addCommand(listCommand);
 program.addCommand(ticketCommand);
 program.addCommand(configCommand);
+program.addCommand(createUpdateCommand());
+program.addCommand(createLanguageCommand());
 
 // Parse command line arguments
 program.parse(process.argv);

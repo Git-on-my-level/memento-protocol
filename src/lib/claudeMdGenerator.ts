@@ -76,8 +76,12 @@ To manage stateful work, use: **"continue ticket [id]"**
 All components are in the \`.memento/\` directory:
 - **Modes**: \`.memento/modes/[mode-name].md\`
 - **Workflows**: \`.memento/workflows/[workflow-name].md\`
-- **Language overrides**: \`.memento/languages/[lang]/[workflow].md\`
+- **Language overrides**: \`.memento/languages/[language].md\`
 - **Tickets**: \`.memento/tickets/[ticket-id]/\`
+
+## Language Support
+Language-specific overrides are automatically applied when detected.
+Run \`memento language\` to install overrides for your project.
 
 ## Project-Specific Instructions
 <!-- Project-specific content below this line -->
