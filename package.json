@@ -4,7 +4,7 @@
   "description": "A lightweight meta-framework for Claude Code",
   "main": "dist/index.js",
   "bin": {
-    "memento": "./dist/cli.js"
+    "memento": "dist/cli.js"
   },
   "scripts": {
     "build": "tsc && node scripts/build.js",
@@ -28,7 +28,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/memento-protocol/memento-protocol.git"
+    "url": "git+https://github.com/memento-protocol/memento-protocol.git"
   },
   "bugs": {
     "url": "https://github.com/memento-protocol/memento-protocol/issues"
