@@ -1,10 +1,21 @@
 # Review Workflow
 
-A comprehensive code review process focusing on quality, security, and maintainability.
+A structured approach to code review that ensures quality, security, and maintainability through systematic evaluation.
 
 ## Prerequisites
+- Access to code changes or pull request
+- Understanding of project standards and conventions
+- Reviewer mode installed (recommended)
 
-This workflow requires the **Reviewer** mode to be installed.
+## Inputs
+- **target**: What to review (PR URL, commit range, or file paths)
+- **type**: Review type (general, security, performance, architecture)
+- **depth**: Review thoroughness (quick, standard, deep)
+
+## Outputs
+- Structured feedback document in `.memento/tickets/[current]/reviews/`
+- Prioritized list of issues and suggestions
+- Actionable improvement recommendations
 
 ## Workflow Steps
 

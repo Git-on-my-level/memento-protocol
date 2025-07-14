@@ -1,6 +1,16 @@
 # Summarize Workflow
 
-A systematic approach to summarizing code, directories, or concepts to manage context efficiently.
+A systematic approach to compressing context and extracting essential information from codebases, directories, or complex topics.
+
+## Prerequisites
+- Clear definition of what needs summarizing
+- Access to relevant files/directories
+- Understanding of the target audience for the summary
+
+## Inputs
+- **scope**: What to summarize (path, topic, or file list)
+- **depth**: Level of detail needed (high-level, detailed, exhaustive)
+- **focus**: Specific aspects to emphasize (architecture, implementation, etc.)
 
 ## Workflow Steps
 
@@ -81,23 +91,87 @@ Structure the summary for maximum utility:
 - [Key files to examine]
 ```
 
+## Output Format
+
+The workflow produces a structured summary saved to `.memento/tickets/[current]/summaries/[timestamp].md`:
+
+```markdown
+# Summary: [Topic/Scope]
+Generated: [timestamp]
+Scope: [what was analyzed]
+Depth: [level of detail]
+
+## Executive Summary
+[1-2 paragraph overview for quick understanding]
+
+## Architecture Overview
+[System structure and key design decisions]
+
+## Key Components
+### Component Name
+- Purpose: [what it does]
+- Location: [where to find it]
+- Dependencies: [what it needs]
+- Interface: [how to use it]
+
+## Data Flow
+[How information moves through the system]
+
+## Entry Points
+[Where to start when working with this code]
+
+## Critical Paths
+[Most important flows through the system]
+
+## Technical Debt / Notes
+[Important limitations or future work]
+```
+
+## Language-Specific Patterns
+
+### TypeScript/JavaScript Projects
+- Focus on module structure and exports
+- Note TypeScript interfaces and types
+- Highlight React component hierarchies
+- Document state management patterns
+
+### Go Projects
+- Emphasize package organization
+- Note interface definitions
+- Document goroutine usage
+- Highlight error handling patterns
+
 ## Best Practices
 
-1. **Be Concise**: Aim for 20% of original context size
-2. **Preserve Essential Information**: Don't lose critical details
-3. **Use Clear Structure**: Make summaries scannable
-4. **Include Examples**: When they clarify complex concepts
-5. **Update Regularly**: Summaries can become stale
+1. **Be Ruthlessly Concise**: Aim for 10-20% of original context
+2. **Preserve Critical Information**: Architecture > Implementation details
+3. **Use Visual Aids**: Include simple ASCII diagrams where helpful
+4. **Make it Scannable**: Use consistent formatting and headers
+5. **Version Summaries**: Include timestamps and scope
 
 ## Integration Points
 
-- Store summaries in `.memento/tickets/[task]/summaries/`
-- Reference in mode switching for context transfer
-- Use for onboarding new team members
+- Store in `.memento/tickets/[task]/summaries/`
+- Link from main ticket documentation
+- Reference when switching modes
+- Use as input for reviews
 
 ## When to Use
 
 - Before switching between modes
-- When context window is filling up
-- For progress documentation
-- When resuming after a break
+- When context window approaches limits
+- For daily progress documentation
+- When onboarding team members
+- Before architectural discussions
+
+## Examples
+
+**Summarizing a React application:**
+```
+execute summarize --scope src/ --depth high-level --focus components
+```
+
+**Summarizing a specific feature:**
+```
+execute summarize --scope src/auth --depth detailed --focus security
+```

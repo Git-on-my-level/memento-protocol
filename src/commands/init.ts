@@ -1,5 +1,7 @@
 import { Command } from 'commander';
 import { DirectoryManager } from '../lib/directoryManager';
+import { ClaudeMdGenerator } from '../lib/claudeMdGenerator';
+import { ProjectDetector } from '../lib/projectDetector';
 import { logger } from '../lib/logger';
 
 export const initCommand = new Command('init')
@@ -7,7 +9,10 @@ export const initCommand = new Command('init')
   .option('-f, --force', 'Force initialization even if .memento already exists')
   .action(async (options) => {
     try {
-      const dirManager = new DirectoryManager(process.cwd());
+      const projectRoot = process.cwd();
+      const dirManager = new DirectoryManager(projectRoot);
+      const claudeMdGenerator = new ClaudeMdGenerator(projectRoot);
+      const projectDetector = new ProjectDetector(projectRoot);
       
       // Check if already initialized
       if (dirManager.isInitialized() && !options.force) {
@@ -23,11 +28,35 @@ export const initCommand = new Command('init')
       // Update .gitignore
       await dirManager.ensureGitignore();
       
-      logger.success('Memento Protocol initialized successfully!');
-      logger.info('Next steps:');
-      logger.info('  - Run "memento add mode" to install a mode');
-      logger.info('  - Run "memento add workflow" to install a workflow');
-      logger.info('  - Run "memento list" to see available components');
+      // Detect project type
+      logger.info('Detecting project type...');
+      const projectInfo = await projectDetector.detect();
+      logger.info(`Project type: ${projectInfo.type}${projectInfo.framework ? ` (${projectInfo.framework})` : ''}`);
+      
+      // Generate or update CLAUDE.md
+      logger.info('Generating CLAUDE.md router...');
+      const existingClaudeMd = await claudeMdGenerator.readExisting();
+      await claudeMdGenerator.generate(existingClaudeMd || undefined);
+      
+      // Show recommendations
+      const recommendations = projectDetector.getRecommendations(projectInfo);
+      logger.info('\nProject Analysis:');
+      recommendations.forEach(rec => logger.info(`  - ${rec}`));
+      
+      logger.success('\nMemento Protocol initialized successfully!');
+      logger.info('\nNext steps:');
+      logger.info('  1. Review the generated CLAUDE.md file');
+      logger.info('  2. Install recommended components:');
+      projectInfo.suggestedModes.forEach(mode => 
+        logger.info(`     - memento add mode ${mode}`)
+      );
+      projectInfo.suggestedWorkflows.forEach(workflow => 
+        logger.info(`     - memento add workflow ${workflow}`)
+      );
+      logger.info('  3. Run "memento list" to see all available components');
+      logger.info('\nTo use with Claude Code:');
+      logger.info('  - Say "act as [mode]" to switch behavioral patterns');
+      logger.info('  - Say "execute [workflow]" to run procedures');
     } catch (error) {
       logger.error('Failed to initialize Memento Protocol:', error);
       process.exit(1);
