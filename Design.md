@@ -132,7 +132,7 @@ Local tool wrappers:
 
 ## Success Metrics
 
-1. **Token Efficiency**: CLAUDE.md remains under 50 lines
+1. **Token Efficiency**: CLAUDE.md remains under 200 lines
 2. **Modularity**: Components can be added/removed independently
 3. **Discoverability**: Users can easily find available modes/workflows
 4. **Resumability**: Work can continue across sessions via tickets
