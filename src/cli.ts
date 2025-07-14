@@ -6,6 +6,8 @@ import { ticketCommand } from './commands/ticket';
 import { configCommand } from './commands/config';
 import { createUpdateCommand } from './commands/update';
 import { createLanguageCommand } from './commands/language';
+import { logger } from './lib/logger';
+import { handleError } from './lib/errors';
 
 // Version will be injected during build
 const version = '0.1.0';
@@ -15,7 +17,20 @@ const program = new Command();
 program
   .name('memento')
   .description('A lightweight meta-framework for Claude Code')
-  .version(version);
+  .version(version)
+  .option('-v, --verbose', 'enable verbose output')
+  .option('-d, --debug', 'enable debug output')
+  .addHelpText('after', '\nFor more information, visit: https://github.com/memento-protocol/memento-protocol')
+  .addHelpText('after', 'Documentation: https://github.com/memento-protocol/memento-protocol#readme')
+  .hook('preAction', (thisCommand) => {
+    const options = thisCommand.opts();
+    if (options.verbose) {
+      logger.setVerbose(true);
+    }
+    if (options.debug) {
+      logger.setDebug(true);
+    }
+  });
 
 // Register commands
 program.addCommand(initCommand);
@@ -25,6 +40,15 @@ program.addCommand(ticketCommand);
 program.addCommand(configCommand);
 program.addCommand(createUpdateCommand());
 program.addCommand(createLanguageCommand());
+
+// Global error handling
+process.on('unhandledRejection', (error) => {
+  handleError(error, program.opts().verbose);
+});
+
+process.on('uncaughtException', (error) => {
+  handleError(error, program.opts().verbose);
+});
 
 // Parse command line arguments
 program.parse(process.argv);

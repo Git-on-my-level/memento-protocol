@@ -8,6 +8,10 @@ dist/
 *.d.ts
 *.d.ts.map
 
+# Keep important JS files
+!scripts/*.js
+!jest.config.js
+
 # Test coverage
 coverage/
 

@@ -13,16 +13,35 @@
     "test": "jest",
     "test:coverage": "jest --coverage",
     "package": "npm run build && node scripts/package.js",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run test && npm run build",
+    "postinstall": "echo 'Thank you for installing Memento Protocol! Run \"memento --help\" to get started.'"
   },
   "keywords": [
     "claude",
     "ai",
     "cli",
-    "meta-framework"
+    "meta-framework",
+    "developer-tools",
+    "productivity"
   ],
-  "author": "",
+  "author": "Memento Protocol Contributors",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/memento-protocol/memento-protocol.git"
+  },
+  "bugs": {
+    "url": "https://github.com/memento-protocol/memento-protocol/issues"
+  },
+  "homepage": "https://github.com/memento-protocol/memento-protocol#readme",
+  "files": [
+    "dist/",
+    "templates/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "dependencies": {
     "commander": "^12.0.0",
     "inquirer": "^9.2.15"

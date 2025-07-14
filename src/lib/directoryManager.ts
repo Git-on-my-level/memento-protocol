@@ -1,6 +1,8 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { existsSync } from 'fs';
+import { FileSystemError } from './errors';
+import { logger } from './logger';
 
 export class DirectoryManager {
   private projectRoot: string;
@@ -32,7 +34,16 @@ export class DirectoryManager {
     ];
 
     for (const dir of directories) {
-      await fs.mkdir(dir, { recursive: true });
+      try {
+        logger.debug(`Creating directory: ${dir}`);
+        await fs.mkdir(dir, { recursive: true });
+      } catch (error) {
+        throw new FileSystemError(
+          `Failed to create directory: ${dir}`,
+          dir,
+          'Ensure you have write permissions in the project directory'
+        );
+      }
     }
 
     // Create a manifest file to track installed components
