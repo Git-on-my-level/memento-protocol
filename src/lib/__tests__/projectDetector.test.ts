@@ -146,8 +146,11 @@ go 1.21`;
       const projectInfo = {
         type: 'typescript' as const,
         framework: 'react' as const,
+        languages: ['typescript'],
         suggestedModes: ['engineer'],
-        suggestedWorkflows: ['review']
+        suggestedWorkflows: ['review'],
+        files: [],
+        dependencies: {}
       };
 
       const recommendations = detector.getRecommendations(projectInfo);
@@ -160,8 +163,11 @@ go 1.21`;
       const projectInfo = {
         type: 'go' as const,
         framework: 'gin' as const,
+        languages: ['go'],
         suggestedModes: ['engineer'],
-        suggestedWorkflows: ['review']
+        suggestedWorkflows: ['review'],
+        files: [],
+        dependencies: {}
       };
 
       const recommendations = detector.getRecommendations(projectInfo);

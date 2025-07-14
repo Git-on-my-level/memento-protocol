@@ -2,11 +2,14 @@ import { Command } from 'commander';
 import { DirectoryManager } from '../lib/directoryManager';
 import { ClaudeMdGenerator } from '../lib/claudeMdGenerator';
 import { ProjectDetector } from '../lib/projectDetector';
+import { InteractiveSetup } from '../lib/interactiveSetup';
 import { logger } from '../lib/logger';
 
 export const initCommand = new Command('init')
   .description('Initialize Memento Protocol in the current project')
   .option('-f, --force', 'Force initialization even if .memento already exists')
+  .option('-q, --quick', 'Quick setup with recommended components')
+  .option('-i, --interactive', 'Interactive setup mode (default)')
   .action(async (options) => {
     try {
       const projectRoot = process.cwd();
@@ -33,30 +36,45 @@ export const initCommand = new Command('init')
       const projectInfo = await projectDetector.detect();
       logger.info(`Project type: ${projectInfo.type}${projectInfo.framework ? ` (${projectInfo.framework})` : ''}`);
       
+      // Run setup flow
+      const interactiveSetup = new InteractiveSetup(projectRoot);
+      let setupOptions;
+      
+      if (options.quick) {
+        // Quick setup with recommended components
+        setupOptions = await interactiveSetup.quickSetup(projectInfo);
+      } else if (options.interactive !== false) {
+        // Interactive setup (default)
+        setupOptions = await interactiveSetup.run(projectInfo);
+      } else {
+        // Basic setup without component installation
+        setupOptions = {
+          projectInfo,
+          selectedModes: [],
+          selectedWorkflows: [],
+          selectedLanguages: []
+        };
+      }
+      
+      // Apply setup (install components and save config)
+      if (setupOptions.selectedModes.length > 0 || 
+          setupOptions.selectedWorkflows.length > 0 || 
+          setupOptions.selectedLanguages.length > 0) {
+        logger.info('\nInstalling selected components...');
+        await interactiveSetup.applySetup(setupOptions);
+      }
+      
       // Generate or update CLAUDE.md
-      logger.info('Generating CLAUDE.md router...');
+      logger.info('\nGenerating CLAUDE.md router...');
       const existingClaudeMd = await claudeMdGenerator.readExisting();
       await claudeMdGenerator.generate(existingClaudeMd || undefined);
       
-      // Show recommendations
-      const recommendations = projectDetector.getRecommendations(projectInfo);
-      logger.info('\nProject Analysis:');
-      recommendations.forEach(rec => logger.info(`  - ${rec}`));
-      
       logger.success('\nMemento Protocol initialized successfully!');
-      logger.info('\nNext steps:');
-      logger.info('  1. Review the generated CLAUDE.md file');
-      logger.info('  2. Install recommended components:');
-      projectInfo.suggestedModes.forEach(mode => 
-        logger.info(`     - memento add mode ${mode}`)
-      );
-      projectInfo.suggestedWorkflows.forEach(workflow => 
-        logger.info(`     - memento add workflow ${workflow}`)
-      );
-      logger.info('  3. Run "memento list" to see all available components');
       logger.info('\nTo use with Claude Code:');
       logger.info('  - Say "act as [mode]" to switch behavioral patterns');
       logger.info('  - Say "execute [workflow]" to run procedures');
+      logger.info('  - Say "create ticket [name]" to start persistent work');
+      logger.info('\nRun "memento --help" to see all available commands.');
     } catch (error) {
       logger.error('Failed to initialize Memento Protocol:', error);
       process.exit(1);

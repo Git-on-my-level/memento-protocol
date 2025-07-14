@@ -3,10 +3,13 @@ import * as path from 'path';
 import { logger } from './logger';
 
 export interface ProjectInfo {
-  type: 'typescript' | 'javascript' | 'go' | 'unknown';
-  framework?: 'react' | 'express' | 'gin' | 'vanilla';
+  type: 'typescript' | 'javascript' | 'go' | 'unknown' | 'web' | 'backend' | 'fullstack' | 'cli' | 'library';
+  framework?: 'react' | 'express' | 'gin' | 'vanilla' | 'vue' | 'angular' | 'nextjs' | 'nuxt';
+  languages: string[];
   suggestedModes: string[];
   suggestedWorkflows: string[];
+  files: string[];
+  dependencies: Record<string, any>;
 }
 
 export class ProjectDetector {
@@ -22,14 +25,19 @@ export class ProjectDetector {
   async detect(): Promise<ProjectInfo> {
     const projectInfo: ProjectInfo = {
       type: 'unknown',
+      languages: [],
       suggestedModes: ['project-manager', 'architect', 'engineer', 'reviewer'],
-      suggestedWorkflows: ['summarize', 'review']
+      suggestedWorkflows: ['summarize', 'review'],
+      files: [],
+      dependencies: {}
     };
 
     // Detect TypeScript/JavaScript projects
     if (await this.fileExists('package.json')) {
       const packageJson = await this.readJsonFile('package.json');
       projectInfo.type = await this.fileExists('tsconfig.json') ? 'typescript' : 'javascript';
+      projectInfo.languages = await this.fileExists('tsconfig.json') ? ['typescript'] : ['javascript'];
+      projectInfo.dependencies = packageJson.dependencies || {};
 
       // Detect React
       if (packageJson.dependencies?.react || packageJson.devDependencies?.react) {
@@ -45,6 +53,7 @@ export class ProjectDetector {
     // Detect Go projects
     else if (await this.fileExists('go.mod')) {
       projectInfo.type = 'go';
+      projectInfo.languages = ['go'];
       
       const goMod = await this.readFile('go.mod');
       // Detect Gin framework
