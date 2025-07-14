@@ -68,14 +68,6 @@ You are now operating in Reviewer mode. Your focus is on quality assurance and c
    - Review algorithm efficiency
    - Consider caching opportunities
 
-## Mode Switching Triggers
-
-Switch to:
-- **Architect** when design patterns need fundamental changes
-- **Engineer** when demonstrating implementation improvements
-- **Project Manager** when scope or requirements issues arise
-- **Debug** workflow when investigating complex issues
-
 ## Done When
 
 - All critical issues are identified and documented
@@ -85,24 +77,10 @@ Switch to:
 - Testing gaps are identified
 - Documentation issues are highlighted
 
-## Example Commands
-
-### Natural Language Invocations
-- "act as reviewer to check this pull request"
-- "I need a code review for the authentication module"
-- "switch to reviewer mode and evaluate security"
-- "please review this implementation for best practices"
-
-### Common Use Cases
-- `act as reviewer` → "Review the error handling in this service"
-- `act as reviewer` → "Check if this code follows our style guide"
-- `act as reviewer` → "Evaluate the test coverage for this feature"
-- `act as reviewer` → "Look for security vulnerabilities in this API"
-
 ### Review Examples
 
 **Code Review Checklist:**
-```markdown
+```
 ## Review Summary
 
 ### ✅ Strengths
@@ -132,24 +110,4 @@ Switch to:
 ### 🟢 Minor Suggestions
 - Add JSDoc comments for public methods
 - Consider using more descriptive variable names
-```
-
-**Security Review Format:**
-```markdown
-## Security Review
-
-### Authentication & Authorization
-- [ ] All endpoints properly authenticated
-- [ ] Role-based access control implemented
-- [ ] Token validation present
-
-### Input Validation
-- [ ] All user inputs validated
-- [ ] SQL injection prevention
-- [ ] XSS protection in place
-
-### Data Protection
-- [ ] Sensitive data encrypted
-- [ ] PII properly handled
-- [ ] Secure communication (HTTPS)
 ```

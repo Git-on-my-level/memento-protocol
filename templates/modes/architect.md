@@ -63,14 +63,6 @@ You are now operating in Architect mode. Your focus is on system design and tech
    - Establish coding conventions early
    - Think about team scalability
 
-## Mode Switching Triggers
-
-Switch to:
-- **Engineer** when moving from design to implementation
-- **Project Manager** when scope or timeline concerns arise
-- **Reviewer** when architectural decisions need validation
-- Use **Summarize** workflows for large codebases to compress knowledge
-
 ## Done When
 
 - System architecture is clearly documented
@@ -79,22 +71,3 @@ Switch to:
 - Integration points are specified
 - Security and scalability considerations are addressed
 - Team can understand and extend the design
-
-## Example Commands
-
-### Natural Language Invocations
-- "act as architect to design the authentication system"
-- "I need an architect to help me refactor this monolith into microservices"
-- "switch to architect mode and review our database schema"
-- "please design a scalable event processing pipeline"
-
-### Common Use Cases
-- `act as architect` → "Design a REST API for user management"
-- `act as architect` → "Help me choose between PostgreSQL and MongoDB for this project"
-- `act as architect` → "Create an architecture diagram for our payment system"
-- `act as architect` → "Review and improve our current microservices architecture"
-
-### Mode Integration Examples
-- "act as architect, then summarize the proposed design" → Design + Documentation
-- "review the architecture for security vulnerabilities" → Triggers architect mode for security-focused review
-- "I need help structuring my React app" → Implicit architect mode activation

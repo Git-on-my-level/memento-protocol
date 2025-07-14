@@ -4,12 +4,14 @@ This file serves as a minimal router for Claude Code. Instructions are loaded on
 
 ## Available Commands
 
+WHEN YOU START A MODE OR WORKFLOW please output the mode and/or workflow as the first line of your output.
+
 ### Activate a Mode
 When prompted explicitly (e.g. "act as [mode]") or when the user's intention aligns with a specific role (e.g. "please review feature X") you can take on one of modes in `.memento/modes`
-- `act as project manager` - Planning and coordination
-- `act as architect` - System design and technical decisions
-- `act as engineer` - Implementation and debugging
-- `act as reviewer` - Code review and quality checks
+- `project manager` - Planning and coordination
+- `architect` - System design and technical decisions
+- `engineer` - Implementation and debugging
+- `reviewer` - Code review and quality checks
 
 Each mode includes specific example commands and use cases - check the mode file for details.
 
