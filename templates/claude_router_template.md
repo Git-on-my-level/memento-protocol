@@ -18,7 +18,10 @@ There are battle tested step-by-step flows in `.memento/workflows`. You must exe
 
 ### Work with Tickets
 To manage complex or long running work, please persist context in `.memento/tickets/`
-- Tickets persist work across sessions in 
+- Tickets are in 3 directories, `next` `done` and `in-progress`
+- You must move tickets to their respective directory based on status at the end of a run
+- You should use tickets to share context between sub-agents or to coordinate parallel agents
+- Each agent must add their updates to their respective ticket before finishing
 
 ## Component Location
 All components are in the `.memento/` directory:

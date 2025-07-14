@@ -1,0 +1,19 @@
+{
+  "version": "1.0.0",
+  "created": "2025-07-14T06:43:20.661Z",
+  "components": {
+    "modes": [
+      "project-manager",
+      "architect",
+      "engineer",
+      "reviewer"
+    ],
+    "workflows": [
+      "summarize",
+      "review"
+    ],
+    "languages": {},
+    "integrations": [],
+    "updated": "2025-07-14T07:18:00.243Z"
+  }
+}

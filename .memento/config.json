@@ -1,0 +1,17 @@
+{
+  "components": {
+    "modes": [
+      "project-manager",
+      "architect",
+      "engineer",
+      "reviewer"
+    ],
+    "workflows": [
+      "summarize",
+      "review"
+    ],
+    "languages": [
+      "typescript"
+    ]
+  }
+}
