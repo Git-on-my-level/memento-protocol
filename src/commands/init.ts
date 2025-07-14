@@ -10,6 +10,7 @@ export const initCommand = new Command('init')
   .option('-f, --force', 'Force initialization even if .memento already exists')
   .option('-q, --quick', 'Quick setup with recommended components')
   .option('-i, --interactive', 'Interactive setup mode (default)')
+  .option('-g, --gitignore', 'Add .memento/ to .gitignore (defaults to false)')
   .action(async (options) => {
     try {
       const projectRoot = process.cwd();
@@ -27,9 +28,6 @@ export const initCommand = new Command('init')
       // Initialize directory structure
       logger.info('Initializing Memento Protocol...');
       await dirManager.initializeStructure();
-      
-      // Update .gitignore
-      await dirManager.ensureGitignore();
       
       // Detect project type
       logger.info('Detecting project type...');
@@ -52,8 +50,14 @@ export const initCommand = new Command('init')
           projectInfo,
           selectedModes: [],
           selectedWorkflows: [],
-          selectedLanguages: []
+          selectedLanguages: [],
+          addToGitignore: false
         };
+      }
+      
+      // Update .gitignore if requested via CLI flag or interactive setup
+      if (options.gitignore || setupOptions.addToGitignore) {
+        await dirManager.ensureGitignore();
       }
       
       // Apply setup (install components and save config)

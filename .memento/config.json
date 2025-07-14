@@ -1,4 +1,5 @@
 {
+  "defaultMode": "project-manager",
   "components": {
     "modes": [
       "project-manager",

@@ -41,4 +41,4 @@ Language-specific overrides are automatically applied when detected.
 Run `memento language` to install overrides for your project.
 
 ## Project-Specific Instructions
-<!-- Project-specific content below this line -->     
+<!-- Project-specific content below this line -->         

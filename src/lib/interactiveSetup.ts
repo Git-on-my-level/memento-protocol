@@ -13,6 +13,7 @@ export interface SetupOptions {
   defaultMode?: string;
   skipRecommended?: boolean;
   force?: boolean;
+  addToGitignore?: boolean;
 }
 
 export class InteractiveSetup {
@@ -49,11 +50,15 @@ export class InteractiveSetup {
     // Configure default mode
     const defaultMode = await this.selectDefaultMode(componentSelections.selectedModes);
 
+    // Ask about gitignore
+    const addToGitignore = await this.askGitignoreOption();
+
     // Show summary and confirm
     const confirmed = await this.confirmSetup({
       projectInfo,
       ...componentSelections,
-      defaultMode
+      defaultMode,
+      addToGitignore
     });
 
     if (!confirmed) {
@@ -63,7 +68,8 @@ export class InteractiveSetup {
     return {
       projectInfo,
       ...componentSelections,
-      defaultMode
+      defaultMode,
+      addToGitignore
     };
   }
 
@@ -81,7 +87,8 @@ export class InteractiveSetup {
       selectedWorkflows: projectInfo.suggestedWorkflows,
       selectedLanguages: projectInfo.languages,
       defaultMode: projectInfo.suggestedModes[0],
-      skipRecommended: true
+      skipRecommended: true,
+      addToGitignore: false
     };
   }
 
@@ -254,6 +261,22 @@ export class InteractiveSetup {
   }
 
   /**
+   * Ask about gitignore option
+   */
+  private async askGitignoreOption(): Promise<boolean> {
+    const { addToGitignore } = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'addToGitignore',
+        message: 'Add .memento/ to .gitignore?',
+        default: false
+      }
+    ]);
+
+    return addToGitignore;
+  }
+
+  /**
    * Check and suggest language overrides
    */
   private async checkLanguageOverrides(): Promise<void> {
@@ -301,6 +324,8 @@ export class InteractiveSetup {
     if (options.defaultMode) {
       logger.info(`Default Mode: ${options.defaultMode}`);
     }
+    logger.info(`Add to .gitignore: ${options.addToGitignore ? 'Yes' : 'No'}`);
+    logger.space();
 
     const { confirmed } = await inquirer.prompt([
       {
