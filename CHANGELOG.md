@@ -30,4 +30,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-platform support (macOS, Linux)
 - npm and standalone distribution
 
-[0.1.0]: https://github.com/memento-protocol/memento-protocol/releases/tag/v0.1.0
+[0.1.0]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.1.0

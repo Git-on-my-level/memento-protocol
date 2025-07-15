@@ -28,12 +28,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/memento-protocol/memento-protocol.git"
+    "url": "git+https://github.com/git-on-my-level/memento-protocol.git"
   },
   "bugs": {
-    "url": "https://github.com/memento-protocol/memento-protocol/issues"
+    "url": "https://github.com/git-on-my-level/memento-protocol/issues"
   },
-  "homepage": "https://github.com/memento-protocol/memento-protocol#readme",
+  "homepage": "https://github.com/git-on-my-level/memento-protocol#readme",
   "files": [
     "dist/",
     "templates/",

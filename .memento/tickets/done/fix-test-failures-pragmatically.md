@@ -215,8 +215,8 @@ For Claude Code users:
   Say "execute review" to run the code review workflow
   Say "create ticket X" to start persistent work
 
-For more information, visit: https://github.com/memento-protocol/memento-protocol
-Documentation: https://github.com/memento-protocol/memento-protocol#readme
+For more information, visit: https://github.com/git-on-my-level/memento-protocol
+Documentation: https://github.com/git-on-my-level/memento-protocol#readme
 Usage: memento [options] [command]
 
 A lightweight meta-framework for Claude Code
@@ -250,8 +250,8 @@ For Claude Code users:
   Say "execute review" to run the code review workflow
   Say "create ticket X" to start persistent work
 
-For more information, visit: https://github.com/memento-protocol/memento-protocol
-Documentation: https://github.com/memento-protocol/memento-protocol#readme
+For more information, visit: https://github.com/git-on-my-level/memento-protocol
+Documentation: https://github.com/git-on-my-level/memento-protocol#readme
 Usage: memento [options] [command]
 
 A lightweight meta-framework for Claude Code
@@ -285,8 +285,8 @@ For Claude Code users:
   Say "execute review" to run the code review workflow
   Say "create ticket X" to start persistent work
 
-For more information, visit: https://github.com/memento-protocol/memento-protocol
-Documentation: https://github.com/memento-protocol/memento-protocol#readme
+For more information, visit: https://github.com/git-on-my-level/memento-protocol
+Documentation: https://github.com/git-on-my-level/memento-protocol#readme
 Usage: memento [options] [command]
 
 A lightweight meta-framework for Claude Code
@@ -320,8 +320,8 @@ For Claude Code users:
   Say "execute review" to run the code review workflow
   Say "create ticket X" to start persistent work
 
-For more information, visit: https://github.com/memento-protocol/memento-protocol
-Documentation: https://github.com/memento-protocol/memento-protocol#readme
+For more information, visit: https://github.com/git-on-my-level/memento-protocol
+Documentation: https://github.com/git-on-my-level/memento-protocol#readme
 Usage: memento [options] [command]
 
 A lightweight meta-framework for Claude Code
@@ -355,8 +355,8 @@ For Claude Code users:
   Say "execute review" to run the code review workflow
   Say "create ticket X" to start persistent work
 
-For more information, visit: https://github.com/memento-protocol/memento-protocol
-Documentation: https://github.com/memento-protocol/memento-protocol#readme
+For more information, visit: https://github.com/git-on-my-level/memento-protocol
+Documentation: https://github.com/git-on-my-level/memento-protocol#readme
  FAIL  src/commands/__tests__/config.test.ts
   ● Test suite failed to run
 
@@ -508,8 +508,8 @@ For Claude Code users:
   Say "execute review" to run the code review workflow
   Say "create ticket X" to start persistent work
 
-For more information, visit: https://github.com/memento-protocol/memento-protocol
-Documentation: https://github.com/memento-protocol/memento-protocol#readme
+For more information, visit: https://github.com/git-on-my-level/memento-protocol
+Documentation: https://github.com/git-on-my-level/memento-protocol#readme
 Usage: memento [options] [command]
 
 A lightweight meta-framework for Claude Code
@@ -543,8 +543,8 @@ For Claude Code users:
   Say "execute review" to run the code review workflow
   Say "create ticket X" to start persistent work
 
-For more information, visit: https://github.com/memento-protocol/memento-protocol
-Documentation: https://github.com/memento-protocol/memento-protocol#readme
+For more information, visit: https://github.com/git-on-my-level/memento-protocol
+Documentation: https://github.com/git-on-my-level/memento-protocol#readme
 0.1.0
  PASS  src/lib/__tests__/projectDetector.test.ts
  FAIL  src/lib/__tests__/modeHeadingConformity.test.ts

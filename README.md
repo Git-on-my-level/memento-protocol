@@ -52,7 +52,7 @@ memento init
 For development, you can clone the repository:
 ```bash
 # Using git
-git clone https://github.com/memento-protocol/memento-protocol.git
+git clone https://github.com/git-on-my-level/memento-protocol.git
 cd memento-protocol
 npm install
 npm link

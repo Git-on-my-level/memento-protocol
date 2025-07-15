@@ -9,7 +9,7 @@ export class MementoError extends Error {
     public suggestion?: string
   ) {
     super(message);
-    this.name = 'MementoError';
+    this.name = "MementoError";
   }
 }
 
@@ -17,10 +17,10 @@ export class FileSystemError extends MementoError {
   constructor(message: string, path: string, suggestion?: string) {
     super(
       message,
-      'FS_ERROR',
+      "FS_ERROR",
       suggestion || `Check if you have write permissions for: ${path}`
     );
-    this.name = 'FileSystemError';
+    this.name = "FileSystemError";
   }
 }
 
@@ -28,10 +28,10 @@ export class ConfigurationError extends MementoError {
   constructor(message: string, suggestion?: string) {
     super(
       message,
-      'CONFIG_ERROR',
+      "CONFIG_ERROR",
       suggestion || 'Run "memento config" to view current configuration'
     );
-    this.name = 'ConfigurationError';
+    this.name = "ConfigurationError";
   }
 }
 
@@ -39,10 +39,10 @@ export class ComponentError extends MementoError {
   constructor(message: string, public component: string, suggestion?: string) {
     super(
       message,
-      'COMPONENT_ERROR',
+      "COMPONENT_ERROR",
       suggestion || `Try running "memento list" to see available components`
     );
-    this.name = 'ComponentError';
+    this.name = "ComponentError";
   }
 }
 
@@ -50,10 +50,10 @@ export class NetworkError extends MementoError {
   constructor(message: string, suggestion?: string) {
     super(
       message,
-      'NETWORK_ERROR',
-      suggestion || 'Check your internet connection and try again'
+      "NETWORK_ERROR",
+      suggestion || "Check your internet connection and try again"
     );
-    this.name = 'NetworkError';
+    this.name = "NetworkError";
   }
 }
 
@@ -61,10 +61,10 @@ export class ValidationError extends MementoError {
   constructor(message: string, field: string, suggestion?: string) {
     super(
       message,
-      'VALIDATION_ERROR',
+      "VALIDATION_ERROR",
       suggestion || `Check the format of: ${field}`
     );
-    this.name = 'ValidationError';
+    this.name = "ValidationError";
   }
 }
 
@@ -79,23 +79,25 @@ export function handleError(error: unknown, verbose = false): void {
     }
     if (verbose) {
       console.error(`\nError code: ${error.code}`);
-      console.error('Stack trace:', error.stack);
+      console.error("Stack trace:", error.stack);
     }
   } else if (error instanceof Error) {
     console.error(`\n✖ Error: ${error.message}`);
     if (verbose) {
-      console.error('Stack trace:', error.stack);
+      console.error("Stack trace:", error.stack);
     } else {
-      console.error('\n💡 Run with --verbose flag for more details');
+      console.error("\n💡 Run with --verbose flag for more details");
     }
   } else {
-    console.error('\n✖ An unexpected error occurred');
+    console.error("\n✖ An unexpected error occurred");
     if (verbose) {
-      console.error('Details:', error);
+      console.error("Details:", error);
     }
   }
-  
-  console.error('\nFor help, visit: https://github.com/memento-protocol/memento-protocol/issues');
+
+  console.error(
+    "\nFor help, visit: https://github.com/git-on-my-level/memento-protocol/issues"
+  );
   process.exit(1);
 }
 
