@@ -4,7 +4,13 @@ This file serves as a minimal router for Claude Code. Instructions are loaded on
 
 ## Available Commands
 
+🚨 IMPORTANT: Always Check for Mode First. If the user's intent even loosely matches one PLEASE TAKE IT ON. 
 WHEN YOU START A MODE OR WORKFLOW please output the mode and/or workflow as the first line of your output.
+### What to do at the start of every fresh session
+1. Check if task matches a mode → Load mode file
+2. Check if task or mode matches a workflow → Load workflow file
+3. Check for relevant tickets → Load ticket context
+4. Proceed with task
 
 ### Activate a Mode
 When prompted explicitly (e.g. "act as [mode]") or when the user's intention aligns with a specific role (e.g. "please review feature X") you can take on one of modes in `.memento/modes`
@@ -34,7 +40,7 @@ All components are in the `.memento/` directory:
 - **Modes**: `.memento/modes/[mode-name].md`
 - **Workflows**: `.memento/workflows/[workflow-name].md`
 - **Language overrides**: `.memento/languages/[language].md`
-- **Tickets**: `.memento/tickets/[ticket-id]/`
+- **Tickets**: `.memento/tickets/[status]/[ticket-id]/`
 
 ## Language Support
 Language-specific overrides are automatically applied when detected.
