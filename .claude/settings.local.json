@@ -11,7 +11,10 @@
       "Bash(gtimeout 15 npm run dev init -- --force --quick)",
       "Bash(npm run dev:*)",
       "Bash(npm test:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(npm init:*)"
     ],
     "deny": []
   }

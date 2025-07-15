@@ -136,7 +136,7 @@ go 1.21`;
       const result = await detector.detect();
 
       expect(result.type).toBe('unknown');
-      expect(result.suggestedModes).toEqual(['project-manager', 'architect', 'engineer', 'reviewer']);
+      expect(result.suggestedModes).toEqual([]);
       expect(result.suggestedWorkflows).toEqual(['summarize', 'review']);
     });
   });
@@ -155,6 +155,8 @@ go 1.21`;
 
       const recommendations = detector.getRecommendations(projectInfo);
 
+      expect(recommendations).toContain('All modes will be selected by default');
+      expect(recommendations).toContain('All workflows will be selected by default');
       expect(recommendations).toContain('TypeScript detected - type-safe patterns will be used');
       expect(recommendations).toContain('React detected - component-based workflows available');
     });
@@ -172,6 +174,8 @@ go 1.21`;
 
       const recommendations = detector.getRecommendations(projectInfo);
 
+      expect(recommendations).toContain('All modes will be selected by default');
+      expect(recommendations).toContain('All workflows will be selected by default');
       expect(recommendations).toContain('Go detected - idiomatic Go patterns will be used');
       expect(recommendations).toContain('Gin framework detected - REST API patterns available');
     });

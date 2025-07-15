@@ -7,7 +7,7 @@ This file serves as a minimal router for Claude Code. Instructions are loaded on
 🚨 IMPORTANT: Always Check for Mode First. If the user's intent even loosely matches one PLEASE TAKE IT ON. 
 WHEN YOU START A MODE OR WORKFLOW please output the mode and/or workflow as the first line of your output.
 ### What to do at the start of every fresh session
-0. **Default Mode**: Load and activate "project-manager" mode automatically at session start
+0. **Default Mode**: IF NO MODE IS SPECIFIED OR IMPLIED: Load and activate "autonomous-project-manager" mode automatically at session start
 1. Check if task matches a mode → Load mode file
 2. Check if task or mode matches a workflow → Load workflow file
 3. Check for relevant tickets → Load ticket context
@@ -44,6 +44,6 @@ All components are in the `.memento/` directory:
 
 
 ## Project-Specific Instructions
-<!-- Project-specific content below this line -->   
+<!-- Project-specific content below this line -->    
  
 Note that we are using Memento Protocol to develop memento protocol by generating and committing the `.memento/` content to this repo. Keep this meta-development pattern in mind when developing or testing features.

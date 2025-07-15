@@ -6,7 +6,9 @@
       "project-manager",
       "architect",
       "engineer",
-      "reviewer"
+      "reviewer",
+      "autonomous-project-manager",
+      "ai-debt-maintainer"
     ],
     "workflows": [
       "summarize",
@@ -14,6 +16,6 @@
     ],
     "languages": {},
     "integrations": [],
-    "updated": "2025-07-15T07:21:59.815Z"
+    "updated": "2025-07-15T10:04:02.723Z"
   }
 }

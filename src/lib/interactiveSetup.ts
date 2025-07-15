@@ -38,7 +38,7 @@ export class InteractiveSetup {
     }
 
     // Select components
-    const componentSelections = await this.selectComponents(projectInfo);
+    const componentSelections = await this.selectComponents();
 
 
     // Configure default mode
@@ -144,18 +144,25 @@ export class InteractiveSetup {
       framework = frameworkAnswer.framework;
     }
 
-
-    return this.createProjectInfo(type, framework);
+    // Return simplified ProjectInfo
+    return {
+      type,
+      framework: framework as any,
+      suggestedModes: [],
+      suggestedWorkflows: [],
+      files: [],
+      dependencies: {}
+    };
   }
 
   /**
    * Select components to install
    */
-  private async selectComponents(projectInfo: ProjectInfo) {
+  private async selectComponents() {
     // Get available components
     const availableComponents = await this.componentInstaller.listAvailableComponents();
 
-    // Select modes
+    // Select modes - Default to ALL available modes
     const { selectedModes } = await inquirer.prompt([
       {
         type: 'checkbox',
@@ -164,13 +171,13 @@ export class InteractiveSetup {
         choices: availableComponents.modes.map((mode: any) => ({
           name: `${mode.name} - ${mode.description}`,
           value: mode.name,
-          checked: projectInfo.suggestedModes.includes(mode.name)
+          checked: true  // Select all modes by default
         })),
         validate: (input: any) => input.length > 0 || 'Please select at least one mode'
       }
     ]);
 
-    // Select workflows
+    // Select workflows - Default to ALL available workflows
     const { selectedWorkflows } = await inquirer.prompt([
       {
         type: 'checkbox',
@@ -179,7 +186,7 @@ export class InteractiveSetup {
         choices: availableComponents.workflows.map((workflow: any) => ({
           name: `${workflow.name} - ${workflow.description}`,
           value: workflow.name,
-          checked: projectInfo.suggestedWorkflows.includes(workflow.name)
+          checked: true  // Select all workflows by default
         }))
       }
     ]);
@@ -263,52 +270,6 @@ export class InteractiveSetup {
     return confirmed;
   }
 
-  /**
-   * Create ProjectInfo from manual selection
-   */
-  private createProjectInfo(
-    type: any,
-    framework?: any
-  ): ProjectInfo {
-    // Define suggestions based on project type
-    const suggestions: Record<string, { modes: string[], workflows: string[] }> = {
-      web: {
-        modes: ['architect', 'engineer', 'reviewer'],
-        workflows: ['refactor', 'test-generation']
-      },
-      backend: {
-        modes: ['architect', 'engineer', 'reviewer'],
-        workflows: ['api-design', 'database-migration']
-      },
-      fullstack: {
-        modes: ['project-manager', 'architect', 'engineer', 'reviewer'],
-        workflows: ['feature-implementation', 'refactor']
-      },
-      cli: {
-        modes: ['engineer', 'reviewer'],
-        workflows: ['cli-design', 'test-generation']
-      },
-      library: {
-        modes: ['architect', 'engineer'],
-        workflows: ['api-design', 'documentation']
-      },
-      unknown: {
-        modes: ['engineer'],
-        workflows: []
-      }
-    };
-
-    const suggestion = suggestions[type] || suggestions.unknown;
-
-    return {
-      type,
-      framework,
-      suggestedModes: suggestion.modes,
-      suggestedWorkflows: suggestion.workflows,
-      files: [],
-      dependencies: {}
-    };
-  }
 
   /**
    * Apply setup options (install components and save config)

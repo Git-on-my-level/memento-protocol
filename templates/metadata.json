@@ -9,12 +9,6 @@
     },
     "modes": [
       {
-        "name": "project-manager",
-        "description": "Planning, coordination, and high-level decision making",
-        "tags": ["planning", "coordination", "management"],
-        "dependencies": []
-      },
-      {
         "name": "autonomous-project-manager",
         "description": "Agentic project management with autonomous delegation to sub-agents",
         "tags": ["planning", "coordination", "management", "autonomous"],

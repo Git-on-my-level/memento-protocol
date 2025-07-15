@@ -24,7 +24,7 @@ export class ProjectDetector {
   async detect(): Promise<ProjectInfo> {
     const projectInfo: ProjectInfo = {
       type: 'unknown',
-      suggestedModes: ['project-manager', 'architect', 'engineer', 'reviewer'],
+      suggestedModes: [], // Empty array - all modes are selected by default in interactive setup
       suggestedWorkflows: ['summarize', 'review'],
       files: [],
       dependencies: {}
@@ -78,9 +78,9 @@ export class ProjectDetector {
   getRecommendations(projectInfo: ProjectInfo): string[] {
     const recommendations: string[] = [];
 
-    // Base recommendations
-    recommendations.push('Recommended modes: ' + projectInfo.suggestedModes.join(', '));
-    recommendations.push('Recommended workflows: ' + projectInfo.suggestedWorkflows.join(', '));
+    // Base recommendations - simplified since all components are selected by default
+    recommendations.push('All modes will be selected by default');
+    recommendations.push('All workflows will be selected by default');
 
     // Type-specific recommendations
     if (projectInfo.type === 'typescript') {

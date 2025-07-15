@@ -1,8 +1,9 @@
 {
-  "defaultMode": "project-manager",
+  "defaultMode": "autonomous-project-manager",
   "components": {
     "modes": [
-      "project-manager",
+      "autonomous-project-manager",
+      "ai-debt-maintainer",
       "architect",
       "engineer",
       "reviewer"
