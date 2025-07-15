@@ -15,6 +15,18 @@
         "dependencies": []
       },
       {
+        "name": "autonomous-project-manager",
+        "description": "Agentic project management with autonomous delegation to sub-agents",
+        "tags": ["planning", "coordination", "management", "autonomous"],
+        "dependencies": []
+      },
+      {
+        "name": "ai-debt-maintainer",
+        "description": "Identify and clean up AI-generated code smells and technical debt",
+        "tags": ["maintenance", "refactoring", "cleanup", "debt"],
+        "dependencies": []
+      },
+      {
         "name": "architect",
         "description": "System design, technical decisions, and architectural patterns",
         "tags": ["design", "architecture", "patterns"],

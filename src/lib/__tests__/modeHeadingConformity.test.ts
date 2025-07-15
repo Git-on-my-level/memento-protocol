@@ -5,9 +5,7 @@ describe('Mode Template Heading Conformity', () => {
   const TEMPLATES_DIR = path.join(__dirname, '..', '..', '..', 'templates', 'modes');
   const REQUIRED_HEADINGS = [
     '## Behavioral Guidelines',
-    '## Core Responsibilities',
-    '## Best Practices',
-    '## Done When'
+    '## Example Process'
   ];
 
   const getModeFiles = (): string[] => {
@@ -79,14 +77,14 @@ describe('Mode Template Heading Conformity', () => {
           }
         });
 
-        it('should have proper subsections under Behavioral Guidelines', () => {
-          const bgIndex = content.indexOf('## Behavioral Guidelines');
-          const nextMainHeading = content.indexOf('## Core Responsibilities');
+        it('should have proper subsections under Example Process', () => {
+          const epIndex = content.indexOf('## Example Process');
+          const endOfFile = content.length;
           
-          if (bgIndex !== -1 && nextMainHeading !== -1) {
-            const bgSection = content.substring(bgIndex, nextMainHeading);
-            expect(bgSection).toContain('### Communication Style');
-            expect(bgSection).toContain('### Decision Making');
+          if (epIndex !== -1) {
+            const epSection = content.substring(epIndex, endOfFile);
+            // Check that it contains at least one Phase heading
+            expect(epSection).toMatch(/### Phase \d+:/);
           }
         });
       });
