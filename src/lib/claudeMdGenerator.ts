@@ -58,7 +58,6 @@ export class ClaudeMdGenerator {
     }
   }
 
-
   /**
    * Merge router content with existing CLAUDE.md
    */
@@ -91,27 +90,28 @@ export class ClaudeMdGenerator {
    */
   private async injectDefaultMode(content: string): Promise<string> {
     try {
-      const defaultMode = await this.configManager.get('defaultMode');
+      const defaultMode = await this.configManager.get("defaultMode");
       if (!defaultMode) {
         return content;
       }
 
       // Add default mode instruction after the session start instructions
-      const defaultModeInstruction = `0. **Default Mode**: Load and activate "${defaultMode}" mode automatically at session start`;
-      const sessionStartSection = "### What to do at the start of every fresh session";
+      const defaultModeInstruction = `0. **Default Mode**: IF NO MODE IS SPECIFIED OR IMPLIED: Load and activate "${defaultMode}" mode automatically at session start`;
+      const sessionStartSection =
+        "### What to do at the start of every fresh session";
       const sessionStartIndex = content.indexOf(sessionStartSection);
-      
+
       if (sessionStartIndex !== -1) {
         // Find the end of the heading line
-        const headingEndIndex = content.indexOf('\n', sessionStartIndex);
+        const headingEndIndex = content.indexOf("\n", sessionStartIndex);
         if (headingEndIndex !== -1) {
           // Insert the default mode instruction right after the heading
           const before = content.substring(0, headingEndIndex + 1);
           const after = content.substring(headingEndIndex + 1);
-          return before + defaultModeInstruction + '\n' + after;
+          return before + defaultModeInstruction + "\n" + after;
         }
       }
-      
+
       return content;
     } catch {
       // If config loading fails, return content unchanged
