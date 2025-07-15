@@ -1,1 +1,0 @@
-Let's add support for Cursor via Cursor Rules, and Gemini CLI via GEMINI.md

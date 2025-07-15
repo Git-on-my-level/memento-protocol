@@ -48,4 +48,6 @@ Run `memento language` to install overrides for your project.
 
 ## Project-Specific Instructions
 <!-- Project-specific content below this line --> 
-          
+ 
+
+Note that we are using Memento Protocol to develop memento protocol by generating and committing the `.memento/` content to this repo. Keep this meta-development pattern in mind when developing or testing features.
