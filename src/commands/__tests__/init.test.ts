@@ -83,7 +83,6 @@ describe("Init Command", () => {
       mockProjectDetector.detect.mockResolvedValue({
         type: "fullstack",
         framework: "nextjs",
-        languages: ["typescript"],
         suggestedModes: ["architect", "engineer"],
         suggestedWorkflows: ["review"],
         files: [],
@@ -93,7 +92,6 @@ describe("Init Command", () => {
         projectInfo: { type: "fullstack" } as any,
         selectedModes: ["architect"],
         selectedWorkflows: ["review"],
-        selectedLanguages: ["typescript"],
       });
 
       await initCommand.parseAsync(["node", "test", "--quick", "--gitignore"]);
@@ -122,7 +120,6 @@ describe("Init Command", () => {
 
       mockProjectDetector.detect.mockResolvedValue({
         type: "unknown",
-        languages: [],
         suggestedModes: [],
         suggestedWorkflows: [],
         files: [],
@@ -132,7 +129,6 @@ describe("Init Command", () => {
         projectInfo: { type: "unknown" } as any,
         selectedModes: [],
         selectedWorkflows: [],
-        selectedLanguages: [],
       });
 
       await initCommand.parseAsync(["node", "test", "--quick"]);
@@ -162,7 +158,6 @@ describe("Init Command", () => {
       mockClaudeMdGen.exists.mockResolvedValue(false);
       mockProjectDetector.detect.mockResolvedValue({
         type: "cli",
-        languages: [],
         suggestedModes: [],
         suggestedWorkflows: [],
         files: [],
@@ -172,7 +167,6 @@ describe("Init Command", () => {
         projectInfo: { type: "cli" } as any,
         selectedModes: [],
         selectedWorkflows: [],
-        selectedLanguages: [],
       });
 
       await initCommand.parseAsync(["node", "test", "--force", "--quick"]);
@@ -203,7 +197,6 @@ describe("Init Command", () => {
       mockClaudeMdGen.exists.mockResolvedValue(false);
       mockProjectDetector.detect.mockResolvedValue({
         type: "unknown",
-        languages: [],
         suggestedModes: [],
         suggestedWorkflows: [],
         files: [],

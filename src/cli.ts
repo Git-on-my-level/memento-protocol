@@ -5,7 +5,6 @@ import { listCommand } from "./commands/list";
 import { ticketCommand } from "./commands/ticket";
 import { configCommand } from "./commands/config";
 import { createUpdateCommand } from "./commands/update";
-import { createLanguageCommand } from "./commands/language";
 import { logger } from "./lib/logger";
 import { handleError } from "./lib/errors";
 
@@ -29,7 +28,6 @@ Examples:
   $ memento add workflow review     # Add the code review workflow
   $ memento ticket create "auth"    # Create a ticket for authentication work
   $ memento list --installed        # Show installed components
-  $ memento language                # Auto-detect and install language overrides
 
 For Claude Code users:
   Say "act as architect" to switch to architect mode
@@ -56,7 +54,6 @@ program.addCommand(listCommand);
 program.addCommand(ticketCommand);
 program.addCommand(configCommand);
 program.addCommand(createUpdateCommand());
-program.addCommand(createLanguageCommand());
 
 // Global error handling
 process.on("unhandledRejection", (error) => {

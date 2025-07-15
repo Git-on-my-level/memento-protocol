@@ -2,14 +2,12 @@ import inquirer from 'inquirer';
 import { ProjectInfo } from './projectDetector';
 import { ComponentInstaller } from './componentInstaller';
 import { ConfigManager } from './configManager';
-import { LanguageOverrideManager } from './languageOverrideManager';
 import { logger } from './logger';
 
 export interface SetupOptions {
   projectInfo: ProjectInfo;
   selectedModes: string[];
   selectedWorkflows: string[];
-  selectedLanguages: string[];
   defaultMode?: string;
   skipRecommended?: boolean;
   force?: boolean;
@@ -19,12 +17,10 @@ export interface SetupOptions {
 export class InteractiveSetup {
   private componentInstaller: ComponentInstaller;
   private configManager: ConfigManager;
-  private languageManager: LanguageOverrideManager;
 
   constructor(projectRoot: string) {
     this.componentInstaller = new ComponentInstaller(projectRoot);
     this.configManager = new ConfigManager(projectRoot);
-    this.languageManager = new LanguageOverrideManager(projectRoot);
   }
 
   /**
@@ -44,8 +40,6 @@ export class InteractiveSetup {
     // Select components
     const componentSelections = await this.selectComponents(projectInfo);
 
-    // Check for language overrides
-    await this.checkLanguageOverrides();
 
     // Configure default mode
     const defaultMode = await this.selectDefaultMode(componentSelections.selectedModes);
@@ -85,7 +79,6 @@ export class InteractiveSetup {
       projectInfo,
       selectedModes: projectInfo.suggestedModes,
       selectedWorkflows: projectInfo.suggestedWorkflows,
-      selectedLanguages: projectInfo.languages,
       defaultMode: projectInfo.suggestedModes[0],
       skipRecommended: true,
       addToGitignore: false
@@ -151,25 +144,8 @@ export class InteractiveSetup {
       framework = frameworkAnswer.framework;
     }
 
-    // Select languages
-    const { languages } = await inquirer.prompt([
-      {
-        type: 'checkbox',
-        name: 'languages',
-        message: 'Select the programming languages used:',
-        choices: [
-          { name: 'TypeScript', value: 'typescript' },
-          { name: 'JavaScript', value: 'javascript' },
-          { name: 'Python', value: 'python' },
-          { name: 'Go', value: 'go' },
-          { name: 'Rust', value: 'rust' },
-          { name: 'Java', value: 'java' }
-        ],
-        default: ['typescript']
-      }
-    ]);
 
-    return this.createProjectInfo(type, framework, languages);
+    return this.createProjectInfo(type, framework);
   }
 
   /**
@@ -208,29 +184,7 @@ export class InteractiveSetup {
       }
     ]);
 
-    // Select language overrides
-    const languageChoices = [
-      { name: 'TypeScript', value: 'typescript' },
-      { name: 'JavaScript', value: 'javascript' },
-      { name: 'Python', value: 'python' },
-      { name: 'Go', value: 'go' },
-      { name: 'Rust', value: 'rust' },
-      { name: 'Java', value: 'java' }
-    ];
-    
-    const { selectedLanguages } = await inquirer.prompt([
-      {
-        type: 'checkbox',
-        name: 'selectedLanguages',
-        message: 'Select language-specific enhancements:',
-        choices: languageChoices.map(lang => ({
-          ...lang,
-          checked: projectInfo.languages.includes(lang.value)
-        }))
-      }
-    ]);
-
-    return { selectedModes, selectedWorkflows, selectedLanguages };
+    return { selectedModes, selectedWorkflows };
   }
 
   /**
@@ -276,35 +230,6 @@ export class InteractiveSetup {
     return addToGitignore;
   }
 
-  /**
-   * Check and suggest language overrides
-   */
-  private async checkLanguageOverrides(): Promise<void> {
-    const detectedLanguage = await this.languageManager.detectProjectLanguage();
-    
-    if (detectedLanguage) {
-      logger.space();
-      logger.info(`🔍 Detected project language: ${detectedLanguage}`);
-      
-      const { installOverride } = await inquirer.prompt([
-        {
-          type: 'confirm',
-          name: 'installOverride',
-          message: `Would you like to install language-specific enhancements for ${detectedLanguage}?`,
-          default: true
-        }
-      ]);
-      
-      if (installOverride) {
-        try {
-          await this.languageManager.installLanguageOverride(detectedLanguage);
-          logger.success(`Installed ${detectedLanguage} language enhancements`);
-        } catch (error: any) {
-          logger.warn(`Could not install ${detectedLanguage} enhancements: ${error.message}`);
-        }
-      }
-    }
-  }
 
   /**
    * Show setup summary and confirm
@@ -320,8 +245,7 @@ export class InteractiveSetup {
     logger.space();
     logger.info(`Modes: ${options.selectedModes.join(', ') || 'None'}`);
     logger.info(`Workflows: ${options.selectedWorkflows.join(', ') || 'None'}`);
-    logger.info(`Languages: ${options.selectedLanguages.join(', ') || 'None'}`);
-    if (options.defaultMode) {
+        if (options.defaultMode) {
       logger.info(`Default Mode: ${options.defaultMode}`);
     }
     logger.info(`Add to .gitignore: ${options.addToGitignore ? 'Yes' : 'No'}`);
@@ -344,8 +268,7 @@ export class InteractiveSetup {
    */
   private createProjectInfo(
     type: any,
-    framework?: any,
-    languages: string[] = []
+    framework?: any
   ): ProjectInfo {
     // Define suggestions based on project type
     const suggestions: Record<string, { modes: string[], workflows: string[] }> = {
@@ -380,7 +303,6 @@ export class InteractiveSetup {
     return {
       type,
       framework,
-      languages,
       suggestedModes: suggestion.modes,
       suggestedWorkflows: suggestion.workflows,
       files: [],
@@ -402,14 +324,6 @@ export class InteractiveSetup {
       await this.componentInstaller.installComponent('workflow', workflow, options.force);
     }
 
-    // Install selected language overrides
-    for (const language of options.selectedLanguages) {
-      try {
-        await this.languageManager.installLanguageOverride(language);
-      } catch (error: any) {
-        logger.warn(`Could not install language override for ${language}: ${error.message}`);
-      }
-    }
 
     // Save configuration
     if (options.defaultMode || options.selectedModes.length > 0) {
@@ -418,7 +332,6 @@ export class InteractiveSetup {
         components: {
           modes: options.selectedModes,
           workflows: options.selectedWorkflows,
-          languages: options.selectedLanguages
         }
       };
       await this.configManager.save(config);

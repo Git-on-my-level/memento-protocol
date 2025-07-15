@@ -19,9 +19,6 @@ jest.mock('../commands/config', () => ({
 jest.mock('../commands/update', () => ({
   createUpdateCommand: () => new Command('update').description('Update components')
 }));
-jest.mock('../commands/language', () => ({
-  createLanguageCommand: () => new Command('language').description('Manage languages')
-}));
 
 describe('CLI', () => {
   // Removed all brittle CLI tests that depend on console output

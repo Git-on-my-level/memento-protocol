@@ -47,7 +47,6 @@ describe('DirectoryManager', () => {
         mockMementoDir,
         path.join(mockMementoDir, 'modes'),
         path.join(mockMementoDir, 'workflows'),
-        path.join(mockMementoDir, 'languages'),
         path.join(mockMementoDir, 'integrations'),
         path.join(mockMementoDir, 'tickets'),
       ];
@@ -179,10 +178,6 @@ describe('DirectoryManager', () => {
       expect(path).toBe('/test/project/.memento/workflows/review.md');
     });
 
-    it('should return correct path for languages', () => {
-      const path = dirManager.getComponentPath('languages', 'typescript');
-      expect(path).toBe('/test/project/.memento/languages/typescript.md');
-    });
   });
 
   describe('getManifest', () => {

@@ -1,7 +1,6 @@
 import { InteractiveSetup } from "../interactiveSetup";
 import { ComponentInstaller } from "../componentInstaller";
 import { ConfigManager } from "../configManager";
-import { LanguageOverrideManager } from "../languageOverrideManager";
 import { ProjectInfo } from "../projectDetector";
 import { logger } from "../logger";
 import inquirer from "inquirer";
@@ -11,7 +10,6 @@ jest.mock("inquirer", () => ({
 }));
 jest.mock("../componentInstaller");
 jest.mock("../configManager");
-jest.mock("../languageOverrideManager");
 jest.mock("../logger", () => ({
   logger: {
     info: jest.fn(),
@@ -26,7 +24,6 @@ describe("InteractiveSetup", () => {
   let interactiveSetup: InteractiveSetup;
   let mockInstaller: jest.Mocked<ComponentInstaller>;
   let mockConfigManager: jest.Mocked<ConfigManager>;
-  let mockLanguageManager: jest.Mocked<LanguageOverrideManager>;
   const mockProjectRoot = "/test/project";
 
   beforeEach(() => {
@@ -41,10 +38,6 @@ describe("InteractiveSetup", () => {
       save: jest.fn(),
     } as any;
 
-    mockLanguageManager = {
-      detectProjectLanguage: jest.fn(),
-      installLanguageOverride: jest.fn(),
-    } as any;
 
     (
       ComponentInstaller as jest.MockedClass<typeof ComponentInstaller>
@@ -52,11 +45,6 @@ describe("InteractiveSetup", () => {
     (
       ConfigManager as jest.MockedClass<typeof ConfigManager>
     ).mockImplementation(() => mockConfigManager);
-    (
-      LanguageOverrideManager as jest.MockedClass<
-        typeof LanguageOverrideManager
-      >
-    ).mockImplementation(() => mockLanguageManager);
 
     interactiveSetup = new InteractiveSetup(mockProjectRoot);
   });
@@ -65,7 +53,6 @@ describe("InteractiveSetup", () => {
     const mockProjectInfo: ProjectInfo = {
       type: "fullstack",
       framework: "nextjs",
-      languages: ["typescript"],
       suggestedModes: ["architect", "engineer"],
       suggestedWorkflows: ["review"],
       files: [],
@@ -98,7 +85,6 @@ describe("InteractiveSetup", () => {
         ],
       });
 
-      mockLanguageManager.detectProjectLanguage.mockResolvedValue("typescript");
 
       (inquirer.prompt as any as jest.Mock)
         .mockResolvedValueOnce({ confirmed: true }) // Confirm project type
@@ -109,14 +95,6 @@ describe("InteractiveSetup", () => {
         .mockResolvedValueOnce({
           // Select workflows
           selectedWorkflows: ["review"],
-        })
-        .mockResolvedValueOnce({
-          // Select languages
-          selectedLanguages: ["typescript"],
-        })
-        .mockResolvedValueOnce({
-          // Install language override
-          installOverride: true,
         })
         .mockResolvedValueOnce({
           // Select default mode
@@ -138,16 +116,11 @@ describe("InteractiveSetup", () => {
           projectInfo: mockProjectInfo,
           selectedModes: ["architect", "engineer"],
           selectedWorkflows: ["review"],
-          selectedLanguages: ["typescript"],
           defaultMode: "architect",
           addToGitignore: false,
         })
       );
 
-      expect(mockLanguageManager.detectProjectLanguage).toHaveBeenCalled();
-      expect(mockLanguageManager.installLanguageOverride).toHaveBeenCalledWith(
-        "typescript"
-      );
     });
 
     // Removed complex interactive setup test
@@ -159,7 +132,6 @@ describe("InteractiveSetup", () => {
     it("should return recommended components", async () => {
       const mockProjectInfo = {
         type: "web" as const,
-        languages: ["typescript", "javascript"],
         suggestedModes: ["engineer", "reviewer"],
         suggestedWorkflows: ["refactor"],
         files: [],
@@ -173,7 +145,6 @@ describe("InteractiveSetup", () => {
           projectInfo: mockProjectInfo,
           selectedModes: ["engineer", "reviewer"],
           selectedWorkflows: ["refactor"],
-          selectedLanguages: ["typescript", "javascript"],
           defaultMode: "engineer",
           skipRecommended: true,
           addToGitignore: false,
@@ -192,7 +163,6 @@ describe("InteractiveSetup", () => {
         projectInfo: {} as any,
         selectedModes: ["architect", "engineer"],
         selectedWorkflows: ["review", "refactor"],
-        selectedLanguages: ["typescript", "python"],
         defaultMode: "architect",
       };
 
@@ -212,49 +182,22 @@ describe("InteractiveSetup", () => {
         ])
       );
 
-      expect(mockLanguageManager.installLanguageOverride).toHaveBeenCalledWith(
-        "typescript"
-      );
-      expect(mockLanguageManager.installLanguageOverride).toHaveBeenCalledWith(
-        "python"
-      );
 
       expect(mockConfigManager.save).toHaveBeenCalledWith({
         defaultMode: "architect",
         components: {
           modes: ["architect", "engineer"],
           workflows: ["review", "refactor"],
-          languages: ["typescript", "python"],
         },
       });
     });
 
-    it("should handle language override installation errors gracefully", async () => {
-      const setupOptions = {
-        projectInfo: {} as any,
-        selectedModes: [],
-        selectedWorkflows: [],
-        selectedLanguages: ["rust"],
-        defaultMode: undefined,
-      };
-
-      mockLanguageManager.installLanguageOverride.mockRejectedValue(
-        new Error("Language not supported")
-      );
-
-      await interactiveSetup.applySetup(setupOptions);
-
-      expect(logger.warn).toHaveBeenCalledWith(
-        "Could not install language override for rust: Language not supported"
-      );
-    });
 
     it("should skip config save when no components selected", async () => {
       const setupOptions = {
         projectInfo: {} as any,
         selectedModes: [],
         selectedWorkflows: [],
-        selectedLanguages: [],
         defaultMode: undefined,
       };
 

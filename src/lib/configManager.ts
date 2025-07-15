@@ -24,7 +24,6 @@ export interface MementoConfig {
   components?: {
     modes?: string[];
     workflows?: string[];
-    languages?: string[];
   };
 }
 
@@ -150,7 +149,7 @@ export class ConfigManager {
 
     // Validate component arrays
     if (config.components) {
-      ['modes', 'workflows', 'languages'].forEach(key => {
+      ['modes', 'workflows'].forEach(key => {
         const value = config.components![key as keyof typeof config.components];
         if (value && !Array.isArray(value)) {
           throw new Error(`components.${key} must be an array`);

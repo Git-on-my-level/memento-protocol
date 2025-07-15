@@ -28,7 +28,6 @@ export class DirectoryManager {
       this.mementoDir,
       path.join(this.mementoDir, 'modes'),
       path.join(this.mementoDir, 'workflows'),
-      path.join(this.mementoDir, 'languages'),
       path.join(this.mementoDir, 'integrations'),
       path.join(this.mementoDir, 'tickets'),
     ];
@@ -55,7 +54,6 @@ export class DirectoryManager {
         components: {
           modes: [],
           workflows: [],
-          languages: {},
           integrations: []
         }
       };
@@ -70,7 +68,6 @@ export class DirectoryManager {
     const requiredDirs = [
       'modes',
       'workflows',
-      'languages',
       'integrations',
       'tickets'
     ];
@@ -141,7 +138,7 @@ export class DirectoryManager {
   /**
    * Get the path to a specific component
    */
-  getComponentPath(type: 'modes' | 'workflows' | 'languages' | 'integrations', name: string): string {
+  getComponentPath(type: 'modes' | 'workflows' | 'integrations', name: string): string {
     return path.join(this.mementoDir, type, `${name}.md`);
   }
 

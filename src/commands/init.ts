@@ -62,8 +62,7 @@ export const initCommand = new Command('init')
       
       // Apply setup (install components and save config)
       if (setupOptions.selectedModes.length > 0 || 
-          setupOptions.selectedWorkflows.length > 0 || 
-          setupOptions.selectedLanguages.length > 0) {
+          setupOptions.selectedWorkflows.length > 0) {
         logger.space();
         logger.info('Installing selected components...');
         await interactiveSetup.applySetup({

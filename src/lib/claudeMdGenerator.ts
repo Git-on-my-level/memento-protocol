@@ -1,12 +1,15 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 import { logger } from "./logger";
+import { ConfigManager } from "./configManager";
 
 export class ClaudeMdGenerator {
   private claudeMdPath: string;
+  private configManager: ConfigManager;
 
   constructor(projectRoot: string) {
     this.claudeMdPath = path.join(projectRoot, "CLAUDE.md");
+    this.configManager = new ConfigManager(projectRoot);
   }
 
   /**
@@ -14,12 +17,16 @@ export class ClaudeMdGenerator {
    */
   async generate(existingContent?: string): Promise<void> {
     // Load router content from external template; throw if missing
-    const routerContent = await this.loadTemplate();
+    let routerContent = await this.loadTemplate();
     if (!routerContent) {
       throw new Error(
         "Router template not found. Expected templates/claude_router_template.md to exist."
       );
     }
+
+    // Inject default mode configuration
+    routerContent = await this.injectDefaultMode(routerContent);
+
     const finalContent = existingContent
       ? this.mergeWithExisting(routerContent, existingContent)
       : routerContent;
@@ -77,6 +84,39 @@ export class ClaudeMdGenerator {
 
     // If no Memento section exists, append router to existing content
     return routerContent + "\n\n" + existingContent;
+  }
+
+  /**
+   * Inject default mode configuration into the router content
+   */
+  private async injectDefaultMode(content: string): Promise<string> {
+    try {
+      const defaultMode = await this.configManager.get('defaultMode');
+      if (!defaultMode) {
+        return content;
+      }
+
+      // Add default mode instruction after the session start instructions
+      const defaultModeInstruction = `0. **Default Mode**: Load and activate "${defaultMode}" mode automatically at session start`;
+      const sessionStartSection = "### What to do at the start of every fresh session";
+      const sessionStartIndex = content.indexOf(sessionStartSection);
+      
+      if (sessionStartIndex !== -1) {
+        // Find the end of the heading line
+        const headingEndIndex = content.indexOf('\n', sessionStartIndex);
+        if (headingEndIndex !== -1) {
+          // Insert the default mode instruction right after the heading
+          const before = content.substring(0, headingEndIndex + 1);
+          const after = content.substring(headingEndIndex + 1);
+          return before + defaultModeInstruction + '\n' + after;
+        }
+      }
+      
+      return content;
+    } catch {
+      // If config loading fails, return content unchanged
+      return content;
+    }
   }
 
   /**
