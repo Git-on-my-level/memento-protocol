@@ -14,10 +14,11 @@ Memento Protocol enhances Claude Code's understanding of your project by providi
 
 All through a simple `CLAUDE.md` file that acts as a minimal router.
 
-## What problems do we solve?
-- Claude Code starts to break down in larger codebases, this tool introduces patterns to mitigate that issue
-- Allows you to track progress across long-running tasks using a ticketing system
-- Reduces "catastropic forgetting" where you keep telling Claude to fix it again, but it just goes in circles
+## This tool is for you if you answer yes to any of the following questions
+- Do you find yourself copy pasting between CLAUDE.md across projects all the time?
+- Does Claude Code start to break down as your codebase gets bigger?
+- Do you wish Claude would stop spamming markdown files and track its work in an opinionated and easy to clean up way?
+- For more complex fixes does Claude tend to go in circles, repeating the same methods over and over again?
 
 ## Quick Start
 
