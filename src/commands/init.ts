@@ -8,8 +8,7 @@ import { logger } from '../lib/logger';
 export const initCommand = new Command('init')
   .description('Initialize Memento Protocol in the current project')
   .option('-f, --force', 'Force initialization even if .memento already exists')
-  .option('-q, --quick', 'Quick setup with recommended components')
-  .option('-i, --interactive', 'Interactive setup mode (default)')
+  .option('-n, --non-interactive', 'Non-interactive setup (no component installation)')
   .option('-g, --gitignore', 'Add .memento/ to .gitignore (defaults to false)')
   .action(async (options) => {
     try {
@@ -38,14 +37,12 @@ export const initCommand = new Command('init')
       const interactiveSetup = new InteractiveSetup(projectRoot);
       let setupOptions;
       
-      if (options.quick) {
-        // Quick setup with recommended components
-        setupOptions = await interactiveSetup.quickSetup(projectInfo);
-      } else if (options.interactive !== false) {
-        // Interactive setup (default)
-        setupOptions = await interactiveSetup.run(projectInfo);
-      } else {
-        // Basic setup without component installation
+      // Check for CI environment or explicit non-interactive mode
+      const isNonInteractive = options.nonInteractive || process.env.CI === 'true';
+      
+      if (isNonInteractive) {
+        // Non-interactive setup without component installation
+        logger.info('Running in non-interactive mode...');
         setupOptions = {
           projectInfo,
           selectedModes: [],
@@ -53,6 +50,9 @@ export const initCommand = new Command('init')
           selectedLanguages: [],
           addToGitignore: false
         };
+      } else {
+        // Interactive setup (default)
+        setupOptions = await interactiveSetup.run(projectInfo);
       }
       
       // Update .gitignore if requested via CLI flag or interactive setup

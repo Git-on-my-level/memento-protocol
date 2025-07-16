@@ -4,30 +4,31 @@ This file serves as a minimal router for Claude Code. Instructions are loaded on
 
 ## Available Commands
 
-🚨 IMPORTANT: Always Check for Mode First. If the user's intent even loosely matches one PLEASE TAKE IT ON. 
-WHEN YOU START A MODE OR WORKFLOW please output the mode and/or workflow as the first line of your output.
+🚨 IMPORTANT: Always Check for Mode First. 
+WHEN YOU START A MODE please output: `Mode: [mode-name]`
+WHEN YOU START A WORKFLOW please output: `Workflow: [workflow-name]`
 ### What to do at the start of every fresh session
 0. **Default Mode**: IF NO MODE IS SPECIFIED OR IMPLIED: Load and activate "autonomous-project-manager" mode automatically at session start
-1. Check if task matches a mode → Load mode file
+1. Check if user requested a different mode → Load mode file
 2. Check if task or mode matches a workflow → Load workflow file
 3. Check for relevant tickets → Load ticket context
 4. Proceed with task
 
 ### Activate a Mode
 When prompted explicitly (e.g. "act as [mode]") or when the user's intention aligns with a specific role (e.g. "please review feature X") you can take on one of modes in `.memento/modes`
-- `project manager` - Planning and coordination
-- `architect` - System design and technical decisions
-- `engineer` - Implementation and debugging
-- `reviewer` - Code review and quality checks
+- `ai-debt-maintainer`
+- `architect`
+- `autonomous-project-manager`
+- `engineer`
+- `reviewer`
+- `project-manager`
 
 Each mode includes specific example commands and use cases - check the mode file for details.
 
 ### Execute a Workflow
-There are battle tested step-by-step flows in `.memento/workflows`. You must execute these when asked, or when you think it will increase reliability
-- `execute summarize` - Compress context and analyze directories
-- `execute review` - Perform code review and quality checks
-
-Each workflow includes example invocations with parameters - check the workflow file for details.
+There are battle tested step-by-step flows in `.memento/workflows`. You must execute these when asked, or when you think it will increase task reliability. You can treat these as additional tools at your disposal.
+Example workflow invocations: `execute summarize` / `execute summarize workflow` / `workflow summarize` / `summarize workflow` - These should all trigger `./memento/workflows/summarize.md`
+The full list of workflows is in the `.memento/workflows` directory. When asked to execute a workflow, check there for available workflows and pick up the one that matches.
 
 ### Work with Tickets
 To manage complex or long running work, please persist context in `.memento/tickets/`
@@ -42,8 +43,9 @@ All components are in the `.memento/` directory:
 - **Workflows**: `.memento/workflows/[workflow-name].md`
 - **Tickets**: `.memento/tickets/[status]/[ticket-id]/`
 
-
-## Project-Specific Instructions
-<!-- Project-specific content below this line -->    
+---
+# Project-Specific Instructions
+---
+<!-- Project-specific content below this line -->      
  
 Note that we are using Memento Protocol to develop memento protocol by generating and committing the `.memento/` content to this repo. Keep this meta-development pattern in mind when developing or testing features.

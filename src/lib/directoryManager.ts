@@ -22,6 +22,15 @@ export class DirectoryManager {
 
   /**
    * Initialize the .memento directory structure
+   * 
+   * CRITICAL SAFETY NOTE: This method MUST NEVER delete existing user data!
+   * - Only create directories that don't exist
+   * - Never use fs.rm, fs.rmdir, or fs.unlink on .memento contents
+   * - Never overwrite existing custom modes, workflows, or tickets
+   * - The { recursive: true } option in fs.mkdir is safe - it won't overwrite existing dirs
+   * 
+   * User's custom components are sacred - they represent hours of work and customization.
+   * Deleting them would be catastrophic and violate user trust.
    */
   async initializeStructure(): Promise<void> {
     const directories = [
@@ -35,6 +44,7 @@ export class DirectoryManager {
     for (const dir of directories) {
       try {
         logger.debug(`Creating directory: ${dir}`);
+        // Safe: mkdir with recursive:true creates only if not exists
         await fs.mkdir(dir, { recursive: true });
       } catch (error) {
         throw new FileSystemError(

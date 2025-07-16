@@ -1,6 +1,5 @@
 import * as fs from "fs/promises";
 import * as path from "path";
-import { ClaudeMdGenerator } from "../claudeMdGenerator";
 
 jest.mock("fs/promises");
 jest.mock("../logger", () => ({
@@ -11,6 +10,13 @@ jest.mock("../logger", () => ({
     error: jest.fn(),
   },
 }));
+jest.mock("../configManager", () => ({
+  ConfigManager: jest.fn().mockImplementation(() => ({
+    get: jest.fn().mockResolvedValue(null),
+  })),
+}));
+
+import { ClaudeMdGenerator } from "../claudeMdGenerator";
 
 describe("ClaudeMdGenerator", () => {
   const mockProjectRoot = "/test/project";
@@ -20,8 +26,9 @@ describe("ClaudeMdGenerator", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Provide default template content for loadTemplate() in all tests
-    const templateContent = `# CLAUDE.md - Memento Protocol Router\n\n### Activate a Mode\nact as [mode]\n### Execute a Workflow\nexecute [workflow]`;
+    const templateContent = `# CLAUDE.md - Memento Protocol Router\n\n### Activate a Mode\n<list_modes>\n### Execute a Workflow\nexecute [workflow]\n<default_mode>`;
     jest.mocked(fs.readFile).mockResolvedValue(templateContent as any);
+    jest.mocked(fs.readdir).mockRejectedValue(new Error("ENOENT")); // Default: no modes found
     generator = new ClaudeMdGenerator(mockProjectRoot);
   });
 
@@ -33,7 +40,7 @@ describe("ClaudeMdGenerator", () => {
       jest
         .mocked(fs.readFile)
         .mockResolvedValueOnce(
-          `# CLAUDE.md - Memento Protocol Router\nact as [mode]\nexecute [workflow]` as any
+          `# CLAUDE.md - Memento Protocol Router\n<list_modes>\nexecute [workflow]` as any
         );
 
       await generator.generate();
@@ -43,11 +50,9 @@ describe("ClaudeMdGenerator", () => {
         expect.stringContaining("# CLAUDE.md - Memento Protocol Router"),
         "utf-8"
       );
-      expect(mockWriteFile).toHaveBeenCalledWith(
-        mockClaudeMdPath,
-        expect.stringContaining("act as [mode]"),
-        "utf-8"
-      );
+      // Since no modes are found, <list_modes> should be removed
+      const writtenContent = mockWriteFile.mock.calls[0][1] as string;
+      expect(writtenContent).not.toContain("<list_modes>");
       expect(mockWriteFile).toHaveBeenCalledWith(
         mockClaudeMdPath,
         expect.stringContaining("execute [workflow]"),
@@ -84,7 +89,7 @@ describe("ClaudeMdGenerator", () => {
       jest
         .mocked(fs.readFile)
         .mockResolvedValueOnce(
-          `# CLAUDE.md - Memento Protocol Router\nact as [mode]` as any
+          `# CLAUDE.md - Memento Protocol Router\n<list_modes>` as any
         );
 
       await generator.generate(existingContent);
@@ -92,6 +97,60 @@ describe("ClaudeMdGenerator", () => {
       const writtenContent = mockWriteFile.mock.calls[0][1] as string;
       expect(writtenContent).toContain("## My Custom Section");
       expect(writtenContent).toContain("Custom project instructions");
+    });
+
+    it("should replace list_modes tag with discovered modes", async () => {
+      const mockWriteFile = jest.mocked(fs.writeFile);
+      
+      // Mock template with list_modes tag
+      jest.mocked(fs.readFile).mockImplementation((filePath: any) => {
+        if (filePath.includes("claude_router_template.md")) {
+          return Promise.resolve(`# CLAUDE.md\n<list_modes>\nEnd` as any);
+        }
+        return Promise.reject(new Error("File not found"));
+      });
+      
+      // Mock mode discovery
+      jest.mocked(fs.readdir).mockImplementation((dirPath: any) => {
+        if (dirPath.includes("templates/modes")) {
+          return Promise.resolve(["architect.md", "engineer.md"] as any);
+        } else if (dirPath.includes(".memento/modes")) {
+          return Promise.resolve(["custom-mode.md"] as any);
+        }
+        return Promise.reject(new Error("Directory not found"));
+      });
+
+      await generator.generate();
+
+      const writtenContent = mockWriteFile.mock.calls[0][1] as string;
+      expect(writtenContent).toContain("- `architect`");
+      expect(writtenContent).toContain("- `engineer`");
+      expect(writtenContent).toContain("- `custom-mode`");
+      expect(writtenContent).not.toContain("<list_modes>");
+    });
+
+    it("should replace default_mode tag when default mode is set", async () => {
+      const mockWriteFile = jest.mocked(fs.writeFile);
+      
+      // Mock template with default_mode tag
+      jest.mocked(fs.readFile).mockResolvedValueOnce(
+        `# CLAUDE.md\n<default_mode>\nEnd` as any
+      );
+      
+      // Mock config manager to return a default mode
+      const ConfigManager = require("../configManager").ConfigManager;
+      ConfigManager.mockImplementation(() => ({
+        get: jest.fn().mockResolvedValue("autonomous-project-manager"),
+      }));
+      
+      // Create a new generator instance with the mocked ConfigManager
+      const generatorWithDefaultMode = new ClaudeMdGenerator(mockProjectRoot);
+
+      await generatorWithDefaultMode.generate();
+
+      const writtenContent = mockWriteFile.mock.calls[0][1] as string;
+      expect(writtenContent).toContain('0. **Default Mode**: IF NO MODE IS SPECIFIED OR IMPLIED: Load and activate "autonomous-project-manager" mode automatically at session start');
+      expect(writtenContent).not.toContain("<default_mode>");
     });
   });
 

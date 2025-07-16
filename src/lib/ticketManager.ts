@@ -24,12 +24,20 @@ export class TicketManager {
 
   /**
    * Ensure status directories exist
+   * 
+   * CRITICAL SAFETY NOTE: This method ONLY creates missing directories!
+   * - Never deletes existing directories or their contents
+   * - The { recursive: true } option is safe - it only creates missing directories
+   * - Existing tickets and their data are never touched
+   * 
+   * User tickets represent work history and progress. They must be preserved.
    */
   private ensureStatusDirectories(): void {
     const statusDirs = ['next', 'in-progress', 'done'];
     statusDirs.forEach(status => {
       const statusDir = path.join(this.ticketsDir, status);
       if (!fs.existsSync(statusDir)) {
+        // SAFE: Only creates directory if it doesn't exist
         fs.mkdirSync(statusDir, { recursive: true });
       }
     });
@@ -249,6 +257,14 @@ Document key design decisions made during this ticket.
 
   /**
    * Move ticket to a different status
+   * 
+   * CRITICAL SAFETY NOTE: This method MOVES tickets, never deletes them!
+   * - Uses fs.renameSync to atomically move the entire ticket directory
+   * - All ticket contents (workspace, files, history) are preserved
+   * - If move fails, ticket remains in original location
+   * 
+   * NEVER use fs.rm or fs.rmdir on ticket directories. Tickets are user data
+   * and must be preserved. Even "done" tickets are valuable history.
    */
   async moveToStatus(ticketId: string, newStatus: TicketStatus): Promise<void> {
     const currentStatus = await this.getTicketStatus(ticketId);
@@ -265,7 +281,7 @@ Document key design decisions made during this ticket.
     const oldPath = path.join(this.ticketsDir, currentStatus, ticketId);
     const newPath = path.join(this.ticketsDir, newStatus, ticketId);
 
-    // Move the ticket directory
+    // SAFE: Move (not delete) the ticket directory - preserves all data
     fs.renameSync(oldPath, newPath);
 
     // Update the metadata

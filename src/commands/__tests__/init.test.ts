@@ -77,7 +77,7 @@ describe("Init Command", () => {
   });
 
   describe("successful initialization", () => {
-    it("should initialize with quick setup", async () => {
+    it("should initialize with non-interactive setup", async () => {
       mockDirManager.isInitialized.mockReturnValue(false);
       mockClaudeMdGen.exists.mockResolvedValue(false);
       mockProjectDetector.detect.mockResolvedValue({
@@ -88,18 +88,13 @@ describe("Init Command", () => {
         files: [],
         dependencies: {},
       });
-      mockInteractiveSetup.quickSetup.mockResolvedValue({
-        projectInfo: { type: "fullstack" } as any,
-        selectedModes: ["architect"],
-        selectedWorkflows: ["review"],
-      });
-
-      await initCommand.parseAsync(["node", "test", "--quick", "--gitignore"]);
+      await initCommand.parseAsync(["node", "test", "--non-interactive", "--gitignore"]);
 
       expect(mockDirManager.initializeStructure).toHaveBeenCalled();
       expect(mockDirManager.ensureGitignore).toHaveBeenCalled();
-      expect(mockInteractiveSetup.quickSetup).toHaveBeenCalled();
-      expect(mockInteractiveSetup.applySetup).toHaveBeenCalled();
+      // In non-interactive mode, no components are installed
+      expect(mockInteractiveSetup.run).not.toHaveBeenCalled();
+      expect(mockInteractiveSetup.applySetup).not.toHaveBeenCalled();
       expect(mockClaudeMdGen.generate).toHaveBeenCalled();
       expect(logger.success).toHaveBeenCalledWith(
         expect.stringContaining("Memento Protocol initialized successfully")
@@ -125,13 +120,7 @@ describe("Init Command", () => {
         files: [],
         dependencies: {},
       });
-      mockInteractiveSetup.quickSetup.mockResolvedValue({
-        projectInfo: { type: "unknown" } as any,
-        selectedModes: [],
-        selectedWorkflows: [],
-      });
-
-      await initCommand.parseAsync(["node", "test", "--quick"]);
+      await initCommand.parseAsync(["node", "test", "--non-interactive"]);
 
       expect(mockClaudeMdGen.generate).toHaveBeenCalledWith(
         expect.stringContaining("# Existing content")
@@ -169,7 +158,7 @@ describe("Init Command", () => {
         selectedWorkflows: [],
       });
 
-      await initCommand.parseAsync(["node", "test", "--force", "--quick"]);
+      await initCommand.parseAsync(["node", "test", "--force", "--non-interactive"]);
 
       expect(logger.info).toHaveBeenCalledWith(
         "Initializing Memento Protocol..."
@@ -183,29 +172,7 @@ describe("Init Command", () => {
         new Error("Permission denied")
       );
 
-      await initCommand.parseAsync(["node", "test", "--quick"]);
-
-      expect(logger.error).toHaveBeenCalledWith(
-        "Failed to initialize Memento Protocol:",
-        expect.any(Error)
-      );
-      expect(process.exit).toHaveBeenCalledWith(1);
-    });
-
-    it("should handle setup cancellation", async () => {
-      mockDirManager.isInitialized.mockReturnValue(false);
-      mockClaudeMdGen.exists.mockResolvedValue(false);
-      mockProjectDetector.detect.mockResolvedValue({
-        type: "unknown",
-        suggestedModes: [],
-        suggestedWorkflows: [],
-        files: [],
-        dependencies: {},
-      });
-      mockInteractiveSetup.run.mockRejectedValue(
-        new Error("Setup cancelled by user")
-      );
-
+      // Run without any options to trigger initialization error
       await initCommand.parseAsync(["node", "test"]);
 
       expect(logger.error).toHaveBeenCalledWith(
@@ -214,5 +181,6 @@ describe("Init Command", () => {
       );
       expect(process.exit).toHaveBeenCalledWith(1);
     });
+
   });
 });

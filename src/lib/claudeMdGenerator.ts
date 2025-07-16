@@ -6,9 +6,13 @@ import { ConfigManager } from "./configManager";
 export class ClaudeMdGenerator {
   private claudeMdPath: string;
   private configManager: ConfigManager;
+  private projectRoot: string;
+  private mementoPath: string;
 
   constructor(projectRoot: string) {
+    this.projectRoot = projectRoot;
     this.claudeMdPath = path.join(projectRoot, "CLAUDE.md");
+    this.mementoPath = path.join(projectRoot, ".memento");
     this.configManager = new ConfigManager(projectRoot);
   }
 
@@ -24,8 +28,8 @@ export class ClaudeMdGenerator {
       );
     }
 
-    // Inject default mode configuration
-    routerContent = await this.injectDefaultMode(routerContent);
+    // Replace template tags
+    routerContent = await this.replaceTags(routerContent);
 
     const finalContent = existingContent
       ? this.mergeWithExisting(routerContent, existingContent)
@@ -86,37 +90,102 @@ export class ClaudeMdGenerator {
   }
 
   /**
-   * Inject default mode configuration into the router content
+   * Replace template tags in the router content
    */
-  private async injectDefaultMode(content: string): Promise<string> {
+  private async replaceTags(content: string): Promise<string> {
+    // Replace <default_mode> tag
+    content = await this.replaceDefaultMode(content);
+    
+    // Replace <list_modes> tag
+    content = await this.replaceListModes(content);
+    
+    return content;
+  }
+
+  /**
+   * Replace <default_mode> tag with default mode instruction
+   */
+  private async replaceDefaultMode(content: string): Promise<string> {
     try {
       const defaultMode = await this.configManager.get("defaultMode");
-      if (!defaultMode) {
-        return content;
+      if (defaultMode) {
+        const defaultModeInstruction = `0. **Default Mode**: IF NO MODE IS SPECIFIED OR IMPLIED: Load and activate "${defaultMode}" mode automatically at session start`;
+        content = content.replace("<default_mode>", defaultModeInstruction);
+      } else {
+        // Remove the tag if no default mode is set
+        content = content.replace("<default_mode>\n", "");
       }
-
-      // Add default mode instruction after the session start instructions
-      const defaultModeInstruction = `0. **Default Mode**: IF NO MODE IS SPECIFIED OR IMPLIED: Load and activate "${defaultMode}" mode automatically at session start`;
-      const sessionStartSection =
-        "### What to do at the start of every fresh session";
-      const sessionStartIndex = content.indexOf(sessionStartSection);
-
-      if (sessionStartIndex !== -1) {
-        // Find the end of the heading line
-        const headingEndIndex = content.indexOf("\n", sessionStartIndex);
-        if (headingEndIndex !== -1) {
-          // Insert the default mode instruction right after the heading
-          const before = content.substring(0, headingEndIndex + 1);
-          const after = content.substring(headingEndIndex + 1);
-          return before + defaultModeInstruction + "\n" + after;
-        }
-      }
-
       return content;
     } catch {
-      // If config loading fails, return content unchanged
-      return content;
+      // If config loading fails, remove the tag
+      return content.replace("<default_mode>\n", "");
     }
+  }
+
+  /**
+   * Replace <list_modes> tag with list of all available modes
+   */
+  private async replaceListModes(content: string): Promise<string> {
+    try {
+      const modes = await this.discoverModes();
+      
+      if (modes.length > 0) {
+        const modeList = modes.map(mode => `- \`${mode}\``).join("\n");
+        content = content.replace("<list_modes>", modeList);
+      } else {
+        // Remove the tag if no modes found
+        content = content.replace("<list_modes>\n", "");
+      }
+      
+      return content;
+    } catch {
+      // If mode discovery fails, remove the tag
+      return content.replace("<list_modes>\n", "");
+    }
+  }
+
+  /**
+   * Discover all available modes (official and custom)
+   * 
+   * CRITICAL SAFETY NOTE: This method ONLY READS directories!
+   * - Never delete or modify any files during discovery
+   * - Custom modes in .memento/modes are preserved
+   * - If a custom mode has the same name as an official mode, the custom one takes precedence
+   * - This ensures user customizations are never lost
+   * 
+   * The discovery process is read-only and safe. It's used to generate
+   * the mode list in CLAUDE.md without touching user files.
+   */
+  private async discoverModes(): Promise<string[]> {
+    const modes: string[] = [];
+    
+    // First, add official modes from templates
+    try {
+      const templatesModesPath = path.join(this.projectRoot, "templates", "modes");
+      const templateFiles = await fs.readdir(templatesModesPath);
+      const templateModes = templateFiles
+        .filter(file => file.endsWith(".md"))
+        .map(file => file.replace(".md", ""));
+      modes.push(...templateModes);
+    } catch {
+      // Templates directory might not exist
+    }
+    
+    // Then, add custom modes from .memento/modes
+    // SAFE: Only reading directory, not modifying anything
+    try {
+      const customModesPath = path.join(this.mementoPath, "modes");
+      const customFiles = await fs.readdir(customModesPath);
+      const customModes = customFiles
+        .filter(file => file.endsWith(".md"))
+        .map(file => file.replace(".md", ""))
+        .filter(mode => !modes.includes(mode)); // Avoid duplicates
+      modes.push(...customModes);
+    } catch {
+      // .memento/modes directory might not exist
+    }
+    
+    return modes;
   }
 
   /**
