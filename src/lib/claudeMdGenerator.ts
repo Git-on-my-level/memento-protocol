@@ -2,15 +2,14 @@ import * as fs from "fs/promises";
 import * as path from "path";
 import { logger } from "./logger";
 import { ConfigManager } from "./configManager";
+import { PackagePaths } from "./packagePaths";
 
 export class ClaudeMdGenerator {
   private claudeMdPath: string;
   private configManager: ConfigManager;
-  private projectRoot: string;
   private mementoPath: string;
 
   constructor(projectRoot: string) {
-    this.projectRoot = projectRoot;
     this.claudeMdPath = path.join(projectRoot, "CLAUDE.md");
     this.mementoPath = path.join(projectRoot, ".memento");
     this.configManager = new ConfigManager(projectRoot);
@@ -159,9 +158,9 @@ export class ClaudeMdGenerator {
   private async discoverModes(): Promise<string[]> {
     const modes: string[] = [];
     
-    // First, add official modes from templates
+    // First, add official modes from package templates
     try {
-      const templatesModesPath = path.join(this.projectRoot, "templates", "modes");
+      const templatesModesPath = path.join(PackagePaths.getTemplatesDir(), "modes");
       const templateFiles = await fs.readdir(templatesModesPath);
       const templateModes = templateFiles
         .filter(file => file.endsWith(".md"))
@@ -189,14 +188,12 @@ export class ClaudeMdGenerator {
   }
 
   /**
-   * Attempt to load router template from the project templates folder.
+   * Attempt to load router template from the package templates folder.
    * Returns the file contents on success, or null if the file is not found / unreadable.
    */
   private async loadTemplate(): Promise<string | null> {
-    // Template lives at <projectRoot>/templates/claude_router_template.md
     const templatePath = path.join(
-      path.dirname(this.claudeMdPath),
-      "templates",
+      PackagePaths.getTemplatesDir(),
       "claude_router_template.md"
     );
     try {

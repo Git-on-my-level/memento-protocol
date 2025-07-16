@@ -4,6 +4,7 @@ import { existsSync } from 'fs';
 import { DirectoryManager } from './directoryManager';
 import { logger } from './logger';
 import { createHash } from 'crypto';
+import { PackagePaths } from './packagePaths';
 
 interface ComponentVersion {
   name: string;
@@ -26,7 +27,7 @@ export class UpdateManager {
 
   constructor(projectRoot: string) {
     this.dirManager = new DirectoryManager(projectRoot);
-    this.templatesDir = path.join(path.dirname(require.main?.filename || __dirname), 'templates');
+    this.templatesDir = PackagePaths.getTemplatesDir();
   }
 
   /**

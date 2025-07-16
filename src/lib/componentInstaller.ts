@@ -3,6 +3,7 @@ import * as path from "path";
 import { existsSync } from "fs";
 import { DirectoryManager } from "./directoryManager";
 import { logger } from "./logger";
+import { PackagePaths } from "./packagePaths";
 
 interface ComponentMetadata {
   name: string;
@@ -27,22 +28,8 @@ export class ComponentInstaller {
   constructor(projectRoot: string) {
     this.dirManager = new DirectoryManager(projectRoot);
 
-    // Determine where the bundled templates live.
-    // 1. Prefer a top-level <projectRoot>/templates directory – this exists when running the CLI
-    //    directly from the source repository during development.
-    // 2. Fallback to <dist>/templates next to the compiled entrypoint – this is the location used
-    //    in the packaged build that is published to npm.
-
-    const repoTemplatesDir = path.join(projectRoot, "templates");
-
-    if (existsSync(repoTemplatesDir)) {
-      this.templatesDir = repoTemplatesDir;
-    } else {
-      this.templatesDir = path.join(
-        path.dirname(require.main?.filename || __dirname),
-        "templates"
-      );
-    }
+    // Use centralized package path resolution
+    this.templatesDir = PackagePaths.getTemplatesDir();
   }
 
   /**
