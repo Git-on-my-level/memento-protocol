@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { initCommand } from "./commands/init";
 import { addCommand } from "./commands/add";
+import { addAgentCommand } from "./commands/add-agent";
 import { listCommand } from "./commands/list";
 import { ticketCommand } from "./commands/ticket";
 import { configCommand } from "./commands/config";
@@ -26,6 +27,7 @@ Examples:
   $ memento init                    # Initialize Memento Protocol in a project
   $ memento add mode architect      # Add the architect mode
   $ memento add workflow review     # Add the code review workflow
+  $ memento add-agent cursor        # Add Cursor AI support (.cursorrules)
   $ memento ticket create "auth"    # Create a ticket for authentication work
   $ memento list --installed        # Show installed components
 
@@ -50,6 +52,7 @@ Documentation: https://github.com/git-on-my-level/memento-protocol#readme`
 // Register commands
 program.addCommand(initCommand);
 program.addCommand(addCommand);
+program.addCommand(addAgentCommand);
 program.addCommand(listCommand);
 program.addCommand(ticketCommand);
 program.addCommand(configCommand);

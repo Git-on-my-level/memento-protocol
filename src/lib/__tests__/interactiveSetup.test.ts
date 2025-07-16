@@ -89,6 +89,10 @@ describe("InteractiveSetup", () => {
       (inquirer.prompt as any as jest.Mock)
         .mockResolvedValueOnce({ confirmed: true }) // Confirm project type
         .mockResolvedValueOnce({
+          // Select agents
+          selectedAgents: ["claude"],
+        })
+        .mockResolvedValueOnce({
           // Select modes
           selectedModes: ["architect", "engineer"],
         })
@@ -116,6 +120,7 @@ describe("InteractiveSetup", () => {
           projectInfo: mockProjectInfo,
           selectedModes: ["architect", "engineer"],
           selectedWorkflows: ["review"],
+          selectedAgents: ["claude"],
           defaultMode: "architect",
           addToGitignore: false,
         })
@@ -145,6 +150,7 @@ describe("InteractiveSetup", () => {
           projectInfo: mockProjectInfo,
           selectedModes: ["engineer", "reviewer"],
           selectedWorkflows: ["refactor"],
+          selectedAgents: ["claude"],
           defaultMode: "engineer",
           skipRecommended: true,
           addToGitignore: false,
@@ -163,6 +169,7 @@ describe("InteractiveSetup", () => {
         projectInfo: {} as any,
         selectedModes: ["architect", "engineer"],
         selectedWorkflows: ["review", "refactor"],
+        selectedAgents: ["claude"],
         defaultMode: "architect",
       };
 
@@ -189,6 +196,7 @@ describe("InteractiveSetup", () => {
           modes: ["architect", "engineer"],
           workflows: ["review", "refactor"],
         },
+        agents: ["claude"],
       });
     });
 
@@ -198,6 +206,7 @@ describe("InteractiveSetup", () => {
         projectInfo: {} as any,
         selectedModes: [],
         selectedWorkflows: [],
+        selectedAgents: [],
         defaultMode: undefined,
       };
 

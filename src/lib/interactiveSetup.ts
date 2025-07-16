@@ -3,11 +3,13 @@ import { ProjectInfo } from './projectDetector';
 import { ComponentInstaller } from './componentInstaller';
 import { ConfigManager } from './configManager';
 import { logger } from './logger';
+import { defaultAgents } from '../types/config';
 
 export interface SetupOptions {
   projectInfo: ProjectInfo;
   selectedModes: string[];
   selectedWorkflows: string[];
+  selectedAgents: string[];
   defaultMode?: string;
   skipRecommended?: boolean;
   force?: boolean;
@@ -37,6 +39,9 @@ export class InteractiveSetup {
       projectInfo = await this.selectProjectType();
     }
 
+    // Select agents
+    const selectedAgents = await this.selectAgents();
+
     // Select components
     const componentSelections = await this.selectComponents();
 
@@ -51,6 +56,7 @@ export class InteractiveSetup {
     const confirmed = await this.confirmSetup({
       projectInfo,
       ...componentSelections,
+      selectedAgents,
       defaultMode,
       addToGitignore
     });
@@ -62,6 +68,7 @@ export class InteractiveSetup {
     return {
       projectInfo,
       ...componentSelections,
+      selectedAgents,
       defaultMode,
       addToGitignore
     };
@@ -79,6 +86,7 @@ export class InteractiveSetup {
       projectInfo,
       selectedModes: projectInfo.suggestedModes,
       selectedWorkflows: projectInfo.suggestedWorkflows,
+      selectedAgents: ['claude'], // Default to Claude for quick setup
       defaultMode: projectInfo.suggestedModes[0],
       skipRecommended: true,
       addToGitignore: false
@@ -153,6 +161,27 @@ export class InteractiveSetup {
       files: [],
       dependencies: {}
     };
+  }
+
+  /**
+   * Select agents to configure
+   */
+  private async selectAgents(): Promise<string[]> {
+    const { selectedAgents } = await inquirer.prompt([
+      {
+        type: 'checkbox',
+        name: 'selectedAgents',
+        message: 'Select AI agents to configure:',
+        choices: defaultAgents.map(agent => ({
+          name: `${agent.name} - ${agent.description}`,
+          value: agent.id,
+          checked: agent.id === 'claude'  // Claude selected by default
+        })),
+        validate: (input: any) => input.length > 0 || 'Please select at least one agent'
+      }
+    ]);
+
+    return selectedAgents;
   }
 
   /**
@@ -250,6 +279,7 @@ export class InteractiveSetup {
       logger.info(`Framework: ${options.projectInfo.framework}`);
     }
     logger.space();
+    logger.info(`Agents: ${options.selectedAgents.join(', ') || 'None'}`);
     logger.info(`Modes: ${options.selectedModes.join(', ') || 'None'}`);
     logger.info(`Workflows: ${options.selectedWorkflows.join(', ') || 'None'}`);
         if (options.defaultMode) {
@@ -287,13 +317,14 @@ export class InteractiveSetup {
 
 
     // Save configuration
-    if (options.defaultMode || options.selectedModes.length > 0) {
+    if (options.defaultMode || options.selectedModes.length > 0 || options.selectedAgents.length > 0) {
       const config = {
         defaultMode: options.defaultMode,
         components: {
           modes: options.selectedModes,
           workflows: options.selectedWorkflows,
-        }
+        },
+        agents: options.selectedAgents
       };
       await this.configManager.save(config);
     }

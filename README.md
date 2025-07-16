@@ -6,13 +6,14 @@ A lightweight meta-framework for Claude Code that creates intelligent project co
 
 ## What is Memento Protocol?
 
-Memento Protocol enhances Claude Code's understanding of your project by providing:
+Memento Protocol enhances AI assistants' understanding of your project by providing:
+- **Multi-Agent Support**: Works with Claude, Cursor, and Gemini CLI
 - **Modes**: AI personalities optimized for specific tasks (architect, engineer, reviewer)
 - **Workflows**: Reusable procedures for common development patterns
 - **Language Overrides**: Language-specific enhancements
 - **State Management**: Ticket-based task tracking
 
-All through a simple `CLAUDE.md` file that acts as a minimal router.
+All through simple configuration files tailored to each AI assistant.
 
 ## This tool is for you if you answer yes to any of the following questions
 - Do you find yourself copy pasting between CLAUDE.md across projects all the time?
@@ -29,13 +30,18 @@ To initialize Memento Protocol in your project, run the interactive setup:
 npx memento-protocol init
 ```
 
+During setup, you'll be asked to:
+- Select which AI agents to support (Claude, Cursor, Gemini)
+- Choose modes and workflows to include
+- Configure project-specific settings
+
 You can also initialize with options, for example:
 ```bash
 npx memento-protocol init --mode engineer --language typescript
 ```
 
 This will create:
-- `CLAUDE.md`: Your project's navigation guide for Claude
+- Agent-specific configuration files (e.g., `CLAUDE.md`, `.cursorrules`, `GEMINI.md`)
 - `.memento/`: A directory for framework files (it's recommended to add this to `.gitignore`)
 
 ### Installation
@@ -61,10 +67,25 @@ npm link
 
 ## Basic Usage
 
-Once initialized, Claude Code will automatically use your CLAUDE.md file to understand:
+Once initialized, your AI assistants will automatically use their respective configuration files to understand:
 - Project context and goals
 - Available modes and workflows
 - Current tickets and tasks
+
+### Adding Additional Agents
+
+If you've already initialized Memento Protocol and want to add support for another AI agent, use the `add-agent` command:
+
+```bash
+# Add a specific agent
+memento add-agent cursor
+
+# Add multiple agents interactively
+memento add-agent
+
+# Add all available agents
+memento add-agent --all
+```
 
 ## Commands
 
@@ -78,6 +99,20 @@ Options:
   -m, --mode <mode>         Initial mode (architect, engineer, etc.)
   -l, --language <lang>     Primary language
   -s, --skip-interactive    Skip interactive setup
+```
+
+### `memento add-agent`
+Add support for additional AI agents to an existing Memento project.
+
+```bash
+memento add-agent [agent] [options]
+
+Arguments:
+  agent        Agent to add (claude, cursor, gemini)
+
+Options:
+  -f, --force  Force overwrite existing agent files
+  -a, --all    Add all available agents
 ```
 
 ## Contributing
