@@ -14,7 +14,15 @@
       "Bash(mv:*)",
       "Bash(find:*)",
       "Bash(ls:*)",
-      "Bash(npm init:*)"
+      "Bash(npm init:*)",
+      "Bash(git tag:*)",
+      "Bash(git describe:*)",
+      "Bash(npm run:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(npm publish:*)",
+      "Bash(git push:*)",
+      "Bash(chmod:*)"
     ],
     "deny": []
   }

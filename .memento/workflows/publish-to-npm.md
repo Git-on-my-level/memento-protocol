@@ -1,35 +1,62 @@
 # NPM Package Release Workflow
 
-This workflow outlines the steps to publish a new version of the npm package. The current version is in `package.json`.
+This workflow publishes a new version of the npm package using automated scripts to minimize token usage.
 
-## 1. Verify Version Bump
+## 1. Gather Release Context
 
-- Make sure we are on `main` branch, if not, ABORT and inform the user.
-- Look at git history to see the last tag. If the current commit is not tagged, please tag it by bumping the version.
-- Check `package.json` to confirm the `version` matches the latest tag. If it can be bumped to match, then bump it.
-- If there is a wild discrepancy between the git tag and the package.json version, ABORT and inform the user.
+Run the prepare script to collect all release information:
+```bash
+scripts/npm/prepare-release-context.sh > /tmp/release-context.json
+```
 
-## 2. Update Changelog
+This script will:
+- Verify we're on the main branch
+- Check for uncommitted changes (abort if any)
+- Collect version info and commit history
+- Output JSON with all context needed for decision making
 
-- Open `CHANGELOG.md` in the root directory.
-- Add a new release section for our new version.
-- Summarize changes since the last git tag by reviewing git commits.
+## 2. Determine Version Bump
 
-## 3. Run Validation Scripts
+Based on the commits in the release context:
+- **patch** (0.0.x): Bug fixes, documentation, minor changes
+- **minor** (0.x.0): New features, enhancements, non-breaking changes  
+- **major** (x.0.0): Breaking changes (look for BREAKING CHANGE in commits)
 
-- Run `npm run prepublishOnly`
+Update the version in `package.json` accordingly.
 
-## 4. Commit and Tag Release
+## 3. Generate and Review Changelog
 
-- Stage the changed files (`package.json`, `CHANGELOG.md`).
-- Commit the changes with a message like `chore(release): vX.Y.Z`, replacing `X.Y.Z` with the new version.
-- Create a git tag for the new version: `git tag -a vX.Y.Z -m "Version X.Y.Z"`.
+Generate the changelog entry:
+```bash
+scripts/npm/generate-changelog-entry.js <new-version> /tmp/release-context.json > /tmp/changelog-entry.md
+```
 
-## 5. Publish to NPM
+Review the generated entry and:
+- Add it to the top of the `CHANGELOG.md` file (after the header)
+- Enhance with additional context if needed
+- Ensure all significant changes are captured
+- Add the version link at the bottom of the file
 
-- Publish the package: `npm publish`.
+## 4. Run Validation
 
-## 6. Push to Remote Repository
+Execute the prepublish validation:
+```bash
+npm run prepublishOnly
+```
 
-- Push the commit to the remote repository: `git push`.
-- Push the new tag to the remote repository: `git push --tags`.
+This runs tests and builds the package. If it fails, investigate and fix issues before proceeding.
+
+## 5. Commit, Tag, and Publish
+
+Run the automated release script:
+```bash
+scripts/npm/commit-tag-and-publish.sh v<new-version>
+```
+
+This script will:
+- Create a release commit
+- Tag the release
+- Publish to npm
+- Push commit and tags to GitHub
+
+The release is now complete! 🎉
