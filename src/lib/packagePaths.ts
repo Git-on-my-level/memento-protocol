@@ -18,14 +18,16 @@ export class PackagePaths {
       return this._packageRoot;
     }
 
-    // In production, __dirname will be something like:
-    // /path/to/node_modules/memento-protocol/dist/lib
-    // So we need to go up 2 levels to reach the package root
-    const fromDist = path.resolve(__dirname, "..", "..");
-
-    // Check if we're in a dist directory (production)
-    if (__dirname.includes(path.sep + "dist" + path.sep)) {
-      this._packageRoot = fromDist;
+    // When bundled with esbuild, __dirname is the directory of the bundled file
+    // For npx/npm execution, this will be /path/to/node_modules/memento-protocol/dist
+    // and the package root is one level up
+    if (__dirname.endsWith(path.sep + "dist")) {
+      this._packageRoot = path.resolve(__dirname, "..");
+    }
+    // Check if we're in a dist directory (unbundled production)
+    else if (__dirname.includes(path.sep + "dist" + path.sep)) {
+      // Go up from dist/lib to package root
+      this._packageRoot = path.resolve(__dirname, "..", "..");
     } 
     // Check if we're in src directory (development/test)
     else if (__dirname.includes(path.sep + "src" + path.sep)) {
@@ -34,7 +36,7 @@ export class PackagePaths {
     }
     // Fallback - assume we're 2 levels deep from package root
     else {
-      this._packageRoot = fromDist;
+      this._packageRoot = path.resolve(__dirname, "..", "..");
     }
 
     return this._packageRoot;
