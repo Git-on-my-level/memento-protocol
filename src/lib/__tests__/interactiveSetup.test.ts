@@ -2,7 +2,6 @@ import { InteractiveSetup } from "../interactiveSetup";
 import { ComponentInstaller } from "../componentInstaller";
 import { ConfigManager } from "../configManager";
 import { ProjectInfo } from "../projectDetector";
-import { logger } from "../logger";
 import inquirer from "inquirer";
 
 jest.mock("inquirer", () => ({
@@ -128,34 +127,6 @@ describe("InteractiveSetup", () => {
     // Removed brittle cancellation test
   });
 
-  describe("quickSetup", () => {
-    it("should return recommended components", async () => {
-      const mockProjectInfo = {
-        type: "web" as const,
-        suggestedModes: ["engineer", "reviewer"],
-        suggestedWorkflows: ["refactor"],
-        files: [],
-        dependencies: {},
-      };
-
-      const result = await interactiveSetup.quickSetup(mockProjectInfo);
-
-      expect(result).toEqual(
-        expect.objectContaining({
-          projectInfo: mockProjectInfo,
-          selectedModes: ["engineer", "reviewer"],
-          selectedWorkflows: ["refactor"],
-          defaultMode: "engineer",
-          skipRecommended: true,
-          addToGitignore: false,
-        })
-      );
-
-      expect(logger.info).toHaveBeenCalledWith(
-        expect.stringContaining("quick setup")
-      );
-    });
-  });
 
   describe("applySetup", () => {
     it("should install all selected components", async () => {

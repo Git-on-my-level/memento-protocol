@@ -67,23 +67,6 @@ export class InteractiveSetup {
     };
   }
 
-  /**
-   * Quick setup with all recommended components
-   */
-  async quickSetup(projectInfo: ProjectInfo): Promise<SetupOptions> {
-    logger.space();
-    logger.info('⚡ Running quick setup with recommended components...');
-    logger.space();
-
-    return {
-      projectInfo,
-      selectedModes: projectInfo.suggestedModes,
-      selectedWorkflows: projectInfo.suggestedWorkflows,
-      defaultMode: projectInfo.suggestedModes[0],
-      skipRecommended: true,
-      addToGitignore: false
-    };
-  }
 
   /**
    * Confirm detected project type

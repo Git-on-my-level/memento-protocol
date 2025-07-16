@@ -34,6 +34,13 @@ You can also initialize with options, for example:
 npx memento-protocol init --mode engineer --language typescript
 ```
 
+### Non-Interactive Setup
+
+For CI/CD or automated environments, use non-interactive mode:
+```bash
+npx memento-protocol init --non-interactive --modes architect,engineer --workflows review --default-mode architect
+```
+
 This will create:
 - `CLAUDE.md`: Your project's navigation guide for Claude
 - `.memento/`: A directory for framework files (it's recommended to add this to `.gitignore`)

@@ -1,15 +1,11 @@
 {
-  "defaultMode": "autonomous-project-manager",
+  "defaultMode": "architect",
   "components": {
     "modes": [
-      "autonomous-project-manager",
-      "ai-debt-maintainer",
       "architect",
-      "engineer",
-      "reviewer"
+      "engineer"
     ],
     "workflows": [
-      "summarize",
       "review"
     ]
   }

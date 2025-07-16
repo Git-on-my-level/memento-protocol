@@ -2,6 +2,6 @@
   "id": "remove-quicksetup-method-and-update-tests-2025-07-16",
   "name": "Remove quickSetup method and update tests",
   "createdAt": "2025-07-16T05:19:26.058Z",
-  "updatedAt": "2025-07-16T05:19:26.058Z",
+  "updatedAt": "2025-07-16T05:54:04.397Z",
   "description": "The quickSetup method in InteractiveSetup class is no longer used after removing the --quick CLI option. This technical debt should be cleaned up by:\n1. Remove the quickSetup method from src/lib/interactiveSetup.ts\n2. Remove all related tests from src/lib/__tests__/interactiveSetup.test.ts\n3. Remove any references in src/commands/__tests__/init.test.ts\n4. Ensure all tests still pass after removal"
 }

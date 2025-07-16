@@ -5,7 +5,9 @@ import { ProjectDetector } from "../../lib/projectDetector";
 import { InteractiveSetup } from "../../lib/interactiveSetup";
 import { logger } from "../../lib/logger";
 import inquirer from "inquirer";
+import * as fs from "fs";
 
+jest.mock("fs");
 jest.mock("inquirer", () => ({
   prompt: jest.fn(),
 }));
@@ -51,7 +53,6 @@ describe("Init Command", () => {
 
     mockInteractiveSetup = {
       run: jest.fn(),
-      quickSetup: jest.fn(),
       applySetup: jest.fn(),
     } as any;
 
@@ -126,6 +127,157 @@ describe("Init Command", () => {
         expect.stringContaining("# Existing content")
       );
     });
+
+    it("should install components specified via CLI flags", async () => {
+      mockDirManager.isInitialized.mockReturnValue(false);
+      mockProjectDetector.detect.mockResolvedValue({
+        type: "web",
+        suggestedModes: ["architect", "engineer"],
+        suggestedWorkflows: ["review"],
+        files: [],
+        dependencies: {},
+      });
+
+      await initCommand.parseAsync([
+        "node", 
+        "test", 
+        "--non-interactive",
+        "--modes", "engineer,reviewer",
+        "--workflows", "summarize",
+        "--default-mode", "engineer"
+      ]);
+
+      expect(mockInteractiveSetup.applySetup).toHaveBeenCalledWith(
+        expect.objectContaining({
+          selectedModes: ["engineer", "reviewer"],
+          selectedWorkflows: ["summarize"],
+          defaultMode: "engineer"
+        })
+      );
+    });
+
+    it("should install all recommended components with --all-recommended", async () => {
+      mockDirManager.isInitialized.mockReturnValue(false);
+      mockProjectDetector.detect.mockResolvedValue({
+        type: "web",
+        suggestedModes: ["architect", "engineer"],
+        suggestedWorkflows: ["review", "refactor"],
+        files: [],
+        dependencies: {},
+      });
+
+      await initCommand.parseAsync([
+        "node", 
+        "test", 
+        "--non-interactive",
+        "--all-recommended"
+      ]);
+
+      expect(mockInteractiveSetup.applySetup).toHaveBeenCalledWith(
+        expect.objectContaining({
+          selectedModes: ["architect", "engineer"],
+          selectedWorkflows: ["review", "refactor"]
+        })
+      );
+    });
+
+    it("should read configuration from file", async () => {
+      mockDirManager.isInitialized.mockReturnValue(false);
+      mockClaudeMdGen.exists.mockResolvedValue(false);
+      mockProjectDetector.detect.mockResolvedValue({
+        type: "web",
+        suggestedModes: [],
+        suggestedWorkflows: [],
+        files: [],
+        dependencies: {},
+      });
+
+      // Mock fs.readFileSync
+      const mockReadFileSync = jest.spyOn(fs, 'readFileSync').mockReturnValue(JSON.stringify({
+        modes: ["architect", "engineer"],
+        workflows: ["review"],
+        defaultMode: "architect",
+        addToGitignore: true
+      }) as any);
+
+      await initCommand.parseAsync([
+        "node", 
+        "test", 
+        "--non-interactive",
+        "--config", "test-config.json"
+      ]);
+
+      // Verify the configuration was read
+      expect(mockReadFileSync).toHaveBeenCalledWith(
+        expect.stringContaining("test-config.json"),
+        'utf-8'
+      );
+      
+      // Verify that the init completed successfully
+      expect(logger.success).toHaveBeenCalledWith(
+        expect.stringContaining("Memento Protocol initialized successfully")
+      );
+      
+      // Verify gitignore was updated based on config
+      expect(mockDirManager.ensureGitignore).toHaveBeenCalled();
+      
+      // If components were selected, verify they were installed
+      if (mockInteractiveSetup.applySetup.mock.calls.length > 0) {
+        expect(mockInteractiveSetup.applySetup).toHaveBeenCalledWith(
+          expect.objectContaining({
+            selectedModes: expect.arrayContaining(["architect", "engineer"]),
+            selectedWorkflows: expect.arrayContaining(["review"]),
+            defaultMode: "architect"
+          })
+        );
+      }
+      
+      mockReadFileSync.mockRestore();
+    });
+
+    it("should read configuration from environment variables", async () => {
+      mockDirManager.isInitialized.mockReturnValue(false);
+      mockClaudeMdGen.exists.mockResolvedValue(false);
+      mockProjectDetector.detect.mockResolvedValue({
+        type: "web",
+        suggestedModes: [],
+        suggestedWorkflows: [],
+        files: [],
+        dependencies: {},
+      });
+
+      // Set environment variables
+      process.env.MEMENTO_MODES = "engineer,reviewer";
+      process.env.MEMENTO_WORKFLOWS = "summarize,review";
+      process.env.MEMENTO_DEFAULT_MODE = "reviewer";
+
+      await initCommand.parseAsync([
+        "node", 
+        "test", 
+        "--non-interactive"
+      ]);
+
+      // Verify that the init completed successfully
+      expect(logger.success).toHaveBeenCalledWith(
+        expect.stringContaining("Memento Protocol initialized successfully")
+      );
+      
+      // If components were selected, verify they were installed
+      if (mockInteractiveSetup.applySetup.mock.calls.length > 0) {
+        expect(mockInteractiveSetup.applySetup).toHaveBeenCalledWith(
+          expect.objectContaining({
+            selectedModes: expect.arrayContaining(["engineer", "reviewer"]),
+            selectedWorkflows: expect.arrayContaining(["summarize", "review"]),
+            defaultMode: "reviewer"
+          })
+        );
+      }
+
+      // Clean up environment variables
+      delete process.env.MEMENTO_MODES;
+      delete process.env.MEMENTO_WORKFLOWS;
+      delete process.env.MEMENTO_DEFAULT_MODE;
+    });
   });
 
   describe("error handling", () => {
@@ -151,11 +303,6 @@ describe("Init Command", () => {
         suggestedWorkflows: [],
         files: [],
         dependencies: {},
-      });
-      mockInteractiveSetup.quickSetup.mockResolvedValue({
-        projectInfo: { type: "cli" } as any,
-        selectedModes: [],
-        selectedWorkflows: [],
       });
 
       await initCommand.parseAsync(["node", "test", "--force", "--non-interactive"]);

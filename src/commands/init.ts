@@ -1,15 +1,87 @@
 import { Command } from 'commander';
+import * as fs from 'fs';
+import * as path from 'path';
 import { DirectoryManager } from '../lib/directoryManager';
 import { ClaudeMdGenerator } from '../lib/claudeMdGenerator';
 import { ProjectDetector } from '../lib/projectDetector';
 import { InteractiveSetup } from '../lib/interactiveSetup';
 import { logger } from '../lib/logger';
 
+interface NonInteractiveOptions {
+  modes?: string[];
+  workflows?: string[];
+  defaultMode?: string;
+  addToGitignore?: boolean;
+}
+
+/**
+ * Parse non-interactive setup options from various sources
+ */
+function parseNonInteractiveOptions(cliOptions: any): NonInteractiveOptions {
+  const options: NonInteractiveOptions = {};
+  
+  // 1. Check for config file
+  if (cliOptions.config) {
+    try {
+      const configPath = path.resolve(cliOptions.config);
+      const configContent = fs.readFileSync(configPath, 'utf-8');
+      const config = JSON.parse(configContent);
+      
+      if (config.modes && Array.isArray(config.modes)) {
+        options.modes = config.modes;
+      }
+      if (config.workflows && Array.isArray(config.workflows)) {
+        options.workflows = config.workflows;
+      }
+      if (config.defaultMode) {
+        options.defaultMode = config.defaultMode;
+      }
+      if (config.addToGitignore !== undefined) {
+        options.addToGitignore = config.addToGitignore;
+      }
+    } catch (error) {
+      logger.warn(`Failed to read config file: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  
+  // 2. Override with environment variables
+  if (process.env.MEMENTO_MODES) {
+    options.modes = process.env.MEMENTO_MODES.split(',').map((m: string) => m.trim());
+  }
+  if (process.env.MEMENTO_WORKFLOWS) {
+    options.workflows = process.env.MEMENTO_WORKFLOWS.split(',').map((w: string) => w.trim());
+  }
+  if (process.env.MEMENTO_DEFAULT_MODE) {
+    options.defaultMode = process.env.MEMENTO_DEFAULT_MODE;
+  }
+  
+  // 3. Override with CLI flags (highest priority)
+  if (cliOptions.modes) {
+    options.modes = cliOptions.modes.split(',').map((m: string) => m.trim());
+  }
+  if (cliOptions.workflows) {
+    options.workflows = cliOptions.workflows.split(',').map((w: string) => w.trim());
+  }
+  if (cliOptions.defaultMode) {
+    options.defaultMode = cliOptions.defaultMode;
+  }
+  if (cliOptions.gitignore) {
+    options.addToGitignore = true;
+  }
+  
+  return options;
+}
+
 export const initCommand = new Command('init')
   .description('Initialize Memento Protocol in the current project')
   .option('-f, --force', 'Force initialization even if .memento already exists')
   .option('-n, --non-interactive', 'Non-interactive setup (no component installation)')
   .option('-g, --gitignore', 'Add .memento/ to .gitignore (defaults to false)')
+  .option('-m, --modes <modes>', 'Comma-separated list of modes to install')
+  .option('-w, --workflows <workflows>', 'Comma-separated list of workflows to install')
+  .option('-a, --all-recommended', 'Install all recommended components')
+  .option('-c, --config <path>', 'Path to configuration file')
+  .option('-d, --default-mode <mode>', 'Set default mode')
   .action(async (options) => {
     try {
       const projectRoot = process.cwd();
@@ -41,14 +113,30 @@ export const initCommand = new Command('init')
       const isNonInteractive = options.nonInteractive || process.env.CI === 'true';
       
       if (isNonInteractive) {
-        // Non-interactive setup without component installation
+        // Non-interactive setup with customization options
         logger.info('Running in non-interactive mode...');
+        
+        const nonInteractiveOpts = parseNonInteractiveOptions(options);
+        let selectedModes: string[] = [];
+        let selectedWorkflows: string[] = [];
+        
+        // Handle --all-recommended flag
+        if (options.allRecommended) {
+          selectedModes = projectInfo.suggestedModes;
+          selectedWorkflows = projectInfo.suggestedWorkflows;
+        } else {
+          // Use specified modes and workflows
+          selectedModes = nonInteractiveOpts.modes || [];
+          selectedWorkflows = nonInteractiveOpts.workflows || [];
+        }
+        
         setupOptions = {
           projectInfo,
-          selectedModes: [],
-          selectedWorkflows: [],
+          selectedModes,
+          selectedWorkflows,
           selectedLanguages: [],
-          addToGitignore: false
+          defaultMode: nonInteractiveOpts.defaultMode || selectedModes[0],
+          addToGitignore: nonInteractiveOpts.addToGitignore || false
         };
       } else {
         // Interactive setup (default)
