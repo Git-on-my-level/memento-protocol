@@ -1,16 +1,15 @@
 import { initCommand } from "../init";
 import { DirectoryManager } from "../../lib/directoryManager";
-import { ClaudeMdGenerator } from "../../lib/claudeMdGenerator";
+import { AgentFileGenerator } from "../../lib/agentFileGenerator";
 import { ProjectDetector } from "../../lib/projectDetector";
 import { InteractiveSetup } from "../../lib/interactiveSetup";
 import { logger } from "../../lib/logger";
-import inquirer from "inquirer";
 
 jest.mock("inquirer", () => ({
   prompt: jest.fn(),
 }));
 jest.mock("../../lib/directoryManager");
-jest.mock("../../lib/claudeMdGenerator");
+jest.mock("../../lib/agentFileGenerator");
 jest.mock("../../lib/projectDetector");
 jest.mock("../../lib/interactiveSetup");
 jest.mock("../../lib/logger", () => ({
@@ -25,7 +24,7 @@ jest.mock("../../lib/logger", () => ({
 
 describe("Init Command", () => {
   let mockDirManager: jest.Mocked<DirectoryManager>;
-  let mockClaudeMdGen: jest.Mocked<ClaudeMdGenerator>;
+  let mockAgentFileGen: jest.Mocked<AgentFileGenerator>;
   let mockProjectDetector: jest.Mocked<ProjectDetector>;
   let mockInteractiveSetup: jest.Mocked<InteractiveSetup>;
   let originalExit: any;
@@ -39,7 +38,7 @@ describe("Init Command", () => {
       ensureGitignore: jest.fn(),
     } as any;
 
-    mockClaudeMdGen = {
+    mockAgentFileGen = {
       exists: jest.fn(),
       readExisting: jest.fn(),
       generate: jest.fn(),
@@ -59,14 +58,26 @@ describe("Init Command", () => {
       DirectoryManager as jest.MockedClass<typeof DirectoryManager>
     ).mockImplementation(() => mockDirManager);
     (
-      ClaudeMdGenerator as jest.MockedClass<typeof ClaudeMdGenerator>
-    ).mockImplementation(() => mockClaudeMdGen);
+      AgentFileGenerator as jest.MockedClass<typeof AgentFileGenerator>
+    ).mockImplementation(() => mockAgentFileGen);
     (
       ProjectDetector as jest.MockedClass<typeof ProjectDetector>
     ).mockImplementation(() => mockProjectDetector);
     (
       InteractiveSetup as jest.MockedClass<typeof InteractiveSetup>
     ).mockImplementation(() => mockInteractiveSetup);
+    
+    // Mock static method
+    (AgentFileGenerator as any).loadAgentMetadata = jest.fn().mockResolvedValue({
+      claude: {
+        id: 'claude',
+        name: 'Claude',
+        description: 'Claude AI',
+        targetFilename: 'CLAUDE.md',
+        templatePath: 'templates/agents/claude.md',
+        placeholders: {}
+      }
+    });
 
     originalExit = process.exit;
     process.exit = jest.fn() as any;
@@ -79,7 +90,8 @@ describe("Init Command", () => {
   describe("successful initialization", () => {
     it("should initialize with quick setup", async () => {
       mockDirManager.isInitialized.mockReturnValue(false);
-      mockClaudeMdGen.exists.mockResolvedValue(false);
+      mockAgentFileGen.exists.mockResolvedValue(false);
+      mockAgentFileGen.readExisting.mockResolvedValue(null);
       mockProjectDetector.detect.mockResolvedValue({
         type: "fullstack",
         framework: "nextjs",
@@ -92,6 +104,7 @@ describe("Init Command", () => {
         projectInfo: { type: "fullstack" } as any,
         selectedModes: ["architect"],
         selectedWorkflows: ["review"],
+        selectedAgents: ["claude"],
       });
 
       await initCommand.parseAsync(["node", "test", "--quick", "--gitignore"]);
@@ -100,7 +113,7 @@ describe("Init Command", () => {
       expect(mockDirManager.ensureGitignore).toHaveBeenCalled();
       expect(mockInteractiveSetup.quickSetup).toHaveBeenCalled();
       expect(mockInteractiveSetup.applySetup).toHaveBeenCalled();
-      expect(mockClaudeMdGen.generate).toHaveBeenCalled();
+      expect(mockAgentFileGen.generate).toHaveBeenCalled();
       expect(logger.success).toHaveBeenCalledWith(
         expect.stringContaining("Memento Protocol initialized successfully")
       );
@@ -110,13 +123,10 @@ describe("Init Command", () => {
 
     it("should preserve existing CLAUDE.md content", async () => {
       mockDirManager.isInitialized.mockReturnValue(false);
-      mockClaudeMdGen.exists.mockResolvedValue(true);
-      mockClaudeMdGen.readExisting.mockResolvedValue(
+      mockAgentFileGen.exists.mockResolvedValue(true);
+      mockAgentFileGen.readExisting.mockResolvedValue(
         "# Existing content\nProject docs"
       );
-      (inquirer.prompt as unknown as jest.Mock).mockResolvedValue({
-        preserveExisting: true,
-      });
 
       mockProjectDetector.detect.mockResolvedValue({
         type: "unknown",
@@ -129,12 +139,18 @@ describe("Init Command", () => {
         projectInfo: { type: "unknown" } as any,
         selectedModes: [],
         selectedWorkflows: [],
+        selectedAgents: ["claude"],
       });
 
       await initCommand.parseAsync(["node", "test", "--quick"]);
 
-      expect(mockClaudeMdGen.generate).toHaveBeenCalledWith(
-        expect.stringContaining("# Existing content")
+      expect(mockAgentFileGen.generate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'claude',
+          targetFilename: 'CLAUDE.md'
+        }),
+        expect.any(Object),
+        "# Existing content\nProject docs"
       );
     });
   });
@@ -155,7 +171,7 @@ describe("Init Command", () => {
 
     it("should reinitialize with force flag", async () => {
       mockDirManager.isInitialized.mockReturnValue(true);
-      mockClaudeMdGen.exists.mockResolvedValue(false);
+      mockAgentFileGen.exists.mockResolvedValue(false);
       mockProjectDetector.detect.mockResolvedValue({
         type: "cli",
         suggestedModes: [],
@@ -167,6 +183,7 @@ describe("Init Command", () => {
         projectInfo: { type: "cli" } as any,
         selectedModes: [],
         selectedWorkflows: [],
+        selectedAgents: ["claude"],
       });
 
       await initCommand.parseAsync(["node", "test", "--force", "--quick"]);
@@ -194,7 +211,7 @@ describe("Init Command", () => {
 
     it("should handle setup cancellation", async () => {
       mockDirManager.isInitialized.mockReturnValue(false);
-      mockClaudeMdGen.exists.mockResolvedValue(false);
+      mockAgentFileGen.exists.mockResolvedValue(false);
       mockProjectDetector.detect.mockResolvedValue({
         type: "unknown",
         suggestedModes: [],

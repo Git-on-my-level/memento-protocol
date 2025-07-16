@@ -2,30 +2,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { logger } from './logger';
+import { Config } from '../types/config';
 
-export interface MementoConfig {
-  // Project-level settings
-  defaultMode?: string;
-  preferredWorkflows?: string[];
-  customTemplateSources?: string[];
-  
-  // Integration settings
-  integrations?: {
-    [key: string]: any;
-  };
-  
-  // UI preferences
-  ui?: {
-    colorOutput?: boolean;
-    verboseLogging?: boolean;
-  };
-  
-  // Component settings
-  components?: {
-    modes?: string[];
-    workflows?: string[];
-  };
-}
+// Re-export Config as MementoConfig for backward compatibility
+export type MementoConfig = Config;
 
 export class ConfigManager {
   private globalConfigPath: string;

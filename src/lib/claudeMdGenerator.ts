@@ -3,6 +3,10 @@ import * as path from "path";
 import { logger } from "./logger";
 import { ConfigManager } from "./configManager";
 
+/**
+ * @deprecated Use AgentFileGenerator instead for multi-agent support
+ * This class is kept for backward compatibility
+ */
 export class ClaudeMdGenerator {
   private claudeMdPath: string;
   private configManager: ConfigManager;

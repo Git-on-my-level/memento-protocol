@@ -2,12 +2,12 @@
 
 ## Vision
 
-Create a CLI tool that establishes a lightweight meta-framework for Claude Code, where CLAUDE.md acts as a minimal router that teaches Claude how to find and use specialized modes (personalities) and workflows (procedures), rather than containing all instructions directly.
+Create a CLI tool that establishes a lightweight meta-framework for AI coding assistants, where agent-specific configuration files (CLAUDE.md, .cursorrules, GEMINI.md) guide each AI to understand project context and, for Claude specifically, find and use specialized modes (personalities) and workflows (procedures).
 
 ## Core Principles
 
 ### 1. Minimal Router Pattern
-The CLAUDE.md file serves only as a navigation guide, keeping token usage minimal by loading instructions only when explicitly needed.
+For Claude, the CLAUDE.md file serves as a navigation guide, keeping token usage minimal by loading instructions only when explicitly needed. Other agents receive project-specific configuration in their native formats.
 
 ### 2. Composable Architecture
 Modes, workflows, and integrations are modular components that can be combined, extended, and overridden without modifying the core system.
@@ -20,10 +20,12 @@ Complex work is tracked in a gitignored workspace, enabling session continuity a
 ### Directory Structure
 ```
 project-root/
-├── CLAUDE.md                    # Minimal router (< 50 lines)
+├── CLAUDE.md                    # Claude router (< 200 lines)
+├── .cursorrules                 # Cursor configuration (optional)
+├── GEMINI.md                    # Gemini context (optional)
 └── .memento/                    # Framework directory (gitignored)
-    ├── modes/                   # Personality definitions
-    ├── workflows/               # Reusable procedures
+    ├── modes/                   # Personality definitions (Claude)
+    ├── workflows/               # Reusable procedures (Claude)
     ├── languages/               # Language-specific overrides
     ├── integrations/            # Tool wrappers (e.g., memory-mcp)
     └── tickets/                 # Workspace for state management
@@ -137,7 +139,7 @@ Local tool wrappers:
 
 ## Success Metrics
 
-1. **Token Efficiency**: CLAUDE.md remains under 200 lines
+1. **Token Efficiency**: Agent files remain concise and focused
 2. **Modularity**: Components can be added/removed independently
 3. **Discoverability**: Users can easily find available modes/workflows
 4. **Resumability**: Work can continue across sessions via tickets

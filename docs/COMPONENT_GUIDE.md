@@ -185,8 +185,8 @@ Each component directory should have a `metadata.json`:
 After creating a component:
 
 1. Install it: `memento add [type] [name]`
-2. Regenerate CLAUDE.md: `memento init --update`
-3. Test with Claude Code to ensure it works as expected
+2. Regenerate agent files: `memento init --update`
+3. Test with your AI assistant to ensure it works as expected
 
 ## Sharing Components
 

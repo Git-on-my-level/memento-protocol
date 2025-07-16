@@ -1,0 +1,51 @@
+# Project Context
+
+**Project Name:** Test Project  
+**Description:** unknown project  
+**Tech Stack:** (To be defined)
+
+## Directory Structure
+(To be defined based on project structure)
+
+## Code Style Guidelines
+
+### Language Guidelines
+(To be defined based on primary language)
+
+### Naming Conventions
+(To be defined based on project standards)
+
+### Framework Guidelines
+(To be defined based on framework choice)
+
+### Component Structure
+(To be defined based on architecture)
+
+### State Management
+(To be defined based on state management approach)
+
+### API Design
+(To be defined based on API patterns)
+
+## Development Workflow
+
+When working on this project:
+1. Follow the established patterns in the codebase
+2. Write tests for new functionality
+3. Keep commits focused and descriptive
+4. Document complex logic
+
+## Memento Protocol Integration
+
+This project uses Memento Protocol for AI-assisted development:
+- Modes define behavioral patterns for different tasks
+- Workflows provide step-by-step procedures
+- Tickets track complex work items
+
+When working with Memento components:
+- Respect the existing file structure in `.memento/`
+- Update tickets with progress when working on complex features
+- Use appropriate modes for different types of work
+
+## Additional Context
+(Add project-specific context, constraints, or guidelines here)

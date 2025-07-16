@@ -1,0 +1,108 @@
+{
+  "version": "1.0.0",
+  "description": "Agent instruction templates for various AI coding assistants",
+  "templates": {
+    "claude": {
+      "filename": "claude.md",
+      "targetFilename": "CLAUDE.md",
+      "description": "Template for Claude AI coding assistant with Memento Protocol integration",
+      "features": [
+        "Mode-based role switching",
+        "Workflow execution",
+        "Ticket-based task management",
+        "On-demand component loading"
+      ],
+      "placeholders": {
+        "PROJECT_NAME": "The name of the project",
+        "DEFAULT_MODE": "The default mode to activate (e.g., 'autonomous-project-manager')",
+        "MODES_LIST": "Formatted list of available modes",
+        "WORKFLOWS_LIST": "Formatted list of available workflows",
+        "PROJECT_SPECIFIC_INSTRUCTIONS": "Custom instructions specific to the project"
+      }
+    },
+    "cursor": {
+      "filename": "cursor.md",
+      "targetFilename": ".cursorrules",
+      "description": "Template for Cursor AI editor with comprehensive coding guidelines",
+      "features": [
+        "Project context and structure",
+        "Code style guidelines",
+        "Framework-specific rules",
+        "Development workflow",
+        "Best practices"
+      ],
+      "placeholders": {
+        "PROJECT_NAME": "The name of the project",
+        "PROJECT_DESCRIPTION": "Brief description of the project",
+        "TECH_STACK": "Technologies used in the project",
+        "PROJECT_STRUCTURE": "Directory structure overview",
+        "LANGUAGE_GUIDELINES": "Language-specific coding guidelines",
+        "NAMING_CONVENTIONS": "Project naming conventions",
+        "FRAMEWORK_GUIDELINES": "Framework-specific guidelines",
+        "COMPONENT_STRUCTURE": "Component organization patterns",
+        "STATE_MANAGEMENT": "State management approach",
+        "API_DESIGN": "API design principles",
+        "MEMENTO_INSTRUCTIONS": "Instructions for working with Memento Protocol",
+        "ADDITIONAL_CONTEXT": "Any additional project-specific context"
+      }
+    },
+    "gemini": {
+      "filename": "gemini.md",
+      "targetFilename": "GEMINI.md",
+      "description": "Template for Google Gemini AI with comprehensive project documentation",
+      "features": [
+        "Project overview",
+        "Development guidelines",
+        "Testing strategy",
+        "Code style rules",
+        "Common task guides"
+      ],
+      "placeholders": {
+        "PROJECT_NAME": "The name of the project",
+        "PROJECT_DESCRIPTION": "Detailed project description",
+        "PROJECT_GOALS": "Primary goals and objectives",
+        "TECH_STACK": "Technical stack details",
+        "ARCHITECTURE_OVERVIEW": "High-level architecture description",
+        "PRIMARY_LANGUAGE": "Primary programming language",
+        "LANGUAGE_SPECIFIC_GUIDELINES": "Language-specific best practices",
+        "CODE_ORGANIZATION": "Code organization principles",
+        "DEPENDENCY_GUIDELINES": "Dependency management guidelines",
+        "BUILD_DEPLOYMENT_GUIDELINES": "Build and deployment processes",
+        "TEST_STRATEGY": "Overall testing approach",
+        "TEST_STRUCTURE_EXAMPLE": "Example test file structure",
+        "FORMATTING_RULES": "Code formatting rules",
+        "DOCUMENTATION_GUIDELINES": "Documentation standards",
+        "ERROR_HANDLING_GUIDELINES": "Error handling patterns",
+        "LOGGING_GUIDELINES": "Logging best practices",
+        "MEMENTO_USAGE_GUIDELINES": "How to use Memento components",
+        "FILE_NAMING_CONVENTIONS": "File naming patterns",
+        "API_CONVENTIONS": "API design conventions",
+        "DATABASE_CONVENTIONS": "Database design patterns",
+        "SECURITY_GUIDELINES": "Security best practices",
+        "ADDITIONAL_CONTEXT": "Additional project information"
+      }
+    }
+  },
+  "usage": {
+    "installation": "Use 'memento add agent <agent-name>' to install a template",
+    "customization": "Replace placeholder values with project-specific content",
+    "integration": "Templates integrate with Memento Protocol's mode and workflow system"
+  },
+  "compatibility": {
+    "mementoVersion": ">=1.0.0",
+    "agents": {
+      "claude": {
+        "versions": ["Claude 3", "Claude 3.5", "Claude Opus"],
+        "tools": ["Claude Code", "Continue.dev"]
+      },
+      "cursor": {
+        "versions": ["Cursor Editor"],
+        "tools": ["Cursor AI"]
+      },
+      "gemini": {
+        "versions": ["Gemini Pro", "Gemini Ultra"],
+        "tools": ["Google AI Studio", "IDE extensions"]
+      }
+    }
+  }
+}

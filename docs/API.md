@@ -2,6 +2,13 @@
 
 This document describes the programmatic API for extending and integrating with Memento Protocol.
 
+## Multi-Agent Support
+
+Memento Protocol supports multiple AI agents (Claude, Cursor, Gemini) through a unified API. Each agent receives configuration in its native format:
+- **Claude**: CLAUDE.md with router functionality for modes/workflows
+- **Cursor**: .cursorrules with code style and conventions
+- **Gemini**: GEMINI.md with hierarchical project context
+
 ## Core Classes
 
 ### DirectoryManager
@@ -82,9 +89,33 @@ await config.set('defaultMode', 'engineer');
 const allConfig = await config.getAll();
 ```
 
-### ClaudeMdGenerator
+### AgentFileGenerator
 
-Generates the CLAUDE.md file.
+Generates AI agent configuration files.
+
+```typescript
+import { AgentFileGenerator } from 'memento-protocol';
+
+const generator = new AgentFileGenerator('/path/to/project');
+
+// Generate a specific agent file
+await generator.generateAgentFile('claude', {
+  projectName: 'My Project',
+  projectDescription: 'A great project',
+  primaryLanguage: 'typescript'
+});
+
+// Generate multiple agent files
+await generator.generateMultipleAgentFiles(['claude', 'cursor', 'gemini'], {
+  projectName: 'My Project',
+  projectDescription: 'A great project',
+  primaryLanguage: 'typescript'
+});
+```
+
+### ClaudeMdGenerator (Legacy)
+
+Generates the CLAUDE.md file specifically (wrapper around AgentFileGenerator).
 
 ```typescript
 import { ClaudeMdGenerator } from 'memento-protocol';
