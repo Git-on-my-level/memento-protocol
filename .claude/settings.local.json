@@ -22,7 +22,8 @@
       "Bash(git commit:*)",
       "Bash(npm publish:*)",
       "Bash(git push:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(scripts/npm/commit-tag-and-publish.sh:*)"
     ],
     "deny": []
   }
