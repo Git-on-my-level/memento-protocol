@@ -1,98 +1,118 @@
-import * as fs from 'fs/promises';
-import { UpdateManager } from '../updateManager';
-import { DirectoryManager } from '../directoryManager';
+import * as fs from "fs/promises";
+import { UpdateManager } from "../updateManager";
+import { DirectoryManager } from "../directoryManager";
 
 // Mock the modules
-jest.mock('fs/promises');
-jest.mock('fs');
-jest.mock('../directoryManager');
-jest.mock('../componentInstaller');
-jest.mock('../logger', () => ({
+jest.mock("fs/promises");
+jest.mock("fs");
+jest.mock("../directoryManager");
+jest.mock("../componentInstaller");
+jest.mock("../logger", () => ({
   logger: {
     info: jest.fn(),
     success: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
-  }
+  },
 }));
 
-describe('UpdateManager', () => {
+describe("UpdateManager", () => {
   let updateManager: UpdateManager;
-  const mockProjectRoot = '/test/project';
+  const mockProjectRoot = "/test/project";
 
   beforeEach(() => {
     jest.clearAllMocks();
-    // Create UpdateManager instance without mocking require.main
+
+    const mockDirManager = {
+      isInitialized: jest.fn().mockReturnValue(true),
+      getManifest: jest.fn().mockResolvedValue({
+        components: { modes: [], workflows: [] },
+        versions: {},
+      }),
+      getComponentPath: jest.fn().mockReturnValue(""),
+    };
+
+    (DirectoryManager as jest.Mock).mockImplementation(() => mockDirManager);
+
     updateManager = new UpdateManager(mockProjectRoot);
-    // Override the templatesDir property directly
-    (updateManager as any).templatesDir = '/test/templates';
   });
 
-  describe('checkForUpdates', () => {
+  describe("checkForUpdates", () => {
     // Removed complex test that relies on brittle hash comparisons
-
     // Removed complex test that relies on mock file system operations
   });
 
-  describe('updateComponent', () => {
+  describe("updateComponent", () => {
     // Removed complex test with brittle file system mocks
 
-    it('should throw error if component is not installed', async () => {
-      const mockExistsSync = require('fs').existsSync as jest.Mock;
+    it("should throw error if component is not installed", async () => {
+      const mockExistsSync = require("fs").existsSync as jest.Mock;
       mockExistsSync.mockReturnValue(false);
 
-      (DirectoryManager.prototype.getComponentPath as jest.Mock).mockReturnValue('/test/.memento/modes/missing.md');
-
-      await expect(updateManager.updateComponent('mode', 'missing')).rejects.toThrow(
-        "mode 'missing' is not installed"
+      const dirManager =
+        new (DirectoryManager as jest.Mock<DirectoryManager>)() as jest.Mocked<DirectoryManager>;
+      (dirManager.getComponentPath as jest.Mock).mockReturnValue(
+        "/test/.memento/modes/missing.md"
       );
+
+      await expect(
+        updateManager.updateComponent("mode", "missing")
+      ).rejects.toThrow("mode 'missing' is not installed");
     });
 
-    it('should warn about local changes without force flag', async () => {
-      const mockExistsSync = require('fs').existsSync as jest.Mock;
+    it("should warn about local changes without force flag", async () => {
+      const mockExistsSync = require("fs").existsSync as jest.Mock;
       mockExistsSync.mockReturnValue(true);
 
-      const mockManifest = {
+      const dirManager =
+        new (DirectoryManager as jest.Mock<DirectoryManager>)() as jest.Mocked<DirectoryManager>;
+      (dirManager.getManifest as jest.Mock).mockResolvedValue({
         components: {
-          modes: ['architect'],
-          workflows: []
+          modes: ["architect"],
+          workflows: [],
         },
         versions: {
           modes: {
             architect: {
-              name: 'architect',
-              version: '1.0.0',
-              hash: 'abc123',
-              lastUpdated: '2024-01-01'
-            }
-          }
-        }
-      };
-
-      (DirectoryManager.prototype.getManifest as jest.Mock).mockResolvedValue(mockManifest);
-      (DirectoryManager.prototype.getComponentPath as jest.Mock).mockReturnValue('/test/.memento/modes/architect.md');
+              name: "architect",
+              version: "1.0.0",
+              hash: "abc123",
+              lastUpdated: "2024-01-01",
+            },
+          },
+        },
+      });
+      (dirManager.getComponentPath as jest.Mock).mockReturnValue(
+        "/test/.memento/modes/architect.md"
+      );
 
       (fs.readFile as jest.Mock).mockImplementation((filePath: string) => {
-        if (!filePath) return Promise.resolve('');
-        if (filePath.includes('architect.md') && filePath.includes('.memento')) {
-          return Promise.resolve('modified content');
+        if (!filePath) return Promise.resolve("");
+        if (
+          filePath.includes("architect.md") &&
+          filePath.includes(".memento")
+        ) {
+          return Promise.resolve("modified content");
         }
-        if (filePath.includes('architect.md') && filePath.includes('templates')) {
-          return Promise.resolve('new content');
+        if (
+          filePath.includes("architect.md") &&
+          filePath.includes("templates")
+        ) {
+          return Promise.resolve("new content");
         }
-        if (filePath.includes('metadata.json')) {
-          return Promise.resolve(JSON.stringify({
-            version: '1.1.0',
-            components: [
-              { name: 'architect', version: '1.1.0' }
-            ]
-          }));
+        if (filePath.includes("metadata.json")) {
+          return Promise.resolve(
+            JSON.stringify({
+              version: "1.1.0",
+              components: [{ name: "architect", version: "1.1.0" }],
+            })
+          );
         }
-        return Promise.resolve('');
+        return Promise.resolve("");
       });
 
-      const { logger } = require('../logger');
-      await updateManager.updateComponent('mode', 'architect', false);
+      const { logger } = require("../logger");
+      await updateManager.updateComponent("mode", "architect", false);
 
       expect(logger.warn).toHaveBeenCalledWith(
         "mode 'architect' has local modifications. Use --force to overwrite."
@@ -100,62 +120,65 @@ describe('UpdateManager', () => {
     });
   });
 
-  describe('updateAll', () => {
+  describe("updateAll", () => {
     // Removed complex integration test
 
-    it('should log when all components are up to date', async () => {
-      const mockManifest = {
-        components: {
-          modes: [],
-          workflows: []
-        }
-      };
-
-      (DirectoryManager.prototype.getManifest as jest.Mock).mockResolvedValue(mockManifest);
-
-      const { logger } = require('../logger');
+    it("should log when all components are up to date", async () => {
+      const { logger } = require("../logger");
       await updateManager.updateAll();
 
-      expect(logger.info).toHaveBeenCalledWith('All components are up to date');
+      expect(logger.info).toHaveBeenCalledWith("All components are up to date");
     });
   });
 
-  describe('showDiff', () => {
-    it('should show diff when component has changes', async () => {
-      const mockExistsSync = require('fs').existsSync as jest.Mock;
+  describe("showDiff", () => {
+    it("should show diff when component has changes", async () => {
+      const mockExistsSync = require("fs").existsSync as jest.Mock;
       mockExistsSync.mockReturnValue(true);
+      const dirManager =
+        new (DirectoryManager as jest.Mock<DirectoryManager>)() as jest.Mocked<DirectoryManager>;
 
-      (DirectoryManager.prototype.getComponentPath as jest.Mock).mockReturnValue('/test/.memento/modes/architect.md');
+      (dirManager.getComponentPath as jest.Mock).mockReturnValue(
+        "/test/.memento/modes/architect.md"
+      );
 
       (fs.readFile as jest.Mock).mockImplementation((filePath: string) => {
-        if (!filePath) return Promise.resolve('');
-        if (filePath.includes('.memento')) {
-          return Promise.resolve('current content');
+        if (!filePath) return Promise.resolve("");
+        if (filePath.includes(".memento")) {
+          return Promise.resolve("current content");
         }
-        if (filePath.includes('templates')) {
-          return Promise.resolve('template content');
+        if (filePath.includes("templates")) {
+          return Promise.resolve("template content");
         }
-        return Promise.resolve('');
+        return Promise.resolve("");
       });
 
-      const { logger } = require('../logger');
-      await updateManager.showDiff('mode', 'architect');
+      const { logger } = require("../logger");
+      await updateManager.showDiff("mode", "architect");
 
-      expect(logger.info).toHaveBeenCalledWith("mode 'architect' has differences from the latest template");
+      expect(logger.info).toHaveBeenCalledWith(
+        "mode 'architect' has differences from the latest template"
+      );
     });
 
-    it('should indicate when component is up to date', async () => {
-      const mockExistsSync = require('fs').existsSync as jest.Mock;
+    it("should indicate when component is up to date", async () => {
+      const mockExistsSync = require("fs").existsSync as jest.Mock;
       mockExistsSync.mockReturnValue(true);
+      const dirManager =
+        new (DirectoryManager as jest.Mock<DirectoryManager>)() as jest.Mocked<DirectoryManager>;
 
-      (DirectoryManager.prototype.getComponentPath as jest.Mock).mockReturnValue('/test/.memento/modes/architect.md');
+      (dirManager.getComponentPath as jest.Mock).mockReturnValue(
+        "/test/.memento/modes/architect.md"
+      );
 
-      (fs.readFile as jest.Mock).mockResolvedValue('same content');
+      (fs.readFile as jest.Mock).mockResolvedValue("same content");
 
-      const { logger } = require('../logger');
-      await updateManager.showDiff('mode', 'architect');
+      const { logger } = require("../logger");
+      await updateManager.showDiff("mode", "architect");
 
-      expect(logger.info).toHaveBeenCalledWith("mode 'architect' is up to date");
+      expect(logger.info).toHaveBeenCalledWith(
+        "mode 'architect' is up to date"
+      );
     });
   });
 });
