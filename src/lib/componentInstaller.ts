@@ -54,6 +54,13 @@ export class ComponentInstaller {
     modes: string[];
     workflows: string[];
   }> {
+    if (!this.dirManager.isInitialized()) {
+      return {
+        modes: [],
+        workflows: [],
+      };
+    }
+    
     const manifest = await this.dirManager.getManifest();
 
     return {

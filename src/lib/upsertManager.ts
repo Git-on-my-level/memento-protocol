@@ -19,10 +19,7 @@ export class UpsertManager {
       logger.warn(
         "Memento Protocol not initialized. Running initialization..."
       );
-      // It might be better to call the init command's logic directly
-      // For now, we'll just inform the user.
-      logger.error('Project not initialized. Please run "memento init" first.');
-      return;
+      await this.dirManager.initializeStructure();
     }
 
     logger.info(

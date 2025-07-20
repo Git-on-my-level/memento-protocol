@@ -24,7 +24,9 @@
       "Bash(git push:*)",
       "Bash(chmod:*)",
       "Bash(scripts/npm/commit-tag-and-publish.sh:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(../dist/cli.js)",
+      "Bash(../src/cli.ts)"
     ],
     "deny": []
   }

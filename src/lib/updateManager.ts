@@ -28,16 +28,6 @@ export class UpdateManager {
   constructor(projectRoot: string) {
     this.dirManager = new DirectoryManager(projectRoot);
     this.templatesDir = PackagePaths.getTemplatesDir();
-
-    // Validate that Memento Protocol is initialized
-    if (!this.dirManager.isInitialized()) {
-      throw new Error(
-        `Memento Protocol is not initialized in this project.\n\n` +
-          `To fix this, run:\n` +
-          `  npx memento-protocol init\n\n` +
-          `This will create the necessary .memento directory structure and manifest file.`
-      );
-    }
   }
 
   /**
@@ -45,6 +35,11 @@ export class UpdateManager {
    */
   async checkForUpdates(): Promise<UpdateInfo[]> {
     const updates: UpdateInfo[] = [];
+    
+    if (!this.dirManager.isInitialized()) {
+      return updates;
+    }
+    
     const manifest = await this.dirManager.getManifest();
 
     // Check modes
