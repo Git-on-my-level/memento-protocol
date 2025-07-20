@@ -19,15 +19,18 @@ program
   .version(version)
   .option("-v, --verbose", "enable verbose output")
   .option("-d, --debug", "enable debug output")
+  .option("-h, --help", "display help for command")
   .addHelpText(
     "after",
     `
 Examples:
-  $ memento init                    # Initialize Memento Protocol in a project
-  $ memento add mode architect      # Add the architect mode
-  $ memento add workflow review     # Add the code review workflow
-  $ memento ticket create "auth"    # Create a ticket for authentication work
-  $ memento list --installed        # Show installed components
+  $ memento                        # Initialize or update Memento Protocol
+  $ memento init                   # Explicitly initialize Memento Protocol
+  $ memento update                 # Explicitly update components
+  $ memento add mode architect     # Add the architect mode
+  $ memento add workflow review    # Add the code review workflow
+  $ memento ticket create "auth"   # Create a ticket for authentication work
+  $ memento list --installed       # Show installed components
 
 For Claude Code users:
   Say "act as architect" to switch to architect mode
@@ -64,10 +67,15 @@ process.on("uncaughtException", (error) => {
   handleError(error, program.opts().verbose);
 });
 
-// Parse command line arguments
-program.parse(process.argv);
-
-// Show help if no command is provided
-if (!process.argv.slice(2).length) {
+// Check if no command is provided before parsing
+const args = process.argv.slice(2);
+if (
+  args.length === 0 ||
+  (args.length === 1 && (args[0] === "--help" || args[0] === "-h"))
+) {
+  // Show help
   program.outputHelp();
+} else {
+  // Parse command line arguments normally
+  program.parse(process.argv);
 }

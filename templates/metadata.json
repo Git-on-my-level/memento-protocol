@@ -51,6 +51,12 @@
         "description": "Comprehensive code review and quality assessment",
         "tags": ["quality", "review", "feedback"],
         "dependencies": ["reviewer"]
+      },
+      {
+        "name": "openmemory-setup",
+        "description": "Setup and configure OpenMemory for persistent memory",
+        "tags": ["memory", "setup", "openmemory"],
+        "dependencies": []
       }
     ]
   }
