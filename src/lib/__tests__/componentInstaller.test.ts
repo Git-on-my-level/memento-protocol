@@ -27,7 +27,8 @@ describe('ComponentInstaller', () => {
     mockDirManager = {
       getManifest: jest.fn(),
       updateManifest: jest.fn(),
-      getComponentPath: jest.fn()
+      getComponentPath: jest.fn(),
+      isInitialized: jest.fn()
     } as any;
 
     (DirectoryManager as jest.MockedClass<typeof DirectoryManager>).mockImplementation(() => mockDirManager);
@@ -88,6 +89,7 @@ describe('ComponentInstaller', () => {
         }
       };
 
+      mockDirManager.isInitialized.mockReturnValue(true);
       mockDirManager.getManifest.mockResolvedValue(mockManifest);
 
       const result = await installer.listInstalledComponents();
@@ -97,6 +99,7 @@ describe('ComponentInstaller', () => {
     });
 
     it('should handle empty manifest', async () => {
+      mockDirManager.isInitialized.mockReturnValue(true);
       mockDirManager.getManifest.mockResolvedValue({
         components: {}
       });
@@ -105,6 +108,16 @@ describe('ComponentInstaller', () => {
 
       expect(result.modes).toEqual([]);
       expect(result.workflows).toEqual([]);
+    });
+
+    it('should return empty arrays when not initialized', async () => {
+      mockDirManager.isInitialized.mockReturnValue(false);
+
+      const result = await installer.listInstalledComponents();
+
+      expect(result.modes).toEqual([]);
+      expect(result.workflows).toEqual([]);
+      expect(mockDirManager.getManifest).not.toHaveBeenCalled();
     });
   });
 
