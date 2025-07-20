@@ -101,9 +101,6 @@ export class UpdateManager {
       return;
     }
 
-    // Create backup
-    await this.createBackup(type, name);
-
     // Copy new version from templates
     const templatePath = path.join(
       this.templatesDir,
@@ -271,33 +268,6 @@ export class UpdateManager {
     };
 
     await this.dirManager.updateManifest(manifest);
-  }
-
-  /**
-   * Create a backup of a component before updating
-   */
-  private async createBackup(
-    type: "mode" | "workflow",
-    name: string
-  ): Promise<void> {
-    const componentPath = this.dirManager.getComponentPath(
-      type === "mode" ? "modes" : "workflows",
-      name
-    );
-
-    const backupDir = path.join(
-      path.dirname(componentPath),
-      ".backups",
-      new Date().toISOString().replace(/[:.]/g, "-")
-    );
-
-    await fs.mkdir(backupDir, { recursive: true });
-
-    const content = await fs.readFile(componentPath, "utf-8");
-    const backupPath = path.join(backupDir, `${name}.md`);
-
-    await fs.writeFile(backupPath, content);
-    logger.info(`Backup created at ${backupPath}`);
   }
 
   /**

@@ -64,16 +64,15 @@ export class ComponentInstaller {
 
   /**
    * Install a specific component
-   * 
+   *
    * CRITICAL SAFETY NOTE: Component installation behavior:
    * - With force=false: Will skip if component already exists (preserves custom modifications)
    * - With force=true: Will OVERWRITE existing component with template version
-   * 
+   *
    * DANGER: The force flag can destroy user customizations!
    * - Users may have spent hours customizing modes/workflows
    * - Always warn users before using force=true
-   * - Consider implementing a backup mechanism before overwriting
-   * 
+   *
    * NEVER delete components that aren't being replaced. Only touch the specific
    * component being installed.
    */
@@ -108,7 +107,10 @@ export class ComponentInstaller {
 
     // Check dependencies
     const metadata = await this.loadGlobalMetadata();
-    const components = type === "mode" ? metadata?.templates.modes : metadata?.templates.workflows;
+    const components =
+      type === "mode"
+        ? metadata?.templates.modes
+        : metadata?.templates.workflows;
     const component = components?.find((c) => c.name === name);
 
     if (component?.dependencies && component.dependencies.length > 0) {
@@ -128,7 +130,6 @@ export class ComponentInstaller {
     );
 
     // WARNING: This writeFile will OVERWRITE any existing custom component if force=true
-    // User customizations will be lost! Consider implementing backup before overwriting.
     await fs.writeFile(destPath, content);
 
     // Reload manifest to get any updates from dependency installation
