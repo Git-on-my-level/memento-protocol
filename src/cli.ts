@@ -5,6 +5,7 @@ import { listCommand } from "./commands/list";
 import { ticketCommand } from "./commands/ticket";
 import { configCommand } from "./commands/config";
 import { createUpdateCommand } from "./commands/update";
+import { upsertCommand } from "./commands/upsert";
 import { logger } from "./lib/logger";
 import { handleError } from "./lib/errors";
 
@@ -57,6 +58,7 @@ program.addCommand(listCommand);
 program.addCommand(ticketCommand);
 program.addCommand(configCommand);
 program.addCommand(createUpdateCommand());
+program.addCommand(upsertCommand);
 
 // Global error handling
 process.on("unhandledRejection", (error) => {
@@ -69,10 +71,20 @@ process.on("uncaughtException", (error) => {
 
 // Check if no command is provided before parsing
 const args = process.argv.slice(2);
-if (
-  args.length === 0 ||
-  (args.length === 1 && (args[0] === "--help" || args[0] === "-h"))
-) {
+if (args.length === 0) {
+  // No command provided, run upsert
+  (async () => {
+    try {
+      const upsertManager = new (
+        await import("./lib/upsertManager")
+      ).UpsertManager(process.cwd());
+      await upsertManager.upsert();
+    } catch (error: any) {
+      logger.error(`Upsert failed: ${error.message}`);
+      process.exit(1);
+    }
+  })();
+} else if (args.length === 1 && (args[0] === "--help" || args[0] === "-h")) {
   // Show help
   program.outputHelp();
 } else {
