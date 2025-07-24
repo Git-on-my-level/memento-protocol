@@ -243,13 +243,16 @@ if [ -n "$TICKET_REQUEST" ]; then
         for status in "\${statuses[@]}"; do
             # Check if ticket is already a path with status
             if echo "$ticket" | grep -q "^$status/"; then
-                if [ -d ".memento/tickets/$ticket" ]; then
+                if [ -f ".memento/tickets/$ticket.md" ] || [ -f ".memento/tickets/$ticket" ]; then
                     echo "$ticket"
                     return
                 fi
             else
                 # Search in each status directory
-                if [ -d ".memento/tickets/$status/$ticket" ]; then
+                if [ -f ".memento/tickets/$status/$ticket.md" ]; then
+                    echo "$status/$ticket"
+                    return
+                elif [ -f ".memento/tickets/$status/$ticket" ]; then
                     echo "$status/$ticket"
                     return
                 fi
@@ -274,68 +277,39 @@ if [ -n "$TICKET_REQUEST" ]; then
     else
         echo "## Ticket: $TICKET_PATH"
         echo ""
-        echo "### Ticket Commands Available"
-        echo "You can manage this ticket using the following npx commands:"
-        echo ""
+        echo "### Ticket Commands"
         echo "\\\`\\\`\\\`bash"
-        echo "# Update ticket progress"
-        echo "npx memento ticket update $TICKET_REQUEST --progress \\"Your progress update here\\""
-        echo ""
-        echo "# Add a decision record"
-        echo "npx memento ticket update $TICKET_REQUEST --decision \\"Decision title\\" --rationale \\"Why this decision was made\\""
+        echo "# Create a new ticket"
+        echo "npx memento ticket create \\"ticket-name\\""
         echo ""
         echo "# Move ticket to different status"
         echo "npx memento ticket move $TICKET_REQUEST --to in-progress  # or: next, done"
         echo ""
-        echo "# Create sub-tickets for delegation"
-        echo "npx memento ticket create \\"sub-task-name\\" --parent $TICKET_REQUEST"
+        echo "# Delete a ticket"
+        echo "npx memento ticket delete $TICKET_REQUEST"
         echo ""
         echo "# List all tickets"
         echo "npx memento ticket list"
         echo "\\\`\\\`\\\`"
         echo ""
-        echo "### Using Tickets as a Workspace"
+        echo "### Working with Tickets"
         echo ""
-        echo "This ticket should be used as your primary workspace for:"
-        echo "- **Planning**: Break down the task, identify dependencies, and create sub-tickets"
-        echo "- **Progress Tracking**: Update progress.md regularly with what you've accomplished"
-        echo "- **Decision Records**: Document important decisions and their rationale"
-        echo "- **Delegation**: When tasks are large and divisible, create sub-tickets and spawn sub-agents to work on them"
-        echo "- **Context Sharing**: Sub-agents should read parent tickets and update their own tickets"
-        echo ""
-        echo "Remember: Tickets are persistent context that survives between sessions. Use them liberally!"
+        echo "- Tickets are simple markdown files that serve as persistent workspaces"
+        echo "- Use your file editing tools to update ticket content directly"
+        echo "- Tickets survive between sessions - use them to track progress and share context"
+        echo "- When working on large tasks, create multiple tickets and delegate to sub-agents"
         echo ""
         
-        # Output metadata if exists
-        if [ -f ".memento/tickets/$TICKET_PATH/metadata.json" ]; then
-            echo "### Metadata"
-            cat ".memento/tickets/$TICKET_PATH/metadata.json"
-            echo ""
-        fi
-        
-        # Output progress if exists
-        if [ -f ".memento/tickets/$TICKET_PATH/progress.md" ]; then
-            echo "### Progress"
-            cat ".memento/tickets/$TICKET_PATH/progress.md"
-            echo ""
-        fi
-        
-        # Output decisions if exists
-        if [ -f ".memento/tickets/$TICKET_PATH/decisions.md" ]; then
-            echo "### Decisions"
-            cat ".memento/tickets/$TICKET_PATH/decisions.md"
-            echo ""
-        fi
-        
-        # Output any other markdown files in the ticket directory
-        if [ -d ".memento/tickets/$TICKET_PATH" ]; then
-            for file in ".memento/tickets/$TICKET_PATH"/*.md; do
-                if [ -f "$file" ] && [ "$(basename "$file")" != "progress.md" ] && [ "$(basename "$file")" != "decisions.md" ]; then
-                    echo "### $(basename "$file" .md)"
-                    cat "$file"
-                    echo ""
-                fi
-            done
+        # Output ticket content
+        if [ -f ".memento/tickets/$TICKET_PATH.md" ]; then
+            echo "### Ticket Content"
+            cat ".memento/tickets/$TICKET_PATH.md"
+        elif [ -f ".memento/tickets/$TICKET_PATH" ]; then
+            echo "### Ticket Content"
+            cat ".memento/tickets/$TICKET_PATH"
+        else
+            echo "### Error"
+            echo "Ticket file not found at expected location."
         fi
     fi
     echo ""

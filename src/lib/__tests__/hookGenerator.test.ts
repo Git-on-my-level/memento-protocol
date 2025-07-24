@@ -184,27 +184,24 @@ value = "test"
       expect(scriptContent).toContain('statuses=("next" "in-progress" "done")');
     });
 
-    it("should output ticket metadata and content files", () => {
-      expect(scriptContent).toContain("metadata.json");
-      expect(scriptContent).toContain("progress.md");
-      expect(scriptContent).toContain("decisions.md");
+    it("should handle simple markdown ticket files", () => {
+      expect(scriptContent).toContain(".memento/tickets/$ticket.md");
+      expect(scriptContent).toContain("Ticket Content");
     });
 
-    it("should include ticket command instructions", () => {
-      expect(scriptContent).toContain("Ticket Commands Available");
-      expect(scriptContent).toContain("npx memento ticket update");
-      expect(scriptContent).toContain("npx memento ticket move");
+    it("should include simplified ticket commands", () => {
+      expect(scriptContent).toContain("Ticket Commands");
       expect(scriptContent).toContain("npx memento ticket create");
+      expect(scriptContent).toContain("npx memento ticket move");
+      expect(scriptContent).toContain("npx memento ticket delete");
       expect(scriptContent).toContain("npx memento ticket list");
     });
 
-    it("should include workspace guidance", () => {
-      expect(scriptContent).toContain("Using Tickets as a Workspace");
-      expect(scriptContent).toContain("Planning");
-      expect(scriptContent).toContain("Progress Tracking");
-      expect(scriptContent).toContain("Decision Records");
-      expect(scriptContent).toContain("Delegation");
-      expect(scriptContent).toContain("Context Sharing");
+    it("should include simplified workspace guidance", () => {
+      expect(scriptContent).toContain("Working with Tickets");
+      expect(scriptContent).toContain("simple markdown files");
+      expect(scriptContent).toContain("file editing tools");
+      expect(scriptContent).toContain("persistent workspaces");
     });
 
     it("should list available tickets when not found", () => {
