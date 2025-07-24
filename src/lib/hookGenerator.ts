@@ -51,7 +51,12 @@ PROMPT=$(cat)
 # Extract mode/workflow request
 MODE_REQUEST=$(echo "$PROMPT" | grep -o '[Mm]ode:[[:space:]]*[A-Za-z0-9_-]*' | sed 's/[Mm]ode:[[:space:]]*//' || true)
 WORKFLOW_REQUEST=$(echo "$PROMPT" | grep -o '[Ww]orkflow:[[:space:]]*[A-Za-z0-9_-]*' | sed 's/[Ww]orkflow:[[:space:]]*//' || true)
-SHORTHAND=$(echo "$PROMPT" | grep -o '@[A-Za-z0-9_-]*' | sed 's/@//' || true)
+
+# Read default mode from config if no mode specified
+DEFAULT_MODE=""
+if [ -z "$MODE_REQUEST" ] && [ -f ".memento/config.json" ]; then
+    DEFAULT_MODE=$(grep '"defaultMode"' .memento/config.json | sed 's/.*"defaultMode"[[:space:]]*:[[:space:]]*"\\([^"]*\\)".*/\\1/' || true)
+fi
 
 # Function to find fuzzy matches
 find_matches() {
@@ -140,14 +145,14 @@ find_matches() {
     echo "\${matches[@]}"
 }
 
-# Process mode request
-if [ -n "$MODE_REQUEST" ] || [ -n "$SHORTHAND" ]; then
-    REQUEST="\${MODE_REQUEST:-$SHORTHAND}"
-    MATCHES=($(find_matches "$REQUEST" "mode"))
+# Process mode request or use default
+if [ -n "$MODE_REQUEST" ]; then
+    # Explicit mode requested
+    MATCHES=($(find_matches "$MODE_REQUEST" "mode"))
     
     if [ \${#MATCHES[@]} -eq 0 ]; then
         echo "## No Mode Match Found"
-        echo "Could not find a mode matching: $REQUEST"
+        echo "Could not find a mode matching: $MODE_REQUEST"
         echo "Available modes in .memento/modes/:"
         if [ -d ".memento/modes" ]; then
             ls .memento/modes/*.md 2>/dev/null | xargs -n1 basename | sed 's/.md//' | sed 's/^/  - /' || echo "  (none)"
@@ -158,7 +163,7 @@ if [ -n "$MODE_REQUEST" ] || [ -n "$SHORTHAND" ]; then
         echo "## Mode: \${MATCHES[0]}"
         cat ".memento/modes/\${MATCHES[0]}.md"
     else
-        echo "## Multiple Mode Matches Found for: $REQUEST"
+        echo "## Multiple Mode Matches Found for: $MODE_REQUEST"
         for match in "\${MATCHES[@]}"; do
             echo ""
             echo "### Mode: $match"
@@ -170,7 +175,15 @@ if [ -n "$MODE_REQUEST" ] || [ -n "$SHORTHAND" ]; then
         echo "Claude will select the most appropriate mode based on context."
     fi
     echo ""
+elif [ -n "$DEFAULT_MODE" ]; then
+    # No explicit mode requested, but default mode is configured
+    if [ -f ".memento/modes/$DEFAULT_MODE.md" ]; then
+        echo "## Mode: $DEFAULT_MODE (default)"
+        cat ".memento/modes/$DEFAULT_MODE.md"
+        echo ""
+    fi
 fi
+# If no mode requested and no default mode, just pass through the prompt unaltered
 
 # Process workflow request
 if [ -n "$WORKFLOW_REQUEST" ]; then

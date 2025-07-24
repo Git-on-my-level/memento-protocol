@@ -135,7 +135,7 @@ export const initCommand = new Command('init')
           selectedModes,
           selectedWorkflows,
           selectedLanguages: [],
-          defaultMode: nonInteractiveOpts.defaultMode || selectedModes[0],
+          defaultMode: nonInteractiveOpts.defaultMode,
           addToGitignore: nonInteractiveOpts.addToGitignore || false
         };
       } else {
@@ -170,7 +170,9 @@ export const initCommand = new Command('init')
       logger.info('To use with Claude Code:');
       logger.info('  - Say "mode: [name]" to activate a mode (fuzzy matching supported)');
       logger.info('  - Say "workflow: [name]" to execute a workflow');
-      logger.info('  - Use "@[mode]" for mode shortcuts');
+      if (setupOptions.defaultMode) {
+        logger.info(`  - Default mode "${setupOptions.defaultMode}" will be used when no mode is specified`);
+      }
       logger.space();
       logger.info('Run "memento --help" to see all available commands.');
     } catch (error) {
