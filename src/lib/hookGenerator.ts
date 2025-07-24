@@ -115,18 +115,26 @@ find_matches() {
         done
     fi
     
-    # Stage 4: Abbreviation match
+    # Stage 4: Common abbreviations (generated from item names)
     if [ \${#matches[@]} -eq 0 ]; then
-        case "$query_lower" in
-            "apm") matches+=("autonomous-project-manager") ;;
-            "pm") matches+=("project-manager") ;;
-            "eng") matches+=("engineer") ;;
-            "arch") matches+=("architect") ;;
-            "rev") matches+=("reviewer") ;;
-            "debt") matches+=("ai-debt-maintainer") ;;
-            "sum") matches+=("summarize") ;;
-            "pub") matches+=("publish-to-npm") ;;
-        esac
+        for item in "\${items[@]}"; do
+            item_lower=$(echo "$item" | tr '[:upper:]' '[:lower:]')
+            
+            # Extract abbreviation from hyphenated names (e.g., autonomous-project-manager -> apm)
+            if echo "$item_lower" | grep -q '-'; then
+                abbrev=$(echo "$item_lower" | sed 's/\\([a-z]\\)[a-z]*-*/\\1/g')
+                if [ "$abbrev" = "$query_lower" ]; then
+                    matches+=("$item")
+                fi
+            fi
+            
+            # First 3-4 letters abbreviation (e.g., architect -> arch, review -> rev)
+            if [ \${#query_lower} -ge 3 ] && [ \${#query_lower} -le 4 ]; then
+                if echo "$item_lower" | grep -q "^$query_lower"; then
+                    matches+=("$item")
+                fi
+            fi
+        done
     fi
     
     echo "\${matches[@]}"
