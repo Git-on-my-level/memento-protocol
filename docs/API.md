@@ -82,24 +82,17 @@ await config.set('defaultMode', 'engineer');
 const allConfig = await config.getAll();
 ```
 
-### ClaudeMdGenerator
+### HookGenerator
 
-Generates the CLAUDE.md file.
+Generates Claude Code hook infrastructure.
 
 ```typescript
-import { ClaudeMdGenerator } from 'memento-protocol';
+import { HookGenerator } from 'memento-protocol';
 
-const generator = new ClaudeMdGenerator('/path/to/project');
+const generator = new HookGenerator('/path/to/project');
 
-// Generate CLAUDE.md
-await generator.generate({
-  projectName: 'My Project',
-  projectDescription: 'A great project',
-  primaryLanguage: 'typescript'
-});
-
-// Update existing CLAUDE.md
-await generator.update();
+// Generate hook infrastructure
+await generator.generate();
 ```
 
 ## Error Handling

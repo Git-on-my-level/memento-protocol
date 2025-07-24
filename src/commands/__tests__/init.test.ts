@@ -1,18 +1,14 @@
 import { initCommand } from "../init";
 import { DirectoryManager } from "../../lib/directoryManager";
-import { ClaudeMdGenerator } from "../../lib/claudeMdGenerator";
+import { HookGenerator } from "../../lib/hookGenerator";
 import { ProjectDetector } from "../../lib/projectDetector";
 import { InteractiveSetup } from "../../lib/interactiveSetup";
 import { logger } from "../../lib/logger";
-import inquirer from "inquirer";
 import * as fs from "fs";
 
 jest.mock("fs");
-jest.mock("inquirer", () => ({
-  prompt: jest.fn(),
-}));
 jest.mock("../../lib/directoryManager");
-jest.mock("../../lib/claudeMdGenerator");
+jest.mock("../../lib/hookGenerator");
 jest.mock("../../lib/projectDetector");
 jest.mock("../../lib/interactiveSetup");
 jest.mock("../../lib/logger", () => ({
@@ -27,7 +23,7 @@ jest.mock("../../lib/logger", () => ({
 
 describe("Init Command", () => {
   let mockDirManager: jest.Mocked<DirectoryManager>;
-  let mockClaudeMdGen: jest.Mocked<ClaudeMdGenerator>;
+  let mockHookGen: jest.Mocked<HookGenerator>;
   let mockProjectDetector: jest.Mocked<ProjectDetector>;
   let mockInteractiveSetup: jest.Mocked<InteractiveSetup>;
   let originalExit: any;
@@ -41,9 +37,7 @@ describe("Init Command", () => {
       ensureGitignore: jest.fn(),
     } as any;
 
-    mockClaudeMdGen = {
-      exists: jest.fn(),
-      readExisting: jest.fn(),
+    mockHookGen = {
       generate: jest.fn(),
     } as any;
 
@@ -60,8 +54,8 @@ describe("Init Command", () => {
       DirectoryManager as jest.MockedClass<typeof DirectoryManager>
     ).mockImplementation(() => mockDirManager);
     (
-      ClaudeMdGenerator as jest.MockedClass<typeof ClaudeMdGenerator>
-    ).mockImplementation(() => mockClaudeMdGen);
+      HookGenerator as jest.MockedClass<typeof HookGenerator>
+    ).mockImplementation(() => mockHookGen);
     (
       ProjectDetector as jest.MockedClass<typeof ProjectDetector>
     ).mockImplementation(() => mockProjectDetector);
@@ -80,7 +74,6 @@ describe("Init Command", () => {
   describe("successful initialization", () => {
     it("should initialize with non-interactive setup", async () => {
       mockDirManager.isInitialized.mockReturnValue(false);
-      mockClaudeMdGen.exists.mockResolvedValue(false);
       mockProjectDetector.detect.mockResolvedValue({
         type: "fullstack",
         framework: "nextjs",
@@ -96,24 +89,14 @@ describe("Init Command", () => {
       // In non-interactive mode, no components are installed
       expect(mockInteractiveSetup.run).not.toHaveBeenCalled();
       expect(mockInteractiveSetup.applySetup).not.toHaveBeenCalled();
-      expect(mockClaudeMdGen.generate).toHaveBeenCalled();
+      expect(mockHookGen.generate).toHaveBeenCalled();
       expect(logger.success).toHaveBeenCalledWith(
         expect.stringContaining("Memento Protocol initialized successfully")
       );
     });
 
-    // Removed brittle integration test with interactive setup
-
-    it("should preserve existing CLAUDE.md content", async () => {
+    it("should generate hook infrastructure", async () => {
       mockDirManager.isInitialized.mockReturnValue(false);
-      mockClaudeMdGen.exists.mockResolvedValue(true);
-      mockClaudeMdGen.readExisting.mockResolvedValue(
-        "# Existing content\nProject docs"
-      );
-      (inquirer.prompt as unknown as jest.Mock).mockResolvedValue({
-        preserveExisting: true,
-      });
-
       mockProjectDetector.detect.mockResolvedValue({
         type: "unknown",
         suggestedModes: [],
@@ -123,9 +106,7 @@ describe("Init Command", () => {
       });
       await initCommand.parseAsync(["node", "test", "--non-interactive"]);
 
-      expect(mockClaudeMdGen.generate).toHaveBeenCalledWith(
-        expect.stringContaining("# Existing content")
-      );
+      expect(mockHookGen.generate).toHaveBeenCalled();
     });
 
     it("should install components specified via CLI flags", async () => {
@@ -183,7 +164,6 @@ describe("Init Command", () => {
 
     it("should read configuration from file", async () => {
       mockDirManager.isInitialized.mockReturnValue(false);
-      mockClaudeMdGen.exists.mockResolvedValue(false);
       mockProjectDetector.detect.mockResolvedValue({
         type: "web",
         suggestedModes: [],
@@ -237,7 +217,6 @@ describe("Init Command", () => {
 
     it("should read configuration from environment variables", async () => {
       mockDirManager.isInitialized.mockReturnValue(false);
-      mockClaudeMdGen.exists.mockResolvedValue(false);
       mockProjectDetector.detect.mockResolvedValue({
         type: "web",
         suggestedModes: [],
@@ -296,7 +275,6 @@ describe("Init Command", () => {
 
     it("should reinitialize with force flag", async () => {
       mockDirManager.isInitialized.mockReturnValue(true);
-      mockClaudeMdGen.exists.mockResolvedValue(false);
       mockProjectDetector.detect.mockResolvedValue({
         type: "cli",
         suggestedModes: [],
