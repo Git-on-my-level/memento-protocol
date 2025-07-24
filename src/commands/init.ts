@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
 import { DirectoryManager } from '../lib/directoryManager';
-import { ClaudeMdGenerator } from '../lib/claudeMdGenerator';
+import { HookGenerator } from '../lib/hookGenerator';
 import { ProjectDetector } from '../lib/projectDetector';
 import { InteractiveSetup } from '../lib/interactiveSetup';
 import { logger } from '../lib/logger';
@@ -86,7 +86,7 @@ export const initCommand = new Command('init')
     try {
       const projectRoot = process.cwd();
       const dirManager = new DirectoryManager(projectRoot);
-      const claudeMdGenerator = new ClaudeMdGenerator(projectRoot);
+      const hookGenerator = new HookGenerator(projectRoot);
       const projectDetector = new ProjectDetector(projectRoot);
       
       // Check if already initialized
@@ -135,7 +135,7 @@ export const initCommand = new Command('init')
           selectedModes,
           selectedWorkflows,
           selectedLanguages: [],
-          defaultMode: nonInteractiveOpts.defaultMode || selectedModes[0],
+          defaultMode: nonInteractiveOpts.defaultMode,
           addToGitignore: nonInteractiveOpts.addToGitignore || false
         };
       } else {
@@ -159,19 +159,20 @@ export const initCommand = new Command('init')
         });
       }
       
-      // Generate or update CLAUDE.md
+      // Generate hook infrastructure
       logger.space();
-      logger.info('Generating CLAUDE.md router...');
-      const existingClaudeMd = await claudeMdGenerator.readExisting();
-      await claudeMdGenerator.generate(existingClaudeMd || undefined);
+      logger.info('Generating Claude Code hook infrastructure...');
+      await hookGenerator.generate();
       
       logger.space();
       logger.success('Memento Protocol initialized successfully!');
       logger.space();
       logger.info('To use with Claude Code:');
-      logger.info('  - Say "act as [mode]" to switch behavioral patterns');
-      logger.info('  - Say "execute [workflow]" to run procedures');
-      logger.info('  - Say "create ticket [name]" to start persistent work');
+      logger.info('  - Say "mode: [name]" to activate a mode (fuzzy matching supported)');
+      logger.info('  - Say "workflow: [name]" to execute a workflow');
+      if (setupOptions.defaultMode) {
+        logger.info(`  - Default mode "${setupOptions.defaultMode}" will be used when no mode is specified`);
+      }
       logger.space();
       logger.info('Run "memento --help" to see all available commands.');
     } catch (error) {

@@ -2,7 +2,7 @@ jest.mock('inquirer', () => ({
   prompt: jest.fn()
 }));
 jest.mock('../../lib/directoryManager');
-jest.mock('../../lib/claudeMdGenerator');
+jest.mock('../../lib/hookGenerator');
 jest.mock('../../lib/projectDetector');
 jest.mock('../../lib/interactiveSetup');
 jest.mock('../../lib/logger', () => ({
