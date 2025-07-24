@@ -191,10 +191,10 @@ value = "test"
 
     it("should include simplified ticket commands", () => {
       expect(scriptContent).toContain("Ticket Commands");
-      expect(scriptContent).toContain("npx memento ticket create");
-      expect(scriptContent).toContain("npx memento ticket move");
-      expect(scriptContent).toContain("npx memento ticket delete");
-      expect(scriptContent).toContain("npx memento ticket list");
+      expect(scriptContent).toContain("npx memento-protocol ticket create");
+      expect(scriptContent).toContain("npx memento-protocol ticket move");
+      expect(scriptContent).toContain("npx memento-protocol ticket delete");
+      expect(scriptContent).toContain("npx memento-protocol ticket list");
     });
 
     it("should include simplified workspace guidance", () => {
