@@ -190,6 +190,23 @@ value = "test"
       expect(scriptContent).toContain("decisions.md");
     });
 
+    it("should include ticket command instructions", () => {
+      expect(scriptContent).toContain("Ticket Commands Available");
+      expect(scriptContent).toContain("npx memento ticket update");
+      expect(scriptContent).toContain("npx memento ticket move");
+      expect(scriptContent).toContain("npx memento ticket create");
+      expect(scriptContent).toContain("npx memento ticket list");
+    });
+
+    it("should include workspace guidance", () => {
+      expect(scriptContent).toContain("Using Tickets as a Workspace");
+      expect(scriptContent).toContain("Planning");
+      expect(scriptContent).toContain("Progress Tracking");
+      expect(scriptContent).toContain("Decision Records");
+      expect(scriptContent).toContain("Delegation");
+      expect(scriptContent).toContain("Context Sharing");
+    });
+
     it("should list available tickets when not found", () => {
       expect(scriptContent).toContain("Available tickets:");
       expect(scriptContent).toContain('for status in next in-progress done');

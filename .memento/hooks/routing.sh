@@ -9,9 +9,9 @@ WORKFLOW_REQUEST=$(echo "$PROMPT" | grep -o '[Ww]orkflow:[[:space:]]*[A-Za-z0-9_
 TICKET_REQUEST=$(echo "$PROMPT" | grep -o '[Tt]icket:[[:space:]]*[A-Za-z0-9_/-]*' | sed 's/[Tt]icket:[[:space:]]*//' || true)
 
 # Extract .memento paths from prompt
-MEMENTO_MODE_PATH=$(echo "$PROMPT" | grep -o '\.memento/modes/[A-Za-z0-9_-]*\.md' | sed 's/\.memento\/modes\///; s/\.md//' | head -1 || true)
-MEMENTO_WORKFLOW_PATH=$(echo "$PROMPT" | grep -o '\.memento/workflows/[A-Za-z0-9_-]*\.md' | sed 's/\.memento\/workflows\///; s/\.md//' | head -1 || true)
-MEMENTO_TICKET_PATH=$(echo "$PROMPT" | grep -o '\.memento/tickets/[A-Za-z0-9_/-]*' | sed 's/\.memento\/tickets\///' | head -1 || true)
+MEMENTO_MODE_PATH=$(echo "$PROMPT" | grep -o '\.memento/modes/[A-Za-z0-9_-]*\.md' | sed 's|\.memento/modes/||; s|\.md||' | head -1 || true)
+MEMENTO_WORKFLOW_PATH=$(echo "$PROMPT" | grep -o '\.memento/workflows/[A-Za-z0-9_-]*\.md' | sed 's|\.memento/workflows/||; s|\.md||' | head -1 || true)
+MEMENTO_TICKET_PATH=$(echo "$PROMPT" | grep -o '\.memento/tickets/[A-Za-z0-9_/-]*' | sed 's|\.memento/tickets/||' | head -1 || true)
 
 # Use path-based detection if no explicit request
 if [ -z "$MODE_REQUEST" ] && [ -n "$MEMENTO_MODE_PATH" ]; then
@@ -228,6 +228,38 @@ if [ -n "$TICKET_REQUEST" ]; then
         done
     else
         echo "## Ticket: $TICKET_PATH"
+        echo ""
+        echo "### Ticket Commands Available"
+        echo "You can manage this ticket using the following npx commands:"
+        echo ""
+        echo "\`\`\`bash"
+        echo "# Update ticket progress"
+        echo "npx memento ticket update $TICKET_REQUEST --progress \"Your progress update here\""
+        echo ""
+        echo "# Add a decision record"
+        echo "npx memento ticket update $TICKET_REQUEST --decision \"Decision title\" --rationale \"Why this decision was made\""
+        echo ""
+        echo "# Move ticket to different status"
+        echo "npx memento ticket move $TICKET_REQUEST --to in-progress  # or: next, done"
+        echo ""
+        echo "# Create sub-tickets for delegation"
+        echo "npx memento ticket create \"sub-task-name\" --parent $TICKET_REQUEST"
+        echo ""
+        echo "# List all tickets"
+        echo "npx memento ticket list"
+        echo "\`\`\`"
+        echo ""
+        echo "### Using Tickets as a Workspace"
+        echo ""
+        echo "This ticket should be used as your primary workspace for:"
+        echo "- **Planning**: Break down the task, identify dependencies, and create sub-tickets"
+        echo "- **Progress Tracking**: Update progress.md regularly with what you've accomplished"
+        echo "- **Decision Records**: Document important decisions and their rationale"
+        echo "- **Delegation**: When tasks are large and divisible, create sub-tickets and spawn sub-agents to work on them"
+        echo "- **Context Sharing**: Sub-agents should read parent tickets and update their own tickets"
+        echo ""
+        echo "Remember: Tickets are persistent context that survives between sessions. Use them liberally!"
+        echo ""
         
         # Output metadata if exists
         if [ -f ".memento/tickets/$TICKET_PATH/metadata.json" ]; then
