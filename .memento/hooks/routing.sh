@@ -3,9 +3,26 @@
 # Get user prompt from stdin
 PROMPT=$(cat)
 
-# Extract mode/workflow request
+# Extract mode/workflow/ticket request
 MODE_REQUEST=$(echo "$PROMPT" | grep -o '[Mm]ode:[[:space:]]*[A-Za-z0-9_-]*' | sed 's/[Mm]ode:[[:space:]]*//' || true)
 WORKFLOW_REQUEST=$(echo "$PROMPT" | grep -o '[Ww]orkflow:[[:space:]]*[A-Za-z0-9_-]*' | sed 's/[Ww]orkflow:[[:space:]]*//' || true)
+TICKET_REQUEST=$(echo "$PROMPT" | grep -o '[Tt]icket:[[:space:]]*[A-Za-z0-9_/-]*' | sed 's/[Tt]icket:[[:space:]]*//' || true)
+
+# Extract .memento paths from prompt
+MEMENTO_MODE_PATH=$(echo "$PROMPT" | grep -o '\.memento/modes/[A-Za-z0-9_-]*\.md' | sed 's/\.memento\/modes\///; s/\.md//' | head -1 || true)
+MEMENTO_WORKFLOW_PATH=$(echo "$PROMPT" | grep -o '\.memento/workflows/[A-Za-z0-9_-]*\.md' | sed 's/\.memento\/workflows\///; s/\.md//' | head -1 || true)
+MEMENTO_TICKET_PATH=$(echo "$PROMPT" | grep -o '\.memento/tickets/[A-Za-z0-9_/-]*' | sed 's/\.memento\/tickets\///' | head -1 || true)
+
+# Use path-based detection if no explicit request
+if [ -z "$MODE_REQUEST" ] && [ -n "$MEMENTO_MODE_PATH" ]; then
+    MODE_REQUEST="$MEMENTO_MODE_PATH"
+fi
+if [ -z "$WORKFLOW_REQUEST" ] && [ -n "$MEMENTO_WORKFLOW_PATH" ]; then
+    WORKFLOW_REQUEST="$MEMENTO_WORKFLOW_PATH"
+fi
+if [ -z "$TICKET_REQUEST" ] && [ -n "$MEMENTO_TICKET_PATH" ]; then
+    TICKET_REQUEST="$MEMENTO_TICKET_PATH"
+fi
 
 # Read default mode from config if no mode specified
 DEFAULT_MODE=""
@@ -167,6 +184,82 @@ if [ -n "$WORKFLOW_REQUEST" ]; then
         done
         echo ""
         echo "Claude will select the most appropriate workflow based on context."
+    fi
+    echo ""
+fi
+
+# Process ticket request
+if [ -n "$TICKET_REQUEST" ]; then
+    # Function to find ticket in any status directory
+    find_ticket() {
+        local ticket="$1"
+        local statuses=("next" "in-progress" "done")
+        
+        for status in "${statuses[@]}"; do
+            # Check if ticket is already a path with status
+            if echo "$ticket" | grep -q "^$status/"; then
+                if [ -d ".memento/tickets/$ticket" ]; then
+                    echo "$ticket"
+                    return
+                fi
+            else
+                # Search in each status directory
+                if [ -d ".memento/tickets/$status/$ticket" ]; then
+                    echo "$status/$ticket"
+                    return
+                fi
+            fi
+        done
+        
+        echo ""
+    }
+    
+    TICKET_PATH=$(find_ticket "$TICKET_REQUEST")
+    
+    if [ -z "$TICKET_PATH" ]; then
+        echo "## No Ticket Match Found"
+        echo "Could not find a ticket matching: $TICKET_REQUEST"
+        echo "Available tickets:"
+        for status in next in-progress done; do
+            if [ -d ".memento/tickets/$status" ]; then
+                echo "  $status:"
+                ls ".memento/tickets/$status" 2>/dev/null | sed 's/^/    - /' || true
+            fi
+        done
+    else
+        echo "## Ticket: $TICKET_PATH"
+        
+        # Output metadata if exists
+        if [ -f ".memento/tickets/$TICKET_PATH/metadata.json" ]; then
+            echo "### Metadata"
+            cat ".memento/tickets/$TICKET_PATH/metadata.json"
+            echo ""
+        fi
+        
+        # Output progress if exists
+        if [ -f ".memento/tickets/$TICKET_PATH/progress.md" ]; then
+            echo "### Progress"
+            cat ".memento/tickets/$TICKET_PATH/progress.md"
+            echo ""
+        fi
+        
+        # Output decisions if exists
+        if [ -f ".memento/tickets/$TICKET_PATH/decisions.md" ]; then
+            echo "### Decisions"
+            cat ".memento/tickets/$TICKET_PATH/decisions.md"
+            echo ""
+        fi
+        
+        # Output any other markdown files in the ticket directory
+        if [ -d ".memento/tickets/$TICKET_PATH" ]; then
+            for file in ".memento/tickets/$TICKET_PATH"/*.md; do
+                if [ -f "$file" ] && [ "$(basename "$file")" != "progress.md" ] && [ "$(basename "$file")" != "decisions.md" ]; then
+                    echo "### $(basename "$file" .md)"
+                    cat "$file"
+                    echo ""
+                fi
+            done
+        fi
     fi
     echo ""
 fi
