@@ -19,4 +19,7 @@ module.exports = {
   },
   coverageDirectory: '<rootDir>/coverage',
   coverageReporters: ['text', 'lcov', 'html'],
+  moduleNameMapper: {
+    '^inquirer$': '<rootDir>/src/__mocks__/inquirer.ts'
+  },
 };
