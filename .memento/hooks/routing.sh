@@ -334,7 +334,7 @@ if [ -n "$TICKET_MENTION" ] && [ -z "$TICKET_REQUEST" ]; then
     else
         # Low confidence - show minimal context
         echo "## Ticket System Available"
-        echo "Use 'ticket: <name>' to work with a specific ticket, or ask for 'ticket help' for more info."
+        echo "For ticket management, run: \`npx memento-protocol ticket --help\`"
         echo ""
     fi
 fi
