@@ -10,7 +10,7 @@ import { logger } from "./lib/logger";
 import { handleError } from "./lib/errors";
 
 // Version will be injected during build
-const version = "0.1.0";
+const version = process.env.VERSION || "0.1.0";
 
 const program = new Command();
 

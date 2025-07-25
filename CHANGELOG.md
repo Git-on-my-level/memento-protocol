@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.3] - 2025-07-25
+
+### Fixed
+- Fixed hardcoded version "0.1.0" in CLI - now properly reads version from package.json during build
+- Added version injection to build process using esbuild define option
+
+## [0.5.2] - 2025-07-25
+
+### Fixed
+- Fixed package.json main field pointing to non-existent dist/index.js file
+- Corrected main field to point to dist/cli.js for proper package resolution
+
+## [0.5.1] - 2025-07-25
+
+### Fixed
+- Fixed CLI executable missing shebang line causing "command not found" errors
+- Improved build process to ensure proper shebang addition and verification
+- Removed TypeScript compilation interference with esbuild output
+
 ## [0.5.0] - 2025-07-25
 
 ### Added
@@ -87,6 +106,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-platform support (macOS, Linux)
 - npm and standalone distribution
 
+[0.5.3]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.5.3
+[0.5.2]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.5.2
+[0.5.1]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.5.1
 [0.5.0]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.5.0
 [0.4.0]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.4.0
 [0.3.1]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.3.1

@@ -1,13 +1,14 @@
 {
   "name": "memento-protocol",
-  "version": "0.5.0",
+  "version": "0.5.3",
   "description": "A lightweight meta-framework for Claude Code",
-  "main": "dist/index.js",
+  "main": "dist/cli.js",
   "bin": {
     "memento": "dist/cli.js"
   },
   "scripts": {
-    "build": "tsc && node scripts/build.js",
+    "build": "node scripts/build.js",
+    "build:types": "tsc --emitDeclarationOnly",
     "watch": "tsc --watch",
     "dev": "tsx src/cli.ts",
     "test": "jest",
