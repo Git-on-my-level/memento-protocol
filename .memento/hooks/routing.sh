@@ -8,6 +8,9 @@ MODE_REQUEST=$(echo "$PROMPT" | grep -o '[Mm]ode:[[:space:]]*[A-Za-z0-9_-]*' | s
 WORKFLOW_REQUEST=$(echo "$PROMPT" | grep -o '[Ww]orkflow:[[:space:]]*[A-Za-z0-9_-]*' | sed 's/[Ww]orkflow:[[:space:]]*//' || true)
 TICKET_REQUEST=$(echo "$PROMPT" | grep -o '[Tt]icket:[[:space:]]*[A-Za-z0-9_/-]*' | sed 's/[Tt]icket:[[:space:]]*//' || true)
 
+# Detect any mention of ticket for context injection
+TICKET_MENTION=$(echo "$PROMPT" | grep -i 'ticket' || true)
+
 # Extract .memento paths from prompt
 MEMENTO_MODE_PATH=$(echo "$PROMPT" | grep -o '\.memento/modes/[A-Za-z0-9_-]*\.md' | sed 's|\.memento/modes/||; s|\.md||' | head -1 || true)
 MEMENTO_WORKFLOW_PATH=$(echo "$PROMPT" | grep -o '\.memento/workflows/[A-Za-z0-9_-]*\.md' | sed 's|\.memento/workflows/||; s|\.md||' | head -1 || true)
@@ -115,6 +118,36 @@ find_matches() {
     fi
     
     echo "${matches[@]}"
+}
+
+# Function to detect high-confidence ticket intent
+detect_ticket_intent() {
+    local prompt_lower=$(echo "$1" | tr '[:upper:]' '[:lower:]')
+    
+    # High confidence patterns
+    local patterns=(
+        "create.*ticket" "new ticket" "make.*ticket" "add.*ticket"
+        "create a ticket" "ticket for" "ticket about" "ticket to track"
+        "list.*ticket" "show.*ticket" "what ticket" "view.*ticket"
+        "see.*ticket" "all ticket" "my ticket" "existing ticket"
+        "available ticket" "ticket list" "ticket status" "ticket.*progress"
+        "update.*ticket" "edit.*ticket" "modify.*ticket" "change.*ticket"
+        "move.*ticket" "close.*ticket" "finish.*ticket" "complete.*ticket"
+        "reopen.*ticket" "work on.*ticket" "open.*ticket" "start.*ticket"
+        "continue.*ticket" "assign.*ticket" "ticket.*done" "ticket.*in-progress"
+        "how.*ticket" "where.*ticket" "find.*ticket" "ticket help"
+        "ticket command" "ticket usage" "what is a ticket" "ticket documentation"
+        "npx memento" "memento.*ticket" "memento-protocol.*ticket"
+        "ticket create" "ticket move" "ticket delete" "ticket list"
+    )
+    
+    for pattern in "${patterns[@]}"; do
+        if echo "$prompt_lower" | grep -q "$pattern"; then
+            return 0  # High confidence
+        fi
+    done
+    
+    return 1  # Low confidence
 }
 
 # Process mode request or use default
@@ -268,6 +301,42 @@ if [ -n "$TICKET_REQUEST" ]; then
         fi
     fi
     echo ""
+fi
+
+# Inject ticket context based on detection
+if [ -n "$TICKET_MENTION" ] && [ -z "$TICKET_REQUEST" ]; then
+    if detect_ticket_intent "$PROMPT"; then
+        # High confidence - show detailed help
+        echo "## Ticket System - Quick Reference"
+        echo ""
+        echo "### Common Commands"
+        echo "\`\`\`bash"
+        echo "# Create a new ticket"
+        echo "npx memento-protocol ticket create \"implement-user-auth\""
+        echo ""
+        echo "# List all tickets"
+        echo "npx memento-protocol ticket list"
+        echo ""
+        echo "# Move ticket between statuses"
+        echo "npx memento-protocol ticket move implement-user-auth --to in-progress"
+        echo "npx memento-protocol ticket move implement-user-auth --to done"
+        echo ""
+        echo "# View a specific ticket"
+        echo "# Use: ticket: implement-user-auth"
+        echo "\`\`\`"
+        echo ""
+        echo "### Working with Tickets in Claude Code"
+        echo "- Reference a ticket: \`ticket: <name>\`"
+        echo "- Tickets are markdown files in \`.memento/tickets/{next,in-progress,done}/\`"
+        echo "- Edit tickets directly using file editing tools"
+        echo "- Tickets persist context between sessions"
+        echo ""
+    else
+        # Low confidence - show minimal context
+        echo "## Ticket System Available"
+        echo "Use 'ticket: <name>' to work with a specific ticket, or ask for 'ticket help' for more info."
+        echo ""
+    fi
 fi
 
 # Output the original prompt
