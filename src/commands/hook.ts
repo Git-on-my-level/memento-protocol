@@ -35,7 +35,7 @@ hookCommand
         return;
       }
       
-      console.log('\\nConfigured Hooks:\\n');
+      console.log('\nConfigured Hooks:\n');
       
       for (const { event, hooks: eventHooks } of hooks) {
         if (eventHooks.length > 0) {
@@ -200,12 +200,12 @@ hookCommand
         return;
       }
       
-      console.log('\\nAvailable Hook Templates:\\n');
+      console.log('\nAvailable Hook Templates:\n');
       
       for (const template of templates) {
         console.log(`  - ${template}`);
       }
-      console.log('\\nUse "memento hook add <template>" to add a hook\\n');
+      console.log('\nUse "memento hook add <template>" to add a hook\n');
     } catch (error) {
       handleError(error);
     }

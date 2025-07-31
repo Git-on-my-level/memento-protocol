@@ -1,3 +1,5 @@
 [[hooks]]
 event = "UserPromptSubmit"
 command = "./.memento/hooks/routing.sh"
+
+# Memento Protocol Hooks

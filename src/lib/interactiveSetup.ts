@@ -1,13 +1,18 @@
 import inquirer from 'inquirer';
+import * as path from 'path';
+import * as fs from 'fs';
 import { ProjectInfo } from './projectDetector';
 import { ComponentInstaller } from './componentInstaller';
 import { ConfigManager } from './configManager';
 import { logger } from './logger';
+import { HookManager } from './hooks/HookManager';
+import { PackagePaths } from './packagePaths';
 
 export interface SetupOptions {
   projectInfo: ProjectInfo;
   selectedModes: string[];
   selectedWorkflows: string[];
+  selectedHooks?: string[];
   defaultMode?: string;
   skipRecommended?: boolean;
   force?: boolean;
@@ -17,10 +22,12 @@ export interface SetupOptions {
 export class InteractiveSetup {
   private componentInstaller: ComponentInstaller;
   private configManager: ConfigManager;
+  private hookManager: HookManager;
 
   constructor(projectRoot: string) {
     this.componentInstaller = new ComponentInstaller(projectRoot);
     this.configManager = new ConfigManager(projectRoot);
+    this.hookManager = new HookManager(projectRoot);
   }
 
   /**
@@ -174,7 +181,43 @@ export class InteractiveSetup {
       }
     ]);
 
-    return { selectedModes, selectedWorkflows };
+    // Select hooks - Get available hook templates
+    const availableHooks = await this.hookManager.listTemplates();
+    let selectedHooks: string[] = [];
+    
+    if (availableHooks.length > 0) {
+      // Get template details for better descriptions
+      const hookChoices = [];
+      for (const hookName of availableHooks) {
+        try {
+          const templatePath = path.join(PackagePaths.getTemplatesDir(), 'hooks', `${hookName}.json`);
+          const template = JSON.parse(fs.readFileSync(templatePath, 'utf-8'));
+          hookChoices.push({
+            name: `${template.name} - ${template.description}`,
+            value: hookName,
+            checked: hookName === 'git-context-loader' // Default to git-context-loader
+          });
+        } catch {
+          hookChoices.push({
+            name: hookName,
+            value: hookName,
+            checked: false
+          });
+        }
+      }
+
+      const { hooks } = await inquirer.prompt([
+        {
+          type: 'checkbox',
+          name: 'hooks',
+          message: 'Select Claude Code hooks to install:',
+          choices: hookChoices
+        }
+      ]);
+      selectedHooks = hooks;
+    }
+
+    return { selectedModes, selectedWorkflows, selectedHooks };
   }
 
   /**
@@ -235,7 +278,10 @@ export class InteractiveSetup {
     logger.space();
     logger.info(`Modes: ${options.selectedModes.join(', ') || 'None'}`);
     logger.info(`Workflows: ${options.selectedWorkflows.join(', ') || 'None'}`);
-        if (options.defaultMode) {
+    if (options.selectedHooks && options.selectedHooks.length > 0) {
+      logger.info(`Hooks: ${options.selectedHooks.join(', ')}`);
+    }
+    if (options.defaultMode) {
       logger.info(`Default Mode: ${options.defaultMode}`);
     }
     logger.info(`Add to .gitignore: ${options.addToGitignore ? 'Yes' : 'No'}`);
@@ -268,6 +314,13 @@ export class InteractiveSetup {
       await this.componentInstaller.installComponent('workflow', workflow, options.force);
     }
 
+    // Install selected hooks
+    if (options.selectedHooks && options.selectedHooks.length > 0) {
+      for (const hook of options.selectedHooks) {
+        await this.hookManager.createHookFromTemplate(hook, {});
+        logger.success(`Installed hook: ${hook}`);
+      }
+    }
 
     // Save configuration
     if (options.defaultMode || options.selectedModes.length > 0) {
