@@ -1,6 +1,44 @@
 import { HookRegistry } from '../HookRegistry';
 import { HookConfig, HookContext } from '../types';
 
+// Mock the Hook implementations to avoid actual command execution
+jest.mock('../SessionStartHook', () => ({
+  SessionStartHook: class {
+    config: any;
+    constructor(config: any) {
+      this.config = config;
+    }
+    get id() { return this.config.id; }
+    get name() { return this.config.name; }
+    get event() { return this.config.event; }
+    get enabled() { return this.config.enabled; }
+    get priority() { return this.config.priority || 0; }
+    async execute() {
+      return { success: true, output: 'mocked' };
+    }
+  }
+}));
+
+jest.mock('../UserPromptSubmitHook', () => ({
+  UserPromptSubmitHook: class {
+    config: any;
+    constructor(config: any) {
+      this.config = config;
+    }
+    get id() { return this.config.id; }
+    get name() { return this.config.name; }
+    get event() { return this.config.event; }
+    get enabled() { return this.config.enabled; }
+    get priority() { return this.config.priority || 0; }
+    async execute() {
+      if (this.config.command === 'exit 2') {
+        return { success: false, exitCode: 2, shouldBlock: true };
+      }
+      return { success: true, output: 'mocked' };
+    }
+  }
+}));
+
 describe('HookRegistry', () => {
   let registry: HookRegistry;
 

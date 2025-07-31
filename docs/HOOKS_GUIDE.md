@@ -117,9 +117,7 @@ Memento Protocol includes pre-built hook templates:
 memento hook templates
 
 # Add a hook from template
-memento hook add code-formatter
 memento hook add security-guard
-memento hook add test-on-save
 memento hook add git-context-loader
 ```
 
@@ -209,18 +207,18 @@ Block dangerous commands:
 }
 ```
 
-### Auto-formatter
-Format code after editing:
+### File Change Logger
+Log file modifications:
 ```json
 {
-  "id": "formatter",
-  "name": "Auto Format",
+  "id": "file-logger",
+  "name": "File Change Logger",
   "event": "PostToolUse",
   "matcher": {
     "type": "tool",
     "pattern": "Write,Edit"
   },
-  "command": "prettier --write $HOOK_TOOL_ARG_FILE_PATH || true",
+  "command": "echo \"File modified: $HOOK_TOOL_ARG_FILE_PATH\" >> .memento/file-changes.log",
   "continueOnError": true
 }
 ```
@@ -236,19 +234,19 @@ Load project info at session start:
 }
 ```
 
-### Test Runner
-Run tests when prompted:
+### Command Logger
+Log specific commands for audit:
 ```json
 {
-  "id": "test-runner",
-  "name": "Test Runner",
+  "id": "command-logger",
+  "name": "Command Logger",
   "event": "UserPromptSubmit",
   "matcher": {
-    "type": "fuzzy",
-    "pattern": "run tests|test this",
-    "confidence": 0.8
+    "type": "regex",
+    "pattern": "\\b(deploy|publish|release)\\b"
   },
-  "command": "npm test"
+  "command": "echo \"[$(date)] Command requested: $HOOK_PROMPT\" >> .memento/command-audit.log",
+  "continueOnError": true
 }
 ```
 

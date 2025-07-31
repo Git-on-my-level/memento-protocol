@@ -49,7 +49,7 @@ export class HookRegistry {
    * Remove a hook by ID
    */
   removeHook(id: string): boolean {
-    for (const [event, hooks] of this.hooks.entries()) {
+    for (const [, hooks] of this.hooks.entries()) {
       const index = hooks.findIndex(h => h.id === id);
       if (index !== -1) {
         hooks.splice(index, 1);

@@ -2,7 +2,7 @@ import { Hook } from './Hook';
 import { HookContext } from './types';
 
 export class SessionStartHook extends Hook {
-  shouldRun(context: HookContext): boolean {
+  shouldRun(_context: HookContext): boolean {
     // SessionStart hooks always run unless disabled
     return true;
   }

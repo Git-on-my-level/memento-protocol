@@ -1,10 +1,10 @@
 {
   "id": "git-context-loader",
   "name": "Git Context Loader",
-  "description": "Loads git status and recent commits at session start",
+  "description": "Loads git status and project structure at session start",
   "event": "SessionStart",
   "enabled": true,
-  "command": "echo '## Git Context\\n' && git status -s && echo '\\n### Recent Commits\\n' && git log --oneline -5",
+  "command": "echo '## Project Context' && echo && echo '### Git Status' && git status -s 2>/dev/null || echo 'Not a git repository' && echo && echo '### Recent Commits' && git log --oneline -5 2>/dev/null || true && echo && echo '### Project Structure' && find . -type f -name '*.json' -o -name '*.js' -o -name '*.ts' -o -name '*.py' -o -name '*.java' -o -name '*.go' | grep -E -v '(node_modules|.git|dist|build|target)' | head -20 || true",
   "continueOnError": true,
   "priority": 90
 }

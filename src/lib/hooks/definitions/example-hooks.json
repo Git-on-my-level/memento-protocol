@@ -6,31 +6,17 @@
   },
   "hooks": [
     {
-      "id": "security-check",
-      "name": "Security Check Hook",
-      "description": "Blocks dangerous commands and prompts",
+      "id": "sudo-block",
+      "name": "Sudo Block Hook",
+      "description": "Blocks sudo and super-user commands",
       "event": "UserPromptSubmit",
       "enabled": false,
       "matcher": {
-        "type": "keyword",
-        "pattern": "+rm -rf +sudo +chmod 777"
+        "type": "regex",
+        "pattern": "\\b(sudo|su|doas)\\b"
       },
-      "command": "echo 'BLOCKED: Dangerous command detected' >&2 && exit 2",
+      "command": "echo 'BLOCKED: Super-user commands are not allowed' >&2 && exit 2",
       "priority": 200
-    },
-    {
-      "id": "auto-format",
-      "name": "Auto Format Hook",
-      "description": "Automatically formats code after editing",
-      "event": "PostToolUse",
-      "enabled": false,
-      "matcher": {
-        "type": "tool",
-        "pattern": "Write,Edit,MultiEdit"
-      },
-      "command": ".memento/hooks/scripts/auto-format.sh",
-      "continueOnError": true,
-      "priority": 50
     },
     {
       "id": "session-context",
@@ -40,21 +26,6 @@
       "enabled": false,
       "command": ".memento/hooks/scripts/load-context.sh",
       "priority": 100
-    },
-    {
-      "id": "test-runner",
-      "name": "Test Runner Hook",
-      "description": "Runs tests when requested",
-      "event": "UserPromptSubmit",
-      "enabled": false,
-      "matcher": {
-        "type": "fuzzy",
-        "pattern": "run tests|test this|check tests|verify tests",
-        "confidence": 0.8
-      },
-      "command": "echo '\\n## Running tests...\\n' && npm test",
-      "timeout": 60000,
-      "priority": 75
     }
   ]
 }
