@@ -3,11 +3,9 @@ import * as path from 'path';
 import { logger } from '../../logger';
 
 export class MementoRoutingHook {
-  private projectRoot: string;
   private scriptPath: string;
 
   constructor(projectRoot: string) {
-    this.projectRoot = projectRoot;
     this.scriptPath = path.join(projectRoot, '.memento', 'hooks', 'scripts', 'memento-routing.sh');
   }
 
