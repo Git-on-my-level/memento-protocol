@@ -99,7 +99,10 @@ export class HookManager {
       event: 'UserPromptSubmit',
       enabled: true,
       command: path.join(this.hooksDir, 'scripts', 'memento-routing.sh'),
-      priority: 100 // High priority to run first
+      priority: 100, // High priority to run first
+      requirements: {
+        commands: ['jq', 'grep', 'sed', 'cat', 'echo', 'ls', 'basename']
+      }
     };
     
     this.registry.addHook(routingConfig);

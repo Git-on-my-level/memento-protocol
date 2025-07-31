@@ -27,8 +27,16 @@ export class MementoRoutingHook {
 # Memento Protocol Routing Hook
 # This hook processes user prompts to inject mode, workflow, and ticket context
 
-# Get user prompt from stdin
-PROMPT=$(cat)
+# Read JSON input from stdin
+JSON_INPUT=$(cat)
+
+# Extract the prompt field from JSON
+PROMPT=$(echo "$JSON_INPUT" | jq -r '.prompt // empty')
+
+# If no prompt field, exit without output
+if [ -z "$PROMPT" ]; then
+  exit 0
+fi
 
 # Extract mode/workflow/ticket request
 MODE_REQUEST=$(echo "$PROMPT" | grep -o '[Mm]ode:[[:space:]]*[A-Za-z0-9_-]*' | sed 's/[Mm]ode:[[:space:]]*//' || true)
@@ -296,8 +304,7 @@ if [ -n "$TICKET_REQUEST" ]; then
     echo ""
 fi
 
-# Output the original prompt
-echo "$PROMPT"
+# Don't output the prompt - Claude Code will append it automatically
 `;
   }
 }
