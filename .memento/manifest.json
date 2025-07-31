@@ -1,13 +1,13 @@
 {
   "version": "1.0.0",
-  "created": "2025-07-31T15:21:43.972Z",
+  "created": "2025-07-31T15:28:41.479Z",
   "components": {
     "modes": [
+      "reviewer",
       "autonomous-project-manager",
       "ai-debt-maintainer",
       "architect",
-      "engineer",
-      "reviewer"
+      "engineer"
     ],
     "workflows": [
       "summarize",
@@ -15,6 +15,30 @@
       "openmemory-setup"
     ],
     "integrations": [],
-    "updated": "2025-07-31T15:21:48.574Z"
+    "updated": "2025-07-31T15:52:07.751Z"
+  },
+  "versions": {
+    "modes": {
+      "reviewer": {
+        "name": "reviewer",
+        "version": "1.0.0",
+        "hash": "3b1d50669f3ad928148936d02fb6d7ee0686b554c4f57d840ced9b2c34440b3c",
+        "lastUpdated": "2025-07-31T15:35:24.492Z"
+      }
+    },
+    "workflows": {
+      "summarize": {
+        "name": "summarize",
+        "version": "1.0.0",
+        "hash": "7c88d97a25097708052c15d71c2d6c2bb5bc9aa86cfcc19eb786287da6ebd08f",
+        "lastUpdated": "2025-07-31T15:35:24.494Z"
+      },
+      "review": {
+        "name": "review",
+        "version": "1.0.0",
+        "hash": "4158ca7373a0baed2881a5b7adb5c85ab9c7d98e4613ba3d2eeeba824c63e3a8",
+        "lastUpdated": "2025-07-31T15:35:24.494Z"
+      }
+    }
   }
 }

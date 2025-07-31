@@ -218,24 +218,30 @@ export class HookValidator {
 
     // Validate matcher
     if (hook.matcher) {
-      const validMatcherTypes = ['regex', 'exact', 'fuzzy', 'tool', 'keyword'];
-      if (!validMatcherTypes.includes(hook.matcher.type)) {
-        result.errors.push(`Invalid matcher type: ${hook.matcher.type}. Valid types: ${validMatcherTypes.join(', ')}`);
-        result.valid = false;
-      }
-
-      if (!hook.matcher.pattern || hook.matcher.pattern.trim().length === 0) {
-        result.errors.push('Matcher pattern is required when matcher is specified');
-        result.valid = false;
-      }
-
-      // Validate regex pattern
-      if (hook.matcher.type === 'regex') {
-        try {
-          new RegExp(hook.matcher.pattern);
-        } catch (error) {
-          result.errors.push(`Invalid regex pattern: ${hook.matcher.pattern}`);
+      // For PreToolUse and PostToolUse events, Claude Code expects tool names as strings
+      if ((hook.event === 'PreToolUse' || hook.event === 'PostToolUse') && 
+          hook.matcher.type === 'tool' && hook.matcher.pattern) {
+        // This is valid - Claude Code will use the pattern as the tool name
+      } else {
+        const validMatcherTypes = ['regex', 'exact', 'fuzzy', 'tool', 'keyword'];
+        if (!validMatcherTypes.includes(hook.matcher.type)) {
+          result.errors.push(`Invalid matcher type: ${hook.matcher.type}. Valid types: ${validMatcherTypes.join(', ')}`);
           result.valid = false;
+        }
+
+        if (!hook.matcher.pattern || hook.matcher.pattern.trim().length === 0) {
+          result.errors.push('Matcher pattern is required when matcher is specified');
+          result.valid = false;
+        }
+
+        // Validate regex pattern
+        if (hook.matcher.type === 'regex') {
+          try {
+            new RegExp(hook.matcher.pattern);
+          } catch (error) {
+            result.errors.push(`Invalid regex pattern: ${hook.matcher.pattern}`);
+            result.valid = false;
+          }
         }
       }
     }

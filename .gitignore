@@ -42,3 +42,6 @@ yarn-error.log*
 *.temp
 
 # DO NOT gitignore Memento Protocol because we want to use the tool to develop the tool
+
+# Memento Protocol
+.memento/

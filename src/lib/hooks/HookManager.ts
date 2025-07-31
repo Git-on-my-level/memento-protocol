@@ -139,11 +139,28 @@ export class HookManager {
         
         uniqueHooks.add(hookKey);
         
+        // Convert absolute paths to relative paths for portability
+        let hookCommand = hook.config.command;
+        if (hookCommand.startsWith(this.projectRoot)) {
+          hookCommand = '.' + hookCommand.substring(this.projectRoot.length);
+        }
+        
         settingsContent += `
 [[hooks]]
 event = "${event}"
-command = "${hook.config.command}"
+command = "${hookCommand}"
 `;
+        
+        // Add matcher if present
+        if (hook.config.matcher) {
+          // Claude Code expects tool name as a string for PreToolUse/PostToolUse events
+          if (hook.config.matcher.type === 'tool' && hook.config.matcher.pattern) {
+            settingsContent += `matcher = ${JSON.stringify(hook.config.matcher.pattern)}\n`;
+          } else {
+            // For other matcher types, we might need different handling
+            logger.warn(`Unsupported matcher type for Claude Code: ${hook.config.matcher.type}`);
+          }
+        }
         
         if (hook.config.args && hook.config.args.length > 0) {
           settingsContent += `args = ${JSON.stringify(hook.config.args)}\n`;
@@ -220,7 +237,21 @@ command = "${hook.config.command}"
       
       // Handle script-based hooks
       let command = template.command;
-      if (template.script && !template.command) {
+      
+      // Check if template expects a script file
+      if (template.command === '${HOOK_SCRIPT}') {
+        // Look for corresponding .sh file
+        const scriptTemplatePath = path.join(PackagePaths.getTemplatesDir(), 'hooks', `${templateName}.sh`);
+        try {
+          const scriptContent = await fs.readFile(scriptTemplatePath, 'utf-8');
+          template.script = scriptContent;
+          command = null; // Will be set below
+        } catch (error) {
+          throw new Error(`Script template not found: ${templateName}.sh`);
+        }
+      }
+      
+      if (template.script && !command) {
         // Validate script before creating file
         const scriptValidation = this.validator.validateScript(template.script);
         if (!scriptValidation.valid) {
