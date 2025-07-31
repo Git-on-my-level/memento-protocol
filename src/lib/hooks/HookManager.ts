@@ -106,6 +106,9 @@ export class HookManager {
    * Generate or update .claude/settings.toml
    */
   private async generateClaudeSettings(): Promise<void> {
+    // Ensure .claude directory exists
+    await fs.mkdir(this.claudeDir, { recursive: true });
+    
     const settingsPath = path.join(this.claudeDir, 'settings.toml');
     
     // Get all hooks from registry
@@ -272,6 +275,9 @@ command = "${hook.config.command}"
       }
       
       await this.addHook(hookConfig);
+      
+      // Ensure definitions directory exists before saving
+      await fs.mkdir(this.definitionsDir, { recursive: true });
       
       // Save to definitions
       const definitionPath = path.join(this.definitionsDir, `${hookConfig.id}.json`);
