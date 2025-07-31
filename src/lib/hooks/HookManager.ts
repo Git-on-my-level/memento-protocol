@@ -165,15 +165,15 @@ export class HookManager {
         
         // Create a unique key for this hook (event + command + args)
         const argsString = hook.config.args ? JSON.stringify(hook.config.args) : '';
-        const hookKey = `${event}:${hook.config.command}:${argsString}`;
+        const dedupeKey = `${event}:${hook.config.command}:${argsString}`;
         
         // Skip if we've already seen this exact hook combination
-        if (uniqueHooks.has(hookKey)) {
-          logger.debug(`Skipping duplicate hook: ${hook.config.name} (${hookKey})`);
+        if (uniqueHooks.has(dedupeKey)) {
+          logger.debug(`Skipping duplicate hook: ${hook.config.name} (${dedupeKey})`);
           continue;
         }
         
-        uniqueHooks.add(hookKey);
+        uniqueHooks.add(dedupeKey);
         
         // Convert absolute paths to relative paths for portability
         let hookCommand = hook.config.command;
@@ -181,22 +181,29 @@ export class HookManager {
           hookCommand = '.' + hookCommand.substring(this.projectRoot.length);
         }
         
+        // Generate hook key based on event type and matcher/id
+        let hookKey = '';
+        if (event === 'PreToolUse' || event === 'PostToolUse') {
+          // For tool hooks, use the matcher pattern as the key
+          if (hook.config.matcher && hook.config.matcher.type === 'tool' && hook.config.matcher.pattern) {
+            hookKey = `[hooks.${event}.${hook.config.matcher.pattern}]`;
+          } else {
+            logger.warn(`PreToolUse/PostToolUse hook ${hook.config.name} missing tool matcher`);
+            continue;
+          }
+        } else if (event === 'UserPromptSubmit') {
+          // For UserPromptSubmit, use the hook ID as the key
+          const hookId = hook.config.id || hook.config.name.replace(/\s+/g, '');
+          hookKey = `[hooks.${event}.${hookId}]`;
+        } else {
+          // For other events (SessionStart, etc), use just the event
+          hookKey = `[hooks.${event}]`;
+        }
+        
         settingsContent += `
-[[hooks]]
-event = "${event}"
+${hookKey}
 command = "${hookCommand}"
 `;
-        
-        // Add matcher if present
-        if (hook.config.matcher) {
-          // Claude Code expects tool name as a string for PreToolUse/PostToolUse events
-          if (hook.config.matcher.type === 'tool' && hook.config.matcher.pattern) {
-            settingsContent += `matcher = ${JSON.stringify(hook.config.matcher.pattern)}\n`;
-          } else {
-            // For other matcher types, we might need different handling
-            logger.warn(`Unsupported matcher type for Claude Code: ${hook.config.matcher.type}`);
-          }
-        }
         
         if (hook.config.args && hook.config.args.length > 0) {
           settingsContent += `args = ${JSON.stringify(hook.config.args)}\n`;

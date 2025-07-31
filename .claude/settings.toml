@@ -1,18 +1,13 @@
 # Memento Protocol Hooks
 
-[[hooks]]
-event = "PreToolUse"
+[hooks.PreToolUse.Bash]
 command = "./.memento/hooks/scripts/security-guard.sh"
-matcher = "Bash"
 
-[[hooks]]
-event = "UserPromptSubmit"
+[hooks.UserPromptSubmit.acronym-expander]
 command = "./.memento/hooks/scripts/acronym-expander.sh"
 
-[[hooks]]
-event = "UserPromptSubmit"
+[hooks.UserPromptSubmit.memento-routing]
 command = "./.memento/hooks/scripts/memento-routing.sh"
 
-[[hooks]]
-event = "SessionStart"
+[hooks.SessionStart]
 command = "echo '## Project Context' && echo && echo '### Git Status' && git status -s 2>/dev/null || echo 'Not a git repository' && echo && echo '### Recent Commits' && git log --oneline -5 2>/dev/null || true && echo && echo '### Project Structure' && find . -type f -name '*.json' -o -name '*.js' -o -name '*.ts' -o -name '*.py' -o -name '*.java' -o -name '*.go' | grep -E -v '(node_modules|.git|dist|build|target)' | head -20 || true"
