@@ -41,6 +41,9 @@ export class HookManager {
     // Load hook definitions
     await this.loadHookDefinitions();
     
+    // Clean up old timestamped hooks
+    await this.cleanupTimestampedHooks();
+    
     // Generate Claude settings
     await this.generateClaudeSettings();
     
@@ -181,6 +184,12 @@ command = "${hook.config.command}"
    * Remove a hook
    */
   async removeHook(id: string): Promise<boolean> {
+    // Find the hook first to get its file paths
+    const hook = await this.findExistingHook(id);
+    if (hook) {
+      await this.removeHookFiles(hook);
+    }
+    
     const removed = this.registry.removeHook(id);
     if (removed) {
       await this.generateClaudeSettings();
@@ -198,8 +207,16 @@ command = "${hook.config.command}"
       const templateContent = await fs.readFile(templatePath, 'utf-8');
       const template: any = JSON.parse(templateContent);
       
-      // Generate hook ID
-      const hookId = config.id || `${templateName}-${Date.now()}`;
+      // Use clean ID without timestamp
+      const hookId = config.id || templateName;
+      
+      // Check if hook already exists and remove it first
+      const existingHook = await this.findExistingHook(hookId);
+      if (existingHook) {
+        logger.info(`Updating existing hook: ${hookId}`);
+        await this.removeHookFiles(existingHook);
+        this.registry.removeHook(hookId);
+      }
       
       // Handle script-based hooks
       let command = template.command;
@@ -218,10 +235,10 @@ command = "${hook.config.command}"
           scriptValidation.warnings.forEach(warning => logger.warn(`  - ${warning}`));
         }
         
-        // Create script file
+        // Create script file with clean name
         const scriptsDir = path.join(this.hooksDir, 'scripts');
         await fs.mkdir(scriptsDir, { recursive: true });
-        const scriptPath = path.join(scriptsDir, `${hookId}.sh`);
+        const scriptPath = path.join(scriptsDir, `${templateName}.sh`);
         await fs.writeFile(scriptPath, template.script, { mode: 0o755 });
         command = scriptPath;
       }
@@ -313,10 +330,110 @@ command = "${hook.config.command}"
   }
 
   /**
+   * Find an existing hook by ID
+   */
+  private async findExistingHook(id: string): Promise<HookConfig | null> {
+    const allHooks = this.registry.getAllHooks();
+    for (const { hooks } of allHooks) {
+      const found = hooks.find(h => h.config.id === id);
+      if (found) {
+        return found.config;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Remove hook files (definition and script)
+   */
+  private async removeHookFiles(hook: HookConfig): Promise<void> {
+    // Remove definition file
+    const definitionPath = path.join(this.definitionsDir, `${hook.id}.json`);
+    try {
+      await fs.unlink(definitionPath);
+    } catch (error) {
+      // File might not exist, ignore
+    }
+
+    // Remove script file if it's in our scripts directory
+    if (hook.command && hook.command.includes(this.hooksDir)) {
+      try {
+        await fs.unlink(hook.command);
+      } catch (error) {
+        // File might not exist, ignore
+      }
+    }
+  }
+
+  /**
    * Get all registered hooks
    */
   getAllHooks(): { event: HookEvent; hooks: any[] }[] {
     return this.registry.getAllHooks();
+  }
+
+  /**
+   * Clean up old timestamped hooks (migration helper)
+   */
+  async cleanupTimestampedHooks(): Promise<void> {
+    const allHooks = this.registry.getAllHooks();
+    const timestampPattern = /-\d{13}$/; // Matches -[13 digits] at end
+    const hooksToCleanup: Array<{ oldHook: any; baseName: string }> = [];
+    
+    // First, collect all hooks that need cleanup
+    for (const { hooks } of allHooks) {
+      for (const hook of hooks) {
+        if (timestampPattern.test(hook.config.id)) {
+          const baseName = hook.config.id.replace(timestampPattern, '');
+          hooksToCleanup.push({ oldHook: hook, baseName });
+        }
+      }
+    }
+    
+    // Now process them
+    for (const { oldHook, baseName } of hooksToCleanup) {
+      logger.info(`Cleaning up hook ID: ${oldHook.config.id} -> ${baseName}`);
+      
+      // Create new hook config with clean ID
+      const cleanConfig = { ...oldHook.config, id: baseName };
+      
+      // Update script path if it exists
+      if (cleanConfig.command && cleanConfig.command.includes(oldHook.config.id)) {
+        const oldScriptPath = cleanConfig.command;
+        const newScriptPath = oldScriptPath.replace(oldHook.config.id, baseName);
+        
+        // Rename script file
+        try {
+          await fs.rename(oldScriptPath, newScriptPath);
+          cleanConfig.command = newScriptPath;
+        } catch (error) {
+          logger.warn(`Could not rename script file: ${error}`);
+        }
+      }
+      
+      // Remove old hook from registry
+      this.registry.removeHook(oldHook.config.id);
+      
+      // Add clean hook
+      this.registry.addHook(cleanConfig);
+      
+      // Save new definition
+      await fs.mkdir(this.definitionsDir, { recursive: true });
+      const definitionPath = path.join(this.definitionsDir, `${baseName}.json`);
+      const definition: HookDefinition = {
+        version: '1.0.0',
+        hooks: [cleanConfig]
+      };
+      await fs.writeFile(definitionPath, JSON.stringify(definition, null, 2));
+      
+      // Remove old definition
+      const oldDefinitionPath = path.join(this.definitionsDir, `${oldHook.config.id}.json`);
+      try {
+        await fs.unlink(oldDefinitionPath);
+      } catch (error) {
+        // Ignore if file doesn't exist
+      }
+    }
   }
 
 }
