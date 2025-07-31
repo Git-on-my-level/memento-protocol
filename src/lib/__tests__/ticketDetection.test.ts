@@ -3,12 +3,13 @@ import * as path from "path";
 import * as fs from "fs";
 
 describe("Ticket Detection in Routing Hook", () => {
-  const hookPath = path.join(__dirname, "../../../.memento/hooks/routing.sh");
+  const hookPath = path.join(__dirname, "../../../.memento/hooks/scripts/memento-routing.sh");
   
   // Helper to test a prompt through the routing hook
   const testPrompt = (prompt: string): string => {
     try {
-      const result = execSync(`echo "${prompt}" | ${hookPath}`, {
+      const jsonInput = JSON.stringify({ prompt });
+      const result = execSync(`echo '${jsonInput}' | ${hookPath}`, {
         encoding: "utf-8",
         cwd: path.join(__dirname, "../../../"),
       });

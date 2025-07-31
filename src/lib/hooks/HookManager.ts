@@ -199,21 +199,17 @@ export class HookManager {
         }
         
         // Create the hook entry
-        const hookEntry = {
+        const hookEntry: any = {
           matcher,
           hooks: [
             {
               type: 'command',
               command: hookCommand,
-              timeout: 30
+              timeout: 30,
+              ...(hook.config.args && hook.config.args.length > 0 && { args: hook.config.args })
             }
           ]
         };
-        
-        // Add args if they exist
-        if (hook.config.args && hook.config.args.length > 0) {
-          hookEntry.hooks[0].args = hook.config.args;
-        }
         
         hooksConfig[event].push(hookEntry);
     }

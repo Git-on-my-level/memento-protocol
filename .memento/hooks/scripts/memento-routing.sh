@@ -280,4 +280,43 @@ if [ -n "$TICKET_REQUEST" ]; then
     echo ""
 fi
 
+# Ticket Detection Logic
+# If no explicit ticket request, check for ticket-related keywords
+if [ -z "$TICKET_REQUEST" ]; then
+    # High-confidence patterns (case-insensitive)
+    if echo "$PROMPT" | grep -qi '\(create.*ticket\|new.*ticket\|list.*tickets\|work.*with.*tickets\|move.*ticket\|use.*ticket.*create\|ticket.*command\)'; then
+        echo "## Ticket System - Quick Reference"
+        echo ""
+        echo "### Available Commands"
+        echo "\`\`\`bash"
+        echo "# Create a new ticket"
+        echo "npx memento-protocol ticket create \"ticket-name\""
+        echo ""
+        echo "# List all tickets"
+        echo "npx memento-protocol ticket list"
+        echo ""
+        echo "# Move ticket to different status"
+        echo "npx memento-protocol ticket move ticket-name --to in-progress  # or: next, done"
+        echo ""
+        echo "# Delete a ticket"
+        echo "npx memento-protocol ticket delete ticket-name"
+        echo "\`\`\`"
+        echo ""
+        echo "### Working with Tickets"
+        echo ""
+        echo "- Tickets are simple markdown files that serve as persistent workspaces"
+        echo "- Use your file editing tools to update ticket content directly"
+        echo "- Tickets survive between sessions - use them to track progress and share context"
+        echo "- When working on large tasks, create multiple tickets and delegate to sub-agents"
+        echo ""
+    # Low-confidence patterns (case-insensitive) - exclude explicit ticket: requests
+    elif echo "$PROMPT" | grep -qi 'ticket' && ! echo "$PROMPT" | grep -qi '^[[:space:]]*ticket[[:space:]]*:'; then
+        echo "## Ticket System Available"
+        echo ""
+        echo "Memento Protocol includes a ticket system for task management."
+        echo "Use \`npx memento-protocol ticket --help\` for more information."
+        echo ""
+    fi
+fi
+
 # Don't output the prompt - Claude Code will append it automatically

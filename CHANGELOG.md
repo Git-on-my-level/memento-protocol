@@ -7,28 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2025-07-31
+
 ### Added
-- **Acronym expansion feature**: New `memento acronym` command for managing project-specific acronyms
-  - `add`, `remove`, `list`, and `clear` subcommands
-  - Automatic acronym expansion via new `acronym-expander` hook
-  - Case-insensitive expansion with whole-word matching
-  - Clean markdown glossary injection without text replacement
-- **Enhanced hook system**: Improved HookManager with script-based hook support
-  - Automatic script file creation from templates
-  - Better hook deduplication logic needed
-- **Hook selection in init**: Hooks can now be selected during interactive initialization
-  - All built-in hooks selected by default
-  - Support for `--hooks` flag in non-interactive mode
-  - `MEMENTO_HOOKS` environment variable support
-- **Documentation updates**: Comprehensive README overhaul with all features documented
-
-### Fixed
-- Fixed escaped newline characters (`\n`) appearing literally in hook list output
-- Made test suites resilient to future hook additions using flexible matchers
-
-### Changed
-- Init command now prompts for hook selection alongside modes and workflows
-- `--all-recommended` flag now includes all available hooks
+- enhance hook system with modular architecture and templates (#5)
+- add intelligent ticket context injection to routing hook (#4)
 
 ## [0.5.3] - 2025-07-25
 
@@ -131,6 +114,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-platform support (macOS, Linux)
 - npm and standalone distribution
 
+[0.6.0]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.6.0
 [0.5.3]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.5.3
 [0.5.2]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.5.2
 [0.5.1]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.5.1
