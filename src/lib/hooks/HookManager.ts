@@ -38,6 +38,9 @@ export class HookManager {
     // Ensure directories exist
     await this.ensureDirectories();
     
+    // Generate built-in hooks first
+    await this.generateBuiltinHooks();
+    
     // Load hook definitions
     await this.loadHookDefinitions();
     
@@ -46,9 +49,6 @@ export class HookManager {
     
     // Generate Claude settings
     await this.generateClaudeSettings();
-    
-    // Generate built-in hooks
-    await this.generateBuiltinHooks();
     
     logger.success('Hook system initialized');
   }
@@ -103,6 +103,15 @@ export class HookManager {
     };
     
     this.registry.addHook(routingConfig);
+    
+    // Save routing hook definition
+    const definitionPath = path.join(this.definitionsDir, 'memento-routing.json');
+    const definition: HookDefinition = {
+      version: '1.0.0',
+      hooks: [routingConfig]
+    };
+    
+    await fs.writeFile(definitionPath, JSON.stringify(definition, null, 2));
   }
 
   /**
@@ -117,15 +126,39 @@ export class HookManager {
     // Get all hooks from registry
     const allHooks = this.registry.getAllHooks();
     
+    // Flatten and sort all hooks by priority (higher priority first)
+    interface FlatHook {
+      event: HookEvent;
+      hook: any;
+      priority: number;
+    }
+    
+    const flatHooks: FlatHook[] = [];
+    for (const { event, hooks } of allHooks) {
+      for (const hook of hooks) {
+        if (!hook.enabled) continue;
+        flatHooks.push({
+          event,
+          hook,
+          priority: hook.config.priority || 50 // Default priority
+        });
+      }
+    }
+    
+    // Sort by priority (descending) and then by name for stability
+    flatHooks.sort((a, b) => {
+      const priorityDiff = b.priority - a.priority;
+      if (priorityDiff !== 0) return priorityDiff;
+      return a.hook.config.name.localeCompare(b.hook.config.name);
+    });
+    
     // Use a Set to track unique hook combinations (event + command) to prevent duplicates
     const uniqueHooks = new Set<string>();
     
     // Build settings content
     let settingsContent = '';
     
-    for (const { event, hooks } of allHooks) {
-      for (const hook of hooks) {
-        if (!hook.enabled) continue;
+    for (const { event, hook } of flatHooks) {
         
         // Create a unique key for this hook (event + command + args)
         const argsString = hook.config.args ? JSON.stringify(hook.config.args) : '';
@@ -165,7 +198,6 @@ command = "${hookCommand}"
         if (hook.config.args && hook.config.args.length > 0) {
           settingsContent += `args = ${JSON.stringify(hook.config.args)}\n`;
         }
-      }
     }
     
     // Check if we need to merge with existing settings
