@@ -1,0 +1,11 @@
+{
+  "acronyms": {
+    "SSA": "Sonic Sub-Agents",
+    "DDD": "Domain Driven Design",
+    "API": "Application Programming Interface"
+  },
+  "settings": {
+    "caseSensitive": false,
+    "wholeWordOnly": true
+  }
+}

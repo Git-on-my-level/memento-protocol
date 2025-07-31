@@ -14,6 +14,12 @@ export interface HookMatcher {
   confidence?: number; // For fuzzy matching
 }
 
+export interface HookRequirements {
+  commands?: string[];
+  env?: string[];
+  files?: string[];
+}
+
 export interface HookConfig {
   id: string;
   name: string;
@@ -27,6 +33,7 @@ export interface HookConfig {
   timeout?: number;
   continueOnError?: boolean;
   priority?: number;
+  requirements?: HookRequirements;
 }
 
 export interface HookContext {

@@ -6,10 +6,13 @@ import { logger } from '../logger';
 import { HookConfigLoader } from './HookConfigLoader';
 import { MementoRoutingHook } from './builtin/MementoRoutingHook';
 import { PackagePaths } from '../packagePaths';
+import { HookValidator } from './HookValidator';
+import { ValidationError } from '../errors';
 
 export class HookManager {
   private registry: HookRegistry;
   private configLoader: HookConfigLoader;
+  private validator: HookValidator;
   private projectRoot: string;
   private claudeDir: string;
   private mementoDir: string;
@@ -25,6 +28,7 @@ export class HookManager {
     
     this.registry = new HookRegistry();
     this.configLoader = new HookConfigLoader(this.definitionsDir);
+    this.validator = new HookValidator(projectRoot);
   }
 
   /**
@@ -107,12 +111,27 @@ export class HookManager {
     // Get all hooks from registry
     const allHooks = this.registry.getAllHooks();
     
+    // Use a Set to track unique hook combinations (event + command) to prevent duplicates
+    const uniqueHooks = new Set<string>();
+    
     // Build settings content
     let settingsContent = '';
     
     for (const { event, hooks } of allHooks) {
       for (const hook of hooks) {
         if (!hook.enabled) continue;
+        
+        // Create a unique key for this hook (event + command + args)
+        const argsString = hook.config.args ? JSON.stringify(hook.config.args) : '';
+        const hookKey = `${event}:${hook.config.command}:${argsString}`;
+        
+        // Skip if we've already seen this exact hook combination
+        if (uniqueHooks.has(hookKey)) {
+          logger.debug(`Skipping duplicate hook: ${hook.config.name} (${hookKey})`);
+          continue;
+        }
+        
+        uniqueHooks.add(hookKey);
         
         settingsContent += `
 [[hooks]]
@@ -174,15 +193,83 @@ command = "${hook.config.command}"
     
     try {
       const templateContent = await fs.readFile(templatePath, 'utf-8');
-      const template: HookConfig = JSON.parse(templateContent);
+      const template: any = JSON.parse(templateContent);
+      
+      // Generate hook ID
+      const hookId = config.id || `${templateName}-${Date.now()}`;
+      
+      // Handle script-based hooks
+      let command = template.command;
+      if (template.script && !template.command) {
+        // Validate script before creating file
+        const scriptValidation = this.validator.validateScript(template.script);
+        if (!scriptValidation.valid) {
+          throw new ValidationError(
+            `Script validation failed: ${scriptValidation.errors.join(', ')}`,
+            'script'
+          );
+        }
+        
+        if (scriptValidation.warnings.length > 0) {
+          logger.warn(`Script warnings for ${templateName}:`);
+          scriptValidation.warnings.forEach(warning => logger.warn(`  - ${warning}`));
+        }
+        
+        // Create script file
+        const scriptsDir = path.join(this.hooksDir, 'scripts');
+        await fs.mkdir(scriptsDir, { recursive: true });
+        const scriptPath = path.join(scriptsDir, `${hookId}.sh`);
+        await fs.writeFile(scriptPath, template.script, { mode: 0o755 });
+        command = scriptPath;
+      }
       
       // Merge template with provided config
       const hookConfig: HookConfig = {
         ...template,
         ...config,
-        id: config.id || `${templateName}-${Date.now()}`,
-        name: config.name || template.name || templateName
+        id: hookId,
+        name: config.name || template.name || templateName,
+        command: command
       };
+      
+      // Remove script field if it exists
+      delete (hookConfig as any).script;
+      
+      // Validate the final hook configuration
+      const configValidation = this.validator.validateHookConfig(hookConfig);
+      if (!configValidation.valid) {
+        throw new ValidationError(
+          `Hook configuration validation failed: ${configValidation.errors.join(', ')}`,
+          'configuration'
+        );
+      }
+      
+      if (configValidation.warnings.length > 0) {
+        logger.warn(`Configuration warnings for ${hookConfig.name}:`);
+        configValidation.warnings.forEach(warning => logger.warn(`  - ${warning}`));
+      }
+      
+      // Validate dependencies
+      const missingDeps = await this.validator.validateDependencies(hookConfig);
+      if (missingDeps.length > 0) {
+        logger.warn(`Missing dependencies for ${hookConfig.name}:`);
+        missingDeps.forEach(dep => logger.warn(`  - ${dep}`));
+        logger.warn('Hook may not function correctly without these dependencies');
+      }
+      
+      // Optional: Test hook execution (dry run)
+      try {
+        logger.debug(`Testing hook: ${hookConfig.name}`);
+        const testResult = await this.validator.testHook(hookConfig, 'test input');
+        if (!testResult.success && testResult.exitCode !== 2) { // Exit code 2 is blocking, which is valid
+          logger.warn(`Hook test failed for ${hookConfig.name}: ${testResult.error || 'Unknown error'}`);
+          logger.warn('Hook created but may not function correctly');
+        } else {
+          logger.debug(`Hook test passed for ${hookConfig.name}`);
+        }
+      } catch (error: any) {
+        logger.warn(`Could not test hook ${hookConfig.name}: ${error.message}`);
+      }
       
       await this.addHook(hookConfig);
       
@@ -197,6 +284,9 @@ command = "${hook.config.command}"
       
       logger.success(`Created hook from template: ${templateName}`);
     } catch (error: any) {
+      if (error instanceof ValidationError) {
+        throw error;
+      }
       throw new Error(`Failed to create hook from template: ${error.message}`);
     }
   }

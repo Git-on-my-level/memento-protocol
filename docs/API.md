@@ -2,6 +2,8 @@
 
 This document describes the programmatic API for extending and integrating with Memento Protocol.
 
+> **Note**: The primary way to use Memento Protocol is through the CLI. This API documentation is for advanced users who want to integrate Memento Protocol programmatically.
+
 ## Core Classes
 
 ### DirectoryManager
@@ -189,6 +191,84 @@ export class MyPlugin {
     logger.success('Plugin installed successfully');
   }
 }
+```
+
+## Hook System API
+
+### HookManager
+
+Manages Claude Code hooks for automation and customization.
+
+```typescript
+import { HookManager } from 'memento-protocol';
+
+const hooks = new HookManager('/path/to/project');
+
+// Initialize hook system
+await hooks.initialize();
+
+// Create hook from template
+await hooks.createHookFromTemplate('security-guard', {
+  enabled: true
+});
+
+// List available templates
+const templates = await hooks.listTemplates();
+// Returns: ['security-guard', 'git-context-loader', 'acronym-expander']
+
+// Get all configured hooks
+const allHooks = hooks.getAllHooks();
+// Returns array of { event: HookEvent, hooks: HookConfig[] }
+
+// Add custom hook
+await hooks.addHook({
+  id: 'my-hook',
+  name: 'My Hook',
+  event: 'PostToolUse',
+  enabled: true,
+  command: './my-script.sh',
+  matcher: {
+    type: 'tool',
+    pattern: 'Write,Edit'
+  }
+});
+
+// Remove hook
+const removed = await hooks.removeHook('my-hook');
+```
+
+### AcronymManager
+
+Manages project-specific acronym expansions.
+
+```typescript
+import { AcronymManager } from 'memento-protocol';
+
+const acronyms = new AcronymManager('/path/to/project');
+
+// Add acronym (case-insensitive by default)
+acronyms.add('api', 'Application Programming Interface');
+acronyms.add('k8s', 'Kubernetes');
+
+// Remove acronym
+const removed = acronyms.remove('api'); // returns true if removed
+
+// List all acronyms
+const all = acronyms.list();
+// Returns: { 'API': 'Application Programming Interface', 'K8S': 'Kubernetes' }
+
+// Clear all acronyms
+acronyms.clear();
+
+// Get current settings
+const settings = acronyms.getSettings();
+// Returns: { caseSensitive: false, wholeWordOnly: true }
+
+// Update settings
+acronyms.updateSettings({
+  caseSensitive: true,
+  wholeWordOnly: false
+});
 ```
 
 ## Events

@@ -9,5 +9,10 @@
     "pattern": "\\b(sudo|su|doas)\\b"
   },
   "command": "echo 'BLOCKED: Super-user commands are not allowed for safety.' >&2 && exit 2",
-  "priority": 200
+  "priority": 200,
+  "requirements": {
+    "commands": ["echo"],
+    "env": [],
+    "files": []
+  }
 }

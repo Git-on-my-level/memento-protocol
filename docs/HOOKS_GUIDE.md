@@ -190,6 +190,17 @@ Hooks receive context through environment variables:
 - `1`: Error (hook failed)
 - `2`: Block execution (for UserPromptSubmit and PreToolUse)
 
+## Built-in Hook Templates
+
+### security-guard
+Blocks dangerous super-user commands (sudo, su, doas) for safety.
+
+### git-context-loader  
+Loads git status and project structure at session start.
+
+### acronym-expander
+Automatically expands configured acronyms in user prompts. Configured acronyms are stored in `.memento/acronyms.json` and managed via `memento acronym` commands.
+
 ## Examples
 
 ### Security Hook
@@ -201,10 +212,30 @@ Block dangerous commands:
   "event": "UserPromptSubmit",
   "matcher": {
     "type": "regex",
-    "pattern": "rm\\s+-rf\\s+/"
+    "pattern": "\\b(sudo|su|doas)\\b"
   },
-  "command": "echo 'BLOCKED: Dangerous command' >&2 && exit 2"
+  "command": "echo 'BLOCKED: Super-user commands are not allowed for safety.' >&2 && exit 2"
 }
+```
+
+### Acronym Expansion
+Automatically expand project-specific acronyms:
+```bash
+# Configure acronyms
+memento acronym add api "Application Programming Interface"
+memento acronym add k8s "Kubernetes"
+
+# Add the hook
+memento hook add acronym-expander
+
+# Now when you say "Deploy the api to k8s", Claude sees:
+# ## Acronym Glossary
+# - **API**: Application Programming Interface
+# - **K8S**: Kubernetes
+# 
+# ---
+# 
+# Deploy the api to k8s
 ```
 
 ### File Change Logger
