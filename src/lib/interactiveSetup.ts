@@ -195,7 +195,7 @@ export class InteractiveSetup {
           hookChoices.push({
             name: `${template.name} - ${template.description}`,
             value: hookName,
-            checked: hookName === 'git-context-loader' // Default to git-context-loader
+            checked: true // Select all hooks by default
           });
         } catch {
           hookChoices.push({

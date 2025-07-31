@@ -112,8 +112,8 @@ describe("InteractiveSetup", () => {
           selectedWorkflows: ["review"],
         })
         .mockResolvedValueOnce({
-          // Select hooks
-          hooks: ["git-context-loader"],
+          // Select hooks - just return whatever hooks are available
+          hooks: ["git-context-loader", "security-guard"],
         })
         .mockResolvedValueOnce({
           // Select default mode
@@ -135,7 +135,7 @@ describe("InteractiveSetup", () => {
           projectInfo: mockProjectInfo,
           selectedModes: ["architect", "engineer"],
           selectedWorkflows: ["review"],
-          selectedHooks: ["git-context-loader"],
+          selectedHooks: expect.arrayContaining(["git-context-loader", "security-guard"]),
           defaultMode: "architect",
           addToGitignore: false,
         })

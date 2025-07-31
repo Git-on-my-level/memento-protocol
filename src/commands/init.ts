@@ -136,7 +136,9 @@ export const initCommand = new Command('init')
         if (options.allRecommended) {
           selectedModes = projectInfo.suggestedModes;
           selectedWorkflows = projectInfo.suggestedWorkflows;
-          selectedHooks = ['git-context-loader']; // Default recommended hook
+          // Get all available hooks for --all-recommended
+          const availableHooks = await hookManager.listTemplates();
+          selectedHooks = availableHooks;
         } else {
           // Use specified modes and workflows
           selectedModes = nonInteractiveOpts.modes || [];

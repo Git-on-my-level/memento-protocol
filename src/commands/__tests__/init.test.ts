@@ -39,6 +39,7 @@ describe("Init Command", () => {
 
     mockHookManager = {
       initialize: jest.fn(),
+      listTemplates: jest.fn().mockResolvedValue(['git-context-loader', 'security-guard']),
     } as any;
 
     mockProjectDetector = {
@@ -132,6 +133,7 @@ describe("Init Command", () => {
         expect.objectContaining({
           selectedModes: ["engineer", "reviewer"],
           selectedWorkflows: ["summarize"],
+          selectedHooks: expect.any(Array), // Can be empty or contain hooks
           defaultMode: "engineer"
         })
       );
@@ -157,7 +159,8 @@ describe("Init Command", () => {
       expect(mockInteractiveSetup.applySetup).toHaveBeenCalledWith(
         expect.objectContaining({
           selectedModes: ["architect", "engineer"],
-          selectedWorkflows: ["review", "refactor"]
+          selectedWorkflows: ["review", "refactor"],
+          selectedHooks: expect.any(Array) // Just verify hooks array exists
         })
       );
     });
