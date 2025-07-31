@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
 import { DirectoryManager } from '../lib/directoryManager';
-import { HookGenerator } from '../lib/hookGenerator';
+import { HookManager } from '../lib/hooks/HookManager';
 import { ProjectDetector } from '../lib/projectDetector';
 import { InteractiveSetup } from '../lib/interactiveSetup';
 import { logger } from '../lib/logger';
@@ -86,7 +86,7 @@ export const initCommand = new Command('init')
     try {
       const projectRoot = process.cwd();
       const dirManager = new DirectoryManager(projectRoot);
-      const hookGenerator = new HookGenerator(projectRoot);
+      const hookManager = new HookManager(projectRoot);
       const projectDetector = new ProjectDetector(projectRoot);
       
       // Check if already initialized
@@ -162,7 +162,7 @@ export const initCommand = new Command('init')
       // Generate hook infrastructure
       logger.space();
       logger.info('Generating Claude Code hook infrastructure...');
-      await hookGenerator.generate();
+      await hookManager.initialize();
       
       logger.space();
       logger.success('Memento Protocol initialized successfully!');

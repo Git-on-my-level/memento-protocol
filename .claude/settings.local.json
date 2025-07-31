@@ -26,7 +26,8 @@
       "Bash(scripts/npm/commit-tag-and-publish.sh:*)",
       "Bash(cat:*)",
       "Bash(../dist/cli.js)",
-      "Bash(../src/cli.ts)"
+      "Bash(../src/cli.ts)",
+      "WebFetch(domain:docs.anthropic.com)"
     ],
     "deny": []
   }

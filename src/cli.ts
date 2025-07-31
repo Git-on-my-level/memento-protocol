@@ -6,6 +6,7 @@ import { ticketCommand } from "./commands/ticket";
 import { configCommand } from "./commands/config";
 import { createUpdateCommand } from "./commands/update";
 import { upsertCommand } from "./commands/upsert";
+import { hookCommand } from "./commands/hook";
 import { logger } from "./lib/logger";
 import { handleError } from "./lib/errors";
 
@@ -59,6 +60,7 @@ program.addCommand(ticketCommand);
 program.addCommand(configCommand);
 program.addCommand(createUpdateCommand());
 program.addCommand(upsertCommand);
+program.addCommand(hookCommand);
 
 // Global error handling
 process.on("unhandledRejection", (error) => {

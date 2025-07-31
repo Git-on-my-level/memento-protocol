@@ -1,0 +1,10 @@
+{
+  "id": "git-context-loader",
+  "name": "Git Context Loader",
+  "description": "Loads git status and recent commits at session start",
+  "event": "SessionStart",
+  "enabled": true,
+  "command": "echo '## Git Context\\n' && git status -s && echo '\\n### Recent Commits\\n' && git log --oneline -5",
+  "continueOnError": true,
+  "priority": 90
+}

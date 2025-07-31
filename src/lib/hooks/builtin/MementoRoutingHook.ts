@@ -1,49 +1,33 @@
-import * as fs from "fs/promises";
-import * as path from "path";
-import { logger } from "./logger";
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { logger } from '../../logger';
 
-export class HookGenerator {
-  private claudeDir: string;
-  private mementoDir: string;
-  private hooksDir: string;
+export class MementoRoutingHook {
+  private projectRoot: string;
+  private scriptPath: string;
 
   constructor(projectRoot: string) {
-    this.claudeDir = path.join(projectRoot, ".claude");
-    this.mementoDir = path.join(projectRoot, ".memento");
-    this.hooksDir = path.join(this.mementoDir, "hooks");
+    this.projectRoot = projectRoot;
+    this.scriptPath = path.join(projectRoot, '.memento', 'hooks', 'scripts', 'memento-routing.sh');
   }
 
-  /**
-   * Generate hook infrastructure for the project
-   */
   async generate(): Promise<void> {
-    // Ensure directories exist
-    await this.ensureDirectories();
-
-    // Generate routing script
-    await this.generateRoutingScript();
-
-    // Generate or update settings.toml
-    await this.generateSettingsToml();
-
-    logger.success("Generated Claude Code hook infrastructure");
-  }
-
-  /**
-   * Ensure all required directories exist
-   */
-  private async ensureDirectories(): Promise<void> {
-    await fs.mkdir(this.claudeDir, { recursive: true });
-    await fs.mkdir(this.hooksDir, { recursive: true });
-  }
-
-  /**
-   * Generate the routing.sh script with fuzzy matching
-   */
-  private async generateRoutingScript(): Promise<void> {
-    const scriptPath = path.join(this.hooksDir, "routing.sh");
+    const scriptContent = this.getScriptContent();
     
-    const scriptContent = `#!/bin/bash
+    // Ensure directory exists
+    await fs.mkdir(path.dirname(this.scriptPath), { recursive: true });
+    
+    // Write the script
+    await fs.writeFile(this.scriptPath, scriptContent, { mode: 0o755 });
+    
+    logger.info('Generated Memento routing hook');
+  }
+
+  private getScriptContent(): string {
+    return `#!/bin/bash
+
+# Memento Protocol Routing Hook
+# This hook processes user prompts to inject mode, workflow, and ticket context
 
 # Get user prompt from stdin
 PROMPT=$(cat)
@@ -137,12 +121,12 @@ find_matches() {
         done
     fi
     
-    # Stage 4: Common abbreviations (generated from item names)
+    # Stage 4: Common abbreviations
     if [ \${#matches[@]} -eq 0 ]; then
         for item in "\${items[@]}"; do
             item_lower=$(echo "$item" | tr '[:upper:]' '[:lower:]')
             
-            # Extract abbreviation from hyphenated names (e.g., autonomous-project-manager -> apm)
+            # Extract abbreviation from hyphenated names
             if echo "$item_lower" | grep -q '-'; then
                 abbrev=$(echo "$item_lower" | sed 's/\\([a-z]\\)[a-z]*-*/\\1/g')
                 if [ "$abbrev" = "$query_lower" ]; then
@@ -150,7 +134,7 @@ find_matches() {
                 fi
             fi
             
-            # First 3-4 letters abbreviation (e.g., architect -> arch, review -> rev)
+            # First 3-4 letters abbreviation
             if [ \${#query_lower} -ge 3 ] && [ \${#query_lower} -le 4 ]; then
                 if echo "$item_lower" | grep -q "^$query_lower"; then
                     matches+=("$item")
@@ -200,7 +184,6 @@ elif [ -n "$DEFAULT_MODE" ]; then
         echo ""
     fi
 fi
-# If no mode requested and no default mode, just pass through the prompt unaltered
 
 # Process workflow request
 if [ -n "$WORKFLOW_REQUEST" ]; then
@@ -318,46 +301,5 @@ fi
 # Output the original prompt
 echo "$PROMPT"
 `;
-
-    await fs.writeFile(scriptPath, scriptContent, { mode: 0o755 });
-    logger.info("Generated routing script at .memento/hooks/routing.sh");
-  }
-
-  /**
-   * Generate or update .claude/settings.toml
-   */
-  private async generateSettingsToml(): Promise<void> {
-    const settingsPath = path.join(this.claudeDir, "settings.toml");
-    
-    // Check if settings.toml already exists
-    let existingContent = "";
-    try {
-      existingContent = await fs.readFile(settingsPath, "utf-8");
-    } catch {
-      // File doesn't exist, that's fine
-    }
-
-    // Check if our hook is already configured
-    if (existingContent.includes(".memento/hooks/routing.sh")) {
-      logger.info("Hook already configured in .claude/settings.toml");
-      return;
-    }
-
-    // Add our hook configuration
-    const hookConfig = `
-[[hooks]]
-event = "UserPromptSubmit"
-command = "./.memento/hooks/routing.sh"
-`;
-
-    // If file exists and has content, append our hook
-    if (existingContent.trim()) {
-      existingContent += "\n" + hookConfig;
-    } else {
-      existingContent = hookConfig.trim() + "\n";
-    }
-
-    await fs.writeFile(settingsPath, existingContent);
-    logger.info("Updated .claude/settings.toml with hook configuration");
   }
 }

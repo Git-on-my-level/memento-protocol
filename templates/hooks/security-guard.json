@@ -1,0 +1,13 @@
+{
+  "id": "security-guard",
+  "name": "Security Guard",
+  "description": "Prevents execution of dangerous commands",
+  "event": "UserPromptSubmit",
+  "enabled": true,
+  "matcher": {
+    "type": "regex",
+    "pattern": "(rm\\s+-rf\\s+/|chmod\\s+777|sudo\\s+rm|dd\\s+if=.*of=/dev/)"
+  },
+  "command": "echo 'BLOCKED: This command appears to be dangerous and could harm your system.' >&2 && exit 2",
+  "priority": 200
+}

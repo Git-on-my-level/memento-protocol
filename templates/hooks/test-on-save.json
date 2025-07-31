@@ -1,0 +1,15 @@
+{
+  "id": "test-on-save",
+  "name": "Test on Save",
+  "description": "Runs tests when test files are modified",
+  "event": "PostToolUse",
+  "enabled": true,
+  "matcher": {
+    "type": "regex",
+    "pattern": ".*\\.test\\.(js|ts|jsx|tsx)$"
+  },
+  "command": "npm test -- ${HOOK_TOOL_ARG_FILE_PATH}",
+  "continueOnError": true,
+  "timeout": 30000,
+  "priority": 40
+}
