@@ -1,9 +1,7 @@
 import { ticketCommand } from '../ticket';
-import { DirectoryManager } from '../../lib/directoryManager';
 import { TicketManager } from '../../lib/ticketManager';
 import { logger } from '../../lib/logger';
 
-jest.mock('../../lib/directoryManager');
 jest.mock('../../lib/ticketManager');
 jest.mock('../../lib/logger', () => ({
   logger: {
@@ -15,27 +13,19 @@ jest.mock('../../lib/logger', () => ({
 }));
 
 describe('Ticket Command Basic Coverage', () => {
-  let mockDirManager: any;
   let mockTicketManager: any;
   let originalExit: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
-    mockDirManager = {
-      isInitialized: jest.fn().mockReturnValue(true)
-    };
 
     mockTicketManager = {
-      create: jest.fn().mockResolvedValue('test-123'),
-      list: jest.fn().mockResolvedValue([]),
-      get: jest.fn(),
-      resume: jest.fn(),
-      close: jest.fn(),
-      search: jest.fn()
+      create: jest.fn(),
+      list: jest.fn(),
+      move: jest.fn(),
+      delete: jest.fn()
     };
 
-    (DirectoryManager as jest.MockedClass<typeof DirectoryManager>).mockImplementation(() => mockDirManager);
     (TicketManager as jest.MockedClass<typeof TicketManager>).mockImplementation(() => mockTicketManager);
     
     originalExit = process.exit;
@@ -47,40 +37,14 @@ describe('Ticket Command Basic Coverage', () => {
   });
 
   it('should create ticket with basic params', async () => {
+    const ticketPath = '/project/.memento/tickets/next/Test ticket.md';
+    mockTicketManager.create.mockResolvedValue(ticketPath);
+    
     await ticketCommand.parseAsync(['node', 'test', 'create', 'Test ticket']);
     
-    expect(mockTicketManager.create).toHaveBeenCalledWith('Test ticket', undefined);
-    expect(logger.info).toHaveBeenCalledWith('Ticket created successfully!');
-    expect(logger.info).toHaveBeenCalledWith('ID: test-123');
-  });
-
-  it('should handle search command', async () => {
-    mockTicketManager.search.mockResolvedValue([{
-      id: 'test-123',
-      name: 'Test ticket',
-      status: 'next',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }]);
-
-    await ticketCommand.parseAsync(['node', 'test', 'search', 'test']);
-    
-    expect(mockTicketManager.search).toHaveBeenCalledWith('test');
-    expect(logger.info).toHaveBeenCalledWith('\nFound 1 ticket(s) matching "test":\n');
-    expect(logger.info).toHaveBeenCalledWith('📋 test-123');
-  });
-
-  it('should handle close command', async () => {
-    mockTicketManager.get.mockResolvedValue({
-      id: 'test-123',
-      name: 'Test',
-      status: 'active'
-    });
-
-    await ticketCommand.parseAsync(['node', 'test', 'close', 'test-123']);
-    
-    expect(mockTicketManager.close).toHaveBeenCalledWith('test-123');
-    expect(logger.success).toHaveBeenCalledWith('Closed ticket: test-123');
+    expect(mockTicketManager.create).toHaveBeenCalledWith('Test ticket');
+    expect(logger.success).toHaveBeenCalledWith('Created ticket: Test ticket');
+    expect(logger.info).toHaveBeenCalledWith(`Location: ${ticketPath}`);
   });
 
   it('should handle list command with empty results', async () => {
@@ -88,30 +52,40 @@ describe('Ticket Command Basic Coverage', () => {
 
     await ticketCommand.parseAsync(['node', 'test', 'list']);
     
-    expect(mockTicketManager.list).toHaveBeenCalledWith('active');
-    expect(logger.info).toHaveBeenCalledWith('No active tickets found.');
+    expect(mockTicketManager.list).toHaveBeenCalled();
+    expect(logger.info).toHaveBeenCalledWith('No tickets found.');
   });
 
-  it('should handle resume command with existing ticket', async () => {
-    mockTicketManager.get.mockResolvedValueOnce({
-      id: 'test-123',
-      name: 'Test',
-      status: 'done'
-    });
-    // Mock the second get call after resume with updated status
-    mockTicketManager.get.mockResolvedValueOnce({
-      id: 'test-123',
-      name: 'Test',
-      status: 'in-progress'
-    });
+  it('should list tickets when they exist', async () => {
+    mockTicketManager.list.mockResolvedValue([
+      { name: 'Test ticket', status: 'next' },
+      { name: 'Another ticket', status: 'in-progress' }
+    ]);
 
-    await ticketCommand.parseAsync(['node', 'test', 'resume', 'test-123']);
+    await ticketCommand.parseAsync(['node', 'test', 'list']);
     
-    expect(mockTicketManager.get).toHaveBeenCalledWith('test-123');
-    expect(mockTicketManager.resume).toHaveBeenCalledWith('test-123');
-    expect(logger.success).toHaveBeenCalledWith('Resumed ticket: test-123');
-    expect(logger.info).toHaveBeenCalledWith('\nTicket: Test');
-    expect(logger.info).toHaveBeenCalledWith('Status: in-progress');
-    expect(logger.info).toHaveBeenCalledWith('Workspace: .memento/tickets/in-progress/test-123/workspace/');
+    expect(mockTicketManager.list).toHaveBeenCalled();
+    expect(logger.info).toHaveBeenCalledWith('\nnext:');
+    expect(logger.info).toHaveBeenCalledWith('  - Test ticket');
+    expect(logger.info).toHaveBeenCalledWith('\nin-progress:');
+    expect(logger.info).toHaveBeenCalledWith('  - Another ticket');
+  });
+
+  it('should move ticket between statuses', async () => {
+    mockTicketManager.move.mockResolvedValue(undefined);
+
+    await ticketCommand.parseAsync(['node', 'test', 'move', 'Test ticket', '--to', 'done']);
+    
+    expect(mockTicketManager.move).toHaveBeenCalledWith('Test ticket', 'done');
+    expect(logger.success).toHaveBeenCalledWith("Moved ticket 'Test ticket' to done");
+  });
+
+  it('should delete a ticket', async () => {
+    mockTicketManager.delete.mockResolvedValue(undefined);
+
+    await ticketCommand.parseAsync(['node', 'test', 'delete', 'Old ticket']);
+    
+    expect(mockTicketManager.delete).toHaveBeenCalledWith('Old ticket');
+    expect(logger.success).toHaveBeenCalledWith('Deleted ticket: Old ticket');
   });
 });
