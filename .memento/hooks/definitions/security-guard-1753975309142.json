@@ -2,7 +2,7 @@
   "version": "1.0.0",
   "hooks": [
     {
-      "id": "security-guard-1753973902009",
+      "id": "security-guard-1753975309142",
       "name": "Security Guard",
       "description": "Blocks sudo and super-user commands",
       "event": "UserPromptSubmit",

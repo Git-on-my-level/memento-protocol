@@ -1,7 +1,0 @@
-{
-  "id": "add-full-non-interactive-setup-with-customization-options-2025-07-16",
-  "name": "Add full non-interactive setup with customization options",
-  "createdAt": "2025-07-16T05:19:37.822Z",
-  "updatedAt": "2025-07-16T05:53:57.124Z",
-  "description": "Currently, non-interactive mode installs no components. We need to support full customization in non-interactive mode through:\n\n1. CLI flags for component selection:\n   - --modes <mode1,mode2,mode3> to specify modes to install\n   - --workflows <workflow1,workflow2> to specify workflows\n   - --all-recommended to install all recommended components\n   \n2. Config file support:\n   - --config <path-to-config.json> to read setup configuration\n   - Config file should support:\n     {\n       \"modes\": [\"architect\", \"engineer\"],\n       \"workflows\": [\"review\", \"summarize\"],\n       \"defaultMode\": \"engineer\",\n       \"addToGitignore\": true\n     }\n\n3. Environment variable support:\n   - MEMENTO_MODES=architect,engineer\n   - MEMENTO_WORKFLOWS=review,summarize\n   - MEMENTO_DEFAULT_MODE=engineer\n\nThis enables fully automated setup in CI/CD environments while maintaining flexibility."
-}

@@ -10,19 +10,7 @@ command = "echo 'BLOCKED: Super-user commands are not allowed for safety.' >&2 &
 
 [[hooks]]
 event = "UserPromptSubmit"
-command = "/Users/dazheng/workspace/memento-protocol/.memento/hooks/scripts/acronym-expander-1753971268326.sh"
-
-[[hooks]]
-event = "UserPromptSubmit"
-command = "/Users/dazheng/workspace/memento-protocol/.memento/hooks/scripts/acronym-expander-1753971624696.sh"
-
-[[hooks]]
-event = "UserPromptSubmit"
-command = "/Users/dazheng/workspace/memento-protocol/.memento/hooks/scripts/acronym-expander-1753973901600.sh"
-
-[[hooks]]
-event = "UserPromptSubmit"
-command = "/Users/dazheng/workspace/memento-protocol/.memento/hooks/scripts/acronym-expander-1753974118826.sh"
+command = "/Users/dazheng/workspace/personal/memento-protocol/.memento/hooks/scripts/acronym-expander-1753975308575.sh"
 
 [[hooks]]
 event = "SessionStart"
