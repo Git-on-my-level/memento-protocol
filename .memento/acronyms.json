@@ -1,0 +1,9 @@
+{
+  "acronyms": {
+    "SSA": "Sonic Sub-Agents"
+  },
+  "settings": {
+    "caseSensitive": false,
+    "wholeWordOnly": true
+  }
+}

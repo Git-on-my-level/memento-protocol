@@ -110,7 +110,10 @@ describe('ConfigManager', () => {
       expect(fs.existsSync(savedPath)).toBe(true);
       
       const savedConfig = JSON.parse(fs.readFileSync(savedPath, 'utf-8'));
-      expect(savedConfig).toEqual(config);
+      expect(savedConfig).toEqual({
+        ...config,
+        version: '1.0.0'
+      });
     });
 
     it('should save config to global level', async () => {
@@ -235,7 +238,7 @@ describe('ConfigManager', () => {
         }
       } as any;
 
-      await expect(configManager.save(invalidConfig)).rejects.toThrow('components.modes must be an array');
+      await expect(configManager.save(invalidConfig)).rejects.toThrow('Components.modes must be an array of strings');
     });
 
     it('should validate UI settings', async () => {
@@ -246,7 +249,7 @@ describe('ConfigManager', () => {
         }
       } as any;
 
-      await expect(configManager.save(invalidConfig)).rejects.toThrow('ui.colorOutput must be a boolean');
+      await expect(configManager.save(invalidConfig)).rejects.toThrow('UI.colorOutput must be a boolean');
     });
   });
 });

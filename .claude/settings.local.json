@@ -26,8 +26,57 @@
       "Bash(scripts/npm/commit-tag-and-publish.sh:*)",
       "Bash(cat:*)",
       "Bash(../dist/cli.js)",
-      "Bash(../src/cli.ts)"
+      "Bash(../src/cli.ts)",
+      "WebFetch(domain:docs.anthropic.com)"
     ],
     "deny": []
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.memento/hooks/scripts/security-guard.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.memento/hooks/scripts/acronym-expander.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.memento/hooks/scripts/memento-routing.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '## Project Context' && echo && echo '### Git Status' && git status -s 2>/dev/null || echo 'Not a git repository' && echo && echo '### Recent Commits' && git log --oneline -5 2>/dev/null || true && echo && echo '### Project Structure' && find . -type f -name '*.json' -o -name '*.js' -o -name '*.ts' -o -name '*.py' -o -name '*.java' -o -name '*.go' | grep -E -v '(node_modules|.git|dist|build|target)' | head -20 || true",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
   }
 }

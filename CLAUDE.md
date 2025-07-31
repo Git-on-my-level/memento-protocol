@@ -1,77 +1,148 @@
-# CLAUDE.md - Memento Protocol Router
+# CLAUDE.md
 
-This file serves as a minimal router for Claude Code. Instructions are loaded on-demand from the .memento directory.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Available Commands
+## Commands
 
-🚨 IMPORTANT: Always Check for Mode First. 
-WHEN YOU START A MODE please output: `Mode: [mode-name]`
-WHEN YOU START A WORKFLOW please output: `Workflow: [workflow-name]`
+### Build and Development
+```bash
+# Install dependencies
+npm install
 
-## Session Start Protocol
+# Build the project (bundles with esbuild, adds shebang, copies templates)
+npm run build
 
-AT THE START OF EVERY SESSION:
-0. **Default Mode**: IF NO MODE IS SPECIFIED OR IMPLIED: Load and activate "architect" mode automatically at session start
-1. Check if user specified a mode
-2. If NO mode specified:
-   - Output: `Mode: autonomous-project-manager`
-   - Read `.memento/modes/autonomous-project-manager.md`
-   - State: "Activating default autonomous project manager mode"
-3. Proceed with task following mode guidelines
+# Development mode (run TypeScript directly)
+npm run dev
 
-## MODE ACTIVATION PROTOCOL (MANDATORY)
+# Watch mode for development
+npm run watch
 
-When a mode is requested or implied:
-1. IMMEDIATELY output: `Mode: [mode-name]`
-2. THEN read the mode file: `.memento/modes/[mode-name].md`
-3. CONFIRM activation by stating: "I am now operating in [mode-name] mode"
-4. ONLY THEN proceed with the task
+# Clean build artifacts
+npm run clean
+```
 
-CRITICAL: You MUST complete ALL steps above before taking ANY other action.
+### Testing
+```bash
+# Run all tests
+npm test
 
-You can take on one of modes in `.memento/modes`
-- `ai-debt-maintainer`
-- `architect`
-- `autonomous-project-manager`
-- `engineer`
-- `reviewer`
-- `project-manager`
+# Run tests with coverage (thresholds: 30% branches, 45% functions/lines/statements)
+npm run test:coverage
 
-Each mode includes specific example commands and use cases - check the mode file for details.
+# Run a specific test file
+npx jest src/commands/__tests__/init.test.ts
 
-## Mode Behavior Enforcement
+# Run tests matching a pattern
+npx jest --testNamePattern="should create ticket"
+```
 
-Once in a mode, you MUST:
-- Follow ALL guidelines in the mode file
+### Publishing
+```bash
+# Prepare for publishing (runs tests and build)
+npm run prepublishOnly
 
-## Mode Persistence
+# The actual publish is handled by scripts/npm/commit-tag-and-publish.sh
+```
 
-IMPORTANT: Once a mode is activated:
-- You remain in that mode for the ENTIRE request until the next user interaction
-- To switch modes, user must explicitly request it
-- If unsure about current mode, re-read the mode file
+## Architecture
 
-### Execute a Workflow
-There are battle tested step-by-step flows in `.memento/workflows`. You must execute these when asked, or when you think it will increase task reliability. You can treat these as additional tools at your disposal.
-Example workflow invocations: `execute summarize` / `execute summarize workflow` / `workflow summarize` / `summarize workflow` - These should all trigger `./memento/workflows/summarize.md`
-The full list of workflows is in the `.memento/workflows` directory. When asked to execute a workflow, check there for available workflows and pick up the one that matches.
+### Core Structure
+Memento Protocol is a CLI tool that generates and manages a `CLAUDE.md` file for projects, providing Claude Code with contextual understanding through modes, workflows, and language overrides.
 
-### Work with Tickets
-To manage complex or long running work, please persist context in `.memento/tickets/`
-- Tickets are in 3 directories, `next` `done` and `in-progress`
-- You must move tickets to their respective directory based on status at the end of a run
-- You should use tickets to share context between sub-agents or to coordinate parallel agents
-- Each agent must add their updates to their respective ticket before finishing
+**Key Concepts:**
+- **Modes**: AI personalities optimized for specific tasks (architect, engineer, reviewer)
+- **Workflows**: Reusable procedures for common development patterns
+- **Language Overrides**: Language-specific enhancements
+- **Tickets**: State management for persistent task tracking
 
-## Component Location
-All components are in the `.memento/` directory:
-- **Modes**: `.memento/modes/[mode-name].md`
-- **Workflows**: `.memento/workflows/[workflow-name].md`
-- **Tickets**: `.memento/tickets/[status]/[ticket-id]/`
+### Directory Layout
+```
+src/
+├── cli.ts                 # Main entry point, command registration
+├── commands/              # CLI command implementations
+│   ├── init.ts           # Initialize/update Memento Protocol
+│   ├── add.ts            # Add modes/workflows
+│   ├── list.ts           # List available/installed components
+│   ├── ticket.ts         # Ticket management (create/move/resolve)
+│   ├── config.ts         # Configuration management
+│   ├── update.ts         # Update components
+│   └── upsert.ts         # Combined init/update logic
+└── lib/                  # Core functionality
+    ├── configManager.ts  # Config hierarchy (default->global->project->env)
+    ├── ticketManager.ts  # Ticket lifecycle management
+    ├── componentInstaller.ts # Install modes/workflows/languages
+    ├── hookGenerator.ts  # Generate Claude Code hooks
+    ├── projectDetector.ts # Detect project language/framework
+    └── upsertManager.ts  # Smart init/update logic
 
----
-# Project-Specific Instructions
----
-<!-- Project-specific content below this line -->        
- 
-Note that we are using Memento Protocol to develop memento protocol by generating and committing the `.memento/` content to this repo. Keep this meta-development pattern in mind when developing or testing features.
+templates/                # Component templates
+├── modes/               # Built-in modes
+├── workflows/           # Built-in workflows
+└── metadata.json        # Component metadata
+```
+
+### Key Design Patterns
+
+1. **Command Pattern**: Each CLI command is a separate module with its own Command instance
+2. **Manager Pattern**: Functionality is organized into manager classes (ConfigManager, TicketManager, etc.)
+3. **Template System**: Components are markdown templates that get copied and can be customized
+4. **Hook System**: Generates Claude Code hooks for ticket-based workflow integration
+
+### Build Process
+The build uses esbuild (scripts/build.js) to:
+1. Bundle TypeScript into a single CLI executable
+2. Inject version from package.json
+3. Add shebang for direct execution
+4. Copy templates to dist directory
+
+### Testing Strategy
+- Uses Jest with ts-jest preset
+- Mocks inquirer for interactive testing
+- Coverage thresholds enforced
+- Tests organized alongside source files in __tests__ directories
+
+### Error Handling
+- Custom error types in lib/errors.ts
+- Global error handlers in cli.ts
+- Verbose/debug logging options for troubleshooting
+
+### Component System
+Components (modes/workflows/languages) are:
+- Stored as markdown files in .memento/ directory
+- Installed from templates/ or custom sources
+- Managed via metadata.json files
+- Dynamically injected into CLAUDE.md
+
+### Ticket Workflow
+Tickets follow a lifecycle:
+1. Created in `.memento/tickets/next/`
+2. Moved to `.memento/tickets/in-progress/` when started
+3. Moved to `.memento/tickets/done/` when completed
+4. Can include context that gets injected into CLAUDE.md
+
+## Development Guidelines
+
+### Adding New Commands
+1. Create command file in `src/commands/`
+2. Export a Command instance
+3. Register in `src/cli.ts`
+4. Add tests in `src/commands/__tests__/`
+
+### Adding New Components
+1. Create markdown template in appropriate `templates/` subdirectory
+2. Follow standardized structure (see docs/COMPONENT_GUIDE.md)
+3. Update metadata.json
+4. Test installation and CLAUDE.md generation
+
+### Code Style
+- TypeScript with strict mode
+- CommonJS modules for Node.js compatibility
+- Async/await for asynchronous operations
+- Comprehensive error messages for CLI users
+
+### Dependencies
+- commander: CLI framework
+- inquirer: Interactive prompts
+- esbuild: Build tool
+- jest/ts-jest: Testing framework

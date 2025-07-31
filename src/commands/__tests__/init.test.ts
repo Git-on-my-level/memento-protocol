@@ -1,6 +1,6 @@
 import { initCommand } from "../init";
 import { DirectoryManager } from "../../lib/directoryManager";
-import { HookGenerator } from "../../lib/hookGenerator";
+import { HookManager } from "../../lib/hooks/HookManager";
 import { ProjectDetector } from "../../lib/projectDetector";
 import { InteractiveSetup } from "../../lib/interactiveSetup";
 import { logger } from "../../lib/logger";
@@ -8,7 +8,7 @@ import * as fs from "fs";
 
 jest.mock("fs");
 jest.mock("../../lib/directoryManager");
-jest.mock("../../lib/hookGenerator");
+jest.mock("../../lib/hooks/HookManager");
 jest.mock("../../lib/projectDetector");
 jest.mock("../../lib/interactiveSetup");
 jest.mock("../../lib/logger", () => ({
@@ -23,7 +23,7 @@ jest.mock("../../lib/logger", () => ({
 
 describe("Init Command", () => {
   let mockDirManager: jest.Mocked<DirectoryManager>;
-  let mockHookGen: jest.Mocked<HookGenerator>;
+  let mockHookManager: jest.Mocked<HookManager>;
   let mockProjectDetector: jest.Mocked<ProjectDetector>;
   let mockInteractiveSetup: jest.Mocked<InteractiveSetup>;
   let originalExit: any;
@@ -37,8 +37,9 @@ describe("Init Command", () => {
       ensureGitignore: jest.fn(),
     } as any;
 
-    mockHookGen = {
-      generate: jest.fn(),
+    mockHookManager = {
+      initialize: jest.fn(),
+      listTemplates: jest.fn().mockResolvedValue(['git-context-loader', 'security-guard']),
     } as any;
 
     mockProjectDetector = {
@@ -54,8 +55,8 @@ describe("Init Command", () => {
       DirectoryManager as jest.MockedClass<typeof DirectoryManager>
     ).mockImplementation(() => mockDirManager);
     (
-      HookGenerator as jest.MockedClass<typeof HookGenerator>
-    ).mockImplementation(() => mockHookGen);
+      HookManager as jest.MockedClass<typeof HookManager>
+    ).mockImplementation(() => mockHookManager);
     (
       ProjectDetector as jest.MockedClass<typeof ProjectDetector>
     ).mockImplementation(() => mockProjectDetector);
@@ -89,7 +90,7 @@ describe("Init Command", () => {
       // In non-interactive mode, no components are installed
       expect(mockInteractiveSetup.run).not.toHaveBeenCalled();
       expect(mockInteractiveSetup.applySetup).not.toHaveBeenCalled();
-      expect(mockHookGen.generate).toHaveBeenCalled();
+      expect(mockHookManager.initialize).toHaveBeenCalled();
       expect(logger.success).toHaveBeenCalledWith(
         expect.stringContaining("Memento Protocol initialized successfully")
       );
@@ -106,7 +107,7 @@ describe("Init Command", () => {
       });
       await initCommand.parseAsync(["node", "test", "--non-interactive"]);
 
-      expect(mockHookGen.generate).toHaveBeenCalled();
+      expect(mockHookManager.initialize).toHaveBeenCalled();
     });
 
     it("should install components specified via CLI flags", async () => {
@@ -132,6 +133,7 @@ describe("Init Command", () => {
         expect.objectContaining({
           selectedModes: ["engineer", "reviewer"],
           selectedWorkflows: ["summarize"],
+          selectedHooks: expect.any(Array), // Can be empty or contain hooks
           defaultMode: "engineer"
         })
       );
@@ -157,7 +159,8 @@ describe("Init Command", () => {
       expect(mockInteractiveSetup.applySetup).toHaveBeenCalledWith(
         expect.objectContaining({
           selectedModes: ["architect", "engineer"],
-          selectedWorkflows: ["review", "refactor"]
+          selectedWorkflows: ["review", "refactor"],
+          selectedHooks: expect.any(Array) // Just verify hooks array exists
         })
       );
     });

@@ -1,0 +1,31 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "author": "Memento Protocol",
+    "description": "Example hook definitions showing various hook types and matchers"
+  },
+  "hooks": [
+    {
+      "id": "sudo-block",
+      "name": "Sudo Block Hook",
+      "description": "Blocks sudo and super-user commands",
+      "event": "UserPromptSubmit",
+      "enabled": false,
+      "matcher": {
+        "type": "regex",
+        "pattern": "\\b(sudo|su|doas)\\b"
+      },
+      "command": "echo 'BLOCKED: Super-user commands are not allowed' >&2 && exit 2",
+      "priority": 200
+    },
+    {
+      "id": "session-context",
+      "name": "Session Context Loader",
+      "description": "Loads project context at session start",
+      "event": "SessionStart",
+      "enabled": false,
+      "command": ".memento/hooks/scripts/load-context.sh",
+      "priority": 100
+    }
+  ]
+}

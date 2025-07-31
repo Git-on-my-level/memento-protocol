@@ -1,1 +1,0 @@
-Right now we ask the user to set a default mode. But that default mode is not actually utilized, e.g. Claude Code doesn't actually take on that default mode

@@ -1,0 +1,5 @@
+# Memento Protocol Hooks
+
+[[hooks]]
+event = "SessionStart"
+command = "echo '## Git Context\n' && git status -s && echo '\n### Recent Commits\n' && git log --oneline -5"

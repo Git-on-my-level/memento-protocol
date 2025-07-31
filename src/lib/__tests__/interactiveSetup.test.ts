@@ -1,6 +1,7 @@
 import { InteractiveSetup } from "../interactiveSetup";
 import { ComponentInstaller } from "../componentInstaller";
 import { ConfigManager } from "../configManager";
+import { HookManager } from "../hooks/HookManager";
 import { ProjectInfo } from "../projectDetector";
 import inquirer from "inquirer";
 
@@ -9,6 +10,7 @@ jest.mock("inquirer", () => ({
 }));
 jest.mock("../componentInstaller");
 jest.mock("../configManager");
+jest.mock("../hooks/HookManager");
 jest.mock("../logger", () => ({
   logger: {
     info: jest.fn(),
@@ -18,11 +20,18 @@ jest.mock("../logger", () => ({
     space: jest.fn(),
   },
 }));
+jest.mock("fs", () => ({
+  readFileSync: jest.fn().mockReturnValue(JSON.stringify({
+    name: "Test Hook",
+    description: "Test hook description"
+  }))
+}));
 
 describe("InteractiveSetup", () => {
   let interactiveSetup: InteractiveSetup;
   let mockInstaller: jest.Mocked<ComponentInstaller>;
   let mockConfigManager: jest.Mocked<ConfigManager>;
+  let mockHookManager: jest.Mocked<HookManager>;
   const mockProjectRoot = "/test/project";
 
   beforeEach(() => {
@@ -37,6 +46,10 @@ describe("InteractiveSetup", () => {
       save: jest.fn(),
     } as any;
 
+    mockHookManager = {
+      listTemplates: jest.fn().mockResolvedValue(['git-context-loader', 'security-guard']),
+      createHookFromTemplate: jest.fn(),
+    } as any;
 
     (
       ComponentInstaller as jest.MockedClass<typeof ComponentInstaller>
@@ -44,6 +57,9 @@ describe("InteractiveSetup", () => {
     (
       ConfigManager as jest.MockedClass<typeof ConfigManager>
     ).mockImplementation(() => mockConfigManager);
+    (
+      HookManager as jest.MockedClass<typeof HookManager>
+    ).mockImplementation(() => mockHookManager);
 
     interactiveSetup = new InteractiveSetup(mockProjectRoot);
   });
@@ -96,6 +112,10 @@ describe("InteractiveSetup", () => {
           selectedWorkflows: ["review"],
         })
         .mockResolvedValueOnce({
+          // Select hooks - just return whatever hooks are available
+          hooks: ["git-context-loader", "security-guard"],
+        })
+        .mockResolvedValueOnce({
           // Select default mode
           defaultMode: "architect",
         })
@@ -115,6 +135,7 @@ describe("InteractiveSetup", () => {
           projectInfo: mockProjectInfo,
           selectedModes: ["architect", "engineer"],
           selectedWorkflows: ["review"],
+          selectedHooks: expect.arrayContaining(["git-context-loader", "security-guard"]),
           defaultMode: "architect",
           addToGitignore: false,
         })

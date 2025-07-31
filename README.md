@@ -9,8 +9,9 @@ A lightweight meta-framework for Claude Code that creates intelligent project co
 Memento Protocol enhances Claude Code's understanding of your project by providing:
 - **Modes**: AI personalities optimized for specific tasks (architect, engineer, reviewer)
 - **Workflows**: Reusable procedures for common development patterns
-- **Language Overrides**: Language-specific enhancements
-- **State Management**: Ticket-based task tracking
+- **Hooks**: Powerful automation and customization for Claude Code events
+- **Tickets**: Persistent task tracking with context injection
+- **Acronyms**: Automatic expansion of project-specific terminology
 
 All through a simple `CLAUDE.md` file that acts as a minimal router.
 
@@ -38,7 +39,14 @@ npx memento-protocol init --mode engineer --language typescript
 
 For CI/CD or automated environments, use non-interactive mode:
 ```bash
-npx memento-protocol init --non-interactive --modes architect,engineer --workflows review --default-mode architect
+npx memento-protocol init --non-interactive --modes architect,engineer --workflows review --hooks git-context-loader,security-guard --default-mode architect
+```
+
+### All Recommended Components
+
+To install all recommended components based on your project type:
+```bash
+npx memento-protocol init --all-recommended
 ```
 
 This will create:
@@ -68,23 +76,227 @@ npm link
 
 ## Basic Usage
 
-Once initialized, Claude Code will automatically use your CLAUDE.md file to understand:
-- Project context and goals
-- Available modes and workflows
-- Current tickets and tasks
+Once initialized, Claude Code will automatically:
+- Load your CLAUDE.md file for project context
+- Execute hooks on specific events (prompts, tool usage, session start)
+- Expand acronyms in your prompts
+- Route modes, workflows, and tickets based on keywords
+- Track persistent task state through tickets
 
 ## Commands
 
-### `memento init`
-Initialize Memento Protocol in your project.
+### Core Commands
 
+#### `memento init`
+Initialize Memento Protocol in your project with interactive setup:
 ```bash
 memento init [options]
 
 Options:
-  -m, --mode <mode>         Initial mode (architect, engineer, etc.)
-  -l, --language <lang>     Primary language
-  -s, --skip-interactive    Skip interactive setup
+  -f, --force                Force initialization
+  -n, --non-interactive      Non-interactive setup
+  -g, --gitignore           Add .memento/ to .gitignore
+  -m, --modes <modes>       Comma-separated list of modes
+  -w, --workflows <flows>   Comma-separated list of workflows  
+  -h, --hooks <hooks>       Comma-separated list of hooks
+  -a, --all-recommended     Install all recommended components
+  -d, --default-mode <mode> Set default mode
+```
+
+#### `memento update`
+Update components and regenerate CLAUDE.md:
+```bash
+memento update
+```
+
+#### `memento` (no arguments)
+Smart update - initializes if needed, otherwise updates:
+```bash
+memento
+```
+
+### Component Management
+
+#### `memento add <type> <name>`
+Add modes, workflows, or language overrides:
+```bash
+memento add mode architect
+memento add workflow review
+memento add language typescript
+```
+
+#### `memento list`
+List available and installed components:
+```bash
+memento list              # Show all available
+memento list --installed  # Show only installed
+```
+
+### Hook Management
+
+#### `memento hook`
+Manage Claude Code hooks:
+```bash
+memento hook list                    # List all configured hooks
+memento hook add security-guard      # Add hook from template
+memento hook enable <id>             # Enable a hook
+memento hook disable <id>            # Disable a hook
+memento hook remove <id>             # Remove a hook
+memento hook templates               # List available templates
+```
+
+### Ticket Management
+
+#### `memento ticket`
+Manage persistent task tickets:
+```bash
+memento ticket create "Add authentication"  # Create new ticket
+memento ticket list                         # List all tickets
+memento ticket list --status in-progress    # Filter by status
+memento ticket start <id>                   # Move to in-progress
+memento ticket resolve <id>                 # Mark as done
+memento ticket delete <id>                  # Delete ticket
+```
+
+### Acronym Management
+
+#### `memento acronym`
+Manage project-specific acronyms:
+```bash
+memento acronym add api "Application Programming Interface"
+memento acronym add ddd "Domain Driven Design"
+memento acronym list                        # List all acronyms
+memento acronym remove api                  # Remove an acronym
+memento acronym clear                       # Clear all acronyms
+```
+
+### Configuration
+
+#### `memento config`
+Manage configuration:
+```bash
+memento config get defaultMode              # Get a setting
+memento config set defaultMode engineer     # Set a setting
+memento config list                         # List all settings
+```
+
+## Claude Code Integration
+
+### Using Modes
+Activate different AI personalities:
+```
+mode: architect     # System design focus
+mode: engineer      # Implementation focus
+mode: reviewer      # Code review focus
+```
+
+### Using Workflows
+Execute predefined procedures:
+```
+workflow: review    # Comprehensive code review
+workflow: summarize # Compress context
+```
+
+### Using Tickets
+Track persistent tasks:
+```
+ticket: create "Add user authentication"
+ticket: start auth-feature
+ticket: done
+```
+
+### Acronym Expansion
+Configured acronyms are automatically expanded:
+```
+User: "Let's implement the API using DDD principles"
+Claude sees: 
+## Acronym Glossary
+- **API**: Application Programming Interface  
+- **DDD**: Domain Driven Design
+
+---
+
+Let's implement the API using DDD principles
+```
+
+## Hook System
+
+Memento Protocol includes a powerful hook system for automation:
+
+### Built-in Hooks
+- **security-guard**: Blocks dangerous commands (sudo, rm -rf)
+- **git-context-loader**: Loads git status and project structure at session start
+- **acronym-expander**: Automatically expands configured acronyms
+
+### Custom Hooks
+Create custom automation for:
+- Pre/post tool usage (formatting, linting, testing)
+- Prompt filtering and modification
+- Session initialization
+- Command validation
+
+See [docs/HOOKS_GUIDE.md](docs/HOOKS_GUIDE.md) for detailed documentation.
+
+## Project Structure
+
+```
+.
+├── CLAUDE.md          # Main router file for Claude Code
+├── .memento/          # Framework directory (add to .gitignore)
+│   ├── modes/         # Installed AI modes
+│   ├── workflows/     # Installed workflows
+│   ├── tickets/       # Task tickets (next/in-progress/done)
+│   ├── hooks/         # Hook definitions and scripts
+│   ├── acronyms.json  # Acronym definitions
+│   └── config.json    # Project configuration
+```
+
+## Documentation
+
+- [Component Guide](docs/COMPONENT_GUIDE.md) - Creating custom modes and workflows
+- [Hooks Guide](docs/HOOKS_GUIDE.md) - Complete hook system documentation
+- [API Reference](docs/API.md) - Programmatic usage
+- [Contributing Guide](CONTRIBUTING.md) - How to contribute
+
+## Examples
+
+### Quick Project Setup
+```bash
+# Initialize with recommended components
+npx memento-protocol init --all-recommended
+
+# Add project acronyms
+memento acronym add k8s "Kubernetes"
+memento acronym add ci/cd "Continuous Integration/Continuous Deployment"
+
+# Create initial tickets
+memento ticket create "Setup testing framework"
+memento ticket create "Add authentication"
+```
+
+### Custom Hook Example
+```bash
+# Add auto-formatting hook
+cat > .memento/hooks/definitions/auto-format.json << 'EOF'
+{
+  "version": "1.0.0",
+  "hooks": [{
+    "id": "auto-format",
+    "name": "Auto Formatter",
+    "event": "PostToolUse",
+    "enabled": true,
+    "matcher": {
+      "type": "tool",
+      "pattern": "Write,Edit,MultiEdit"
+    },
+    "command": "npm run format -- $HOOK_TOOL_ARG_FILE_PATH",
+    "continueOnError": true
+  }]
+}
+EOF
+
+# Regenerate hooks
+memento
 ```
 
 ## Contributing
