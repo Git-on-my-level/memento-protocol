@@ -3,6 +3,8 @@
 # Read the prompt from stdin
 prompt=$(cat)
 
+# Get the project root (current working directory)
+PROJECT_ROOT="$(pwd)"
 # Get the acronyms config path
 acronyms_file="${PROJECT_ROOT}/.memento/acronyms.json"
 
