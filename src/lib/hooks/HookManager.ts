@@ -118,13 +118,13 @@ export class HookManager {
   }
 
   /**
-   * Generate or update .claude/settings.toml
+   * Generate or update .claude/settings.local.json
    */
   private async generateClaudeSettings(): Promise<void> {
     // Ensure .claude directory exists
     await fs.mkdir(this.claudeDir, { recursive: true });
     
-    const settingsPath = path.join(this.claudeDir, 'settings.toml');
+    const settingsPath = path.join(this.claudeDir, 'settings.local.json');
     
     // Get all hooks from registry
     const allHooks = this.registry.getAllHooks();
@@ -158,8 +158,8 @@ export class HookManager {
     // Use a Set to track unique hook combinations (event + command) to prevent duplicates
     const uniqueHooks = new Set<string>();
     
-    // Build settings content
-    let settingsContent = '';
+    // Initialize hooks object
+    const hooksConfig: any = {};
     
     for (const { event, hook } of flatHooks) {
         
@@ -181,54 +181,82 @@ export class HookManager {
           hookCommand = '.' + hookCommand.substring(this.projectRoot.length);
         }
         
-        // Generate hook key based on event type and matcher/id
-        let hookKey = '';
+        // Initialize the event array if it doesn't exist
+        if (!hooksConfig[event]) {
+          hooksConfig[event] = [];
+        }
+        
+        // Determine the matcher pattern
+        let matcher = '*';
         if (event === 'PreToolUse' || event === 'PostToolUse') {
-          // For tool hooks, use the matcher pattern as the key
+          // For tool hooks, use the specific tool name
           if (hook.config.matcher && hook.config.matcher.type === 'tool' && hook.config.matcher.pattern) {
-            hookKey = `[hooks.${event}.${hook.config.matcher.pattern}]`;
+            matcher = hook.config.matcher.pattern;
           } else {
             logger.warn(`PreToolUse/PostToolUse hook ${hook.config.name} missing tool matcher`);
             continue;
           }
-        } else if (event === 'UserPromptSubmit') {
-          // For UserPromptSubmit, use the hook ID as the key
-          const hookId = hook.config.id || hook.config.name.replace(/\s+/g, '');
-          hookKey = `[hooks.${event}.${hookId}]`;
-        } else {
-          // For other events (SessionStart, etc), use just the event
-          hookKey = `[hooks.${event}]`;
         }
         
-        settingsContent += `
-${hookKey}
-command = "${hookCommand}"
-`;
+        // Create the hook entry
+        const hookEntry = {
+          matcher,
+          hooks: [
+            {
+              type: 'command',
+              command: hookCommand,
+              timeout: 30
+            }
+          ]
+        };
         
+        // Add args if they exist
         if (hook.config.args && hook.config.args.length > 0) {
-          settingsContent += `args = ${JSON.stringify(hook.config.args)}\n`;
+          hookEntry.hooks[0].args = hook.config.args;
         }
+        
+        hooksConfig[event].push(hookEntry);
     }
     
-    // Check if we need to merge with existing settings
+    // Read existing settings and merge
+    let existingSettings: any = {};
     try {
-      const existing = await fs.readFile(settingsPath, 'utf-8');
-      
-      // Simple check to avoid duplicates
-      if (!existing.includes('# Memento Protocol Hooks')) {
-        settingsContent = existing + '\n# Memento Protocol Hooks\n' + settingsContent;
-      } else {
-        // Replace the Memento section
-        const beforeMemento = existing.substring(0, existing.indexOf('# Memento Protocol Hooks'));
-        settingsContent = beforeMemento + '# Memento Protocol Hooks\n' + settingsContent;
-      }
+      const existingContent = await fs.readFile(settingsPath, 'utf-8');
+      existingSettings = JSON.parse(existingContent);
     } catch {
-      // File doesn't exist, add header
-      settingsContent = '# Memento Protocol Hooks\n' + settingsContent;
+      // File doesn't exist or is invalid JSON, start fresh
     }
     
-    await fs.writeFile(settingsPath, settingsContent.trim() + '\n');
-    logger.info('Updated .claude/settings.toml');
+    // Merge hooks into existing settings, preserving existing hooks within the same event
+    const existingHooks = existingSettings.hooks || {};
+    const mergedHooks = { ...existingHooks };
+    
+    // For each event, merge hooks instead of replacing
+    for (const [event, newHooksList] of Object.entries(hooksConfig)) {
+      if (!mergedHooks[event]) {
+        mergedHooks[event] = [];
+      }
+      
+      // Add new hooks that don't already exist
+      for (const newHook of newHooksList as any[]) {
+        const existingHook = mergedHooks[event].find((h: any) => 
+          h.matcher === newHook.matcher && 
+          h.hooks[0]?.command === newHook.hooks[0]?.command
+        );
+        
+        if (!existingHook) {
+          mergedHooks[event].push(newHook);
+        }
+      }
+    }
+    
+    const newSettings = {
+      ...existingSettings,
+      hooks: mergedHooks
+    };
+    
+    await fs.writeFile(settingsPath, JSON.stringify(newSettings, null, 2));
+    logger.info('Updated .claude/settings.local.json');
   }
 
   /**

@@ -7,7 +7,7 @@
 tool_call=$(cat)
 
 # Extract the command from the tool call JSON
-command=$(echo "$tool_call" | jq -r '.params.command // empty')
+command=$(echo "$tool_call" | jq -r '.tool_input.command // empty')
 
 # Check if command contains super-user commands
 if echo "$command" | grep -qE '\b(sudo|su|doas)\b'; then
