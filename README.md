@@ -2,20 +2,20 @@
 
 [![npm version](https://badge.fury.io/js/memento-protocol.svg)](https://badge.fury.io/js/memento-protocol)
 
-A lightweight meta-framework for Claude Code that creates intelligent project context through minimal configuration.
+A powerful enhancement framework for Claude Code that transforms projects with intelligent context management, custom commands, and specialized AI agents.
 
 ## What is Memento Protocol?
 
-Memento Protocol enhances Claude Code's understanding of your project by providing:
-- **Modes**: AI personalities optimized for specific tasks (architect, engineer, reviewer)
-- **Workflows**: Reusable procedures for common development patterns
-- **Hooks**: Powerful automation and customization for Claude Code events
-- **Tickets**: Persistent task tracking with context injection
-- **Acronyms**: Automatic expansion of project-specific terminology
-- **Custom Commands**: Direct access to Memento features through Claude's slash commands
-- **Subagents**: Pre-configured AI specialists for enhanced capabilities
+Memento Protocol supercharges Claude Code with:
+- **AI Modes**: Switchable personalities with fuzzy matching (architect, engineer, reviewer)
+- **Claude Code Agents**: Specialized subagents for focused tasks (research, analysis, etc.)
+- **Custom Commands**: Project-specific slash commands (/mode, /ticket, /memento)
+- **Smart Hooks**: Automated workflows triggered by Claude Code events
+- **Tickets**: Persistent task tracking with intelligent context injection
+- **Workflows**: Reusable development procedures and patterns
+- **Acronym Expansion**: Auto-expansion of project terminology
 
-All through a simple `CLAUDE.md` file that acts as a minimal router.
+All managed through an intelligent hook system that seamlessly integrates with Claude Code.
 
 ## This tool is for you if you answer yes to any of the following questions
 - Do you find yourself copy pasting between CLAUDE.md across projects all the time?
@@ -44,6 +44,17 @@ For CI/CD or automated environments, use non-interactive mode:
 npx memento-protocol init --non-interactive --modes architect,engineer --workflows review --hooks git-context-loader,security-guard --default-mode architect
 ```
 
+### Force Reinitialize (Dogfooding)
+
+For development or updating existing setups:
+```bash
+# Using yarn (no -- needed)
+yarn dev init --force --non-interactive
+
+# Using npm
+npm run dev init -- --force --non-interactive
+```
+
 ### All Recommended Components
 
 To install all recommended components based on your project type:
@@ -52,8 +63,12 @@ npx memento-protocol init --all-recommended
 ```
 
 This will create:
-- `CLAUDE.md`: Your project's navigation guide for Claude
-- `.memento/`: A directory for framework files (it's recommended to add this to `.gitignore`)
+- `.memento/`: Framework configuration and components
+- `.claude/`: Claude Code integration (agents, commands, settings)
+- Shell scripts for dynamic behavior
+- Hook configurations for automation
+
+**Note**: The `.memento/` directory should be added to `.gitignore` as it contains generated files.
 
 ### Installation
 
@@ -79,10 +94,11 @@ npm link
 ## Basic Usage
 
 Once initialized, Claude Code will automatically:
-- Load your CLAUDE.md file for project context
-- Execute hooks on specific events (prompts, tool usage, session start)
-- Expand acronyms in your prompts
-- Route modes, workflows, and tickets based on keywords
+- Execute hooks for intelligent context routing and automation
+- Enable custom slash commands (/mode, /ticket, /memento)
+- Support fuzzy mode switching (e.g., 'apm' → 'autonomous-project-manager')
+- Load specialized agents for enhanced capabilities
+- Expand acronyms and inject relevant context
 - Track persistent task state through tickets
 
 ## Commands
@@ -120,12 +136,11 @@ memento
 ### Component Management
 
 #### `memento add <type> <name>`
-Add modes, workflows, language overrides, or agents:
+Add modes, workflows, or agents:
 ```bash
-memento add mode architect
-memento add workflow review
-memento add language typescript
-memento add agent claude-code-research
+memento add mode architect              # Add AI mode
+memento add workflow review             # Add workflow
+memento add agent claude-code-research  # Add Claude Code agent
 ```
 
 #### `memento list`
@@ -196,11 +211,16 @@ memento config list                         # List all settings
 ## Claude Code Integration
 
 ### Using Modes
-Activate different AI personalities:
-```
-mode: architect     # System design focus
-mode: engineer      # Implementation focus
-mode: reviewer      # Code review focus
+Switch AI personalities with fuzzy matching:
+```bash
+# Using custom command
+/mode architect    # Exact match
+/mode eng         # Fuzzy match → engineer
+/mode apm         # Acronym → autonomous-project-manager
+
+# Or in prompts
+mode: architect   # System design focus
+mode: engineer    # Implementation focus
 ```
 
 ### Using Workflows
@@ -219,12 +239,19 @@ ticket: done
 ```
 
 ### Using Custom Commands
-Access Memento features directly in Claude:
-```
-/ticket:create my-feature    # Create a new ticket
-/ticket:list                 # List all tickets
-/mode:set architect          # Switch to architect mode
-/memento:status             # Show project status
+Direct access to Memento features in Claude Code:
+```bash
+# Mode management with fuzzy matching
+/mode                    # List available modes
+/mode architect         # Switch to architect mode
+/mode eng              # Fuzzy match to engineer
+
+# Ticket management
+/ticket                 # List all tickets
+/ticket my-feature      # Load ticket context
+
+# Project status
+/memento               # Show project overview
 ```
 
 ### Using Subagents
@@ -256,9 +283,11 @@ Let's implement the API using DDD principles
 Memento Protocol includes a powerful hook system for automation:
 
 ### Built-in Hooks
-- **security-guard**: Blocks dangerous commands (sudo, rm -rf)
-- **git-context-loader**: Loads git status and project structure at session start
-- **acronym-expander**: Automatically expands configured acronyms
+- **memento-routing**: Intelligent mode/workflow/ticket routing with fuzzy matching
+- **security-guard**: Blocks dangerous commands and protects system
+- **git-context-loader**: Auto-loads git status and project structure
+- **project-overview**: Provides project context at session start
+- **acronym-expander**: Expands project-specific terminology
 
 ### Custom Hooks
 Create custom automation for:
@@ -334,18 +363,24 @@ EOF
 memento
 ```
 
-### Claude Code Commands Example
+### Custom Commands in Action
 ```bash
-# Initialize with custom commands
+# Initialize Memento Protocol
 npx memento-protocol init
 
-# Now in Claude Code, you can use:
-# /ticket:create authentication-system
-# /ticket:list
-# /mode:set architect
-# /memento:status
+# Custom commands are now available in Claude Code:
 
-# Commands are automatically available after init
+# Mode switching with fuzzy matching
+/mode                  # Shows: architect, engineer, reviewer, etc.
+/mode eng             # Switches to engineer mode
+/mode apm             # Switches to autonomous-project-manager
+
+# Ticket management
+/ticket               # Lists all tickets
+/ticket auth-feature  # Loads specific ticket context
+
+# Project status
+/memento             # Shows modes, workflows, tickets, configuration
 ```
 
 ### Subagent Example
@@ -362,6 +397,14 @@ memento add agent claude-code-research
 ## Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+## What's New in v0.7.0
+
+- **Claude Code Agents**: Full subagent support with .claude/agents/ integration
+- **Fuzzy Mode Matching**: Smart mode switching with acronym support
+- **Enhanced Commands**: Improved custom command system with proper permissions
+- **Better Hooks**: Modular hook architecture with focused responsibilities
+- **GitHub Integration**: Automated CI/CD workflows for Claude Code projects
 
 ## License
 
