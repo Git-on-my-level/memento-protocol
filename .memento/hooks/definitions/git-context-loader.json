@@ -1,0 +1,24 @@
+{
+  "version": "1.0.0",
+  "hooks": [
+    {
+      "id": "git-context-loader",
+      "name": "Git Context Loader",
+      "description": "Loads current git status on each user prompt",
+      "event": "UserPromptSubmit",
+      "enabled": true,
+      "command": "echo '## Git Status' && git status -s 2>/dev/null | head -10 || echo 'Not a git repository'",
+      "continueOnError": true,
+      "priority": 95,
+      "requirements": {
+        "commands": [
+          "echo",
+          "git",
+          "head"
+        ],
+        "env": [],
+        "files": []
+      }
+    }
+  ]
+}
