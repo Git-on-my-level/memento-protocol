@@ -5,7 +5,7 @@ import { logger } from '../lib/logger';
 
 export const addCommand = new Command('add')
   .description('Add components to your Memento Protocol setup')
-  .argument('<type>', 'Component type (mode, workflow)')
+  .argument('<type>', 'Component type (mode, workflow, agent)')
   .argument('[name]', 'Component name (optional, will prompt if not provided)')
   .action(async (type: string, name?: string) => {
     try {
@@ -21,17 +21,17 @@ export const addCommand = new Command('add')
       const installer = new ComponentInstaller(process.cwd());
       
       // Validate component type
-      if (!['mode', 'workflow'].includes(type)) {
+      if (!['mode', 'workflow', 'agent'].includes(type)) {
         logger.error(`Invalid component type: ${type}`);
-        logger.info('Valid types are: mode, workflow');
+        logger.info('Valid types are: mode, workflow, agent');
         process.exit(1);
       }
 
       // Install component
       if (name) {
-        await installer.installComponent(type as 'mode' | 'workflow', name);
+        await installer.installComponent(type as 'mode' | 'workflow' | 'agent', name);
       } else {
-        await installer.interactiveInstall(type as 'mode' | 'workflow');
+        await installer.interactiveInstall(type as 'mode' | 'workflow' | 'agent');
       }
       
       logger.success('Component installed successfully!');

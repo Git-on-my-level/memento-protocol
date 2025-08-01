@@ -7,10 +7,12 @@ import { logger } from "./logger";
 export class DirectoryManager {
   private projectRoot: string;
   private mementoDir: string;
+  private claudeDir: string;
 
   constructor(projectRoot: string) {
     this.projectRoot = projectRoot;
     this.mementoDir = path.join(projectRoot, ".memento");
+    this.claudeDir = path.join(projectRoot, ".claude");
   }
 
   /**
@@ -39,6 +41,8 @@ export class DirectoryManager {
       path.join(this.mementoDir, "workflows"),
       path.join(this.mementoDir, "integrations"),
       path.join(this.mementoDir, "tickets"),
+      this.claudeDir,
+      path.join(this.claudeDir, "agents"),
     ];
 
     for (const dir of directories) {
@@ -65,6 +69,7 @@ export class DirectoryManager {
           modes: [],
           workflows: [],
           integrations: [],
+          agents: [],
         },
       };
       await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
@@ -76,6 +81,7 @@ export class DirectoryManager {
    */
   async validateStructure(): Promise<{ valid: boolean; missing: string[] }> {
     const requiredDirs = ["modes", "workflows", "integrations", "tickets"];
+    const requiredClaudeDirs = ["agents"];
 
     const missing: string[] = [];
 
@@ -83,6 +89,13 @@ export class DirectoryManager {
       const fullPath = path.join(this.mementoDir, dir);
       if (!existsSync(fullPath)) {
         missing.push(dir);
+      }
+    }
+
+    for (const dir of requiredClaudeDirs) {
+      const fullPath = path.join(this.claudeDir, dir);
+      if (!existsSync(fullPath)) {
+        missing.push(`.claude/${dir}`);
       }
     }
 
@@ -145,9 +158,12 @@ export class DirectoryManager {
    * Get the path to a specific component
    */
   getComponentPath(
-    type: "modes" | "workflows" | "integrations",
+    type: "modes" | "workflows" | "integrations" | "agents",
     name: string
   ): string {
+    if (type === "agents") {
+      return path.join(this.claudeDir, "agents", `${name}.md`);
+    }
     return path.join(this.mementoDir, type, `${name}.md`);
   }
 

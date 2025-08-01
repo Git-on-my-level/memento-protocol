@@ -18,6 +18,7 @@ interface TemplateMetadata {
     claude_router?: ComponentMetadata;
     modes: ComponentMetadata[];
     workflows: ComponentMetadata[];
+    agents: ComponentMetadata[];
   };
 }
 
@@ -38,12 +39,14 @@ export class ComponentInstaller {
   async listAvailableComponents(): Promise<{
     modes: ComponentMetadata[];
     workflows: ComponentMetadata[];
+    agents: ComponentMetadata[];
   }> {
     const metadata = await this.loadGlobalMetadata();
 
     return {
       modes: metadata?.templates.modes || [],
       workflows: metadata?.templates.workflows || [],
+      agents: metadata?.templates.agents || [],
     };
   }
 
@@ -53,11 +56,13 @@ export class ComponentInstaller {
   async listInstalledComponents(): Promise<{
     modes: string[];
     workflows: string[];
+    agents: string[];
   }> {
     if (!this.dirManager.isInitialized()) {
       return {
         modes: [],
         workflows: [],
+        agents: [],
       };
     }
     
@@ -66,6 +71,7 @@ export class ComponentInstaller {
     return {
       modes: manifest.components.modes || [],
       workflows: manifest.components.workflows || [],
+      agents: manifest.components.agents || [],
     };
   }
 
@@ -84,14 +90,25 @@ export class ComponentInstaller {
    * component being installed.
    */
   async installComponent(
-    type: "mode" | "workflow",
+    type: "mode" | "workflow" | "agent",
     name: string,
     force = false
   ): Promise<void> {
     // Check if component exists in templates
+    let templateSubdir: string;
+    if (type === "mode") {
+      templateSubdir = "modes";
+    } else if (type === "workflow") {
+      templateSubdir = "workflows";
+    } else if (type === "agent") {
+      templateSubdir = "agents";
+    } else {
+      throw new Error(`Invalid component type: ${type}`);
+    }
+    
     const componentPath = path.join(
       this.templatesDir,
-      type === "mode" ? "modes" : "workflows",
+      templateSubdir,
       `${name}.md`
     );
 
@@ -101,10 +118,16 @@ export class ComponentInstaller {
 
     // Check if already installed
     let manifest = await this.dirManager.getManifest();
-    let componentList =
-      type === "mode"
-        ? manifest.components.modes
-        : manifest.components.workflows;
+    let componentList: string[];
+    if (type === "mode") {
+      componentList = manifest.components.modes;
+    } else if (type === "workflow") {
+      componentList = manifest.components.workflows;
+    } else if (type === "agent") {
+      componentList = manifest.components.agents || [];
+    } else {
+      throw new Error(`Invalid component type: ${type}`);
+    }
 
     if (componentList.includes(name) && !force) {
       // SAFE: Preserving existing user customization
@@ -114,10 +137,14 @@ export class ComponentInstaller {
 
     // Check dependencies
     const metadata = await this.loadGlobalMetadata();
-    const components =
-      type === "mode"
-        ? metadata?.templates.modes
-        : metadata?.templates.workflows;
+    let components: ComponentMetadata[] | undefined;
+    if (type === "mode") {
+      components = metadata?.templates.modes;
+    } else if (type === "workflow") {
+      components = metadata?.templates.workflows;
+    } else if (type === "agent") {
+      components = metadata?.templates.agents;
+    }
     const component = components?.find((c) => c.name === name);
 
     if (component?.dependencies && component.dependencies.length > 0) {
@@ -131,20 +158,38 @@ export class ComponentInstaller {
 
     // Copy component file
     const content = await fs.readFile(componentPath, "utf-8");
-    const destPath = this.dirManager.getComponentPath(
-      type === "mode" ? "modes" : "workflows",
-      name
-    );
+    let destType: "modes" | "workflows" | "integrations" | "agents";
+    if (type === "mode") {
+      destType = "modes";
+    } else if (type === "workflow") {
+      destType = "workflows";
+    } else if (type === "agent") {
+      destType = "agents";
+    } else {
+      throw new Error(`Invalid component type: ${type}`);
+    }
+    
+    const destPath = this.dirManager.getComponentPath(destType, name);
 
     // WARNING: This writeFile will OVERWRITE any existing custom component if force=true
     await fs.writeFile(destPath, content);
 
     // Reload manifest to get any updates from dependency installation
     manifest = await this.dirManager.getManifest();
-    componentList =
-      type === "mode"
-        ? manifest.components.modes
-        : manifest.components.workflows;
+    if (type === "mode") {
+      componentList = manifest.components.modes;
+    } else if (type === "workflow") {
+      componentList = manifest.components.workflows;
+    } else if (type === "agent") {
+      componentList = manifest.components.agents || [];
+      // Ensure agents array exists in manifest
+      if (!manifest.components.agents) {
+        manifest.components.agents = [];
+        componentList = manifest.components.agents;
+      }
+    } else {
+      throw new Error(`Invalid component type: ${type}`);
+    }
 
     // Update manifest
     if (!componentList.includes(name)) {
@@ -163,9 +208,18 @@ export class ComponentInstaller {
   /**
    * Interactive component installation
    */
-  async interactiveInstall(type: "mode" | "workflow"): Promise<void> {
+  async interactiveInstall(type: "mode" | "workflow" | "agent"): Promise<void> {
     const available = await this.listAvailableComponents();
-    const components = type === "mode" ? available.modes : available.workflows;
+    let components: ComponentMetadata[];
+    if (type === "mode") {
+      components = available.modes;
+    } else if (type === "workflow") {
+      components = available.workflows;
+    } else if (type === "agent") {
+      components = available.agents;
+    } else {
+      throw new Error(`Invalid component type: ${type}`);
+    }
 
     if (components.length === 0) {
       logger.error(`No ${type}s available for installation`);
@@ -225,6 +279,27 @@ export class ComponentInstaller {
             component: `workflow:${workflow}`,
             dependencies: missingDeps,
           });
+        }
+      }
+    }
+
+    // Check agent dependencies (though agents typically don't have dependencies)
+    if (manifest.components.agents) {
+      for (const agent of manifest.components.agents) {
+        const meta = metadata?.templates.agents?.find(
+          (c) => c.name === agent
+        );
+        if (meta?.dependencies && meta.dependencies.length > 0) {
+          const missingDeps = meta.dependencies.filter(
+            (dep) => !manifest.components.modes.includes(dep)
+          );
+
+          if (missingDeps.length > 0) {
+            missing.push({
+              component: `agent:${agent}`,
+              dependencies: missingDeps,
+            });
+          }
         }
       }
     }
