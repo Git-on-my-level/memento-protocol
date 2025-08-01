@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2025-08-01
+
+### Fixed
+- **Hook Script Creation**: Fixed issue where hook scripts weren't being created when only hooks were selected during installation, ensuring proper hook functionality regardless of component selection
+
 ## [0.7.0] - 2025-08-01
 
 ### Added
