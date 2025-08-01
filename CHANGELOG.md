@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2025-08-01
+
+### Added
+- **Claude Code Subagent Support**: Complete implementation of Claude Code subagent system with agent templates, CLI commands (`memento add agent`, `memento list agents`), and proper `.claude/agents/` directory integration
+- **Custom Command Enhancements**: Fixed permission generation for custom commands (`/mode`, `/ticket`) with proper Claude Code format support
+- **Enhanced Mode Switching**: Added fuzzy matching support for modes including exact match, substring match, and acronym matching (e.g., `apm` → `autonomous-project-manager`)
+- **Claude Code Research Agent**: Built-in specialist agent for staying updated on Claude Code features and best practices
+
+### Changed
+- **GitHub Workflow Integration**: Added automated CI/CD workflow for Claude Code projects
+- **Hook System Improvements**: Refactored hook system with focused responsibilities and better error handling
+- **Permission Generation**: Fixed custom command permission format to work correctly with Claude Code's security model
+
+### Fixed
+- Custom commands (`/mode` and `/ticket`) now work with proper permissions
+- Mode switching supports fuzzy matching and acronym shortcuts
+- Agent installation properly targets `.claude/agents/` directory
+
 ## [0.6.0] - 2025-07-31
 
 ### Added

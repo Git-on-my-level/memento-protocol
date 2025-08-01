@@ -1,6 +1,6 @@
 {
   "name": "memento-protocol",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "A lightweight meta-framework for Claude Code",
   "main": "dist/cli.js",
   "bin": {
