@@ -1,15 +1,12 @@
 ---
-allowed-tools: Bash(ls:.memento/modes/), Bash(cat:.memento/modes/*)
-description: Switch between modes interactively
+allowed-tools: Bash(sh:.memento/scripts/mode-switch.sh)
+argument-hint: [mode-name]
+description: List available modes or switch to a specific mode
 ---
 # Mode Management
 
-## Available Modes
-!`ls -1 .memento/modes/ 2>/dev/null || echo "No modes installed. Run 'memento add mode' to install modes."`
+!`sh .memento/scripts/mode-switch.sh $ARGUMENTS`
 
-Use mode commands:
-- `/mode:list` - List all available modes
-- `/mode:set <mode-name>` - Switch to a specific mode
-- `/mode:current` - Show current active mode
 
-Which mode would you like to activate?
+
+I'll now operate according to the mode guidelines shown above.

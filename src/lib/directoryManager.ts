@@ -3,6 +3,7 @@ import * as path from "path";
 import { existsSync } from "fs";
 import { FileSystemError } from "./errors";
 import { logger } from "./logger";
+import { PackagePaths } from "./packagePaths";
 
 export class DirectoryManager {
   private projectRoot: string;
@@ -40,6 +41,7 @@ export class DirectoryManager {
       path.join(this.mementoDir, "modes"),
       path.join(this.mementoDir, "workflows"),
       path.join(this.mementoDir, "integrations"),
+      path.join(this.mementoDir, "scripts"),
       path.join(this.mementoDir, "tickets"),
       this.claudeDir,
       path.join(this.claudeDir, "agents"),
@@ -74,13 +76,22 @@ export class DirectoryManager {
       };
       await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
     }
+
+    // Copy essential scripts for custom commands
+    await this.copyEssentialScripts();
   }
 
   /**
    * Validate the directory structure and report any issues
    */
   async validateStructure(): Promise<{ valid: boolean; missing: string[] }> {
-    const requiredDirs = ["modes", "workflows", "integrations", "tickets"];
+    const requiredDirs = [
+      "modes",
+      "workflows",
+      "integrations",
+      "scripts",
+      "tickets",
+    ];
     const requiredClaudeDirs = ["agents"];
 
     const missing: string[] = [];
@@ -192,5 +203,48 @@ export class DirectoryManager {
   async updateManifest(manifest: any): Promise<void> {
     const manifestPath = path.join(this.mementoDir, "manifest.json");
     await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
+  }
+
+  /**
+   * Copy essential scripts from templates to .memento/scripts/
+   * These scripts are required for custom commands to work properly
+   */
+  private async copyEssentialScripts(): Promise<void> {
+    const templatesDir = PackagePaths.getTemplatesDir();
+    const templateScriptsDir = path.join(templatesDir, "scripts");
+    const mementoScriptsDir = path.join(this.mementoDir, "scripts");
+
+    // Check if template scripts directory exists
+    if (!existsSync(templateScriptsDir)) {
+      logger.debug(
+        "No template scripts directory found, skipping script copying"
+      );
+      return;
+    }
+
+    try {
+      // Get list of script files from templates
+      const scriptFiles = await fs.readdir(templateScriptsDir);
+
+      for (const scriptFile of scriptFiles) {
+        const sourcePath = path.join(templateScriptsDir, scriptFile);
+        const destPath = path.join(mementoScriptsDir, scriptFile);
+
+        // Only copy if the destination doesn't exist (don't overwrite user modifications)
+        if (!existsSync(destPath)) {
+          logger.debug(`Copying script: ${scriptFile}`);
+          await fs.copyFile(sourcePath, destPath);
+
+          // Make the script executable (on Unix-like systems)
+          if (process.platform !== "win32") {
+            await fs.chmod(destPath, 0o755);
+          }
+        }
+      }
+
+      logger.debug("Essential scripts copied successfully");
+    } catch (error) {
+      logger.warn(`Failed to copy essential scripts: ${error}`);
+    }
   }
 }
