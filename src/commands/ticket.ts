@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import { TicketManager, TicketStatus } from '../lib/ticketManager';
 import { logger } from '../lib/logger';
+import { SessionRecorder } from '../lib/sessionRecorder';
 
 const ticketCommand = new Command('ticket')
   .description('Manage tickets for persistent workspace');
@@ -95,6 +96,29 @@ ticketCommand
       logger.success(`Deleted ticket: ${name}`);
     } catch (error) {
       logger.error(`Failed to delete ticket: ${error}`);
+      process.exit(1);
+    }
+  });
+
+// Record subcommand
+ticketCommand
+  .command('record [name]')
+  .description('Record current session context to a ticket')
+  .option('-s, --summary <summary>', 'Custom session summary')
+  .action(async (name?: string, options?: { summary?: string }) => {
+    try {
+      const sessionRecorder = new SessionRecorder(process.cwd());
+      const ticketName = await sessionRecorder.recordSession(name, options?.summary);
+      
+      if (name && name === ticketName) {
+        logger.success(`Recorded session to existing ticket: ${ticketName}`);
+      } else {
+        logger.success(`Recorded session to ticket: ${ticketName}`);
+      }
+      
+      logger.info(`Session context has been ${name ? 'appended to' : 'saved in'} ticket '${ticketName}'`);
+    } catch (error) {
+      logger.error(`Failed to record session: ${error}`);
       process.exit(1);
     }
   });
