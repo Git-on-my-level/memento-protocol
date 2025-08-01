@@ -24,7 +24,13 @@ Claude Code supports custom commands through markdown files stored in `.claude/c
    - `/mode:set <mode-name>` - Switch to specific mode
    - `/mode:current` - Show current active mode
 
-3. **Workflow Commands**
+3. **Workflow Management Commands**
+   - `/workflow` - Execute workflows interactively
+   - `/workflow:list` - List available workflows
+   - `/workflow:run <workflow-name>` - Execute a specific workflow
+   - `/workflow:add <workflow-name>` - Add a workflow from templates
+
+4. **Memento Commands**
    - `/memento:init` - Initialize Memento Protocol in project
    - `/memento:status` - Show current project state (tickets, modes, etc.)
    - `/memento:sync` - Regenerate CLAUDE.md with current state
@@ -47,6 +53,11 @@ Claude Code supports custom commands through markdown files stored in `.claude/c
    │   │   ├── list.md
    │   │   ├── set.md
    │   │   └── current.md
+   │   ├── workflow.md           # Main workflow command
+   │   ├── workflow/
+   │   │   ├── list.md
+   │   │   ├── run.md
+   │   │   └── add.md
    │   └── memento/
    │       ├── init.md
    │       ├── status.md
@@ -85,10 +96,25 @@ Claude Code supports custom commands through markdown files stored in `.claude/c
    I'll now operate according to the $ARGUMENTS mode guidelines shown above.
    ```
 
+   **Example: `/workflow:run` command**
+   ```markdown
+   ---
+   allowed-tools: Bash(cat:.memento/workflows/*), Bash(echo:*)
+   argument-hint: <workflow-name>
+   description: Execute a Memento Protocol workflow
+   ---
+   
+   Executing workflow: $ARGUMENTS
+   
+   !`cat .memento/workflows/$ARGUMENTS.md 2>/dev/null || echo "Workflow '$ARGUMENTS' not found"`
+   
+   I'll now execute the $ARGUMENTS workflow as described above.
+   ```
+
    **Example: `/memento:status` command**
    ```markdown
    ---
-   allowed-tools: Bash(npx memento-protocol ticket list), Bash(ls:.memento/modes/), Bash(cat:CLAUDE.md)
+   allowed-tools: Bash(npx memento-protocol ticket list), Bash(ls:.memento/modes/), Bash(ls:.memento/workflows/), Bash(cat:CLAUDE.md)
    description: Show current Memento Protocol project status
    ---
    
@@ -99,6 +125,9 @@ Claude Code supports custom commands through markdown files stored in `.claude/c
    
    ## Available Modes
    !`ls -1 .memento/modes/ 2>/dev/null | sed 's/.md$//' || echo "No modes installed"`
+   
+   ## Available Workflows
+   !`ls -1 .memento/workflows/ 2>/dev/null | sed 's/.md$//' || echo "No workflows installed"`
    
    ## Current Configuration
    !`head -20 CLAUDE.md 2>/dev/null || echo "CLAUDE.md not found"`
@@ -144,9 +173,10 @@ Claude Code supports custom commands through markdown files stored in `.claude/c
 ### Phase 2: Complete Feature Set
 1. Implement remaining ticket commands
 2. Add mode management commands
-3. Create workflow commands (init, status, sync)
-4. Add namespace support for complex commands
-5. Improve error handling and feedback
+3. Add workflow management commands
+4. Create memento commands (init, status, sync)
+5. Add namespace support for complex commands
+6. Improve error handling and feedback
 
 ### Phase 3: Polish & Documentation
 1. Add command descriptions to help system
