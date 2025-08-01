@@ -11,12 +11,10 @@ export interface CommandTemplate {
 }
 
 export class CommandGenerator {
-  private projectRoot: string;
   private claudeDir: string;
   private commandsDir: string;
 
   constructor(projectRoot: string) {
-    this.projectRoot = projectRoot;
     this.claudeDir = path.join(projectRoot, '.claude');
     this.commandsDir = path.join(this.claudeDir, 'commands');
   }
