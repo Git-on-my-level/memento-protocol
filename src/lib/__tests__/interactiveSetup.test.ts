@@ -98,6 +98,7 @@ describe("InteractiveSetup", () => {
             dependencies: [],
           },
         ],
+        agents: [],
       });
 
 

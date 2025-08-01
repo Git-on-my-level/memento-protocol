@@ -12,6 +12,8 @@ Memento Protocol enhances Claude Code's understanding of your project by providi
 - **Hooks**: Powerful automation and customization for Claude Code events
 - **Tickets**: Persistent task tracking with context injection
 - **Acronyms**: Automatic expansion of project-specific terminology
+- **Custom Commands**: Direct access to Memento features through Claude's slash commands
+- **Subagents**: Pre-configured AI specialists for enhanced capabilities
 
 All through a simple `CLAUDE.md` file that acts as a minimal router.
 
@@ -118,11 +120,12 @@ memento
 ### Component Management
 
 #### `memento add <type> <name>`
-Add modes, workflows, or language overrides:
+Add modes, workflows, language overrides, or agents:
 ```bash
 memento add mode architect
 memento add workflow review
 memento add language typescript
+memento add agent claude-code-research
 ```
 
 #### `memento list`
@@ -156,6 +159,16 @@ memento ticket list --status in-progress    # Filter by status
 memento ticket start <id>                   # Move to in-progress
 memento ticket resolve <id>                 # Mark as done
 memento ticket delete <id>                  # Delete ticket
+```
+
+### Custom Commands Management
+
+#### `memento command`
+Manage Claude Code custom commands:
+```bash
+memento command install                     # Install custom commands
+memento command status                      # Check installation status
+memento command cleanup                     # Remove all commands
 ```
 
 ### Acronym Management
@@ -205,6 +218,25 @@ ticket: start auth-feature
 ticket: done
 ```
 
+### Using Custom Commands
+Access Memento features directly in Claude:
+```
+/ticket:create my-feature    # Create a new ticket
+/ticket:list                 # List all tickets
+/mode:set architect          # Switch to architect mode
+/memento:status             # Show project status
+```
+
+### Using Subagents
+Leverage specialized AI agents:
+```
+# Install the Claude Code research agent
+memento add agent claude-code-research
+
+# Agent will be available for Claude to invoke automatically
+# when you need help with Claude Code features
+```
+
 ### Acronym Expansion
 Configured acronyms are automatically expanded:
 ```
@@ -242,6 +274,9 @@ See [docs/HOOKS_GUIDE.md](docs/HOOKS_GUIDE.md) for detailed documentation.
 ```
 .
 ├── CLAUDE.md          # Main router file for Claude Code
+├── .claude/           # Claude Code specific directory
+│   ├── agents/        # Installed subagents
+│   └── commands/      # Custom slash commands
 ├── .memento/          # Framework directory (add to .gitignore)
 │   ├── modes/         # Installed AI modes
 │   ├── workflows/     # Installed workflows
@@ -297,6 +332,31 @@ EOF
 
 # Regenerate hooks
 memento
+```
+
+### Claude Code Commands Example
+```bash
+# Initialize with custom commands
+npx memento-protocol init
+
+# Now in Claude Code, you can use:
+# /ticket:create authentication-system
+# /ticket:list
+# /mode:set architect
+# /memento:status
+
+# Commands are automatically available after init
+```
+
+### Subagent Example
+```bash
+# Add the Claude Code research agent
+memento add agent claude-code-research
+
+# The agent is now available for Claude to invoke
+# when you ask about Claude Code features:
+# "What are the latest features in Claude Code?"
+# "How do I use MCP servers with Claude?"
 ```
 
 ## Contributing

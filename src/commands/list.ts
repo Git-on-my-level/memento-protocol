@@ -37,11 +37,19 @@ export const listCommand = new Command('list')
           installed.workflows.forEach(workflow => {
             logger.info(`  - ${workflow}`);
           });
+          logger.info('');
         }
         
-        if (installed.modes.length === 0 && installed.workflows.length === 0) {
+        if (installed.agents.length > 0) {
+          logger.info('Agents:');
+          installed.agents.forEach(agent => {
+            logger.info(`  - ${agent}`);
+          });
+        }
+        
+        if (installed.modes.length === 0 && installed.workflows.length === 0 && installed.agents.length === 0) {
           logger.info('No components installed yet.');
-          logger.info('Run "memento add mode" or "memento add workflow" to get started.');
+          logger.info('Run "memento add mode", "memento add workflow", or "memento add agent" to get started.');
         }
       } else {
         const available = await installer.listAvailableComponents();
@@ -58,6 +66,12 @@ export const listCommand = new Command('list')
         logger.info('Workflows:');
         available.workflows.forEach(workflow => {
           logger.info(`  - ${workflow.name}: ${workflow.description}`);
+        });
+        logger.info('');
+        
+        logger.info('Agents:');
+        available.agents.forEach(agent => {
+          logger.info(`  - ${agent.name}: ${agent.description}`);
         });
       }
     } catch (error) {

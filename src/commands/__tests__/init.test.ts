@@ -3,6 +3,7 @@ import { DirectoryManager } from "../../lib/directoryManager";
 import { HookManager } from "../../lib/hooks/HookManager";
 import { ProjectDetector } from "../../lib/projectDetector";
 import { InteractiveSetup } from "../../lib/interactiveSetup";
+import { CommandGenerator } from "../../lib/commandGenerator";
 import { logger } from "../../lib/logger";
 import * as fs from "fs";
 
@@ -11,6 +12,7 @@ jest.mock("../../lib/directoryManager");
 jest.mock("../../lib/hooks/HookManager");
 jest.mock("../../lib/projectDetector");
 jest.mock("../../lib/interactiveSetup");
+jest.mock("../../lib/commandGenerator");
 jest.mock("../../lib/logger", () => ({
   logger: {
     info: jest.fn(),
@@ -26,6 +28,7 @@ describe("Init Command", () => {
   let mockHookManager: jest.Mocked<HookManager>;
   let mockProjectDetector: jest.Mocked<ProjectDetector>;
   let mockInteractiveSetup: jest.Mocked<InteractiveSetup>;
+  let mockCommandGenerator: jest.Mocked<CommandGenerator>;
   let originalExit: any;
 
   beforeEach(() => {
@@ -51,6 +54,10 @@ describe("Init Command", () => {
       applySetup: jest.fn(),
     } as any;
 
+    mockCommandGenerator = {
+      initialize: jest.fn().mockResolvedValue(undefined),
+    } as any;
+
     (
       DirectoryManager as jest.MockedClass<typeof DirectoryManager>
     ).mockImplementation(() => mockDirManager);
@@ -63,6 +70,9 @@ describe("Init Command", () => {
     (
       InteractiveSetup as jest.MockedClass<typeof InteractiveSetup>
     ).mockImplementation(() => mockInteractiveSetup);
+    (
+      CommandGenerator as jest.MockedClass<typeof CommandGenerator>
+    ).mockImplementation(() => mockCommandGenerator);
 
     originalExit = process.exit;
     process.exit = jest.fn() as any;

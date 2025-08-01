@@ -1,6 +1,5 @@
 {
   "version": "1.0.0",
-  "defaultMode": "autonomous-project-manager",
   "components": {
     "modes": [
       "autonomous-project-manager",

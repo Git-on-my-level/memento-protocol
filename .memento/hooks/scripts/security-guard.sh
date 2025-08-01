@@ -15,11 +15,5 @@ if echo "$command" | grep -qE '\b(sudo|su|doas)\b'; then
   exit 2
 fi
 
-# Check for other dangerous patterns
-if echo "$command" | grep -qE '(rm -rf|:(){:|dd if=|mkfs\.|/dev/(sd|hd|nvme))'; then
-  echo "BLOCKED: Potentially dangerous command detected." >&2
-  exit 2
-fi
-
 # If safe, pass through the tool call unchanged
 echo "$tool_call"

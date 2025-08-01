@@ -53,7 +53,8 @@ describe('List Command', () => {
         ],
         workflows: [
           { name: 'review', description: 'Code review', tags: ['quality'], dependencies: ['reviewer'] }
-        ]
+        ],
+        agents: []
       });
 
       await listCommand.parseAsync(['node', 'test']);
@@ -72,7 +73,8 @@ describe('List Command', () => {
       mockDirManager.isInitialized.mockReturnValue(true);
       mockInstaller.listInstalledComponents.mockResolvedValue({
         modes: ['architect', 'engineer'],
-        workflows: ['review', 'refactor']
+        workflows: ['review', 'refactor'],
+        agents: []
       });
 
       await listCommand.parseAsync(['node', 'test', '--installed']);
@@ -90,13 +92,21 @@ describe('List Command', () => {
       mockDirManager.isInitialized.mockReturnValue(true);
       mockInstaller.listInstalledComponents.mockResolvedValue({
         modes: [],
-        workflows: []
+        workflows: [],
+        agents: []
       });
 
       await listCommand.parseAsync(['node', 'test', '--installed']);
 
       expect(logger.info).toHaveBeenCalledWith('No components installed yet.');
-      expect(logger.info).toHaveBeenCalledWith('Run "memento add mode" or "memento add workflow" to get started.');
+      
+      // Check that the help message contains essential parts without being brittle about exact wording
+      const calls = (logger.info as jest.Mock).mock.calls;
+      const helpMessage = calls.find(call => call[0].includes('memento add') && call[0].includes('to get started'));
+      expect(helpMessage).toBeDefined();
+      expect(helpMessage[0]).toMatch(/memento add mode/);
+      expect(helpMessage[0]).toMatch(/memento add workflow/);
+      expect(helpMessage[0]).toMatch(/to get started/);
     });
 
     it('should error when not initialized', async () => {

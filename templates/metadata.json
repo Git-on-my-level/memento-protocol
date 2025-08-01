@@ -58,6 +58,14 @@
         "tags": ["memory", "setup", "openmemory"],
         "dependencies": []
       }
+    ],
+    "agents": [
+      {
+        "name": "claude-code-research",
+        "description": "Expert on Claude Code features and capabilities. Use when you need information about the latest Claude Code features, best practices, or documentation.",
+        "tags": ["research", "claude-code", "features", "documentation"],
+        "dependencies": []
+      }
     ]
   }
 }

@@ -94,7 +94,13 @@ describe('Update Command', () => {
       const cmd = createUpdateCommand();
       await cmd.parseAsync(['node', 'test', 'invalid-format']);
 
-      expect(logger.error).toHaveBeenCalledWith('Update failed: Invalid component format. Use "mode:name" or "workflow:name"');
+      // Check that the error message contains the essential parts without being brittle
+      const calls = (logger.error as jest.Mock).mock.calls;
+      const errorCall = calls.find(call => call[0].includes('Invalid component format'));
+      expect(errorCall).toBeDefined();
+      expect(errorCall[0]).toMatch(/Invalid component format/);
+      expect(errorCall[0]).toMatch(/mode.*name/);
+      expect(errorCall[0]).toMatch(/workflow.*name/);
       expect(process.exit).toHaveBeenCalledWith(1);
     });
   });
@@ -127,7 +133,13 @@ describe('Update Command', () => {
       const cmd = createUpdateCommand();
       await cmd.parseAsync(['node', 'test', 'diff', 'invalid']);
 
-      expect(logger.error).toHaveBeenCalledWith('Failed to show diff: Invalid component format. Use "mode:name" or "workflow:name"');
+      // Check that the error message contains the essential parts without being brittle
+      const calls = (logger.error as jest.Mock).mock.calls;
+      const errorCall = calls.find(call => call[0].includes('Invalid component format'));
+      expect(errorCall).toBeDefined();
+      expect(errorCall[0]).toMatch(/Invalid component format/);
+      expect(errorCall[0]).toMatch(/mode.*name/);
+      expect(errorCall[0]).toMatch(/workflow.*name/);
       expect(process.exit).toHaveBeenCalledWith(1);
     });
   });

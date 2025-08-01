@@ -2,16 +2,19 @@ import { ComponentInstaller } from "./componentInstaller";
 import { UpdateManager } from "./updateManager";
 import { logger } from "./logger";
 import { DirectoryManager } from "./directoryManager";
+import { CommandGenerator } from "./commandGenerator";
 
 export class UpsertManager {
   private installer: ComponentInstaller;
   private updater: UpdateManager;
   private dirManager: DirectoryManager;
+  private commandGenerator: CommandGenerator;
 
   constructor(projectRoot: string) {
     this.dirManager = new DirectoryManager(projectRoot);
     this.installer = new ComponentInstaller(projectRoot);
     this.updater = new UpdateManager(projectRoot);
+    this.commandGenerator = new CommandGenerator(projectRoot);
   }
 
   async upsert(force = false) {
@@ -55,6 +58,10 @@ export class UpsertManager {
     // 4. Update existing components
     logger.info("Checking for updates to existing components...");
     await this.updater.updateAll(force);
+
+    // 5. Regenerate custom commands
+    logger.info("Updating Claude Code custom commands...");
+    await this.commandGenerator.initialize();
 
     logger.success("Upsert complete.");
   }

@@ -267,7 +267,7 @@ if [ -n "$TICKET_REQUEST" ]; then
         echo "## Ticket: $TICKET_PATH"
         echo ""
         echo "### Ticket Commands"
-        echo "\\\`\\\`\\\`bash"
+        printf '%s\\n' '\`\`\`bash'
         echo "# Create a new ticket"
         echo "npx memento-protocol ticket create \\"ticket-name\\""
         echo ""
@@ -279,7 +279,7 @@ if [ -n "$TICKET_REQUEST" ]; then
         echo ""
         echo "# List all tickets"
         echo "npx memento-protocol ticket list"
-        echo "\\\`\\\`\\\`"
+        printf '%s\\n' '\`\`\`'
         echo ""
         echo "### Working with Tickets"
         echo ""
@@ -312,7 +312,7 @@ if [ -z "$TICKET_REQUEST" ]; then
         echo "## Ticket System - Quick Reference"
         echo ""
         echo "### Available Commands"
-        echo "\\\\\`\\\\\`\\\\\`bash"
+        printf '%s\\n' '\`\`\`bash'
         echo "# Create a new ticket"
         echo "npx memento-protocol ticket create \\"ticket-name\\""
         echo ""
@@ -324,7 +324,7 @@ if [ -z "$TICKET_REQUEST" ]; then
         echo ""
         echo "# Delete a ticket"
         echo "npx memento-protocol ticket delete ticket-name"
-        echo "\\\\\`\\\\\`\\\\\`"
+        printf '%s\\n' '\`\`\`'
         echo ""
         echo "### Working with Tickets"
         echo ""

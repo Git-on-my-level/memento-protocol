@@ -45,6 +45,11 @@ npm run prepublishOnly
 # The actual publish is handled by scripts/npm/commit-tag-and-publish.sh
 ```
 
+## Development CLI
+
+### Non-Interactive Initialization
+- To run the current development CLI non-interactively `yarn dev init -- --force --non-interactive`
+
 ## Architecture
 
 ### Core Structure
