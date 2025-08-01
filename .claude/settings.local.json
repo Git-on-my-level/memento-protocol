@@ -27,7 +27,8 @@
       "Bash(cat:*)",
       "Bash(../dist/cli.js)",
       "Bash(../src/cli.ts)",
-      "WebFetch(domain:docs.anthropic.com)"
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(npx memento-protocol ticket:*)"
     ],
     "deny": []
   },
@@ -64,6 +65,16 @@
             "timeout": 30
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '## Git Status' && git status -s 2>/dev/null | head -10 || echo 'Not a git repository'",
+            "timeout": 30
+          }
+        ]
       }
     ],
     "SessionStart": [
@@ -76,7 +87,18 @@
             "timeout": 60
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '## Project Overview' && echo && echo '### Tickets Status' && echo && echo '#### In Progress' && (find .memento/tickets/in-progress -name '*.md' 2>/dev/null | while read f; do echo \"- $(basename \"$f\" .md)\"; done || echo 'No tickets in progress') && echo && echo '#### Next' && echo \"$(find .memento/tickets/next -name '*.md' 2>/dev/null | wc -l | tr -d ' ') tickets\" && echo && echo '#### Done' && echo \"$(find .memento/tickets/done -name '*.md' 2>/dev/null | wc -l | tr -d ' ') tickets\"",
+            "timeout": 30
+          }
+        ]
       }
     ]
-  }
+  },
+  "$schema": "https://json.schemastore.org/claude-code-settings.json"
 }

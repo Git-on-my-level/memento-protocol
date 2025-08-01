@@ -108,11 +108,11 @@ Available ticket commands:
     const ticketStart: CommandTemplate = {
       name: 'ticket/start',
       description: 'Move a ticket to in-progress status',
-      allowedTools: ['Bash(npx memento-protocol ticket start:*)'],
+      allowedTools: ['Bash(npx memento-protocol ticket move:*)'],
       argumentHint: '<ticket-name>',
       body: `# Starting Ticket: $ARGUMENTS
 
-!\`npx memento-protocol ticket start $ARGUMENTS\`
+!\`npx memento-protocol ticket move --to in-progress $ARGUMENTS\`
 
 The ticket is now in progress. I'll work with the context and requirements from this ticket.
 Use \`/ticket:context $ARGUMENTS\` to load the full ticket context if needed.`
@@ -122,11 +122,11 @@ Use \`/ticket:context $ARGUMENTS\` to load the full ticket context if needed.`
     const ticketDone: CommandTemplate = {
       name: 'ticket/done',
       description: 'Mark a ticket as completed',
-      allowedTools: ['Bash(npx memento-protocol ticket done:*)'],
+      allowedTools: ['Bash(npx memento-protocol ticket move:*)'],
       argumentHint: '<ticket-name>',
       body: `# Completing Ticket: $ARGUMENTS
 
-!\`npx memento-protocol ticket done $ARGUMENTS\`
+!\`npx memento-protocol ticket move --to done $ARGUMENTS\`
 
 The ticket has been marked as completed! Great work.
 Use \`/ticket:list\` to see your updated ticket status.`
@@ -168,7 +168,7 @@ I now have the full context for this ticket and will work according to its requi
       body: `# Mode Management
 
 ## Available Modes
-!\`ls -1 .memento/modes/ 2>/dev/null | sed 's/.md$//' || echo "No modes installed. Run 'memento add mode' to install modes."\`
+!\`ls -1 .memento/modes/ 2>/dev/null || echo "No modes installed. Run 'memento add mode' to install modes."\`
 
 Use mode commands:
 - \`/mode:list\` - List all available modes
@@ -244,10 +244,10 @@ The mode shown above is currently active. Use \`/mode:set <mode-name>\` to switc
 !\`npx memento-protocol ticket list 2>/dev/null || echo "No tickets found"\`
 
 ## Available Modes
-!\`ls -1 .memento/modes/ 2>/dev/null | sed 's/.md$//' | head -10 || echo "No modes installed"\`
+!\`ls -1 .memento/modes/ 2>/dev/null | head -10 || echo "No modes installed"\`
 
 ## Available Workflows  
-!\`ls -1 .memento/workflows/ 2>/dev/null | sed 's/.md$//' | head -10 || echo "No workflows installed"\`
+!\`ls -1 .memento/workflows/ 2>/dev/null | head -10 || echo "No workflows installed"\`
 
 ## Current Configuration
 !\`head -20 CLAUDE.md 2>/dev/null || echo "CLAUDE.md not found"\``

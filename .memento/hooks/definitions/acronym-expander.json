@@ -7,7 +7,7 @@
       "description": "Automatically expands configured acronyms in prompts",
       "event": "UserPromptSubmit",
       "enabled": true,
-      "command": "/Users/dazheng/workspace/memento-protocol/.memento/hooks/scripts/acronym-expander.sh",
+      "command": "/Users/dazheng/workspace/personal/memento-protocol/.memento/hooks/scripts/acronym-expander.sh",
       "priority": 150,
       "requirements": {
         "commands": [
