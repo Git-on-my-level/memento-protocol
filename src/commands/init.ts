@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { DirectoryManager } from '../lib/directoryManager';
 import { HookManager } from '../lib/hooks/HookManager';
+import { CommandGenerator } from '../lib/commandGenerator';
 import { ProjectDetector } from '../lib/projectDetector';
 import { InteractiveSetup } from '../lib/interactiveSetup';
 import { logger } from '../lib/logger';
@@ -98,6 +99,7 @@ export const initCommand = new Command('init')
       const projectRoot = process.cwd();
       const dirManager = new DirectoryManager(projectRoot);
       const hookManager = new HookManager(projectRoot);
+      const commandGenerator = new CommandGenerator(projectRoot);
       const projectDetector = new ProjectDetector(projectRoot);
       
       // Check if already initialized
@@ -181,12 +183,17 @@ export const initCommand = new Command('init')
       logger.info('Generating Claude Code hook infrastructure...');
       await hookManager.initialize();
       
+      // Generate custom commands
+      logger.info('Generating Claude Code custom commands...');
+      await commandGenerator.initialize();
+      
       logger.space();
       logger.success('Memento Protocol initialized successfully!');
       logger.space();
       logger.info('To use with Claude Code:');
       logger.info('  - Say "mode: [name]" to activate a mode (fuzzy matching supported)');
       logger.info('  - Say "workflow: [name]" to execute a workflow');
+      logger.info('  - Use custom commands: /ticket, /mode, /memento:status');
       if (setupOptions.defaultMode) {
         logger.info(`  - Default mode "${setupOptions.defaultMode}" will be used when no mode is specified`);
       }
