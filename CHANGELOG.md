@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2025-08-02
+
+### Documentation
+-  update CLAUDE.md and README.md for v0.7.0 features (#10)
+
+### Changed
+- Enhance Memento Protocol with new hooks and scripts for project context and git status
+- Remove security-guard hook, automate metadata.json generation (#12)
+
 ## [0.7.1] - 2025-08-01
 
 ### Fixed
@@ -137,6 +146,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-platform support (macOS, Linux)
 - npm and standalone distribution
 
+[0.8.0]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.8.0
+[0.7.1]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.7.1
+[0.7.0]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.7.0
 [0.6.0]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.6.0
 [0.5.3]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.5.3
 [0.5.2]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.5.2
