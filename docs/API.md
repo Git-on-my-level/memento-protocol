@@ -208,13 +208,13 @@ const hooks = new HookManager('/path/to/project');
 await hooks.initialize();
 
 // Create hook from template
-await hooks.createHookFromTemplate('security-guard', {
+await hooks.createHookFromTemplate('acronym-expander', {
   enabled: true
 });
 
 // List available templates
 const templates = await hooks.listTemplates();
-// Returns: ['security-guard', 'git-context-loader', 'acronym-expander']
+// Returns: ['git-context-loader', 'acronym-expander', 'project-overview']
 
 // Get all configured hooks
 const allHooks = hooks.getAllHooks();

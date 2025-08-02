@@ -42,7 +42,7 @@ describe("Init Command", () => {
 
     mockHookManager = {
       initialize: jest.fn(),
-      listTemplates: jest.fn().mockResolvedValue(['git-context-loader', 'security-guard']),
+      listTemplates: jest.fn().mockResolvedValue(['git-context-loader', 'acronym-expander']),
     } as any;
 
     mockProjectDetector = {

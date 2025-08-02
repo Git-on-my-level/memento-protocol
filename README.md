@@ -41,7 +41,7 @@ npx memento-protocol init --mode engineer --language typescript
 
 For CI/CD or automated environments, use non-interactive mode:
 ```bash
-npx memento-protocol init --non-interactive --modes architect,engineer --workflows review --hooks git-context-loader,security-guard --default-mode architect
+npx memento-protocol init --non-interactive --modes architect,engineer --workflows review --hooks git-context-loader --default-mode architect
 ```
 
 ### Force Reinitialize (Dogfooding)
@@ -156,7 +156,7 @@ memento list --installed  # Show only installed
 Manage Claude Code hooks:
 ```bash
 memento hook list                    # List all configured hooks
-memento hook add security-guard      # Add hook from template
+memento hook add acronym-expander    # Add hook from template
 memento hook enable <id>             # Enable a hook
 memento hook disable <id>            # Disable a hook
 memento hook remove <id>             # Remove a hook
@@ -284,7 +284,6 @@ Memento Protocol includes a powerful hook system for automation:
 
 ### Built-in Hooks
 - **memento-routing**: Intelligent mode/workflow/ticket routing with fuzzy matching
-- **security-guard**: Blocks dangerous commands and protects system
 - **git-context-loader**: Auto-loads git status and project structure
 - **project-overview**: Provides project context at session start
 - **acronym-expander**: Expands project-specific terminology

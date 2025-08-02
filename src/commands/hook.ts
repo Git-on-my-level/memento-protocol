@@ -11,7 +11,7 @@ const hookCommand = new Command('hook')
 Examples:
   $ memento hook list                    # List all configured hooks
   $ memento hook add code-formatter      # Add a hook from template
-  $ memento hook enable security-guard   # Enable a hook
+  $ memento hook enable acronym-expander # Enable a hook
   $ memento hook disable test-on-save    # Disable a hook
   $ memento hook remove my-hook          # Remove a hook
 `);
