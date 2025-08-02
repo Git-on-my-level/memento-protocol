@@ -175,7 +175,7 @@ The build uses esbuild (scripts/build.js) to:
 
 #### Hooks
 - Claude Code integration points for automated behavior
-- Built-in hooks: memento-routing, security-guard, project-overview, git-context-loader
+- Built-in hooks: memento-routing, project-overview, git-context-loader, acronym-expander
 - Custom hooks can be added via templates
 - Configured in .memento/hooks/definitions/
 

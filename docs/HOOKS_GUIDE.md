@@ -117,7 +117,7 @@ Memento Protocol includes pre-built hook templates:
 memento hook templates
 
 # Add a hook from template
-memento hook add security-guard
+memento hook add acronym-expander
 memento hook add git-context-loader
 ```
 
@@ -192,8 +192,8 @@ Hooks receive context through environment variables:
 
 ## Built-in Hook Templates
 
-### security-guard
-Blocks dangerous super-user commands (sudo, su, doas) for safety.
+### git-context-loader  
+Loads git status and project structure at session start.
 
 ### git-context-loader  
 Loads git status and project structure at session start.

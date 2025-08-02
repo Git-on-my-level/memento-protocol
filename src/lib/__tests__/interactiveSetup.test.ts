@@ -47,7 +47,7 @@ describe("InteractiveSetup", () => {
     } as any;
 
     mockHookManager = {
-      listTemplates: jest.fn().mockResolvedValue(['git-context-loader', 'security-guard']),
+      listTemplates: jest.fn().mockResolvedValue(['git-context-loader', 'acronym-expander']),
       createHookFromTemplate: jest.fn(),
     } as any;
 
@@ -114,7 +114,7 @@ describe("InteractiveSetup", () => {
         })
         .mockResolvedValueOnce({
           // Select hooks - just return whatever hooks are available
-          hooks: ["git-context-loader", "security-guard"],
+          hooks: ["git-context-loader", "acronym-expander"],
         })
         .mockResolvedValueOnce({
           // Select default mode
@@ -136,7 +136,7 @@ describe("InteractiveSetup", () => {
           projectInfo: mockProjectInfo,
           selectedModes: ["architect", "engineer"],
           selectedWorkflows: ["review"],
-          selectedHooks: expect.arrayContaining(["git-context-loader", "security-guard"]),
+          selectedHooks: expect.arrayContaining(["git-context-loader", "acronym-expander"]),
           defaultMode: "architect",
           addToGitignore: false,
         })
