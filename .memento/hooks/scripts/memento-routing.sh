@@ -260,9 +260,11 @@ if [ -n "$TICKET_REQUEST" ]; then
         echo "### Working with Tickets"
         echo ""
         echo "- Tickets are simple markdown files that serve as persistent workspaces"
+        echo "- **Read ticket files directly using the Read tool to understand their content**"
         echo "- Use your file editing tools to update ticket content directly"
         echo "- Tickets survive between sessions - use them to track progress and share context"
         echo "- When working on large tasks, create multiple tickets and delegate to sub-agents"
+        echo "- **Note: There are no built-in ticket commands to read content - use Read tool for file paths shown above**"
         echo ""
         
         # Output ticket content
@@ -305,9 +307,11 @@ if [ -z "$TICKET_REQUEST" ]; then
         echo "### Working with Tickets"
         echo ""
         echo "- Tickets are simple markdown files that serve as persistent workspaces"
+        echo "- **Read ticket files directly using the Read tool to understand their content**"
         echo "- Use your file editing tools to update ticket content directly"
         echo "- Tickets survive between sessions - use them to track progress and share context"
         echo "- When working on large tasks, create multiple tickets and delegate to sub-agents"
+        echo "- **Note: There are no built-in ticket commands to read content - use Read tool for file paths shown above**"
         echo ""
     # Low-confidence patterns (case-insensitive) - exclude explicit ticket: requests
     elif echo "$PROMPT" | grep -qi 'ticket' && ! echo "$PROMPT" | grep -qi '^[[:space:]]*ticket[[:space:]]*:'; then
