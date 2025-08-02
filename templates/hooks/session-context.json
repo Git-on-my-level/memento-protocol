@@ -1,0 +1,15 @@
+{
+  "id": "session-context",
+  "name": "Session Context",
+  "description": "Loads comprehensive project context at session start",
+  "event": "SessionStart",
+  "enabled": true,
+  "command": "${HOOK_SCRIPT}",
+  "continueOnError": true,
+  "priority": 90,
+  "requirements": {
+    "commands": ["echo", "git", "find", "grep", "head"],
+    "env": [],
+    "files": []
+  }
+}

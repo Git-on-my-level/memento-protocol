@@ -43,3 +43,6 @@ if [ -d ".memento/tickets/done" ]; then
 else
     echo "0 tickets"
 fi
+
+# Exit successfully
+exit 0

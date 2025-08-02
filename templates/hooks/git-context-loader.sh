@@ -5,3 +5,6 @@
 echo '## Git Status'
 # Show only the first 10 changed files to keep output succinct
 git status -s 2>/dev/null | head -10 || echo 'Not a git repository'
+
+# Exit successfully
+exit 0
