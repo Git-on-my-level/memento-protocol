@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2025-08-02T10:44:44.368Z",
+  "generated": "2025-08-02T17:29:21.644Z",
   "templates": {
     "modes": [
       {
@@ -87,14 +87,6 @@
         "dependencies": [],
         "event": "SessionStart",
         "priority": 85
-      },
-      {
-        "name": "session-context",
-        "description": "Loads comprehensive project context at session start",
-        "tags": [],
-        "dependencies": [],
-        "event": "SessionStart",
-        "priority": 90
       }
     ]
   }

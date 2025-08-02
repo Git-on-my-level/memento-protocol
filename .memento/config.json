@@ -1,17 +1,18 @@
 {
   "version": "1.0.0",
+  "defaultMode": "autonomous-project-manager",
   "components": {
     "modes": [
-      "autonomous-project-manager",
       "ai-debt-maintainer",
       "architect",
+      "autonomous-project-manager",
       "engineer",
       "reviewer"
     ],
     "workflows": [
-      "summarize",
+      "openmemory-setup",
       "review",
-      "openmemory-setup"
+      "summarize"
     ]
   }
 }

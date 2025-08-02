@@ -159,7 +159,7 @@ export class InteractiveSetup {
         name: 'selectedModes',
         message: 'Select modes (behavioral patterns) to install:',
         choices: availableComponents.modes.map((mode: any) => ({
-          name: `${mode.name} - ${mode.description}`,
+          name: mode.name,
           value: mode.name,
           checked: true  // Select all modes by default
         })),
@@ -174,7 +174,7 @@ export class InteractiveSetup {
         name: 'selectedWorkflows',
         message: 'Select workflows (procedures) to install:',
         choices: availableComponents.workflows.map((workflow: any) => ({
-          name: `${workflow.name} - ${workflow.description}`,
+          name: workflow.name,
           value: workflow.name,
           checked: true  // Select all workflows by default
         }))
@@ -193,7 +193,7 @@ export class InteractiveSetup {
           const templatePath = path.join(PackagePaths.getTemplatesDir(), 'hooks', `${hookName}.json`);
           const template = JSON.parse(fs.readFileSync(templatePath, 'utf-8'));
           hookChoices.push({
-            name: `${template.name} - ${template.description}`,
+            name: template.name,
             value: hookName,
             checked: true // Select all hooks by default
           });
