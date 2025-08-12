@@ -53,16 +53,14 @@ export class CommandGenerator {
     // Main ticket command (list if no args, load context if args provided)
     const ticketMain: CommandTemplate = {
       name: "ticket",
-      description: "List tickets or load specific ticket context",
+      description: "Manage tickets stored as .md files in .memento/tickets/ directories",
       allowedTools: ["Bash(sh:.memento/scripts/ticket-context.sh)"],
       argumentHint: "[ticket-name]",
       body: `# Ticket Management
 
 !\`sh .memento/scripts/ticket-context.sh $ARGUMENTS\`
 
-${"" /* No arguments: Shows ticket list */}
-${"" /* With arguments: Loads ticket context */}
-I now have the current ticket status and context loaded.`,
+I now have ticket information loaded. Use Read tool to access actual ticket content.`,
     };
 
     // Generate ticket command file
