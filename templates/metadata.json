@@ -61,6 +61,13 @@
         "tags": [],
         "dependencies": [],
         "tools": "WebFetch, WebSearch, Read"
+      },
+      {
+        "name": "file-content-analyzer",
+        "description": "Use this agent when you need to analyze large files to understand their structure, content type, and organization.",
+        "tags": [],
+        "dependencies": [],
+        "tools": "Glob, Grep, LS, Read, WebFetch, TodoWrite, WebSearch, BashOutput, KillBash"
       }
     ],
     "hooks": [
