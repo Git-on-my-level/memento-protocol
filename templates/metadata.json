@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2025-08-12T10:31:38.637Z",
+  "generated": "2025-08-12T10:46:36.557Z",
   "templates": {
     "modes": [
       {
@@ -71,10 +71,10 @@
       },
       {
         "name": "session-summarizer",
-        "description": "Quickly summarize development session work, achievements, and next steps",
+        "description": "Use PROACTIVELY when user mentions recording work, saving progress, creating session summaries, or documenting what was done. Automatically creates or updates tickets with AI-generated summaries of development work.",
         "tags": [],
         "dependencies": [],
-        "tools": "Read, Glob, Grep"
+        "tools": "Read, Glob, Grep, Bash"
       },
       {
         "name": "ticket-finder",
