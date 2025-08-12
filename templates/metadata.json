@@ -1,61 +1,56 @@
 {
   "version": "1.0.0",
+  "generated": "2025-08-02T17:29:21.644Z",
   "templates": {
-    "claude_router": {
-      "name": "claude_router_template",
-      "description": "Minimal router for Claude Code, managing on-demand instruction loading",
-      "tags": ["router", "claude", "core"],
-      "dependencies": []
-    },
     "modes": [
       {
-        "name": "autonomous-project-manager",
-        "description": "Agentic project management with autonomous delegation to sub-agents",
-        "tags": ["planning", "coordination", "management", "autonomous"],
-        "dependencies": []
-      },
-      {
         "name": "ai-debt-maintainer",
-        "description": "Identify and clean up AI-generated code smells and technical debt",
-        "tags": ["maintenance", "refactoring", "cleanup", "debt"],
+        "description": "This codebase has knowledge and tech debt left over from previous changes made by humans and AIs. Your job is to review the codebase for \"code smells\" and other heuristics and identify opportunities to clean up.",
+        "tags": [],
         "dependencies": []
       },
       {
         "name": "architect",
-        "description": "System design, technical decisions, and architectural patterns",
-        "tags": ["design", "architecture", "patterns"],
+        "description": "You are now operating in Architect mode. Your focus is on system design and technical excellence.",
+        "tags": [],
+        "dependencies": []
+      },
+      {
+        "name": "autonomous-project-manager",
+        "description": "You are operating in Autonomous Project Manager mode. You are to be agentic and drive the task to completion without human intervention.",
+        "tags": [],
         "dependencies": []
       },
       {
         "name": "engineer",
-        "description": "Implementation, coding, and debugging",
-        "tags": ["coding", "implementation", "debugging"],
+        "description": "You are now operating in Engineer mode. Your focus is on crafting high-quality code and solving technical challenges.",
+        "tags": [],
         "dependencies": []
       },
       {
         "name": "reviewer",
-        "description": "Code review, quality assurance, and feedback",
-        "tags": ["review", "quality", "feedback"],
+        "description": "You are now operating in Reviewer mode. Your focus is on quality assurance and constructive feedback.",
+        "tags": [],
         "dependencies": []
       }
     ],
     "workflows": [
       {
-        "name": "summarize",
-        "description": "Summarize code, directories, or concepts to compress context",
-        "tags": ["analysis", "documentation", "context"],
+        "name": "openmemory-setup",
+        "description": "This workflow guides an LLM agent in setting up OpenMemory MCP for the user's local environment to enable persistent memory across sessions.",
+        "tags": [],
         "dependencies": []
       },
       {
         "name": "review",
-        "description": "Comprehensive code review and quality assessment",
-        "tags": ["quality", "review", "feedback"],
-        "dependencies": ["reviewer"]
+        "description": "A structured approach to code review that ensures quality, security, and maintainability through systematic evaluation.",
+        "tags": [],
+        "dependencies": []
       },
       {
-        "name": "openmemory-setup",
-        "description": "Setup and configure OpenMemory for persistent memory",
-        "tags": ["memory", "setup", "openmemory"],
+        "name": "summarize",
+        "description": "A systematic approach to compressing context and extracting essential information from codebases, directories, or complex topics.",
+        "tags": [],
         "dependencies": []
       }
     ],
@@ -63,8 +58,9 @@
       {
         "name": "claude-code-research",
         "description": "Expert on Claude Code features and capabilities. Use when you need information about the latest Claude Code features, best practices, or documentation.",
-        "tags": ["research", "claude-code", "features", "documentation"],
-        "dependencies": []
+        "tags": [],
+        "dependencies": [],
+        "tools": "WebFetch, WebSearch, Read"
       },
       {
         "name": "session-summarizer",
@@ -77,6 +73,39 @@
         "description": "Find relevant tickets based on current work, files being modified, or keywords",
         "tags": ["tickets", "search", "context", "productivity"],
         "dependencies": []
+      },
+      {
+        "name": "file-content-analyzer",
+        "description": "Use this agent when you need to analyze large files to understand their structure, content type, and organization.",
+        "tags": [],
+        "dependencies": [],
+        "tools": "Glob, Grep, LS, Read, WebFetch, TodoWrite, WebSearch, BashOutput, KillBash"
+      }
+    ],
+    "hooks": [
+      {
+        "name": "acronym-expander",
+        "description": "Automatically expands configured acronyms in prompts",
+        "tags": [],
+        "dependencies": [],
+        "event": "UserPromptSubmit",
+        "priority": 150
+      },
+      {
+        "name": "git-context-loader",
+        "description": "Loads current git status on each user prompt",
+        "tags": [],
+        "dependencies": [],
+        "event": "UserPromptSubmit",
+        "priority": 95
+      },
+      {
+        "name": "project-overview",
+        "description": "Loads project overview including tickets status at session start",
+        "tags": [],
+        "dependencies": [],
+        "event": "SessionStart",
+        "priority": 85
       }
     ]
   }

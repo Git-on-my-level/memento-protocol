@@ -1,12 +1,17 @@
 const esbuild = require("esbuild");
 const { execSync } = require("child_process");
 const fs = require("fs");
+const { generateMetadata } = require("./generate-metadata");
 
 // Read version from package.json
 const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
 const version = packageJson.version;
 
 console.log(`Building version ${version}...`);
+
+// Generate metadata.json from templates
+console.log("Generating metadata...");
+generateMetadata();
 
 // Clean dist directory
 execSync("rm -rf dist", { stdio: "inherit" });

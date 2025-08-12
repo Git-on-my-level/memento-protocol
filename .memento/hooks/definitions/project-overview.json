@@ -7,7 +7,7 @@
       "description": "Loads project overview including tickets status at session start",
       "event": "SessionStart",
       "enabled": true,
-      "command": "echo '## Project Overview' && echo && echo '### Tickets Status' && echo && echo '#### In Progress' && (find .memento/tickets/in-progress -name '*.md' 2>/dev/null | while read f; do echo \"- $(basename \"$f\" .md)\"; done || echo 'No tickets in progress') && echo && echo '#### Next' && echo \"$(find .memento/tickets/next -name '*.md' 2>/dev/null | wc -l | tr -d ' ') tickets\" && echo && echo '#### Done' && echo \"$(find .memento/tickets/done -name '*.md' 2>/dev/null | wc -l | tr -d ' ') tickets\"",
+      "command": "/Users/dazheng/workspace/memento-protocol/.memento/hooks/scripts/project-overview.sh",
       "continueOnError": true,
       "priority": 85,
       "requirements": {

@@ -4,7 +4,7 @@
   "description": "Loads current git status on each user prompt",
   "event": "UserPromptSubmit",
   "enabled": true,
-  "command": "echo '## Git Status' && git status -s 2>/dev/null | head -10 || echo 'Not a git repository'",
+  "command": "${HOOK_SCRIPT}",
   "continueOnError": true,
   "priority": 95,
   "requirements": {

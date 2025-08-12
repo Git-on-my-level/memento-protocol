@@ -17,15 +17,6 @@
       },
       "command": "echo 'BLOCKED: Super-user commands are not allowed' >&2 && exit 2",
       "priority": 200
-    },
-    {
-      "id": "session-context",
-      "name": "Session Context Loader",
-      "description": "Loads project context at session start",
-      "event": "SessionStart",
-      "enabled": false,
-      "command": ".memento/hooks/scripts/load-context.sh",
-      "priority": 100
     }
   ]
 }
