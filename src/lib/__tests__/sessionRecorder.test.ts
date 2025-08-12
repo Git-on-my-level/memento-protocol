@@ -40,7 +40,7 @@ describe('SessionRecorder', () => {
 
       const result = await sessionRecorder.recordSession();
 
-      expect(result).toMatch(/^session-\d+$/);
+      expect(result).toMatch(/^session-\d{4}-\d{2}-\d{2}-[a-f0-9]{6}$/);
       expect(mockedFs.writeFileSync).toHaveBeenCalled();
     });
 

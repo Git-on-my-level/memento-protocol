@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 import { TicketManager } from './ticketManager';
 
 export interface SessionEntry {
@@ -40,10 +41,10 @@ export class SessionRecorder {
   }
 
   /**
-   * Generate a simple session ID based on current timestamp
+   * Generate a unique session ID using crypto.randomUUID
    */
   private generateSessionId(): string {
-    return `session-${Date.now()}`;
+    return `session-${crypto.randomUUID()}`;
   }
 
   /**
@@ -125,7 +126,9 @@ export class SessionRecorder {
   }
 
   /**
-   * Generate a session summary (simplified version - in real implementation could use AI)
+   * Generate a session summary
+   * Note: If session-summarizer agent is available in .claude/agents/,
+   * Claude Code will automatically use it for AI-powered summaries
    */
   private generateSessionSummary(ticketName?: string): string {
     const recentFiles = this.getRecentlyModifiedFiles();
@@ -149,6 +152,8 @@ export class SessionRecorder {
 
   /**
    * Find the most relevant ticket for current session
+   * Note: If ticket-finder agent is available in .claude/agents/,
+   * Claude Code will automatically use it for better ticket matching
    */
   private async findRelevantTicket(): Promise<string | null> {
     const tickets = await this.ticketManager.list();
@@ -199,8 +204,10 @@ export class SessionRecorder {
       await this.appendToTicket(targetTicket, sessionEntry);
       return targetTicket;
     } else {
-      // Create new ticket
-      const newTicketName = this.sanitizeTicketName(`session-${Date.now()}`);
+      // Create new ticket with readable name
+      const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      const shortId = crypto.randomBytes(3).toString('hex'); // 6 char hex
+      const newTicketName = this.sanitizeTicketName(`session-${timestamp}-${shortId}`);
       await this.createTicketWithSession(newTicketName, sessionEntry);
       return newTicketName;
     }

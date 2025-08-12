@@ -40,8 +40,7 @@
       "Bash(sh:.memento/scripts/mode-switch.sh:*)",
       "Bash(sh:.memento/scripts/ticket-context.sh:*)",
       "Bash(timeout 15 npm run dev init -- --force --quick)",
-      "WebFetch(domain:docs.anthropic.com)",
-      "Bash(sh:*)"
+      "WebFetch(domain:docs.anthropic.com)"
     ],
     "deny": []
   },
@@ -53,6 +52,16 @@
           {
             "type": "command",
             "command": "./.memento/hooks/scripts/security-guard.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/dazheng/workspace/personal/memento-protocol/.memento/hooks/scripts/security-guard.sh",
             "timeout": 30
           }
         ]
@@ -85,6 +94,16 @@
           {
             "type": "command",
             "command": "echo '## Git Status' && git status -s 2>/dev/null | head -10 || echo 'Not a git repository'",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/dazheng/workspace/personal/memento-protocol/.memento/hooks/scripts/acronym-expander.sh",
             "timeout": 30
           }
         ]
