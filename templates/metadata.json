@@ -65,6 +65,18 @@
         "description": "Expert on Claude Code features and capabilities. Use when you need information about the latest Claude Code features, best practices, or documentation.",
         "tags": ["research", "claude-code", "features", "documentation"],
         "dependencies": []
+      },
+      {
+        "name": "session-summarizer",
+        "description": "Quickly summarize development session work, achievements, and next steps",
+        "tags": ["summary", "session", "development", "productivity"],
+        "dependencies": []
+      },
+      {
+        "name": "ticket-finder",
+        "description": "Find relevant tickets based on current work, files being modified, or keywords",
+        "tags": ["tickets", "search", "context", "productivity"],
+        "dependencies": []
       }
     ]
   }

@@ -10,12 +10,33 @@ export interface SessionEntry {
 }
 
 export class SessionRecorder {
+  // Constants for limits and configuration
+  private static readonly MAX_FILES = 50;
+  private static readonly MAX_DEPTH = 2;
+  private static readonly RECENT_FILES_LIMIT = 5;
+  private static readonly KEY_FILES_LIMIT = 3;
+  private static readonly ONE_HOUR_MS = 60 * 60 * 1000;
+
   private ticketManager: TicketManager;
   private projectRoot: string;
 
   constructor(projectRoot: string) {
     this.projectRoot = projectRoot;
     this.ticketManager = new TicketManager(projectRoot);
+  }
+
+  /**
+   * Sanitize ticket name to prevent path traversal and other security issues
+   */
+  private sanitizeTicketName(name: string): string {
+    // Remove dangerous path components and characters
+    return name
+      .replace(/\.\./g, '') // Remove path traversal attempts
+      .replace(/[\\\/]/g, '') // Remove path separators
+      .replace(/[<>:"|?*]/g, '') // Remove Windows invalid filename chars
+      .replace(/[\x00-\x1f\x7f]/g, '') // Remove control characters
+      .trim()
+      .substring(0, 100); // Limit length to reasonable size
   }
 
   /**
@@ -49,7 +70,7 @@ export class SessionRecorder {
     try {
       const recentFiles = this.getRecentlyModifiedFiles();
       if (recentFiles.length > 0) {
-        context.push(`Recently Modified Files: ${recentFiles.slice(0, 5).join(', ')}`);
+        context.push(`Recently Modified Files: ${recentFiles.slice(0, SessionRecorder.RECENT_FILES_LIMIT).join(', ')}`);
       }
     } catch (error) {
       // Ignore file system errors
@@ -63,10 +84,11 @@ export class SessionRecorder {
    */
   private getRecentlyModifiedFiles(): string[] {
     const recentFiles: string[] = [];
-    const oneHourAgo = Date.now() - (60 * 60 * 1000);
+    const oneHourAgo = Date.now() - SessionRecorder.ONE_HOUR_MS;
 
     const scanDirectory = (dir: string, depth = 0) => {
-      if (depth > 2) return; // Limit depth to avoid performance issues
+      if (depth > SessionRecorder.MAX_DEPTH) return; // Limit depth to avoid performance issues
+      if (recentFiles.length >= SessionRecorder.MAX_FILES) return; // Limit total files processed
 
       try {
         const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -80,9 +102,14 @@ export class SessionRecorder {
           }
 
           if (entry.isFile()) {
-            const stats = fs.statSync(fullPath);
-            if (stats.mtime.getTime() > oneHourAgo) {
-              recentFiles.push(path.relative(this.projectRoot, fullPath));
+            try {
+              const stats = fs.statSync(fullPath);
+              if (stats.mtime.getTime() > oneHourAgo) {
+                recentFiles.push(path.relative(this.projectRoot, fullPath));
+              }
+            } catch (statError) {
+              // Ignore individual file stat errors (handles race conditions)
+              continue;
             }
           } else if (entry.isDirectory()) {
             scanDirectory(fullPath, depth + 1);
@@ -113,11 +140,9 @@ export class SessionRecorder {
     if (recentFiles.length > 0) {
       summary += `\n\nRecent activity:`;
       summary += `\n- Modified ${recentFiles.length} file(s)`;
-      summary += `\n- Key files: ${recentFiles.slice(0, 3).join(', ')}`;
+      summary += `\n- Key files: ${recentFiles.slice(0, SessionRecorder.KEY_FILES_LIMIT).join(', ')}`;
     }
 
-    // Add placeholder for AI-generated summary
-    summary += `\n\n*Note: In a full implementation, this would include an AI-generated summary of the session using Haiku or similar model.*`;
 
     return summary;
   }
@@ -144,9 +169,17 @@ export class SessionRecorder {
   async recordSession(ticketName?: string, summary?: string): Promise<string> {
     let targetTicket = ticketName;
     
+    // Sanitize ticket name if provided
+    if (targetTicket) {
+      targetTicket = this.sanitizeTicketName(targetTicket);
+      if (!targetTicket) {
+        throw new Error('Invalid ticket name after sanitization');
+      }
+    }
+    
     // If no ticket specified, try to find relevant one
     if (!targetTicket) {
-      targetTicket = await this.findRelevantTicket();
+      targetTicket = await this.findRelevantTicket() || undefined;
     }
 
     // Generate session summary
@@ -167,7 +200,7 @@ export class SessionRecorder {
       return targetTicket;
     } else {
       // Create new ticket
-      const newTicketName = `session-${Date.now()}`;
+      const newTicketName = this.sanitizeTicketName(`session-${Date.now()}`);
       await this.createTicketWithSession(newTicketName, sessionEntry);
       return newTicketName;
     }
@@ -177,15 +210,16 @@ export class SessionRecorder {
    * Append session entry to existing ticket
    */
   private async appendToTicket(ticketName: string, sessionEntry: SessionEntry): Promise<void> {
+    const sanitizedName = this.sanitizeTicketName(ticketName);
     const tickets = await this.ticketManager.list();
-    const ticket = tickets.find(t => t.name === ticketName);
+    const ticket = tickets.find(t => t.name === sanitizedName);
     
     if (!ticket) {
-      throw new Error(`Ticket '${ticketName}' not found`);
+      throw new Error(`Ticket '${sanitizedName}' not found`);
     }
 
     // Read current ticket content
-    const ticketPath = path.join(this.projectRoot, '.memento', 'tickets', ticket.status, `${ticketName}.md`);
+    const ticketPath = path.join(this.projectRoot, '.memento', 'tickets', ticket.status, `${sanitizedName}.md`);
     let content = '';
     
     if (fs.existsSync(ticketPath)) {
@@ -217,8 +251,9 @@ ${sessionEntry.context}
    * Create new ticket with session entry
    */
   private async createTicketWithSession(ticketName: string, sessionEntry: SessionEntry): Promise<void> {
+    const sanitizedName = this.sanitizeTicketName(ticketName);
     // Create basic ticket structure with session
-    const content = `# ${ticketName}
+    const content = `# ${sanitizedName}
 
 ## Description
 Session-based ticket created automatically.
@@ -242,7 +277,7 @@ ${sessionEntry.context}
 Created: ${sessionEntry.timestamp}
 `;
 
-    const ticketPath = path.join(this.projectRoot, '.memento', 'tickets', 'next', `${ticketName}.md`);
+    const ticketPath = path.join(this.projectRoot, '.memento', 'tickets', 'next', `${sanitizedName}.md`);
     
     // Ensure directory exists
     const ticketDir = path.dirname(ticketPath);
