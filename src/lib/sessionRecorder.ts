@@ -7,7 +7,6 @@ export interface SessionEntry {
   timestamp: string;
   summary: string;
   context?: string;
-  sessionId?: string;
 }
 
 export class SessionRecorder {
@@ -41,43 +40,19 @@ export class SessionRecorder {
   }
 
   /**
-   * Generate a unique session ID using crypto.randomUUID
-   */
-  private generateSessionId(): string {
-    return `session-${crypto.randomUUID()}`;
-  }
-
-  /**
    * Capture basic session context
    */
   private captureSessionContext(): string {
-    const context = [];
-    
-    // Current working directory
-    context.push(`Working Directory: ${this.projectRoot}`);
-    
-    // Git status if available
-    try {
-      const gitDir = path.join(this.projectRoot, '.git');
-      if (fs.existsSync(gitDir)) {
-        context.push('Git Repository: Yes');
-        // Could add more git context here if needed
-      }
-    } catch (error) {
-      // Ignore git errors
-    }
-
-    // Recent file modifications (simple approach)
+    // Only capture recently modified files - the most useful context
     try {
       const recentFiles = this.getRecentlyModifiedFiles();
       if (recentFiles.length > 0) {
-        context.push(`Recently Modified Files: ${recentFiles.slice(0, SessionRecorder.RECENT_FILES_LIMIT).join(', ')}`);
+        return `Recently Modified Files: ${recentFiles.slice(0, SessionRecorder.RECENT_FILES_LIMIT).join(', ')}`;
       }
+      return 'No recently modified files';
     } catch (error) {
-      // Ignore file system errors
+      return 'Unable to capture file context';
     }
-
-    return context.join('\n');
   }
 
   /**
@@ -190,13 +165,11 @@ export class SessionRecorder {
     // Generate session summary
     const sessionSummary = summary || this.generateSessionSummary(targetTicket);
     const sessionContext = this.captureSessionContext();
-    const sessionId = this.generateSessionId();
 
     const sessionEntry: SessionEntry = {
       timestamp: new Date().toISOString(),
       summary: sessionSummary,
-      context: sessionContext,
-      sessionId
+      context: sessionContext
     };
 
     // If we have a target ticket, append to it
@@ -239,7 +212,6 @@ export class SessionRecorder {
 ---
 
 ## Session Entry - ${new Date(sessionEntry.timestamp).toLocaleString()}
-**Session ID:** ${sessionEntry.sessionId}
 
 ### Summary
 ${sessionEntry.summary}
@@ -270,7 +242,6 @@ Session-based ticket created automatically.
 - [ ] Define specific tasks
 
 ## Session Entry - ${new Date(sessionEntry.timestamp).toLocaleString()}
-**Session ID:** ${sessionEntry.sessionId}
 
 ### Summary
 ${sessionEntry.summary}

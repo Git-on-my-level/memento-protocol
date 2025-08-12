@@ -97,18 +97,16 @@ describe('SessionRecorder', () => {
     it('should capture basic session context', async () => {
       mockTicketManager.list.mockResolvedValue([]);
       
-      // Mock git directory exists
-      mockedFs.existsSync.mockImplementation((path: any) => {
-        return path.toString().endsWith('.git');
-      });
-
       await sessionRecorder.recordSession();
 
       const writeCall = mockedFs.writeFileSync.mock.calls[0];
       const content = writeCall[1] as string;
       
-      expect(content).toContain('Working Directory:');
-      expect(content).toContain('Git Repository: Yes');
+      // Should only contain recently modified files now
+      expect(content).toContain('Context');
+      expect(content).not.toContain('Working Directory:');
+      expect(content).not.toContain('Git Repository:');
+      expect(content).not.toContain('Session ID:');
     });
   });
 
