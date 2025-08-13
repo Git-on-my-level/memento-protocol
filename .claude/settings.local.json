@@ -75,6 +75,16 @@
             "timeout": 30
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/dazheng/workspace/personal/memento-protocol/.memento/hooks/scripts/acronym-expander.sh",
+            "timeout": 30
+          }
+        ]
       }
     ],
     "SessionStart": [

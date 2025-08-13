@@ -11,6 +11,7 @@ dist/
 # Keep important JS files
 !scripts/*.js
 !jest.config.js
+!templates/scripts/*.js
 
 # Test coverage
 coverage/

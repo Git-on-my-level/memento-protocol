@@ -98,7 +98,15 @@ export class HookManager {
       description: "Routes modes, workflows, and tickets based on user prompts",
       event: "UserPromptSubmit",
       enabled: true,
-      command: path.join(this.hooksDir, "scripts", "memento-routing.sh"),
+      // Store command as relative to project root for portability
+      command:
+        "./" +
+        path
+          .relative(
+            this.projectRoot,
+            path.join(this.hooksDir, "scripts", "memento-routing.sh")
+          )
+          .replace(/\\/g, "/"),
       priority: 100, // High priority to run first
       requirements: {
         commands: ["jq", "grep", "sed", "cat", "echo", "ls", "basename"],
@@ -504,7 +512,10 @@ export class HookManager {
         await fs.mkdir(scriptsDir, { recursive: true });
         const scriptPath = path.join(scriptsDir, `${templateName}.sh`);
         await fs.writeFile(scriptPath, template.script, { mode: 0o755 });
-        command = scriptPath;
+        // Use relative command path for portability
+        command =
+          "./" +
+          path.relative(this.projectRoot, scriptPath).replace(/\\/g, "/");
       }
 
       // Merge template with provided config
@@ -513,7 +524,17 @@ export class HookManager {
         ...config,
         id: hookId,
         name: config.name || template.name || templateName,
-        command: command,
+        command: (() => {
+          if (!command) return command as unknown as string;
+          // Ensure stored command is relative to project root
+          if (path.isAbsolute(command)) {
+            return (
+              "./" +
+              path.relative(this.projectRoot, command).replace(/\\/g, "/")
+            );
+          }
+          return command;
+        })(),
       };
 
       // Remove script field if it exists
@@ -637,11 +658,16 @@ export class HookManager {
     }
 
     // Remove script file if it's in our scripts directory
-    if (hook.command && hook.command.includes(this.hooksDir)) {
-      try {
-        await fs.unlink(hook.command);
-      } catch (error) {
-        // File might not exist, ignore
+    if (hook.command) {
+      const absoluteCommandPath = path.isAbsolute(hook.command)
+        ? hook.command
+        : path.join(this.projectRoot, hook.command);
+      if (absoluteCommandPath.startsWith(this.hooksDir)) {
+        try {
+          await fs.unlink(absoluteCommandPath);
+        } catch (error) {
+          // File might not exist, ignore
+        }
       }
     }
   }
@@ -689,10 +715,19 @@ export class HookManager {
           baseName
         );
 
-        // Rename script file
+        // Rename script file (resolve to absolute paths)
+        const absOld = path.isAbsolute(oldScriptPath)
+          ? oldScriptPath
+          : path.join(this.projectRoot, oldScriptPath);
+        const absNew = path.isAbsolute(newScriptPath)
+          ? newScriptPath
+          : path.join(this.projectRoot, newScriptPath);
+
         try {
-          await fs.rename(oldScriptPath, newScriptPath);
-          cleanConfig.command = newScriptPath;
+          await fs.rename(absOld, absNew);
+          // Store as relative for portability
+          cleanConfig.command =
+            "./" + path.relative(this.projectRoot, absNew).replace(/\\/g, "/");
         } catch (error) {
           logger.warn(`Could not rename script file: ${error}`);
         }
