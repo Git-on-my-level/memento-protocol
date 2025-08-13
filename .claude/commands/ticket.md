@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(sh:.memento/scripts/ticket-context.sh)
+allowed-tools: Bash(sh .memento/scripts/ticket-context.sh)
 argument-hint: [ticket-name]
 description: List tickets or load specific ticket context
 ---

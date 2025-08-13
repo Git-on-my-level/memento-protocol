@@ -22,7 +22,7 @@ We are dogfooding Memento Protocol while developing it. This means:
 # Install dependencies
 npm install
 
-# Build the project (bundles with esbuild, adds shebang, copies templates)
+# Validate dependencies and build the project (bundles with esbuild, adds shebang, copies templates)
 npm run build
 
 # Development mode (run TypeScript directly)
@@ -30,6 +30,9 @@ npm run dev
 
 # Watch mode for development
 npm run watch
+
+# Validate dependencies without building
+npm run validate
 
 # Clean build artifacts
 npm run clean
@@ -257,3 +260,9 @@ Tickets follow a lifecycle:
 ### GitHub Integration
 - Automated CI/CD workflow for Claude Code projects
 - Proper integration with Claude Code's workflow patterns
+
+### Dependency Validation System
+- Pre-build validation prevents custom command regressions
+- Validates that required scripts exist before generating commands
+- Run `npm run validate` to check dependencies manually
+- Integrated into build process to catch issues early

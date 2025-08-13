@@ -1,5 +1,6 @@
 import * as fs from "fs/promises";
 import * as path from "path";
+import { existsSync } from "fs";
 import { logger } from "./logger";
 
 export interface CommandTemplate {
@@ -11,10 +12,12 @@ export interface CommandTemplate {
 }
 
 export class CommandGenerator {
+  private projectRoot: string;
   private claudeDir: string;
   private commandsDir: string;
 
   constructor(projectRoot: string) {
+    this.projectRoot = projectRoot;
     this.claudeDir = path.join(projectRoot, ".claude");
     this.commandsDir = path.join(this.claudeDir, "commands");
   }
@@ -25,6 +28,9 @@ export class CommandGenerator {
   async initialize(): Promise<void> {
     // Ensure directories exist
     await this.ensureDirectories();
+
+    // Validate dependencies before generating commands
+    await this.validateDependencies();
 
     // Generate ticket commands
     await this.generateTicketCommands();
@@ -54,7 +60,7 @@ export class CommandGenerator {
     const ticketMain: CommandTemplate = {
       name: "ticket",
       description: "Manage tickets stored as .md files in .memento/tickets/ directories",
-      allowedTools: ["Bash(sh:.memento/scripts/ticket-context.sh)"],
+      allowedTools: ["Bash(sh .memento/scripts/ticket-context.sh)"],
       argumentHint: "[ticket-name]",
       body: `# Ticket Management
 
@@ -77,7 +83,7 @@ I now have ticket information loaded. Use Read tool to access actual ticket cont
     const modeMain: CommandTemplate = {
       name: "mode",
       description: "List available modes or switch to a specific mode",
-      allowedTools: ["Bash(sh:.memento/scripts/mode-switch.sh)"],
+      allowedTools: ["Bash(sh .memento/scripts/mode-switch.sh)"],
       argumentHint: "[mode-name]",
       body: `# Mode Management
 
@@ -189,5 +195,39 @@ I'll now operate according to the mode guidelines shown above.`,
     } catch (error) {
       logger.warn(`Failed to cleanup commands: ${error}`);
     }
+  }
+
+  /**
+   * Validate that all dependencies for custom commands exist
+   * This prevents the regression where commands are generated but required scripts don't exist
+   */
+  private async validateDependencies(): Promise<void> {
+    const requiredScripts = [
+      ".memento/scripts/ticket-context.sh",
+      ".memento/scripts/mode-switch.sh"
+    ];
+
+    const missing: string[] = [];
+
+    for (const scriptPath of requiredScripts) {
+      const fullPath = path.join(this.projectRoot, scriptPath);
+      if (!existsSync(fullPath)) {
+        missing.push(scriptPath);
+      }
+    }
+
+    if (missing.length > 0) {
+      const errorMessage = [
+        "Missing required scripts for custom commands:",
+        ...missing.map(script => `  - ${script}`),
+        "",
+        "This indicates that the .memento directory structure is incomplete.",
+        "Please run 'memento init --force' to regenerate the required files."
+      ].join("\n");
+      
+      throw new Error(errorMessage);
+    }
+
+    logger.debug("All command dependencies validated successfully");
   }
 }
