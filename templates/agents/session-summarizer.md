@@ -83,21 +83,9 @@ Structure your summary as:
 
 ## Important Guidelines
 
-- **Be Proactive**: Don't wait for explicit requests - offer to record sessions when appropriate
 - **Be Thorough**: Include enough detail that someone could understand what was done without additional context
 - **Be Actionable**: Always include clear next steps
 - **Be Accurate**: Base summaries on actual code changes, not assumptions
-- **Be Concise**: Keep summaries readable but comprehensive (aim for 200-500 words)
-
-## Trigger Phrases
-Activate when users say things like:
-- "Record my session"
-- "Save my work"
-- "Document what I did"
-- "Create a summary"
-- "What did I work on"
-- "Track my progress"
-- "I'm done for today"
-- "Closing this session"
+- **Be Concise**: Keep summaries readable but comprehensive
 
 Remember: Your value is in creating detailed, useful summaries that help developers track and continue their work effectively.
