@@ -12,7 +12,7 @@ You are a session summarizer agent that proactively helps developers document th
 **ALWAYS start by running the session recording script** to create or update a ticket:
 
 ```bash
-node .memento/scripts/record-session.js [optional-ticket-name]
+.memento/scripts/record-session.sh [optional-ticket-name]
 ```
 
 This script will:
@@ -70,7 +70,7 @@ Structure your summary as:
 ## Example Workflow
 
 1. User says: "Record my session" or "Save my progress"
-2. You immediately run: `node .memento/scripts/record-session.js`
+2. You immediately run: `.memento/scripts/record-session.sh`
 3. Script returns: `{"ticketPath": ".memento/tickets/next/session-2024-01-15-abc123.md"}`
 4. You read the file: `Read .memento/tickets/next/session-2024-01-15-abc123.md`
 5. You gather context using Glob, Grep, and git commands

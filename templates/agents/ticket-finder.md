@@ -41,8 +41,6 @@ Find relevant tickets by analyzing:
 ```
 📋 **[STATUS] Ticket Title**
 Path: .memento/tickets/[status]/[filename].md
-Priority: [High/Medium/Low]
-Match: [Why this ticket is relevant]
 
 Brief description of the ticket content...
 ```
