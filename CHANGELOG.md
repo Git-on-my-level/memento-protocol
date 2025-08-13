@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2025-08-13
+
+### Added
+- **Ticket Sessions**: Add session tracking support for tickets to improve continuity across edits (#11)
+- **File Content Analyzer Agent**: New agent for large file summarization to aid navigation and review (#19)
+
+### Changed
+- Improve `/ticket` command clarity and reduce confusion in Claude Code routing (#17)
+
+### Fixed
+- Ticket command regression and dependency validation improvements (#21)
+- Test typing in `commandGenerator` to satisfy strict TypeScript checks
+
 ## [0.8.0] - 2025-08-02
 
 ### Documentation
@@ -146,6 +159,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-platform support (macOS, Linux)
 - npm and standalone distribution
 
+[0.9.0]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.9.0
 [0.8.0]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.8.0
 [0.7.1]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.7.1
 [0.7.0]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.7.0
