@@ -124,7 +124,7 @@ describe("CommandGenerator", () => {
       try {
         await commandGenerator.initialize();
         fail("Should have thrown an error");
-      } catch (error) {
+      } catch (error: any) {
         expect(error.message).toContain(".memento/scripts/ticket-context.sh");
         expect(error.message).toContain(".memento/scripts/mode-switch.sh");
         expect(error.message).toContain("memento init --force");
