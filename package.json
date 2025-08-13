@@ -7,13 +7,14 @@
     "memento": "dist/cli.js"
   },
   "scripts": {
-    "build": "node scripts/build.js",
+    "build": "npm run validate && node scripts/build.js",
     "build:types": "tsc --emitDeclarationOnly",
     "watch": "tsc --watch",
     "dev": "tsx src/cli.ts",
     "test": "jest",
     "test:coverage": "jest --coverage",
     "clean": "rm -rf dist",
+    "validate": "node scripts/validate-dependencies.js",
     "prepublishOnly": "npm run test && npm run build",
     "postinstall": "echo 'Thank you for installing Memento Protocol! Run \"memento --help\" to get started.'"
   },
