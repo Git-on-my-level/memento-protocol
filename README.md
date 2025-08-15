@@ -1,23 +1,24 @@
 # Memento Protocol
 
-[![npm version](https://badge.fury.io/js/memento-protocol.svg)](https://badge.fury.io/js/memento-protocol) [![Stargazers over time](https://starchart.cc/git-on-my-level/memento-protocol.svg?variant=adaptive)](https://starchart.cc/git-on-my-level/memento-protocol)
+[![npm version](https://badge.fury.io/js/memento-protocol.svg)](https://badge.fury.io/js/memento-protocol)
 
 **Transform Claude Code from a basic AI assistant into a project-aware, context-intelligent development partner.**
 
 ## The Problem We Solve
 
 Claude Code starts to break down as your codebase grows. You find yourself:
-- Copy-pasting the same CLAUDE.md setup across projects
-- Watching Claude spam markdown files instead of organized task tracking  
-- Seeing Claude go in circles on complex fixes, repeating the same failed approaches
+- Re-adding the same best practices to CLAUDE.md across projects
+- Watching Claude spam markdown files instead of organized task tracking
+- Seeing Claude go in circles after context compacting, repeating the same failed approaches
+- Copy pasting the same roleplay prompts "Act as an engineer..." "Take on a QA role..." "Delegate to subagents..."
 
 ## Our Opinionated Solution
 
 Memento Protocol adds an **opinionated meta-framework layer** on top of Claude Code that enforces:
-- **Project context awareness** through intelligent routing and persistent state
+- **Project context awareness** through hooks that remind Claude about project tasks
 - **Structured task management** with tickets instead of scattered markdown files
-- **Specialized AI modes** (architect, engineer, reviewer) with fuzzy matching
-- **Automated workflows** triggered by your development patterns
+- **Built-in AI modes** (architect, engineer, reviewer, etc...) with roleplay best practices
+- **Automated workflows** so you can automate fuzzy but repetitive tasks (publish packages, security audit, etc...)
 
 ## Quick Start
 
@@ -49,6 +50,11 @@ npx memento-protocol init
 ## Contributing
 
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=git-on-my-level/memento-protocol&type=Timeline)](https://www.star-history.com/#git-on-my-level/memento-protocol&Timeline)
+
 
 ## License
 
