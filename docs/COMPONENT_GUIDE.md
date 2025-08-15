@@ -1,201 +1,248 @@
 # Component Creation Guide
 
-This guide helps LLMs and developers create custom components for Memento Protocol.
+This guide helps LLMs and developers create effective components for Memento Protocol. Focus on what actually helps agents execute tasks successfully.
 
 ## Component Types
 
-### 1. Modes (Personality/Behavior)
+### 1. Modes (Agent Personalities)
 
 Location: `.memento/modes/<name>.md`
 
-**Standardized Section Structure** (must be in this order):
-1. `## Behavioral Guidelines` - How the mode communicates and makes decisions
-2. `## Core Responsibilities` - Primary duties and areas of focus
-3. `## Best Practices` - Recommended approaches and methods
-4. `## Mode Switching Triggers` - When to switch to other modes
-5. `## Done When` - Clear completion criteria
-6. `## Example Commands` - Natural language invocations and use cases
+Modes define how agents think and behave. The most effective modes focus on **actionable behavioral guidelines** rather than abstract concepts.
 
-Structure:
+#### Effective Mode Structure
+
 ```markdown
 # [Mode Name] Mode
 
-[One paragraph description of the mode's purpose and focus]
+[One clear sentence describing the agent's identity and primary focus]
 
 ## Behavioral Guidelines
 
-### Communication Style
-- [How this mode communicates]
-- [Tone and formality level]
-- [Key communication principles]
+[2-4 specific, actionable behavioral instructions that shape how the agent makes decisions and communicates]
 
-### Decision Making
-- [How this mode makes decisions]
-- [Prioritization approach]
-- [Trade-off considerations]
+## Example Process
 
-## Core Responsibilities
+[Optional: A flexible framework showing typical phases of work, not rigid steps]
 
-1. **[Responsibility Area]**
-   - [Specific duties]
-   - [Key activities]
+### Phase 1: [Name]
+- [Key activities and mindset]
 
-2. **[Responsibility Area]**
-   - [Specific duties]
-   - [Key activities]
+### Phase 2: [Name]  
+- [Key activities and mindset]
 
-## Best Practices
-
-1. **[Practice Category]**
-   - [Specific practices]
-   - [Guidelines]
-
-2. **[Practice Category]**
-   - [Specific practices]
-   - [Guidelines]
-
-## Mode Switching Triggers
-
-Switch to:
-- **[Mode]** when [condition]
-- **[Mode]** when [condition]
-
-## Done When
-
-- [Clear completion criterion]
-- [Measurable outcome]
-- [Success indicator]
-
-## Example Commands
-
-### Natural Language Invocations
-- [3-4 examples of how users might naturally invoke this mode]
-- [Include variations in phrasing]
-
-### Common Use Cases
-- [Specific command examples with typical tasks]
-- [Show the command format and expected outcome]
-
-### [Optional: Implementation/Review/Planning Examples]
-[Code snippets or structured examples specific to the mode]
+[Additional sections as needed for the specific mode]
 ```
 
-### 2. Workflows (Procedures)
+#### What Makes Modes Effective
+
+**✅ Good Behavioral Guidelines:**
+- "Be pragmatic, focus on clear, easy to understand code over elegant and over-engineered code"
+- "Save your own context, delegate work to sub-agents whenever possible"
+- "Prioritize critical issues (bugs, security vulnerabilities) over stylistic preferences"
+
+**❌ Avoid These:**
+- Vague personality descriptions ("be helpful and friendly")
+- Mode switching triggers (agents can't switch themselves)
+- Rigid step-by-step procedures (use Example Process for flexibility)
+- Abstract principles without actionable guidance
+
+#### Examples of Effective Patterns
+
+- **Identity Statement**: "You are now operating in Engineer mode. Your focus is on crafting high-quality code."
+- **Decision Framework**: "If requirements are clear, take a TDD approach; if not, implement then test"
+- **Resource Management**: "Delegate to sub-agents, bias towards cost savings"
+- **Quality Standards**: "Don't write brittle tests. Avoid asserting things likely to change"
+
+### 2. Workflows (Reusable Procedures)
 
 Location: `.memento/workflows/<name>.md`
 
-Structure:
-```markdown
-# Workflow: [Name]
+Workflows provide structured approaches to common tasks. The best workflows balance structure with flexibility.
 
-[Brief description of what this workflow accomplishes]
+#### Effective Workflow Structure
+
+```markdown
+# [Workflow Name]
+
+[Brief description of what this accomplishes and when to use it]
 
 ## Prerequisites
-- [Any required setup or context]
-- [Dependencies or requirements]
+- [What agents need before starting]
+- [Required context or setup]
 
-## Example Commands
-### Natural Language Invocations
-- [3-4 examples of how users might naturally execute this workflow]
-- [Include parameter variations]
-
-### Common Use Cases
-- [Specific execution examples with parameters]
-- [Show different parameter combinations and their effects]
-
-## Steps
-1. **[Step Name]**: [Detailed description]
-   - [Sub-steps if needed]
-   - [Expected outcomes]
-
-2. **[Step Name]**: [Detailed description]
-   - [Sub-steps if needed]
-   - [Expected outcomes]
+## Inputs
+- **parameter**: Description of expected input
+- **parameter**: Description with example formats
 
 ## Outputs
 - [What this workflow produces]
-- [Artifacts or deliverables]
+- [Where results are stored]
 
-## Next Steps
-- [Typical follow-up actions]
-- [Related workflows]
+## Example Commands
+
+### Natural Language Invocations
+- "[4-5 examples of how users naturally request this workflow]"
+- "[Include parameter variations]"
+
+## Workflow Steps
+
+### 1. [Phase Name]
+[Clear description of this phase's purpose]
+
+1. **[Specific Action]**
+   - [Concrete steps]
+   - [Expected outcomes]
+
+2. **[Specific Action]**
+   - [Concrete steps]
+   - [Expected outcomes]
+
+### 2. [Phase Name]
+[Continue pattern...]
+
+## Best Practices
+- [Workflow-specific guidance]
+- [Common pitfalls to avoid]
 ```
+
+#### What Makes Workflows Effective
+
+**✅ Good Workflow Characteristics:**
+- Clear inputs and outputs agents can work with
+- Natural language invocation examples that actually work
+- Flexible phases rather than rigid sequences
+- Specific action items with expected outcomes
+- Integration with modes and tools
+
+**❌ Avoid These:**
+- Theoretical procedures without concrete steps
+- Overly rigid sequences that don't adapt to reality
+- Vague action items without clear outcomes
+- No connection to how agents actually work
 
 ### 3. Language Overrides
 
 Location: `.memento/languages/<language>/overrides.md`
 
-Structure:
+Language overrides help agents work effectively with specific technologies and codebases.
+
+#### Structure
+
 ```markdown
 # Language: [Language Name]
 
-## Conventions
-- [Language-specific coding standards]
-- [Naming conventions]
-- [File organization]
+## Behavioral Adaptations
+- [How agents should modify their approach for this language]
+- [Language-specific mindset and priorities]
+
+## Code Conventions
+- [Specific patterns and styles to follow]
+- [Naming conventions and organization]
 
 ## Best Practices
-- [Language-specific patterns]
-- [Performance considerations]
-- [Security guidelines]
+- [Language-specific quality standards]
+- [Performance and security considerations]
 
 ## Common Patterns
 ### [Pattern Name]
 ```[language]
-// Example code
+// Concrete example showing the pattern
 ```
 
-## Testing Approach
-- [Preferred testing framework]
-- [Test organization]
-- [Coverage expectations]
-
-## Build & Deploy
-- [Build tools and processes]
-- [Deployment considerations]
+## Testing & Verification
+- [Preferred testing approaches]
+- [How to validate code quality]
 ```
 
-## Metadata Files
+## Component Creation Best Practices
 
-Each component directory should have a `metadata.json`:
+### 1. Write for Agent Execution Context
 
-```json
-{
-  "components": {
-    "component-name": {
-      "description": "Brief description",
-      "version": "1.0.0",
-      "tags": ["tag1", "tag2"],
-      "author": "optional-author"
-    }
-  }
-}
+Remember: agents only see your component content AFTER they've been invoked. Write for that context.
+
+**✅ Agent-Focused Writing:**
+- "You are now operating in [Mode] mode"
+- "Your focus is on [specific capability]"
+- "Follow this approach when [specific situation]"
+
+**❌ User-Focused Writing:**
+- "This mode helps with [general description]"
+- "Switch to this mode when [trigger condition]"
+- "Users can invoke this by [method]"
+
+### 2. Provide Actionable Guidance
+
+Agents need specific, executable instructions, not abstract principles.
+
+**✅ Actionable:**
+- "Use TDD if requirements are clear, implement-then-test if they're unclear"
+- "Bias towards cost savings when choosing sub-agent models"
+- "Focus on critical issues before stylistic preferences"
+
+**❌ Abstract:**
+- "Write good code"
+- "Be thorough"
+- "Consider best practices"
+
+### 3. Balance Structure with Flexibility
+
+Provide frameworks, not rigid scripts. Agents need to adapt to real situations.
+
+**✅ Flexible Framework:**
+```markdown
+## Example Process
+This is an example process. Be flexible and use good judgment based on the actual task.
+
+### Phase 1: Planning
+- Identify core requirements
+- Gather context in parallel
+
+### Phase 2: Implementation
+- Spawn sub-agents as needed
 ```
 
-## Best Practices
+**❌ Rigid Script:**
+```markdown
+## Steps
+1. Always start by reading the requirements
+2. Then analyze the codebase
+3. Then create a plan
+4. Then implement
+```
 
-1. **Be Specific**: Components should have a clear, focused purpose
-2. **Be Concise**: Avoid unnecessary verbosity
-3. **Be Practical**: Include real-world examples
-4. **Be Consistent**: Follow the established format
-5. **Be Helpful**: Anticipate common questions
+### 4. Include Real Examples
+
+Show agents exactly what effective execution looks like.
+
+**Examples:**
+- Code snippets for language overrides
+- Natural language commands for workflows
+- Decision-making scenarios for modes
 
 ## Testing Your Components
 
 After creating a component:
 
-1. Install it: `memento add [type] [name]`
-2. Regenerate CLAUDE.md: `memento init --update`
-3. Test with Claude Code to ensure it works as expected
+1. **Install it**: `memento add [type] [name]`
+2. **Test with real scenarios**: Use the component in actual development tasks
+3. **Observe agent behavior**: Does the component actually improve how agents work?
+4. **Iterate based on results**: Refine based on what works in practice
 
-## Sharing Components
+## Quality Indicators
 
-To share your components:
+**Effective Components:**
+- Agents make better decisions when using them
+- Clear improvement in task completion quality
+- Natural integration with agent workflows
+- Reduced need for clarification or iteration
 
-1. Create a GitHub repository
-2. Structure it like the official template repo
-3. Users can then configure it as their template source
+**Ineffective Components:**
+- Agents ignore or misinterpret guidance
+- No observable improvement in outcomes
+- Conflicts with natural agent behavior
+- Requires extensive explanation to be useful
 
 ## Examples
 
-See the `templates/` directory for reference implementations of all component types.
+See the `.memento/modes/` and `.memento/workflows/` directories for reference implementations that follow these patterns.
