@@ -1,325 +1,364 @@
-# Memento Protocol
+# Memento Protocol: The zsh for Claude Code
 
 [![npm version](https://badge.fury.io/js/memento-protocol.svg)](https://badge.fury.io/js/memento-protocol)
 
-A powerful enhancement framework for Claude Code that transforms projects with intelligent context management, custom commands, and specialized AI agents.
+**Transform Claude Code from a basic shell into a power tool.** Just as zsh revolutionized the terminal experience with oh-my-zsh, themes, and plugins, Memento Protocol transforms Claude Code into a highly customizable, intelligent development environment.
 
-## What is Memento Protocol?
+## The "Aha" Moment
 
-Memento Protocol supercharges Claude Code with:
-- **AI Modes**: Switchable personalities with fuzzy matching (architect, engineer, reviewer)
-- **Claude Code Agents**: Specialized subagents for focused tasks (research, analysis, etc.)
-- **Custom Commands**: Project-specific slash commands (/mode, /ticket, /memento)
-- **Smart Hooks**: Automated workflows triggered by Claude Code events
-- **Tickets**: Persistent task tracking with intelligent context injection
-- **Workflows**: Reusable development procedures and patterns
-- **Acronym Expansion**: Auto-expansion of project terminology
+Remember when you first switched from bash to zsh? That feeling when your terminal suddenly became smart, beautiful, and powerful? **That's what Memento Protocol does for Claude Code.**
 
-All managed through an intelligent hook system that seamlessly integrates with Claude Code.
-
-## This tool is for you if you answer yes to any of the following questions
-- Do you find yourself copy pasting between CLAUDE.md across projects all the time?
-- Does Claude Code start to break down as your codebase gets bigger?
-- Do you wish Claude would stop spamming markdown files and track its work in an opinionated and easy to clean up way?
-- For more complex fixes does Claude tend to go in circles, repeating the same methods over and over again?
-
-## Quick Start
-
-The easiest way to get started is by using `npx`, which allows you to run `memento-protocol` without a permanent installation.
-
-To initialize Memento Protocol in your project, run the interactive setup:
 ```bash
-npx memento-protocol init
+# Before: Basic Claude Code
+Claude helps with code...
+
+# After: Claude Code + Memento Protocol  
+Claude becomes YOUR personalized AI team with:
+- Switchable personalities (like zsh themes)
+- Smart completions and fuzzy matching
+- Custom commands and workflows
+- Automated context management
+- Plugin-style extensibility
 ```
 
-You can also initialize with options, for example:
+## What You Get
+
+| **zsh Feature** | **Memento Protocol Equivalent** | **What It Does** |
+|-----------------|----------------------------------|------------------|
+| **Themes** | **Modes** | Switch AI personality: architect → engineer → reviewer |
+| **Plugins** | **Agents & Workflows** | Specialized capabilities: research, analysis, code review |
+| **Aliases** | **Custom Commands** | `/mode`, `/ticket`, `/memento` - your project shortcuts |
+| **Hooks** | **Smart Hooks** | Auto-routing, context loading, git integration |
+| **Completions** | **Fuzzy Matching** | Type `apm` → finds `autonomous-project-manager` |
+| **.zshrc** | **.memento/config** | Your personalized AI configuration |
+| **oh-my-zsh** | **Component Library** | Pre-built modes, workflows, and agents |
+
+## When You Need This
+
+✅ You keep copy-pasting the same CLAUDE.md instructions across projects  
+✅ Claude Code gets confused in large codebases  
+✅ You want Claude to work YOUR way, not the default way  
+✅ You wish Claude had different "modes" for different tasks  
+✅ You want to share your Claude Code setup with your team
+
+## Quick Start: From Zero to Power User
+
+### 1. The One-Liner (Like Installing oh-my-zsh)
+
 ```bash
-npx memento-protocol init --mode engineer --language typescript
-```
-
-### Non-Interactive Setup
-
-For CI/CD or automated environments, use non-interactive mode:
-```bash
-npx memento-protocol init --non-interactive --modes architect,engineer --workflows review --hooks git-context-loader --default-mode architect
-```
-
-### Force Reinitialize (Dogfooding)
-
-For development or updating existing setups:
-```bash
-# Using yarn (no -- needed)
-yarn dev init --force --non-interactive
-
-# Using npm
-npm run dev init -- --force --non-interactive
-```
-
-### All Recommended Components
-
-To install all recommended components based on your project type:
-```bash
+# Transform Claude Code in seconds
 npx memento-protocol init --all-recommended
 ```
 
-This will create:
-- `.memento/`: Framework configuration and components
-- `.claude/`: Claude Code integration (agents, commands, settings)
-- Shell scripts for dynamic behavior
-- Hook configurations for automation
+**What just happened?** You've installed:
+- 🎨 Multiple AI modes (architect, engineer, reviewer)
+- 🔧 Smart workflows for common tasks
+- 🤖 Specialized agents for enhanced capabilities
+- ⚡ Custom commands that work instantly
+- 🪝 Hooks that automate your workflow
 
-**Note**: The `.memento/` directory should be added to `.gitignore` as it contains generated files.
-
-### Installation
-
-While `npx` is recommended for trying out Memento Protocol, you may prefer a global installation for convenience.
+### 2. Choose Your Flavor
 
 ```bash
-# Using npm
-npm install -g memento-protocol
+# Interactive setup (like zsh's first-run wizard)
+npx memento-protocol init
 
-# Now you can use the 'memento' command directly
-memento init
+# Start with a specific mode (like choosing a zsh theme)
+npx memento-protocol init --mode engineer --language typescript
 ```
 
-For development, you can clone the repository:
+### 3. Switch Modes On-the-Fly
+
 ```bash
-# Using git
+# In Claude Code, after installation:
+/mode architect    # Big picture thinking
+/mode engineer     # Implementation focus
+/mode reviewer     # Code quality checks
+/mode apm         # Fuzzy match → autonomous-project-manager
+```
+
+### 4. Advanced Setup Options
+
+```bash
+# Automated setup (perfect for CI/CD)
+npx memento-protocol init --non-interactive \
+  --modes architect,engineer \
+  --workflows review \
+  --default-mode architect
+
+# Update existing setup (like updating oh-my-zsh)
+npx memento-protocol update
+
+# List available components (like browsing zsh plugins)
+npx memento-protocol list --available
+```
+
+## What Gets Installed
+
+Just like zsh creates `~/.zshrc` and `~/.oh-my-zsh/`, Memento Protocol creates:
+
+```
+Your Project/
+├── .memento/              # Your Memento configuration (like .oh-my-zsh/)
+│   ├── config.json        # Settings (like .zshrc)
+│   ├── modes/             # AI personalities (like themes/)
+│   ├── workflows/         # Reusable procedures (like plugins/)
+│   └── tickets/           # Task tracking
+└── .claude/               # Claude Code integration
+    ├── agents/            # Specialized capabilities
+    ├── commands/          # Your custom slash commands
+    └── settings.json      # Claude Code config
+```
+
+## Installation Options
+
+### Try It First (Recommended)
+```bash
+# No commitment, just like trying zsh before installing
+npx memento-protocol init
+```
+
+### Global Installation
+```bash
+# Install globally for the 'memento' command
+npm install -g memento-protocol
+
+# Now use it anywhere
+memento init
+memento add mode my-custom-mode
+memento list --installed
+```
+
+### Developer Setup
+```bash
+# Contributing? Fork and clone:
 git clone https://github.com/git-on-my-level/memento-protocol.git
 cd memento-protocol
 npm install
-npm link
+npm link  # Use your local version globally
 ```
 
-## Basic Usage
+## How It Works
 
-Once initialized, Claude Code will automatically:
-- Execute hooks for intelligent context routing and automation
-- Enable custom slash commands (/mode, /ticket, /memento)
-- Support fuzzy mode switching (e.g., 'apm' → 'autonomous-project-manager')
-- Load specialized agents for enhanced capabilities
-- Expand acronyms and inject relevant context
-- Track persistent task state through tickets
+### Instant Power-Up
+Once installed, Claude Code automatically:
+- 🧠 **Becomes context-aware** through intelligent hooks
+- 🎯 **Responds to your commands** via `/mode`, `/ticket`, `/memento`
+- 🔍 **Finds what you mean** with fuzzy matching
+- 🚀 **Loads specialized capabilities** through agents and workflows
 
-## Commands
+### Daily Workflow
 
-### Core Commands
-
-#### `memento init`
-Initialize Memento Protocol in your project with interactive setup:
 ```bash
-memento init [options]
+# Morning: Start with architecture
+/mode architect
+"Design a caching system for our API"
 
-Options:
-  -f, --force                Force initialization
-  -n, --non-interactive      Non-interactive setup
-  -g, --gitignore           Add .memento/ to .gitignore
-  -m, --modes <modes>       Comma-separated list of modes
-  -w, --workflows <flows>   Comma-separated list of workflows  
-  -h, --hooks <hooks>       Comma-separated list of hooks
-  -a, --all-recommended     Install all recommended components
-  -d, --default-mode <mode> Set default mode
+# Afternoon: Switch to implementation
+/mode engineer  
+"Implement the cache with Redis"
+
+# Evening: Review everything
+/mode reviewer
+"Check my changes for issues"
+
+# Track your work
+/ticket create "Implement caching system"
+/ticket move in-progress
 ```
 
-#### `memento update`
-Update components and regenerate CLAUDE.md:
+## Core Features
+
+### Modes: Your AI Personalities
+
+Think of modes as zsh themes, but for AI behavior:
+
 ```bash
+# Switch personalities like switching zsh themes
+/mode architect     # Big-picture thinking (like powerlevel10k)
+/mode engineer      # Get things done (like robbyrussell)
+/mode reviewer      # Quality focus (like agnoster)
+/mode educator      # Teaching mode (like terminalparty)
+
+# Fuzzy matching = Smart completions
+/mode eng          # → finds 'engineer'
+/mode apm          # → finds 'autonomous-project-manager'
+/mode arc          # → finds 'architect'
+```
+
+**Each mode completely changes how Claude Code thinks and responds.**
+
+### Tickets: Persistent Task Memory
+
+Unlike bash history that forgets, Memento remembers:
+
+```bash
+# Create a ticket (like creating a tmux session)
+/ticket create "Implement user authentication"
+
+# Track progress
+/ticket move <id> in-progress
+/ticket move <id> done
+
+# Load context anytime
+/ticket view <id>  # Claude remembers everything about this task
+
+# See your work
+/ticket list --status in-progress
+```
+
+**Tickets = Persistent context that survives across Claude Code sessions**
+
+### Workflows: Your Playbooks
+
+Like zsh functions, but for AI tasks:
+
+```bash
+# Trigger complex procedures with simple commands
+"Run the code review workflow"      # Full review process
+"Execute the API design workflow"   # Structured API creation
+"Start the refactoring workflow"    # Systematic improvements
+
+# Workflows = Reusable, battle-tested procedures
+```
+
+### Agents: Specialized Plugins
+
+Like zsh plugins that add specific capabilities:
+
+```bash
+# Built-in agents (like oh-my-zsh bundled plugins)
+claude-code-research    # The 'git' plugin for Claude Code docs
+session-summarizer      # The 'history' plugin for work tracking  
+file-content-analyzer   # The 'extract' plugin for large files
+
+# Community agents coming soon (like awesome-zsh-plugins)
+```
+
+**Agents = Focused tools that do one thing really well**
+
+### Managing Components
+
+Just like managing zsh plugins:
+
+```bash
+# Browse available components (like oh-my-zsh wiki)
+memento list --available
+
+# Install new capabilities
+memento add mode my-custom-mode      # Add a personality
+memento add workflow code-review     # Add a procedure
+memento add agent researcher         # Add specialized skills
+
+# See what's installed
+memento list --installed
+
+# Update everything
 memento update
 ```
 
-#### `memento` (no arguments)
-Smart update - initializes if needed, otherwise updates:
+## Power User Features
+
+### Hooks: Automation Magic
+
+Like zsh hooks (precmd, chpwd), but for AI interactions:
+
+| **Hook** | **zsh Equivalent** | **What It Does** |
+|----------|-------------------|------------------|
+| **memento-routing** | `preexec` | Routes requests to right mode automatically |
+| **project-overview** | `chpwd` | Loads context when switching projects |
+| **git-context-loader** | `precmd` | Shows git status in prompts |
+| **acronym-expander** | `alias-expansion` | Expands your project's terminology |
+| **user-prompt-submit** | `zle widget` | Transforms input before processing |
+
 ```bash
-memento
+# Hooks run automatically, making Claude Code smarter without you thinking about it
 ```
 
-### Component Management
+### Configuration Hierarchy
 
-#### `memento add <type> <name>`
-Add modes, workflows, or agents:
+Like zsh's config loading order:
+
 ```bash
-memento add mode architect              # Add AI mode
-memento add workflow review             # Add workflow
-memento add agent claude-code-research  # Add Claude Code agent
+1. Built-in defaults              # Like zsh defaults
+2. ~/.memento/config.json          # Like ~/.zshrc
+3. .memento/config.json            # Like .envrc (project-specific)
+4. Environment variables           # Runtime overrides
 ```
 
-#### `memento list`
-List available and installed components:
+**Your project config overrides global, just like local .zshrc overrides global.**
+
+## Your Memento Setup
+
 ```bash
-memento list              # Show all available
-memento list --installed  # Show only installed
+Your-Project/
+│
+# Memento Config (like ~/.oh-my-zsh/)
+├── .memento/
+│   ├── config.json        # Your .zshrc equivalent
+│   ├── modes/            # Your themes
+│   ├── workflows/        # Your plugins  
+│   ├── tickets/          # Your persistent sessions
+│   └── hooks/            # Your automation
+│
+# Claude Code Integration
+└── .claude/
+    ├── agents/           # Specialized capabilities
+    ├── commands/         # Your slash commands
+    └── settings.json     # Claude Code config
 ```
 
-### Hook Management
+## Command Reference
 
-#### `memento hook`
-Manage Claude Code hooks:
+### Core Commands (like zsh builtins)
+
 ```bash
-memento hook list                    # List all configured hooks
-memento hook add acronym-expander    # Add hook from template
-memento hook enable <id>             # Enable a hook
-memento hook disable <id>            # Disable a hook
-memento hook remove <id>             # Remove a hook
-memento hook templates               # List available templates
+memento init              # Initial setup (like oh-my-zsh installer)
+memento update            # Update everything (like upgrade_oh_my_zsh)
+memento list              # Browse components (like plugin list)
+memento add               # Install components (like adding plugins)
 ```
 
-### Ticket Management
+### In Claude Code (your new superpowers)
 
-#### `memento ticket`
-Manage persistent task tickets:
 ```bash
-memento ticket create "Add authentication"  # Create new ticket
-memento ticket list                         # List all tickets
-memento ticket list --status in-progress    # Filter by status
-memento ticket start <id>                   # Move to in-progress
-memento ticket resolve <id>                 # Mark as done
-memento ticket delete <id>                  # Delete ticket
+/mode [name]              # Switch personality (like changing theme)
+/ticket [action]          # Manage tasks (like job control)
+/memento                  # Show status (like neofetch for AI)
 ```
 
-### Custom Commands Management
+### Full CLI Reference
 
-#### `memento command`
-Manage Claude Code custom commands:
 ```bash
-memento command install                     # Install custom commands
-memento command status                      # Check installation status
-memento command cleanup                     # Remove all commands
-```
+# Setup & Management
+memento init [options]              # Setup wizard
+memento update                      # Update all components
+memento config get/set              # Manage settings
 
-### Acronym Management
+# Components
+memento add <type> <name>           # Install mode/workflow/agent
+memento list --available            # Browse library
+memento list --installed            # See what you have
 
-#### `memento acronym`
-Manage project-specific acronyms:
-```bash
+# Tickets
+memento ticket create <title>       # Start tracking work
+memento ticket move <id> <status>   # Update progress
+memento ticket list                 # View all tickets
+
+# Commands
+memento command install             # Setup slash commands
+memento command check               # Verify installation
+
+# Acronyms
 memento acronym add api "Application Programming Interface"
-memento acronym add ddd "Domain Driven Design"
-memento acronym list                        # List all acronyms
-memento acronym remove api                  # Remove an acronym
-memento acronym clear                       # Clear all acronyms
+memento acronym list                # List all acronyms
+memento acronym remove api          # Remove an acronym
+
+# Hooks
+memento hook list                   # List configured hooks
+memento hook add <name>             # Add hook from template
+memento hook enable/disable <id>   # Toggle hooks
 ```
-
-### Configuration
-
-#### `memento config`
-Manage configuration:
-```bash
-memento config get defaultMode              # Get a setting
-memento config set defaultMode engineer     # Set a setting
-memento config list                         # List all settings
-```
-
-## Claude Code Integration
-
-### Using Modes
-Switch AI personalities with fuzzy matching:
-```bash
-# Using custom command
-/mode architect    # Exact match
-/mode eng         # Fuzzy match → engineer
-/mode apm         # Acronym → autonomous-project-manager
-
-# Or in prompts
-mode: architect   # System design focus
-mode: engineer    # Implementation focus
-```
-
-### Using Workflows
-Execute predefined procedures:
-```
-workflow: review    # Comprehensive code review
-workflow: summarize # Compress context
-```
-
-### Using Tickets
-Track persistent tasks:
-```
-ticket: create "Add user authentication"
-ticket: start auth-feature
-ticket: done
-```
-
-### Using Custom Commands
-Direct access to Memento features in Claude Code:
-```bash
-# Mode management with fuzzy matching
-/mode                    # List available modes
-/mode architect         # Switch to architect mode
-/mode eng              # Fuzzy match to engineer
-
-# Ticket management
-/ticket                 # List all tickets
-/ticket my-feature      # Load ticket context
-
-# Project status
-/memento               # Show project overview
-```
-
-### Using Subagents
-Leverage specialized AI agents:
-```
-# Install the Claude Code research agent
-memento add agent claude-code-research
-
-# Agent will be available for Claude to invoke automatically
-# when you need help with Claude Code features
-```
-
-### Acronym Expansion
-Configured acronyms are automatically expanded:
-```
-User: "Let's implement the API using DDD principles"
-Claude sees: 
-## Acronym Glossary
-- **API**: Application Programming Interface  
-- **DDD**: Domain Driven Design
-
----
-
-Let's implement the API using DDD principles
-```
-
-## Hook System
-
-Memento Protocol includes a powerful hook system for automation:
-
-### Built-in Hooks
-- **memento-routing**: Intelligent mode/workflow/ticket routing with fuzzy matching
-- **git-context-loader**: Auto-loads git status and project structure
-- **project-overview**: Provides project context at session start
-- **acronym-expander**: Expands project-specific terminology
-
-### Custom Hooks
-Create custom automation for:
-- Pre/post tool usage (formatting, linting, testing)
-- Prompt filtering and modification
-- Session initialization
-- Command validation
-
-See [docs/HOOKS_GUIDE.md](docs/HOOKS_GUIDE.md) for detailed documentation.
-
-## Project Structure
-
-```
-.
-├── CLAUDE.md          # Main router file for Claude Code
-├── .claude/           # Claude Code specific directory
-│   ├── agents/        # Installed subagents
-│   └── commands/      # Custom slash commands
-├── .memento/          # Framework directory (add to .gitignore)
-│   ├── modes/         # Installed AI modes
-│   ├── workflows/     # Installed workflows
-│   ├── tickets/       # Task tickets (next/in-progress/done)
-│   ├── hooks/         # Hook definitions and scripts
-│   ├── acronyms.json  # Acronym definitions
-│   └── config.json    # Project configuration
-```
-
-## Documentation
-
-- [Component Guide](docs/COMPONENT_GUIDE.md) - Creating custom modes and workflows
-- [Hooks Guide](docs/HOOKS_GUIDE.md) - Complete hook system documentation
-- [API Reference](docs/API.md) - Programmatic usage
-- [Contributing Guide](CONTRIBUTING.md) - How to contribute
 
 ## Examples
 
@@ -359,27 +398,7 @@ cat > .memento/hooks/definitions/auto-format.json << 'EOF'
 EOF
 
 # Regenerate hooks
-memento
-```
-
-### Custom Commands in Action
-```bash
-# Initialize Memento Protocol
-npx memento-protocol init
-
-# Custom commands are now available in Claude Code:
-
-# Mode switching with fuzzy matching
-/mode                  # Shows: architect, engineer, reviewer, etc.
-/mode eng             # Switches to engineer mode
-/mode apm             # Switches to autonomous-project-manager
-
-# Ticket management
-/ticket               # Lists all tickets
-/ticket auth-feature  # Loads specific ticket context
-
-# Project status
-/memento             # Shows modes, workflows, tickets, configuration
+memento update
 ```
 
 ### Subagent Example
@@ -393,9 +412,29 @@ memento add agent claude-code-research
 # "How do I use MCP servers with Claude?"
 ```
 
-## Contributing
+## The Philosophy
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+**Memento Protocol follows the zsh philosophy:**
+- **Enhance, don't replace**: We make Claude Code better, not different
+- **Composable components**: Mix and match modes, workflows, and agents
+- **Sensible defaults**: Works great out-of-the-box
+- **Infinite customization**: Make it yours
+- **Community-driven**: Share your setups and components
+
+## Coming Soon
+
+- 📦 **Starter Packs**: oh-my-memento with themed collections (Frontend Pack, Backend Pack, DevOps Pack)
+- 🌍 **Community Hub**: Share your modes and workflows
+- 🎨 **Visual Configurator**: GUI for managing your setup
+- 🔌 **Plugin Marketplace**: Discover and install community components
+- 📝 **.mementorc**: Global config file (like .zshrc)
+
+## Documentation
+
+- [Component Guide](docs/COMPONENT_GUIDE.md) - Creating custom modes and workflows
+- [Hooks Guide](docs/HOOKS_GUIDE.md) - Complete hook system documentation
+- [API Reference](docs/API.md) - Programmatic usage
+- [Contributing Guide](CONTRIBUTING.md) - How to contribute
 
 ## What's New in v0.7.0
 
@@ -405,6 +444,24 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 - **Better Hooks**: Modular hook architecture with focused responsibilities
 - **GitHub Integration**: Automated CI/CD workflows for Claude Code projects
 
+## Contributing
+
+Join us in building the ultimate Claude Code enhancement platform! See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Support
+
+- 🐛 [Report Issues](https://github.com/git-on-my-level/memento-protocol/issues)
+- 📖 [Documentation](https://github.com/git-on-my-level/memento-protocol/wiki)
+- 💬 [Discussions](https://github.com/git-on-my-level/memento-protocol/discussions)
+
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT © Memento Protocol Contributors
+
+---
+
+<div align="center">
+<strong>Memento Protocol</strong><br>
+<em>The zsh for Claude Code - Because your AI assistant should work YOUR way.</em><br><br>
+🌟 Star us on GitHub if this gave you that "aha" moment!
+</div>

@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Core Concept: The zsh for Claude Code
+
+**Memento Protocol is to Claude Code what zsh is to bash.** We enhance, customize, and empower Claude Code through themes (modes), plugins (agents/workflows), configuration (.memento/config), and automation (hooks). Think of this project as building oh-my-zsh for AI development.
+
 ## Important: Dogfooding Context
 
 We are dogfooding Memento Protocol while developing it. This means:
@@ -70,15 +74,17 @@ npm run prepublishOnly
 ## Architecture
 
 ### Core Structure
-Memento Protocol is a CLI tool that enhances Claude Code projects with advanced context management, custom commands, and AI agents.
+Memento Protocol is the "zsh for Claude Code" - a meta-framework that transforms Claude Code from a basic shell into a highly customizable power tool.
 
-**Key Concepts:**
-- **Modes**: AI personalities optimized for specific tasks with fuzzy matching support
-- **Workflows**: Reusable procedures for common development patterns
-- **Agents**: Claude Code subagents for specialized tasks (e.g., claude-code-research)
-- **Tickets**: State management for persistent task tracking
-- **Hooks**: Claude Code integration points for automated behavior
-- **Custom Commands**: Project-specific slash commands (/mode, /ticket, /memento)
+**Key Concepts (zsh Analogies):**
+- **Modes**: AI personalities (like zsh themes - robbyrussell, agnoster, powerlevel10k)
+- **Workflows**: Reusable procedures (like zsh functions/scripts)
+- **Agents**: Specialized capabilities (like zsh plugins - git, docker, kubectl)
+- **Tickets**: Persistent task tracking (like tmux sessions)
+- **Hooks**: Automation points (like zsh hooks - precmd, preexec, chpwd)
+- **Custom Commands**: Slash commands (like zsh aliases)
+- **Fuzzy Matching**: Smart completions (like zsh's completion system)
+- **.memento/config**: Project config (like .zshrc)
 
 ### Directory Layout
 ```
@@ -133,11 +139,12 @@ Generated Directories:
 
 ### Key Design Patterns
 
-1. **Command Pattern**: Each CLI command is a separate module with its own Command instance
-2. **Manager Pattern**: Functionality is organized into manager classes (ConfigManager, TicketManager, HookManager, etc.)
-3. **Template System**: Components are markdown/JSON templates that get copied and can be customized
-4. **Hook System**: Modular Claude Code hooks with focused responsibilities
-5. **Dual Directory Structure**: Separation between .memento (Memento data) and .claude (Claude Code config)
+1. **Enhancement Philosophy**: Like zsh enhances bash, we enhance Claude Code without replacing it
+2. **Plugin Architecture**: Components (modes/workflows/agents) work like zsh plugins - modular and composable
+3. **Configuration Cascade**: Settings layer like zsh (defaults → global ~/.memento → project .memento → environment)
+4. **Template System**: Components are templates that can be customized (like oh-my-zsh themes/plugins)
+5. **Hook System**: Event-driven automation (like zsh's hook functions)
+6. **Dual Directory Structure**: .memento/ (like ~/.oh-my-zsh/) and .claude/ (Claude Code integration)
 
 ### Build Process
 The build uses esbuild (scripts/build.js) to:
@@ -159,27 +166,32 @@ The build uses esbuild (scripts/build.js) to:
 
 ### Component System
 
-#### Modes
-- AI personalities for different development tasks
-- Support fuzzy matching: exact match → substring → acronym (e.g., `apm` → `autonomous-project-manager`)
-- Stored as markdown in .memento/modes/
-- Activated via `/mode [name]` custom command
+#### Modes (Themes)
+- AI personalities for different development tasks (like zsh themes change prompt appearance/behavior)
+- Support fuzzy matching: exact match → substring → acronym (like zsh completions)
+- Example: `apm` → `autonomous-project-manager` (like `gst` → `git status` in oh-my-zsh)
+- Stored as markdown in .memento/modes/ (like themes in ~/.oh-my-zsh/themes/)
+- Activated via `/mode [name]` custom command (like setting ZSH_THEME)
 
-#### Workflows
-- Reusable development procedures and patterns
-- Stored as markdown in .memento/workflows/
-- Can be referenced in prompts or modes
+#### Workflows (Functions/Scripts)
+- Reusable development procedures and patterns (like zsh functions)
+- Stored as markdown in .memento/workflows/ (like custom functions in .zshrc)
+- Can be referenced in prompts or modes (like calling functions in zsh)
 
-#### Agents
-- Claude Code subagents for specialized tasks
-- Installed to .claude/agents/ directory
-- Example: claude-code-research agent for Claude Code documentation
-- Added via `memento add agent [name]`
+#### Agents (Plugins)
+- Claude Code subagents for specialized tasks (like zsh plugins add specific capabilities)
+- Installed to .claude/agents/ directory (like plugins in ~/.oh-my-zsh/plugins/)
+- Example: claude-code-research agent (like the 'git' plugin in oh-my-zsh)
+- Added via `memento add agent [name]` (like adding plugins to .zshrc)
 
-#### Hooks
-- Claude Code integration points for automated behavior
-- Built-in hooks: memento-routing, project-overview, git-context-loader, acronym-expander
-- Custom hooks can be added via templates
+#### Hooks (Event Functions)
+- Claude Code integration points for automated behavior (like zsh hook functions)
+- Built-in hooks:
+  - memento-routing (like preexec - runs before commands)
+  - project-overview (like chpwd - runs on directory change)
+  - git-context-loader (like precmd - runs before prompts)
+  - acronym-expander (like alias expansion)
+- Custom hooks can be added (like adding custom hook functions)
 - Configured in .memento/hooks/definitions/
 
 #### Custom Commands
@@ -231,38 +243,19 @@ Tickets follow a lifecycle:
 - esbuild: Build tool
 - jest/ts-jest: Testing framework
 
-## New Features (v0.7.0)
+## Recent Enhancements
 
-### Claude Code Subagent Support
-- Complete implementation of subagent system
-- CLI commands: `memento add agent`, `memento list agents`
-- Agents install to `.claude/agents/` directory
-- Built-in claude-code-research agent for documentation lookups
+### The zsh Philosophy Implementation
+- **Fuzzy Matching**: Like zsh's smart completions (`eng` → `engineer`, `apm` → `autonomous-project-manager`)
+- **Plugin System**: Agents work like zsh plugins - modular, focused, composable
+- **Theme System**: Modes are like themes - completely change behavior/personality
+- **Configuration Hierarchy**: Like zsh's config loading (defaults → global → project → env)
+- **Hook System**: Event-driven automation like zsh hooks (precmd, preexec, chpwd)
+- **Alias System**: Custom commands work like zsh aliases
 
-### Enhanced Mode Switching
-- Fuzzy matching for mode names
-- Supports exact match, substring match, and acronym shortcuts
-- Example: `apm` automatically resolves to `autonomous-project-manager`
-- Works via `/mode` custom command
-
-### Custom Command System
-- Generates Claude Code slash commands in `.claude/commands/`
-- Proper permission format for Claude Code security model
-- Commands: `/mode`, `/ticket`, `/memento`
-- Shell script backend for dynamic behavior
-
-### Improved Hook System
-- Modular architecture with focused responsibilities
-- Better error handling and validation
-- Path-based trigger detection
-- Intelligent context injection for tickets
-
-### GitHub Integration
-- Automated CI/CD workflow for Claude Code projects
-- Proper integration with Claude Code's workflow patterns
-
-### Dependency Validation System
-- Pre-build validation prevents custom command regressions
-- Validates that required scripts exist before generating commands
-- Run `npm run validate` to check dependencies manually
-- Integrated into build process to catch issues early
+### Coming Soon (oh-my-memento)
+- **Starter Packs**: Like oh-my-zsh bundles (Frontend Pack, Backend Pack, DevOps Pack)
+- **.mementorc**: Global config file (like ~/.zshrc)
+- **Community Hub**: Share modes/workflows (like awesome-zsh-plugins)
+- **Plugin Manager**: Easy installation/updates (like zplug, zinit)
+- **Visual Configurator**: GUI setup (like zsh configuration tools)
