@@ -4,11 +4,11 @@
 The `command` CLI command is redundant since custom commands are automatically generated during `init` and `update` operations. Removing it will simplify the CLI surface area and reduce maintenance burden.
 
 ## Tasks
-- [ ] Remove src/commands/command.ts
-- [ ] Remove command registration from src/cli.ts
-- [ ] Update tests to remove command-related tests
-- [ ] Update documentation to remove references to the command command
-- [ ] Verify custom commands still generate properly during init/update
+- [x] Remove src/commands/command.ts
+- [x] Remove command registration from src/cli.ts
+- [x] Update tests to remove command-related tests (no specific tests existed)
+- [x] Update documentation to remove references to the command command (none found)
+- [x] Verify custom commands still generate properly during init/update
 
 ## Notes
 - Custom command generation happens in commandGenerator.ts and is called by init/update
