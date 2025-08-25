@@ -1,6 +1,7 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 import { existsSync } from "fs";
+import matter from "gray-matter";
 import { DirectoryManager } from "./directoryManager";
 import { logger } from "./logger";
 import { PackagePaths } from "./packagePaths";
@@ -8,19 +9,16 @@ import { PackagePaths } from "./packagePaths";
 interface ComponentMetadata {
   name: string;
   description: string;
+  author?: string;
+  version?: string;
   tags: string[];
   dependencies: string[];
+  tools?: string; // For agents
+  model?: string; // For agents
+  event?: string; // For hooks
+  priority?: number; // For hooks
 }
 
-interface TemplateMetadata {
-  version: string;
-  templates: {
-    claude_router?: ComponentMetadata;
-    modes: ComponentMetadata[];
-    workflows: ComponentMetadata[];
-    agents: ComponentMetadata[];
-  };
-}
 
 export class ComponentInstaller {
   private dirManager: DirectoryManager;
@@ -34,20 +32,87 @@ export class ComponentInstaller {
   }
 
   /**
-   * List available components from templates
+   * Parse frontmatter from a template file
+   */
+  private async parseTemplateFrontmatter(filePath: string): Promise<ComponentMetadata | null> {
+    try {
+      const content = await fs.readFile(filePath, "utf-8");
+      const parsed = matter(content);
+      const data = parsed.data;
+
+      // Validate required fields
+      if (!data.name || !data.description) {
+        logger.warn(`Template ${filePath} missing required frontmatter fields (name, description)`);
+        return null;
+      }
+
+      return {
+        name: data.name,
+        description: data.description,
+        author: data.author,
+        version: data.version,
+        tags: data.tags || [],
+        dependencies: data.dependencies || [],
+        tools: data.tools,
+        model: data.model,
+        event: data.event,
+        priority: data.priority,
+      };
+    } catch (error) {
+      logger.warn(`Error parsing frontmatter from ${filePath}: ${error}`);
+      return null;
+    }
+  }
+
+  /**
+   * Scan a directory for template files and parse their metadata
+   */
+  private async scanComponentDirectory(dirPath: string, extension = ".md"): Promise<ComponentMetadata[]> {
+    const components: ComponentMetadata[] = [];
+    
+    if (!existsSync(dirPath)) {
+      return components;
+    }
+
+    try {
+      const files = await fs.readdir(dirPath);
+      
+      for (const file of files) {
+        if (file.endsWith(extension)) {
+          const filePath = path.join(dirPath, file);
+          const metadata = await this.parseTemplateFrontmatter(filePath);
+          
+          if (metadata) {
+            components.push(metadata);
+          }
+        }
+      }
+    } catch (error) {
+      logger.warn(`Error scanning directory ${dirPath}: ${error}`);
+    }
+    
+    return components;
+  }
+
+  /**
+   * List available components from templates using frontmatter parsing
    */
   async listAvailableComponents(): Promise<{
     modes: ComponentMetadata[];
     workflows: ComponentMetadata[];
     agents: ComponentMetadata[];
   }> {
-    const metadata = await this.loadGlobalMetadata();
+    const modesPath = path.join(this.templatesDir, "modes");
+    const workflowsPath = path.join(this.templatesDir, "workflows");
+    const agentsPath = path.join(this.templatesDir, "agents");
 
-    return {
-      modes: metadata?.templates.modes || [],
-      workflows: metadata?.templates.workflows || [],
-      agents: metadata?.templates.agents || [],
-    };
+    const [modes, workflows, agents] = await Promise.all([
+      this.scanComponentDirectory(modesPath),
+      this.scanComponentDirectory(workflowsPath),
+      this.scanComponentDirectory(agentsPath),
+    ]);
+
+    return { modes, workflows, agents };
   }
 
   /**
@@ -135,17 +200,9 @@ export class ComponentInstaller {
       return;
     }
 
-    // Check dependencies
-    const metadata = await this.loadGlobalMetadata();
-    let components: ComponentMetadata[] | undefined;
-    if (type === "mode") {
-      components = metadata?.templates.modes;
-    } else if (type === "workflow") {
-      components = metadata?.templates.workflows;
-    } else if (type === "agent") {
-      components = metadata?.templates.agents;
-    }
-    const component = components?.find((c) => c.name === name);
+    // Check dependencies using frontmatter parsing
+    const componentMetadata = await this.parseTemplateFrontmatter(componentPath);
+    const component = componentMetadata;
 
     if (component?.dependencies && component.dependencies.length > 0) {
       for (const dep of component.dependencies) {
@@ -238,19 +295,6 @@ export class ComponentInstaller {
     );
   }
 
-  /**
-   * Load global metadata for all templates
-   */
-  private async loadGlobalMetadata(): Promise<TemplateMetadata | null> {
-    const metadataPath = path.join(this.templatesDir, "metadata.json");
-
-    if (!existsSync(metadataPath)) {
-      return null;
-    }
-
-    const content = await fs.readFile(metadataPath, "utf-8");
-    return JSON.parse(content);
-  }
 
   /**
    * Validate component dependencies are satisfied
@@ -263,12 +307,11 @@ export class ComponentInstaller {
     const missing: { component: string; dependencies: string[] }[] = [];
 
     // Check workflow dependencies
-    const metadata = await this.loadGlobalMetadata();
-
+    const workflowsPath = path.join(this.templatesDir, "workflows");
     for (const workflow of manifest.components.workflows) {
-      const meta = metadata?.templates.workflows.find(
-        (c) => c.name === workflow
-      );
+      const workflowPath = path.join(workflowsPath, `${workflow}.md`);
+      const meta = await this.parseTemplateFrontmatter(workflowPath);
+      
       if (meta?.dependencies && meta.dependencies.length > 0) {
         const missingDeps = meta.dependencies.filter(
           (dep) => !manifest.components.modes.includes(dep)
@@ -285,10 +328,11 @@ export class ComponentInstaller {
 
     // Check agent dependencies (though agents typically don't have dependencies)
     if (manifest.components.agents) {
+      const agentsPath = path.join(this.templatesDir, "agents");
       for (const agent of manifest.components.agents) {
-        const meta = metadata?.templates.agents?.find(
-          (c) => c.name === agent
-        );
+        const agentPath = path.join(agentsPath, `${agent}.md`);
+        const meta = await this.parseTemplateFrontmatter(agentPath);
+        
         if (meta?.dependencies && meta.dependencies.length > 0) {
           const missingDeps = meta.dependencies.filter(
             (dep) => !manifest.components.modes.includes(dep)

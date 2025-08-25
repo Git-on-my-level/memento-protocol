@@ -1,6 +1,10 @@
 ---
 name: ticket-finder
 description: Find relevant tickets based on current work, files being modified, or keywords
+author: Memento Protocol
+version: 1.0.0
+tags: []
+dependencies: []
 tools: Read, Glob, Grep
 model: haiku
 ---

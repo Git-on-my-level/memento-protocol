@@ -1,3 +1,12 @@
+---
+name: summarize
+description: A systematic approach to compressing context and extracting essential information from codebases, directories, or complex topics.
+author: Memento Protocol
+version: 1.0.0
+tags: []
+dependencies: []
+---
+
 # Summarize Workflow
 
 A systematic approach to compressing context and extracting essential information from codebases, directories, or complex topics.

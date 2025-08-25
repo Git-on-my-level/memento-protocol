@@ -1,11 +1,13 @@
 import * as fs from 'fs/promises';
 import { existsSync } from 'fs';
+import matter from 'gray-matter';
 import { ComponentInstaller } from '../componentInstaller';
 import { DirectoryManager } from '../directoryManager';
 import { logger } from '../logger';
 
 jest.mock('fs/promises');
 jest.mock('fs');
+jest.mock('gray-matter');
 jest.mock('../directoryManager');
 jest.mock('../logger', () => ({
   logger: {
@@ -45,22 +47,49 @@ describe('ComponentInstaller', () => {
   });
 
   describe('listAvailableComponents', () => {
-    it('should list available modes and workflows', async () => {
-      const globalMetadata = {
-        version: '1.0.0',
-        templates: {
-          modes: [
-            { name: 'architect', description: 'System design', tags: ['design'], dependencies: [] },
-            { name: 'engineer', description: 'Implementation', tags: ['code'], dependencies: [] }
-          ],
-          workflows: [
-            { name: 'review', description: 'Code review', tags: ['quality'], dependencies: ['reviewer'] }
-          ]
+    it('should list available modes and workflows from frontmatter', async () => {
+      // Mock directory listing
+      (fs.readdir as jest.Mock).mockImplementation((path: string) => {
+        if (path.includes('/modes')) {
+          return Promise.resolve(['architect.md', 'engineer.md']);
         }
-      };
+        if (path.includes('/workflows')) {
+          return Promise.resolve(['review.md']);
+        }
+        if (path.includes('/agents')) {
+          return Promise.resolve([]);
+        }
+        return Promise.resolve([]);
+      });
+
+      // Mock file reading and frontmatter parsing
+      (fs.readFile as jest.Mock).mockImplementation((path: string) => {
+        if (path.includes('architect.md')) {
+          return Promise.resolve('---\nname: architect\ndescription: System design\ntags: [design]\ndependencies: []\n---\n# Content');
+        }
+        if (path.includes('engineer.md')) {
+          return Promise.resolve('---\nname: engineer\ndescription: Implementation\ntags: [code]\ndependencies: []\n---\n# Content');
+        }
+        if (path.includes('review.md')) {
+          return Promise.resolve('---\nname: review\ndescription: Code review\ntags: [quality]\ndependencies: [reviewer]\n---\n# Content');
+        }
+        return Promise.resolve('');
+      });
+
+      (matter as any as jest.Mock).mockImplementation((content: string) => {
+        if (content.includes('architect')) {
+          return { data: { name: 'architect', description: 'System design', tags: ['design'], dependencies: [] } };
+        }
+        if (content.includes('engineer')) {
+          return { data: { name: 'engineer', description: 'Implementation', tags: ['code'], dependencies: [] } };
+        }
+        if (content.includes('review')) {
+          return { data: { name: 'review', description: 'Code review', tags: ['quality'], dependencies: ['reviewer'] } };
+        }
+        return { data: {} };
+      });
 
       (existsSync as jest.Mock).mockReturnValue(true);
-      (fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(globalMetadata));
 
       const result = await installer.listAvailableComponents();
 
@@ -70,13 +99,33 @@ describe('ComponentInstaller', () => {
       expect(result.workflows[0].name).toBe('review');
     });
 
-    it('should handle missing metadata files', async () => {
+    it('should handle missing template directories', async () => {
       (existsSync as jest.Mock).mockReturnValue(false);
 
       const result = await installer.listAvailableComponents();
 
       expect(result.modes).toEqual([]);
       expect(result.workflows).toEqual([]);
+      expect(result.agents).toEqual([]);
+    });
+
+    it('should handle files with invalid frontmatter', async () => {
+      (fs.readdir as jest.Mock).mockImplementation((path: string) => {
+        if (path.includes('/modes')) {
+          return Promise.resolve(['invalid.md']);
+        }
+        return Promise.resolve([]);
+      });
+
+      (fs.readFile as jest.Mock).mockResolvedValue('---\ninvalid: content\n---\n# Content');
+      (matter as any as jest.Mock).mockReturnValue({ data: { invalid: 'content' } }); // Missing name/description
+
+      (existsSync as jest.Mock).mockReturnValue(true);
+
+      const result = await installer.listAvailableComponents();
+
+      expect(result.modes).toEqual([]);
+      expect(logger.warn).toHaveBeenCalled();
     });
   });
 
@@ -131,15 +180,7 @@ describe('ComponentInstaller', () => {
         }
       };
 
-      const globalMetadata = {
-        version: '1.0.0',
-        templates: {
-          modes: [
-            { name: 'architect', description: 'System design', tags: ['design'], dependencies: [] }
-          ],
-          workflows: []
-        }
-      };
+      const modeContent = '---\nname: architect\ndescription: System design\ntags: [design]\ndependencies: []\n---\n# Architect Mode\nContent';
 
       (existsSync as jest.Mock).mockImplementation((path: string) => {
         if (path.includes('/test/project/templates')) {
@@ -147,11 +188,9 @@ describe('ComponentInstaller', () => {
         }
         return true;
       });
-      (fs.readFile as jest.Mock).mockImplementation((path: string) => {
-        if (path.includes('metadata.json')) {
-          return Promise.resolve(JSON.stringify(globalMetadata));
-        }
-        return Promise.resolve('# Architect Mode\nContent');
+      (fs.readFile as jest.Mock).mockResolvedValue(modeContent);
+      (matter as any as jest.Mock).mockReturnValue({
+        data: { name: 'architect', description: 'System design', tags: ['design'], dependencies: [] }
       });
       (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
       mockDirManager.getManifest.mockResolvedValue(mockManifest);
@@ -161,7 +200,7 @@ describe('ComponentInstaller', () => {
 
       expect(fs.writeFile).toHaveBeenCalledWith(
         '/test/.memento/modes/architect.md',
-        '# Architect Mode\nContent'
+        modeContent
       );
       expect(logger.success).toHaveBeenCalledWith("Installed mode 'architect'");
     });
@@ -175,22 +214,27 @@ describe('ComponentInstaller', () => {
         }
       };
 
-      const metadata = {
-        version: '1.0.0',
-        templates: {
-          modes: [],
-          workflows: [
-            { name: 'review', dependencies: ['reviewer'] }
-          ]
-        }
-      };
+      const workflowContent = '---\nname: review\ndescription: Code review\ndependencies: [reviewer]\n---\n# Review Workflow';
+      const reviewerContent = '---\nname: reviewer\ndescription: Reviewer mode\ndependencies: []\n---\n# Reviewer Mode';
 
       (existsSync as jest.Mock).mockReturnValue(true);
       (fs.readFile as jest.Mock).mockImplementation((path: string) => {
-        if (path.includes('metadata.json')) {
-          return Promise.resolve(JSON.stringify(metadata));
+        if (path.includes('review.md')) {
+          return Promise.resolve(workflowContent);
+        }
+        if (path.includes('reviewer.md')) {
+          return Promise.resolve(reviewerContent);
         }
         return Promise.resolve('# Content');
+      });
+      (matter as any as jest.Mock).mockImplementation((content: string) => {
+        if (content.includes('review')) {
+          return { data: { name: 'review', description: 'Code review', dependencies: ['reviewer'] } };
+        }
+        if (content.includes('reviewer')) {
+          return { data: { name: 'reviewer', description: 'Reviewer mode', dependencies: [] } };
+        }
+        return { data: {} };
       });
       (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
       mockDirManager.getManifest.mockResolvedValue(mockManifest);
@@ -238,19 +282,11 @@ describe('ComponentInstaller', () => {
         }
       };
 
-      const metadata = {
-        version: '1.0.0',
-        templates: {
-          modes: [],
-          workflows: [
-            { name: 'review', dependencies: ['reviewer'] }
-          ]
-        }
-      };
-
       mockDirManager.getManifest.mockResolvedValue(mockManifest);
-      (existsSync as jest.Mock).mockReturnValue(true);
-      (fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(metadata));
+      (fs.readFile as jest.Mock).mockResolvedValue('---\nname: review\ndescription: Code review\ndependencies: [reviewer]\n---\n# Content');
+      (matter as any as jest.Mock).mockReturnValue({
+        data: { name: 'review', description: 'Code review', dependencies: ['reviewer'] }
+      });
 
       const result = await installer.validateDependencies();
 
@@ -266,19 +302,11 @@ describe('ComponentInstaller', () => {
         }
       };
 
-      const metadata = {
-        version: '1.0.0',
-        templates: {
-          modes: [],
-          workflows: [
-            { name: 'review', dependencies: ['reviewer'] }
-          ]
-        }
-      };
-
       mockDirManager.getManifest.mockResolvedValue(mockManifest);
-      (existsSync as jest.Mock).mockReturnValue(true);
-      (fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(metadata));
+      (fs.readFile as jest.Mock).mockResolvedValue('---\nname: review\ndescription: Code review\ndependencies: [reviewer]\n---\n# Content');
+      (matter as any as jest.Mock).mockReturnValue({
+        data: { name: 'review', description: 'Code review', dependencies: ['reviewer'] }
+      });
 
       const result = await installer.validateDependencies();
 
@@ -293,18 +321,18 @@ describe('ComponentInstaller', () => {
 
   describe('interactiveInstall', () => {
     it('should display available components', async () => {
-      const metadata = {
-        version: '1.0.0',
-        templates: {
-          modes: [
-            { name: 'architect', description: 'System design', tags: [], dependencies: [] }
-          ],
-          workflows: []
+      (fs.readdir as jest.Mock).mockImplementation((path: string) => {
+        if (path.includes('/modes')) {
+          return Promise.resolve(['architect.md']);
         }
-      };
+        return Promise.resolve([]);
+      });
 
       (existsSync as jest.Mock).mockReturnValue(true);
-      (fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(metadata));
+      (fs.readFile as jest.Mock).mockResolvedValue('---\nname: architect\ndescription: System design\ntags: []\ndependencies: []\n---\n# Content');
+      (matter as any as jest.Mock).mockReturnValue({
+        data: { name: 'architect', description: 'System design', tags: [], dependencies: [] }
+      });
 
       await installer.interactiveInstall('mode');
 
@@ -319,6 +347,91 @@ describe('ComponentInstaller', () => {
       await installer.interactiveInstall('workflow');
 
       expect(logger.error).toHaveBeenCalledWith('No workflows available for installation');
+    });
+  });
+
+  describe('parseTemplateFrontmatter (private method testing via integration)', () => {
+    it('should parse agent frontmatter with tools and model fields', async () => {
+      (fs.readdir as jest.Mock).mockImplementation((path: string) => {
+        if (path.includes('/agents')) {
+          return Promise.resolve(['test-agent.md']);
+        }
+        return Promise.resolve([]);
+      });
+
+      (existsSync as jest.Mock).mockReturnValue(true);
+      (fs.readFile as jest.Mock).mockResolvedValue('---\nname: test-agent\ndescription: Test agent\ntools: Read, Write\nmodel: haiku\ntags: []\ndependencies: []\n---\n# Content');
+      (matter as any as jest.Mock).mockReturnValue({
+        data: { 
+          name: 'test-agent', 
+          description: 'Test agent',
+          tools: 'Read, Write',
+          model: 'haiku',
+          tags: [], 
+          dependencies: [] 
+        }
+      });
+
+      const result = await installer.listAvailableComponents();
+
+      expect(result.agents).toHaveLength(1);
+      expect(result.agents[0].tools).toBe('Read, Write');
+      expect(result.agents[0].model).toBe('haiku');
+    });
+
+    it('should handle parsing errors gracefully', async () => {
+      (fs.readdir as jest.Mock).mockImplementation((path: string) => {
+        if (path.includes('/modes')) {
+          return Promise.resolve(['error-mode.md']);
+        }
+        return Promise.resolve([]);
+      });
+
+      (existsSync as jest.Mock).mockReturnValue(true);
+      (fs.readFile as jest.Mock).mockRejectedValue(new Error('File read error'));
+
+      const result = await installer.listAvailableComponents();
+
+      expect(result.modes).toEqual([]);
+      expect(logger.warn).toHaveBeenCalled();
+    });
+  });
+
+  describe('scanComponentDirectory (private method testing via integration)', () => {
+    it('should only process .md files', async () => {
+      (fs.readdir as jest.Mock).mockImplementation((path: string) => {
+        if (path.includes('/modes')) {
+          return Promise.resolve(['valid.md', 'invalid.txt', 'another.md']);
+        }
+        return Promise.resolve([]);
+      });
+
+      (existsSync as jest.Mock).mockReturnValue(true);
+      (fs.readFile as jest.Mock).mockImplementation((path: string) => {
+        if (path.includes('valid.md')) {
+          return Promise.resolve('---\nname: valid\ndescription: Valid mode\ntags: []\ndependencies: []\n---\n# Content');
+        }
+        if (path.includes('another.md')) {
+          return Promise.resolve('---\nname: another\ndescription: Another mode\ntags: []\ndependencies: []\n---\n# Content');
+        }
+        return Promise.resolve('Not markdown content');
+      });
+      (matter as any as jest.Mock).mockImplementation((content: string) => {
+        if (content.includes('valid')) {
+          return { data: { name: 'valid', description: 'Valid mode', tags: [], dependencies: [] } };
+        }
+        if (content.includes('another')) {
+          return { data: { name: 'another', description: 'Another mode', tags: [], dependencies: [] } };
+        }
+        return { data: {} };
+      });
+
+      const result = await installer.listAvailableComponents();
+
+      expect(result.modes).toHaveLength(2);
+      expect(result.modes.find(m => m.name === 'valid')).toBeDefined();
+      expect(result.modes.find(m => m.name === 'another')).toBeDefined();
+      expect(fs.readFile).not.toHaveBeenCalledWith(expect.stringContaining('invalid.txt'));
     });
   });
 });
