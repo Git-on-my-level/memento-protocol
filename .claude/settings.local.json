@@ -36,9 +36,9 @@
       "Bash(rm:*)",
       "Bash(scripts/npm/commit-tag-and-publish.sh:*)",
       "Bash(sh .memento/scripts/mode-switch.sh)",
+      "Bash(sh .memento/scripts/mode-switch.sh):*",
       "Bash(sh .memento/scripts/ticket-context.sh)",
-      "Bash(sh:.memento/scripts/mode-switch.sh:*)",
-      "Bash(sh:.memento/scripts/ticket-context.sh:*)",
+      "Bash(sh .memento/scripts/ticket-context.sh):*",
       "Bash(timeout 15 npm run dev init -- --force --quick)",
       "WebFetch(domain:docs.anthropic.com)"
     ],

@@ -1,6 +1,10 @@
 ---
 name: session-summarizer
 description: Use PROACTIVELY when user mentions recording work, saving progress, creating session summaries, or documenting what was done. Automatically creates or updates tickets with AI-generated summaries of development work.
+author: Memento Protocol
+version: 1.0.0
+tags: []
+dependencies: []
 tools: Read, Glob, Grep, Bash
 model: haiku
 ---
