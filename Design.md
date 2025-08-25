@@ -1,153 +1,354 @@
-# MementoProtocol - A Claude Code Meta-Framework
+# Memento Protocol Design Philosophy
 
-## Vision
+## Core Concept: The zsh for Claude Code
 
-Create a CLI tool that establishes a lightweight meta-framework for Claude Code, where CLAUDE.md acts as a minimal router that teaches Claude how to find and use specialized modes (personalities) and workflows (procedures), rather than containing all instructions directly.
+Memento Protocol is designed around a powerful analogy: **We are to Claude Code what zsh is to bash.**
 
-## Core Principles
+This isn't just a marketing tagline—it's our north star for every design decision. Just as zsh transformed the shell experience while remaining compatible with bash, Memento Protocol transforms Claude Code while preserving its core functionality.
 
-### 1. Minimal Router Pattern
-The CLAUDE.md file serves only as a navigation guide, keeping token usage minimal by loading instructions only when explicitly needed.
+## The zsh Philosophy Applied
 
-### 2. Composable Architecture
-Modes, workflows, and integrations are modular components that can be combined, extended, and overridden without modifying the core system.
+### 1. Enhancement, Not Replacement
 
-### 3. Explicit State Management
-Complex work is tracked in a gitignored workspace, enabling session continuity and multi-agent coordination.
+**zsh Principle**: zsh doesn't replace bash; it enhances it. Bash scripts still work, but you get so much more.
 
-## System Architecture
+**Memento Application**: 
+- Claude Code continues to work exactly as before
+- We add layers of functionality on top
+- Users can adopt features gradually
+- Complete backwards compatibility
+
+### 2. Themes Change Everything
+
+**zsh Principle**: A theme isn't just colors—it transforms your entire prompt experience (robbyrussell vs powerlevel10k).
+
+**Memento Application**:
+- Modes are our themes
+- Each mode completely changes Claude's personality and approach
+- `architect` mode thinks big picture like powerlevel10k is feature-rich
+- `engineer` mode is pragmatic like robbyrussell is minimal
+- Users can switch modes as easily as changing themes
+
+### 3. Plugins Are Power
+
+**zsh Principle**: Plugins add focused capabilities. The git plugin adds git aliases, the docker plugin adds docker completions.
+
+**Memento Application**:
+- Agents are specialized plugins (claude-code-research = git plugin)
+- Workflows are reusable functions (review workflow = custom function)
+- Each component does one thing well
+- Composable and modular
+
+### 4. Configuration Cascade
+
+**zsh Principle**: Configuration layers from system → global → local, each overriding the previous.
+
+**Memento Application**:
+```
+1. Built-in defaults (like zsh defaults)
+2. Global config ~/.memento/config.json (like ~/.zshrc)
+3. Project config .memento/config.json (like project .envrc)
+4. Environment variables (runtime overrides)
+```
+
+### 5. Smart Completions
+
+**zsh Principle**: Intelligent tab completion that understands context and fuzzy matches.
+
+**Memento Application**:
+- Fuzzy mode matching: `eng` → `engineer`
+- Acronym expansion: `apm` → `autonomous-project-manager`
+- Context-aware suggestions
+- Progressive matching (exact → substring → acronym)
+
+### 6. Hooks Drive Automation
+
+**zsh Principle**: Hooks like precmd, preexec, and chpwd enable powerful automation.
+
+**Memento Application**:
+
+| **Memento Hook** | **zsh Equivalent** | **Purpose** |
+|------------------|-------------------|-------------|
+| user-prompt-submit | preexec | Transform commands before execution |
+| project-overview | chpwd | Load context on project switch |
+| git-context-loader | precmd | Update context before prompts |
+| memento-routing | command-not-found | Intelligent command routing |
+
+### 7. Community-Driven
+
+**zsh Principle**: oh-my-zsh's success comes from community contributions.
+
+**Memento Application**:
+- Templates for easy component creation
+- Shareable configurations
+- Future: Community hub for modes/workflows
+- Future: oh-my-memento starter packs
+
+## Design Patterns
+
+### The Plugin Pattern
+
+Every component (mode, workflow, agent) follows the plugin pattern:
+1. Self-contained definition
+2. No dependencies on other components
+3. Declarative configuration
+4. Can be distributed independently
+
+```typescript
+// Like a zsh plugin
+interface MementoComponent {
+  name: string;           // Plugin name
+  description: string;    // What it does
+  metadata: {};          // Configuration
+  content: string;       // Implementation
+}
+```
+
+### The Theme Pattern
+
+Modes work like themes—complete personality transformations:
+
+```yaml
+# Like a zsh theme definition
+name: architect
+prompt: "You think in systems and patterns..."
+behavior:
+  - Big picture focus
+  - Design patterns emphasis
+  - Scalability concerns
+```
+
+### The Hook Pattern
+
+Event-driven automation without user intervention:
+
+```javascript
+// Like zsh's add-zsh-hook
+registerHook({
+  event: 'user-prompt-submit',
+  handler: transformPrompt,
+  priority: 10
+});
+```
+
+## Implementation Guidelines
+
+### 1. Always Think "How Would zsh Do This?"
+
+When adding new features, ask:
+- Is there a zsh equivalent?
+- How does zsh solve this problem?
+- Can we use similar terminology?
+
+### 2. Progressive Enhancement
+
+Users should be able to:
+1. Start with basic installation
+2. Add components as needed
+3. Customize gradually
+4. Share configurations
+
+### 3. Discoverability
+
+Like `zsh<TAB>` shows all zsh commands:
+- `memento list` shows available components
+- `/mode<TAB>` should show available modes (future)
+- Clear, predictable naming
+
+### 4. Sensible Defaults
+
+Like zsh works great out-of-the-box:
+- Recommended components on first install
+- Smart project detection
+- Automatic mode selection based on context
+
+## System Architecture (zsh-Inspired)
 
 ### Directory Structure
 ```
 project-root/
-├── CLAUDE.md                    # Minimal router (< 50 lines)
-└── .memento/                    # Framework directory (gitignored)
-    ├── modes/                   # Personality definitions
-    ├── workflows/               # Reusable procedures
-    ├── languages/               # Language-specific overrides
-    ├── integrations/            # Tool wrappers (e.g., memory-mcp)
-    └── tickets/                 # Workspace for state management
-        └── [ticket-id]/         # Task-specific working directory
+├── CLAUDE.md                    # Router (like .zshenv - always loaded)
+└── .memento/                    # Framework directory (like ~/.oh-my-zsh/)
+    ├── config.json              # Configuration (like .zshrc)
+    ├── modes/                   # AI personalities (like themes/)
+    ├── workflows/               # Procedures (like functions/)
+    ├── agents/                  # Specialized tools (like plugins/)
+    ├── hooks/                   # Automation (like hook functions)
+    ├── tickets/                 # Task tracking (like sessions)
+    └── acronyms.json           # Expansions (like aliases)
+
+.claude/                         # Claude Code specific
+    ├── agents/                  # Installed subagents
+    ├── commands/                # Custom slash commands
+    └── settings.json           # Claude Code config
 ```
 
-### Component Types
+### Component Loading Order
 
-#### Modes (Personalities)
-Behavioral patterns that define how Claude approaches tasks:
-- **Project Manager**: Planning, coordination, high-level decisions
-- **Architect**: System design, technical decisions, patterns
-- **Engineer**: Implementation, coding, debugging
-- **Reviewer**: Code review, quality assurance, feedback
+Like zsh's initialization sequence:
+1. CLAUDE.md loaded (always, like .zshenv)
+2. Hook system initialized (like loading compinit)
+3. Default mode activated (like setting ZSH_THEME)
+4. Custom commands registered (like sourcing aliases)
+5. Project context loaded (like .envrc)
 
-Each mode must include:
-- **Core Responsibilities**: Primary focus areas and tasks
-- **Done When**: Clear, testable completion criteria
-- **Mode-specific sections**: Additional guidance as needed
+### Lazy Loading Strategy
 
-#### Workflows (Procedures, sub-Agents)
-Step-by-step procedures for common tasks:
-- **Summarize**: Summarize some logic, directories, or topic, to compress context
-- **Review**: Code review, audit
+Like zsh's autoload:
+- Components loaded only when needed
+- Modes loaded on switch
+- Workflows loaded on invocation
+- Agents loaded on demand
 
-#### Language Overrides
-Language-specific implementations that enhance base workflows with specialized tools and patterns.
+## Future Roadmap (Inspired by zsh Evolution)
 
-#### Integration Wrappers
-Patterns that wrap workflows with external tool interactions (pre/post hooks).
+### Phase 1: Core Enhancement (Current)
+- ✅ Basic mode system (themes)
+- ✅ Fuzzy matching (completions)
+- ✅ Hooks (automation)
+- ✅ Custom commands (aliases)
 
-## Key Design Decisions
+### Phase 2: oh-my-memento
+- 📦 Starter packs (theme bundles)
+- 🔧 .mementorc global config
+- 🌍 Community repository
+- 📚 Component marketplace
 
-### 1. Lazy Loading
-Files are read only when explicitly requested through mode activation or workflow invocation. The CLAUDE.md router contains only navigation instructions.
+### Phase 3: Power Tools
+- 🎨 Visual configurator (like zsh config tools)
+- 🔌 Plugin manager (like zplug/zinit)
+- 📊 Performance profiling
+- 🔄 Auto-updates
 
-### 2. Ticket-Based State Management
-The `.memento/tickets/` directory serves as a persistent workspace where:
-- Progress is tracked across sessions
-- Multiple agents can coordinate
-- Context is preserved between mode switches
-- Work artifacts are organized
+### Phase 4: Ecosystem
+- 🤝 Integration with other AI tools
+- 📱 Web-based configuration
+- 🎯 Project-type detection and auto-config
+- 🌐 Shared team configurations
 
-### 3. Clear Context Management
-- Only one mode active at a time
-- Tickets provide continuity when needed
-- No implicit state carryover
+## Component Design Principles
 
-### 4. Git-Based Safety
-- Leverage git for rollback capabilities
-- Use git worktrees for parallel work
+### Modes (Themes)
+- Each mode is a complete personality
+- Modes should be discoverable by behavior
+- Names should indicate function (architect, engineer, reviewer)
+- Support abbreviations and fuzzy matching
 
-### 5. Discovery Through Tooling
-The CLI tool handles discovery during:
-- Interactive setup (showing available modes/workflows)
-- Installation process (listing components)
-- Help commands within the tool
+### Workflows (Functions)
+- Single-purpose, reusable procedures
+- Clear input/output expectations
+- Composable with other workflows
+- Version controlled for stability
 
-## Workflow Execution Model
+### Agents (Plugins)
+- Focused on one capability
+- Self-documenting
+- No side effects
+- Clear tool permissions
 
-### Basic Flow
-1. User requests mode: "act as architect"
-2. Claude reads `.memento/modes/architect.md`
-3. User, mode, or agent requests workflow: "execute refactor"
-4. Claude reads `.memento/workflows/refactor.md`
-5. If language-specific: overlay `.memento/languages/[lang]/refactor.md`
-6. If integrations active: apply wrappers from `.memento/integrations/`
+### Hooks (Automation)
+- Event-driven, not polling
+- Fast execution (don't block)
+- Graceful failure
+- User-visible logging
 
-### State Persistence
-1. Create ticket: `.memento/tickets/refactor-auth-2025-01-13/`
-2. Track progress: `.memento/tickets/refactor-auth-2025-01-13/progress.md`
-3. Store decisions: `.memento/tickets/refactor-auth-2025-01-13/decisions.md`
-4. Resume later: "continue ticket refactor-auth-2025-01-13"
+## Testing Philosophy
 
-## CLI Tool Responsibilities
+Like zsh's robust testing:
+1. Unit tests for each component
+2. Integration tests for component interaction
+3. E2E tests for user workflows
+4. Performance benchmarks
 
-### Setup Phase
-1. Initialize `.memento/` directory structure
-2. Install selected modes and workflows
-3. Configure language-specific overrides
-4. Set up integration wrappers
+## Documentation Standards
 
-### Maintenance Phase
-1. Add/remove components
-2. Update from template repository
-3. Validate framework integrity
-4. Manage ticket lifecycle
+### For Users
+- Start with "It's like [zsh feature] but for Claude Code"
+- Use familiar terminology
+- Provide migration guides from basic Claude Code
+- Show before/after examples
 
-### Enhancement Phase
-1. Analyze existing CLAUDE.md
-2. Preserve project-specific content
-3. Add router instructions
-4. Suggest relevant components
-
-## Extension Points
-
-### Custom Modes
-Projects can add domain-specific modes:
-- `.memento/modes/data-scientist.md`
-- `.memento/modes/devops.md`
-
-### Custom Workflows
-Teams can create specialized procedures:
-- `.memento/workflows/deploy.md`
-- `.memento/workflows/migrate-database.md`
-
-### Project-Specific Integrations
-Local tool wrappers:
-- `.memento/integrations/internal-api.md`
-- `.memento/integrations/ci-system.md`
+### For Contributors
+- Explain the zsh parallel
+- Provide templates
+- Document the plugin API
+- Show example implementations
 
 ## Success Metrics
 
-1. **Token Efficiency**: CLAUDE.md remains under 200 lines
-2. **Modularity**: Components can be added/removed independently
-3. **Discoverability**: Users can easily find available modes/workflows
-4. **Resumability**: Work can continue across sessions via tickets
-5. **Composability**: Workflows can be extended without modification
+We measure success by:
+1. **Adoption**: "As obvious as switching from bash to zsh"
+2. **Customization**: Average number of custom components per user
+3. **Sharing**: Components shared in community
+4. **Retention**: Users who keep using after 30 days
+5. **Performance**: No noticeable slowdown vs vanilla Claude Code
 
-## Non-Goals
+## Design Anti-Patterns to Avoid
 
-1. **Not a package manager**: Focus on template management, not dependency resolution
-2. **Not a runtime**: No process management or service orchestration
-3. **Not a state database**: Tickets are working directories, not structured storage
-4. **Not an IDE plugin**: CLI-first, integration-agnostic approach
+### Don't Break Claude Code
+Never interfere with core Claude Code functionality. Enhancement only.
 
-This design provides a foundation for iterative development while maintaining clarity about the system's purpose and boundaries.
+### Don't Overcomplicate
+If zsh wouldn't need it, we probably don't either.
+
+### Don't Lock Users In
+Everything should be removable/reversible. No vendor lock-in.
+
+### Don't Assume Expertise
+Work for beginners with defaults, power users with customization.
+
+## CLI Tool Responsibilities (Like oh-my-zsh Installer)
+
+### Setup Phase
+1. Initialize `.memento/` directory structure (like ~/.oh-my-zsh/)
+2. Install selected modes and workflows (like choosing plugins)
+3. Configure hooks and integrations (like enabling features)
+4. Generate CLAUDE.md router (like updating .zshrc)
+
+### Maintenance Phase
+1. Add/remove components (`memento add/remove`)
+2. Update from templates (`memento update`)
+3. Validate integrity (`memento doctor`)
+4. Manage tickets (`memento ticket`)
+
+### Discovery Phase
+1. List available components (`memento list`)
+2. Search for components (`memento search`)
+3. Show component details (`memento info`)
+4. Preview before installing (`memento preview`)
+
+## The Ultimate Vision
+
+**Memento Protocol becomes to Claude Code what oh-my-zsh became to zsh:**
+- The default enhancement everyone installs
+- A thriving ecosystem of components
+- Community-driven development
+- The obvious choice for serious users
+
+When someone starts using Claude Code, installing Memento Protocol should feel as natural and necessary as installing oh-my-zsh when setting up a new shell.
+
+## Technical Implementation Notes
+
+### Token Efficiency
+- CLAUDE.md remains minimal (< 200 lines)
+- Components loaded on-demand
+- Smart caching of frequently used components
+
+### State Management
+- Tickets provide session continuity
+- Git integration for versioning
+- Clean separation of concerns
+
+### Extensibility
+- Plugin API for third-party components
+- Theme inheritance system
+- Hook priority system
+
+### Performance
+- Lazy loading everything
+- Minimal overhead on Claude Code
+- Fast mode switching
+
+---
+
+*"Make Claude Code work YOUR way"* - This is our promise, delivered through the proven patterns that made zsh the developer's choice for shell enhancement.

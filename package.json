@@ -1,7 +1,7 @@
 {
   "name": "memento-protocol",
   "version": "0.9.0",
-  "description": "A lightweight meta-framework for Claude Code",
+  "description": "The zsh for Claude Code - Power tools for AI-assisted development",
   "main": "dist/cli.js",
   "bin": {
     "memento": "dist/cli.js"
@@ -20,11 +20,18 @@
   },
   "keywords": [
     "claude",
+    "claude-code",
     "ai",
     "cli",
+    "zsh",
+    "oh-my-zsh",
+    "themes",
+    "plugins",
     "meta-framework",
     "developer-tools",
-    "productivity"
+    "productivity",
+    "customization",
+    "automation"
   ],
   "author": "Memento Protocol Contributors",
   "license": "MIT",
