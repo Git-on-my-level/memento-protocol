@@ -1,4 +1,6 @@
 {
+  "name": "Web Development",
+  "description": "Common acronyms used in web development",
   "acronyms": {
     "API": "Application Programming Interface",
     "AJAX": "Asynchronous JavaScript and XML",
@@ -24,25 +26,22 @@
     "MVVM": "Model-View-ViewModel",
     "ORM": "Object-Relational Mapping",
     "SQL": "Structured Query Language",
-    "NOSQL": "Not Only Structured Query Language",
-    "GRAPHQL": "Graph Query Language",
+    "NoSQL": "Not Only Structured Query Language",
+    "GraphQL": "Graph Query Language",
     "UI": "User Interface",
     "UX": "User Experience",
     "SEO": "Search Engine Optimization",
     "SEM": "Search Engine Marketing",
     "CMS": "Content Management System",
+    "CDN": "Content Delivery Network",
     "SSL": "Secure Sockets Layer",
     "TLS": "Transport Layer Security",
     "NPM": "Node Package Manager",
-    "YARN": "Yet Another Resource Negotiator",
-    "WEBPACK": "Web Package",
-    "BABEL": "Babel JavaScript Compiler",
-    "ESLINT": "ECMAScript Linter",
-    "TYPESCRIPT": "Type Script",
+    "yarn": "Yet Another Resource Negotiator",
+    "webpack": "Web Package",
+    "babel": "Babel JavaScript Compiler",
+    "ESLint": "ECMAScript Linter",
+    "TypeScript": "Type Script",
     "JSX": "JavaScript XML"
-  },
-  "settings": {
-    "caseSensitive": false,
-    "wholeWordOnly": true
   }
 }

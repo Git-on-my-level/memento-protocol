@@ -37,14 +37,14 @@ memento acronym export --format json
 ```
 
 ## Tasks
-- [ ] Implement bulk import from text/yaml/json files
-- [ ] Add acronym scanning to detect common patterns (all-caps words)
-- [ ] Create preset acronym sets for common domains
-- [ ] Add export functionality for sharing
-- [ ] Create custom command for quick acronym addition
-- [ ] Add fuzzy search for acronym lookup: `memento acronym search api`
-- [ ] Support acronym aliases (multiple expansions)
-- [ ] Add acronym usage statistics to show which are most used
+- [x] Implement bulk import from text/json files
+- [ ] Add acronym scanning to detect common patterns (all-caps words) - future
+- [x] Create preset acronym sets for common domains (webdev, devops)
+- [x] Add export functionality for sharing
+- [x] Create custom command for quick acronym addition
+- [ ] Add fuzzy search for acronym lookup - future
+- [ ] Support acronym aliases (multiple expansions) - future
+- [ ] Add acronym usage statistics to show which are most used - future
 
 ## Benefits
 - Reduces setup friction for new projects
