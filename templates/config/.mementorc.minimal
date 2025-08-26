@@ -1,0 +1,10 @@
+# Minimal Memento Protocol Configuration
+# Copy to ~/.mementorc or ./.mementorc and customize as needed
+
+# Your preferred AI mode
+defaultMode: engineer
+
+# UI preferences
+ui:
+  colorOutput: true
+  verboseLogging: false

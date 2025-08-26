@@ -1,0 +1,89 @@
+# Memento Protocol Configuration File
+# This file configures the behavior of Memento Protocol - the zsh for Claude Code
+# 
+# Format: YAML (also supports .mementorc.yaml, .mementorc.yml, .mementorc.json)
+# Location: Global (~/.mementorc) or Project (./.mementorc)
+#
+# Configuration Hierarchy (higher precedence overrides lower):
+# 1. Environment variables (MEMENTO_*)
+# 2. Project JSON config (.memento/config.json)
+# 3. Project RC file (.mementorc, .mementorc.yaml, etc.)
+# 4. Global JSON config (~/.memento/config.json)
+# 5. Global RC file (~/.mementorc, ~/.mementorc.yaml, etc.)
+# 6. Built-in defaults
+
+# Configuration schema version
+version: "1.0.0"
+
+# Default AI mode/personality to use when starting Claude Code
+# Available: engineer, architect, reviewer, autonomous-project-manager
+defaultMode: engineer
+
+# List of preferred workflows to suggest or auto-load
+# Available: review, summarize, openmemory-setup
+preferredWorkflows:
+  - review
+  - summarize
+
+# Custom template sources (URLs or local paths)
+# These extend the built-in templates with your own modes/workflows/agents
+customTemplateSources: []
+  # - "https://github.com/yourorg/memento-templates.git"
+  # - "/path/to/local/templates"
+
+# Integration settings for external tools and services
+integrations:
+  # Git integration settings
+  git:
+    autoCommit: false
+    signCommits: true
+    defaultBranch: main
+  
+  # Slack notifications (optional)
+  # slack:
+  #   webhook: "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+  #   channel: "#dev-notifications"
+  #   username: "Memento Bot"
+
+# User interface preferences
+ui:
+  # Enable colored output in terminal
+  colorOutput: true
+  
+  # Enable verbose logging for debugging
+  verboseLogging: false
+
+# Component preferences - which modes/workflows to keep loaded
+components:
+  # AI modes/personalities to have available
+  modes:
+    - engineer
+    - architect
+    - reviewer
+    # - autonomous-project-manager
+  
+  # Workflows to have readily available
+  workflows:
+    - review
+    - summarize
+    # - openmemory-setup
+
+# Advanced settings (optional)
+# advanced:
+#   # Custom hook configurations
+#   hooks:
+#     - id: "custom-project-setup"
+#       enabled: true
+#       event: "SessionStart"
+#       command: "echo 'Welcome to your project!'"
+#   
+#   # Custom acronym expansions
+#   acronyms:
+#     "apm": "autonomous-project-manager"
+#     "eng": "engineer"
+#     "arch": "architect"
+#   
+#   # Performance tuning
+#   performance:
+#     cacheSize: 100
+#     timeoutMs: 30000

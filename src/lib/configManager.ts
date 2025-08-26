@@ -5,6 +5,7 @@ import { logger } from './logger';
 import { ConfigMigrator } from './ConfigMigrator';
 import { ConfigSchemaRegistry, VersionedMementoConfig } from './configSchema';
 import { ValidationError, ConfigurationError } from './errors';
+import { RCFileLoader } from './rcFileLoader';
 
 export interface MementoConfig {
   // Project-level settings
@@ -38,16 +39,21 @@ export class ConfigManager {
   private projectConfigPath: string;
   private migrator: ConfigMigrator;
   private schemaRegistry: ConfigSchemaRegistry;
+  private rcFileLoader: RCFileLoader;
+  private projectRoot: string;
 
   constructor(projectRoot: string) {
+    this.projectRoot = projectRoot;
     this.globalConfigPath = path.join(os.homedir(), '.memento', 'config.json');
     this.projectConfigPath = path.join(projectRoot, '.memento', 'config.json');
     this.migrator = new ConfigMigrator();
     this.schemaRegistry = ConfigSchemaRegistry.getInstance();
+    this.rcFileLoader = new RCFileLoader();
   }
 
   /**
-   * Load configuration with hierarchy: defaults -> global -> project -> env
+   * Load configuration with hierarchy: 
+   * defaults → global RC → global JSON → project RC → project JSON → env vars
    */
   async load(): Promise<MementoConfig> {
     const defaultConfig: VersionedMementoConfig = {
@@ -58,16 +64,48 @@ export class ConfigManager {
       }
     };
 
-    // Merge global config if exists
-    const globalConfig = await this.loadConfigFile(this.globalConfigPath);
-    const mergedConfig = this.mergeConfigs(defaultConfig, globalConfig);
+    // Step 1: Start with defaults
+    let mergedConfig = defaultConfig;
 
-    // Merge project config if exists
-    const projectConfig = await this.loadConfigFile(this.projectConfigPath);
-    const finalConfig = this.mergeConfigs(mergedConfig, projectConfig);
+    // Step 2: Merge global RC config if exists
+    try {
+      const homeDirectory = path.dirname(path.dirname(this.globalConfigPath));
+      const globalRCConfig = await this.rcFileLoader.loadGlobalRC(homeDirectory);
+      if (globalRCConfig) {
+        logger.debug('Loaded global RC configuration');
+        mergedConfig = this.mergeConfigs(mergedConfig, globalRCConfig);
+      }
+    } catch (error: any) {
+      logger.warn(`Failed to load global RC configuration: ${error.message}`);
+    }
 
-    // Apply environment variable overrides
-    const result = this.applyEnvironmentOverrides(finalConfig);
+    // Step 3: Merge global JSON config if exists
+    const globalJSONConfig = await this.loadConfigFile(this.globalConfigPath);
+    if (globalJSONConfig) {
+      logger.debug('Loaded global JSON configuration');
+      mergedConfig = this.mergeConfigs(mergedConfig, globalJSONConfig);
+    }
+
+    // Step 4: Merge project RC config if exists
+    try {
+      const projectRCConfig = await this.rcFileLoader.loadProjectRC(this.projectRoot);
+      if (projectRCConfig) {
+        logger.debug('Loaded project RC configuration');
+        mergedConfig = this.mergeConfigs(mergedConfig, projectRCConfig);
+      }
+    } catch (error: any) {
+      logger.warn(`Failed to load project RC configuration: ${error.message}`);
+    }
+
+    // Step 5: Merge project JSON config if exists
+    const projectJSONConfig = await this.loadConfigFile(this.projectConfigPath);
+    if (projectJSONConfig) {
+      logger.debug('Loaded project JSON configuration');
+      mergedConfig = this.mergeConfigs(mergedConfig, projectJSONConfig);
+    }
+
+    // Step 6: Apply environment variable overrides
+    const result = this.applyEnvironmentOverrides(mergedConfig);
 
     // Strip version from result for backward compatibility
     const { version, ...configWithoutVersion } = result;
@@ -464,5 +502,147 @@ export class ConfigManager {
   async cleanupBackups(global: boolean = false, keepCount: number = 5): Promise<void> {
     const configPath = global ? this.globalConfigPath : this.projectConfigPath;
     await this.migrator.cleanupBackups(configPath, keepCount);
+  }
+
+  /**
+   * Get RC file discovery status for diagnostics
+   */
+  getRCFileStatus(): {
+    global: Array<{ path: string; format: string; exists: boolean }>;
+    project: Array<{ path: string; format: string; exists: boolean }>;
+  } {
+    const homeDirectory = path.dirname(path.dirname(this.globalConfigPath));
+    const status = this.rcFileLoader.getRCFileStatus({
+      homeDirectory,
+      projectDirectory: this.projectRoot
+    });
+
+    return {
+      global: status.global.map(rc => ({
+        path: rc.path,
+        format: rc.format,
+        exists: rc.exists
+      })),
+      project: status.project.map(rc => ({
+        path: rc.path,
+        format: rc.format,
+        exists: rc.exists
+      }))
+    };
+  }
+
+  /**
+   * Validate an RC file without loading it into configuration
+   */
+  async validateRCFile(filePath: string): Promise<{
+    valid: boolean;
+    errors: string[];
+    warnings: string[];
+    format?: 'yaml' | 'json';
+  }> {
+    return this.rcFileLoader.validateRCFile(filePath);
+  }
+
+  /**
+   * Generate sample RC file content
+   */
+  generateSampleRC(format: 'yaml' | 'json' = 'yaml'): string {
+    return this.rcFileLoader.generateSampleRC(format);
+  }
+
+  /**
+   * Get the configuration hierarchy with sources for debugging
+   */
+  async getConfigurationHierarchy(): Promise<{
+    defaults: VersionedMementoConfig;
+    globalRC?: { path: string; config: VersionedMementoConfig };
+    globalJSON?: { path: string; config: VersionedMementoConfig };
+    projectRC?: { path: string; config: VersionedMementoConfig };
+    projectJSON?: { path: string; config: VersionedMementoConfig };
+    envOverrides: Record<string, any>;
+    final: MementoConfig;
+  }> {
+    const defaultConfig: VersionedMementoConfig = {
+      version: ConfigMigrator.getCurrentVersion(),
+      ui: {
+        colorOutput: true,
+        verboseLogging: false
+      }
+    };
+
+    const hierarchy: any = {
+      defaults: defaultConfig,
+      envOverrides: {},
+      final: {}
+    };
+
+    // Load global RC
+    try {
+      const homeDirectory = path.dirname(path.dirname(this.globalConfigPath));
+      const globalRCConfig = await this.rcFileLoader.loadGlobalRC(homeDirectory);
+      if (globalRCConfig) {
+        const status = this.rcFileLoader.getRCFileStatus({ homeDirectory });
+        const existingGlobalRC = status.global.find(rc => rc.exists);
+        if (existingGlobalRC) {
+          hierarchy.globalRC = {
+            path: existingGlobalRC.path,
+            config: globalRCConfig
+          };
+        }
+      }
+    } catch (error) {
+      // Ignore errors for diagnostics
+    }
+
+    // Load global JSON
+    const globalJSONConfig = await this.loadConfigFile(this.globalConfigPath);
+    if (globalJSONConfig) {
+      hierarchy.globalJSON = {
+        path: this.globalConfigPath,
+        config: globalJSONConfig
+      };
+    }
+
+    // Load project RC
+    try {
+      const projectRCConfig = await this.rcFileLoader.loadProjectRC(this.projectRoot);
+      if (projectRCConfig) {
+        const status = this.rcFileLoader.getRCFileStatus({ projectDirectory: this.projectRoot });
+        const existingProjectRC = status.project.find(rc => rc.exists);
+        if (existingProjectRC) {
+          hierarchy.projectRC = {
+            path: existingProjectRC.path,
+            config: projectRCConfig
+          };
+        }
+      }
+    } catch (error) {
+      // Ignore errors for diagnostics
+    }
+
+    // Load project JSON
+    const projectJSONConfig = await this.loadConfigFile(this.projectConfigPath);
+    if (projectJSONConfig) {
+      hierarchy.projectJSON = {
+        path: this.projectConfigPath,
+        config: projectJSONConfig
+      };
+    }
+
+    // Record environment overrides
+    if (process.env.MEMENTO_DEFAULT_MODE) {
+      hierarchy.envOverrides.defaultMode = process.env.MEMENTO_DEFAULT_MODE;
+    }
+    if (process.env.MEMENTO_COLOR_OUTPUT !== undefined) {
+      hierarchy.envOverrides['ui.colorOutput'] = process.env.MEMENTO_COLOR_OUTPUT === 'true';
+    }
+    if (process.env.MEMENTO_VERBOSE !== undefined) {
+      hierarchy.envOverrides['ui.verboseLogging'] = process.env.MEMENTO_VERBOSE === 'true';
+    }
+
+    // Load final merged configuration
+    hierarchy.final = await this.load();
+
+    return hierarchy;
   }
 }

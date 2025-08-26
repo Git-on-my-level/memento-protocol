@@ -1,0 +1,41 @@
+{
+  "_comment": "Memento Protocol Configuration File (JSON Format)",
+  "_description": "This file configures the behavior of Memento Protocol - the zsh for Claude Code",
+  "_hierarchy": "Environment variables → Project JSON → Project RC → Global JSON → Global RC → Defaults",
+  
+  "version": "1.0.0",
+  
+  "defaultMode": "engineer",
+  
+  "preferredWorkflows": [
+    "review", 
+    "summarize"
+  ],
+  
+  "customTemplateSources": [],
+  
+  "integrations": {
+    "git": {
+      "autoCommit": false,
+      "signCommits": true,
+      "defaultBranch": "main"
+    }
+  },
+  
+  "ui": {
+    "colorOutput": true,
+    "verboseLogging": false
+  },
+  
+  "components": {
+    "modes": [
+      "engineer",
+      "architect", 
+      "reviewer"
+    ],
+    "workflows": [
+      "review",
+      "summarize"
+    ]
+  }
+}
