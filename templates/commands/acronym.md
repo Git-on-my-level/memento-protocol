@@ -13,10 +13,6 @@ Manage acronyms and their expansions for your project.
 - `/acronym add <acronym> "<expansion>"` - Add or update an acronym
 - `/acronym list` - List all configured acronyms  
 - `/acronym remove <acronym>` - Remove an acronym
-- `/acronym clear` - Clear all acronyms
-- `/acronym use <preset>` - Load a preset collection (webdev, devops)
-- `/acronym import <file>` - Import acronyms from a file
-- `/acronym export [--format json]` - Export acronyms
 
 ## Examples
 
@@ -24,8 +20,7 @@ Manage acronyms and their expansions for your project.
 /acronym add API "Application Programming Interface"
 /acronym add K8s "Kubernetes"
 /acronym list
-/acronym use webdev
-/acronym export --format json
+/acronym remove API
 ```
 
 ## Script Implementation
@@ -75,40 +70,11 @@ case "$CMD" in
         fi
         memento acronym remove "$1"
         ;;
-    "clear")
-        memento acronym clear
-        ;;
-    "use")
-        if [[ $# -lt 1 ]]; then
-            echo "Usage: /acronym use <preset>"
-            memento acronym presets
-            exit 1
-        fi
-        memento acronym use "$1"
-        ;;
-    "import")
-        if [[ $# -lt 1 ]]; then
-            echo "Usage: /acronym import <file> [--format text|json] [--merge]"
-            exit 1
-        fi
-        memento acronym import "$@"
-        ;;
-    "export")
-        memento acronym export "$@"
-        ;;
-    "presets")
-        memento acronym presets
-        ;;
     *)
         echo "Acronym Management Commands:"
         echo "  add <acronym> \"<expansion>\"  Add/update an acronym"
         echo "  list                         List all acronyms"
         echo "  remove <acronym>             Remove an acronym"
-        echo "  clear                        Clear all acronyms"
-        echo "  use <preset>                 Load preset collection"
-        echo "  import <file>                Import from file"
-        echo "  export                       Export acronyms"
-        echo "  presets                      List available presets"
         ;;
 esac
 ```
