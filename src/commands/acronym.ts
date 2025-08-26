@@ -67,19 +67,6 @@ class AcronymManager {
     return this.config.acronyms;
   }
 
-  clear(): void {
-    this.config.acronyms = {};
-    this.saveConfig();
-  }
-
-  getSettings(): AcronymConfig['settings'] {
-    return this.config.settings;
-  }
-
-  updateSettings(settings: Partial<AcronymConfig['settings']>): void {
-    this.config.settings = { ...this.config.settings, ...settings };
-    this.saveConfig();
-  }
 }
 
 const acronymCommand = new Command('acronym')
@@ -125,7 +112,6 @@ acronymCommand
     try {
       const manager = new AcronymManager(process.cwd());
       const acronyms = manager.list();
-      const settings = manager.getSettings();
       
       if (Object.keys(acronyms).length === 0) {
         logger.info('No acronyms configured.');
@@ -133,7 +119,6 @@ acronymCommand
       }
       
       logger.info('Configured Acronyms:');
-      logger.info(`Settings: Case ${settings.caseSensitive ? 'Sensitive' : 'Insensitive'}, Whole Word: ${settings.wholeWordOnly ? 'Yes' : 'No'}`);
       logger.space();
       
       Object.entries(acronyms).forEach(([acronym, expansion]) => {
@@ -145,18 +130,5 @@ acronymCommand
     }
   });
 
-acronymCommand
-  .command('clear')
-  .description('Clear all acronyms')
-  .action(async () => {
-    try {
-      const manager = new AcronymManager(process.cwd());
-      manager.clear();
-      logger.success('Cleared all acronyms.');
-    } catch (error) {
-      logger.error('Failed to clear acronyms:', error);
-      process.exit(1);
-    }
-  });
 
 export { acronymCommand, AcronymManager };

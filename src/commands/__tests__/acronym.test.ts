@@ -34,13 +34,8 @@ describe('Acronym Command', () => {
     it('should initialize with default config when no file exists', () => {
       const manager = new AcronymManager(mockProjectRoot);
       const acronyms = manager.list();
-      const settings = manager.getSettings();
       
       expect(acronyms).toEqual({});
-      expect(settings).toEqual({
-        caseSensitive: false,
-        wholeWordOnly: true
-      });
     });
 
     it('should load existing config from file', () => {
@@ -54,10 +49,8 @@ describe('Acronym Command', () => {
       
       const manager = new AcronymManager(mockProjectRoot);
       const acronyms = manager.list();
-      const settings = manager.getSettings();
       
       expect(acronyms).toEqual(mockConfig.acronyms);
-      expect(settings).toEqual(mockConfig.settings);
     });
 
     it('should add acronyms in uppercase when case insensitive', () => {
@@ -71,8 +64,15 @@ describe('Acronym Command', () => {
     });
 
     it('should preserve case when case sensitive', () => {
+      const mockConfig = {
+        acronyms: {},
+        settings: { caseSensitive: true, wholeWordOnly: true }
+      };
+      
+      (fs.existsSync as jest.Mock).mockReturnValue(true);
+      (fs.readFileSync as jest.Mock).mockReturnValue(JSON.stringify(mockConfig));
+      
       const manager = new AcronymManager(mockProjectRoot);
-      manager.updateSettings({ caseSensitive: true });
       manager.add('Api', 'Application Programming Interface');
       
       expect(fs.writeFileSync).toHaveBeenCalledWith(
@@ -100,26 +100,6 @@ describe('Acronym Command', () => {
       );
     });
 
-    it('should clear all acronyms', () => {
-      const mockConfig = {
-        acronyms: { 
-          'API': 'Application Programming Interface',
-          'CLI': 'Command Line Interface'
-        },
-        settings: { caseSensitive: false, wholeWordOnly: true }
-      };
-      
-      (fs.existsSync as jest.Mock).mockReturnValue(true);
-      (fs.readFileSync as jest.Mock).mockReturnValue(JSON.stringify(mockConfig));
-      
-      const manager = new AcronymManager(mockProjectRoot);
-      manager.clear();
-      
-      expect(fs.writeFileSync).toHaveBeenCalledWith(
-        mockAcronymsPath,
-        expect.stringContaining('"acronyms": {}')
-      );
-    });
   });
 
   describe('CLI commands', () => {
@@ -167,11 +147,6 @@ describe('Acronym Command', () => {
       
       expect(logger.info).toHaveBeenCalledWith('No acronyms configured.');
     });
-
-    it('should clear all acronyms via CLI', async () => {
-      await acronymCommand.parseAsync(['node', 'test', 'clear']);
-      
-      expect(logger.success).toHaveBeenCalledWith('Cleared all acronyms.');
-    });
   });
+
 });
