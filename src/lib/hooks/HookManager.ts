@@ -8,6 +8,7 @@ import { MementoRoutingHook } from "./builtin/MementoRoutingHook";
 import { PackagePaths } from "../packagePaths";
 import { HookValidator } from "./HookValidator";
 import { ValidationError } from "../errors";
+import { ensureDirectory } from "../utils/filesystem";
 
 export class HookManager {
   private registry: HookRegistry;
@@ -57,11 +58,11 @@ export class HookManager {
    * Ensure all required directories exist
    */
   private async ensureDirectories(): Promise<void> {
-    await fs.mkdir(this.claudeDir, { recursive: true });
-    await fs.mkdir(this.hooksDir, { recursive: true });
-    await fs.mkdir(this.definitionsDir, { recursive: true });
-    await fs.mkdir(path.join(this.hooksDir, "scripts"), { recursive: true });
-    await fs.mkdir(path.join(this.hooksDir, "templates"), { recursive: true });
+    await ensureDirectory(this.claudeDir);
+    await ensureDirectory(this.hooksDir);
+    await ensureDirectory(this.definitionsDir);
+    await ensureDirectory(path.join(this.hooksDir, "scripts"));
+    await ensureDirectory(path.join(this.hooksDir, "templates"));
   }
 
   /**
@@ -133,7 +134,7 @@ export class HookManager {
    */
   private async generateClaudeSettings(): Promise<void> {
     // Ensure .claude directory exists
-    await fs.mkdir(this.claudeDir, { recursive: true });
+    await ensureDirectory(this.claudeDir);
 
     const settingsPath = path.join(this.claudeDir, "settings.local.json");
 
@@ -509,7 +510,7 @@ export class HookManager {
 
         // Create script file with clean name
         const scriptsDir = path.join(this.hooksDir, "scripts");
-        await fs.mkdir(scriptsDir, { recursive: true });
+        await ensureDirectory(scriptsDir);
         const scriptPath = path.join(scriptsDir, `${templateName}.sh`);
         await fs.writeFile(scriptPath, template.script, { mode: 0o755 });
         // Use relative command path for portability
@@ -593,7 +594,7 @@ export class HookManager {
       await this.addHook(hookConfig);
 
       // Ensure definitions directory exists before saving
-      await fs.mkdir(this.definitionsDir, { recursive: true });
+      await ensureDirectory(this.definitionsDir);
 
       // Save to definitions
       const definitionPath = path.join(
@@ -740,7 +741,7 @@ export class HookManager {
       this.registry.addHook(cleanConfig);
 
       // Save new definition
-      await fs.mkdir(this.definitionsDir, { recursive: true });
+      await ensureDirectory(this.definitionsDir);
       const definitionPath = path.join(this.definitionsDir, `${baseName}.json`);
       const definition: HookDefinition = {
         version: "1.0.0",

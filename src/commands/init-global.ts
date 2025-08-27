@@ -8,6 +8,7 @@ import { MementoCore } from "../lib/MementoCore";
 import { MementoConfig } from "../lib/configSchema";
 import { logger } from "../lib/logger";
 import { FileSystemError } from "../lib/errors";
+import { ensureDirectory } from "../lib/utils/filesystem";
 
 interface GlobalInitOptions {
   force?: boolean;
@@ -153,7 +154,7 @@ async function installExampleComponents(globalPath: string): Promise<void> {
   ];
 
   for (const dir of exampleDirs) {
-    await fs.mkdir(dir, { recursive: true });
+    await ensureDirectory(dir);
   }
 
   // Create a simple example script
@@ -201,7 +202,7 @@ export const initGlobalCommand = new Command("init-global")
       logger.space();
 
       // Create global directory structure
-      await fs.mkdir(globalPath, { recursive: true });
+      await ensureDirectory(globalPath);
 
       let config: MementoConfig;
 

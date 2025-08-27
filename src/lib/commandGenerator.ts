@@ -2,6 +2,7 @@ import * as fs from "fs/promises";
 import * as path from "path";
 import { existsSync } from "fs";
 import { logger } from "./logger";
+import { ensureDirectory } from "./utils/filesystem";
 
 export interface CommandTemplate {
   name: string;
@@ -48,8 +49,8 @@ export class CommandGenerator {
    * Ensure all required directories exist
    */
   private async ensureDirectories(): Promise<void> {
-    await fs.mkdir(this.claudeDir, { recursive: true });
-    await fs.mkdir(this.commandsDir, { recursive: true });
+    await ensureDirectory(this.claudeDir);
+    await ensureDirectory(this.commandsDir);
   }
 
   /**

@@ -4,6 +4,7 @@ import { existsSync } from "fs";
 import { FileSystemError } from "./errors";
 import { logger } from "./logger";
 import { PackagePaths } from "./packagePaths";
+import { ensureDirectory } from "./utils/filesystem";
 
 export class DirectoryManager {
   private projectRoot: string;
@@ -51,7 +52,7 @@ export class DirectoryManager {
       try {
         logger.debug(`Creating directory: ${dir}`);
         // Safe: mkdir with recursive:true creates only if not exists
-        await fs.mkdir(dir, { recursive: true });
+        await ensureDirectory(dir);
       } catch (error) {
         throw new FileSystemError(
           `Failed to create directory: ${dir}`,
