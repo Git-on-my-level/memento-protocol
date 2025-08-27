@@ -3,6 +3,16 @@ import { PackStructure } from "../types/packs";
 
 // Mock dependencies
 jest.mock("../logger");
+jest.mock("../directoryManager");
+jest.mock("../componentInstaller");
+jest.mock("fs/promises", () => ({
+  mkdir: jest.fn().mockResolvedValue(undefined),
+  writeFile: jest.fn().mockResolvedValue(undefined),
+  readFile: jest.fn().mockResolvedValue("{}"),
+  access: jest.fn().mockResolvedValue(undefined),
+  readdir: jest.fn().mockResolvedValue([]),
+  stat: jest.fn().mockResolvedValue({ isDirectory: () => true })
+}));
 
 describe("StarterPackManager", () => {
   let manager: StarterPackManager;
@@ -28,6 +38,18 @@ describe("StarterPackManager", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    
+    // Mock DirectoryManager to prevent actual filesystem operations
+    const mockDirectoryManager = require("../directoryManager").DirectoryManager;
+    mockDirectoryManager.prototype.initializeStructure = jest.fn().mockResolvedValue(undefined);
+    mockDirectoryManager.prototype.ensureProjectRoot = jest.fn().mockReturnValue(undefined);
+    
+    // Mock ComponentInstaller
+    const mockComponentInstaller = require("../componentInstaller").ComponentInstaller;
+    mockComponentInstaller.prototype.installMode = jest.fn().mockResolvedValue({ success: true });
+    mockComponentInstaller.prototype.installWorkflow = jest.fn().mockResolvedValue({ success: true });
+    mockComponentInstaller.prototype.installAgent = jest.fn().mockResolvedValue({ success: true });
+    
     manager = new StarterPackManager(mockProjectRoot);
   });
 
@@ -658,12 +680,45 @@ describe("StarterPackManager", () => {
     });
 
     it("should handle concurrent pack operations", async () => {
-      // Pack variables no longer needed as we mock directly in the registry
-
+      // Mock the registry to return different packs
       jest.spyOn(manager['registry'], 'loadPack').mockImplementation(async (name: string) => {
         if (name === "concurrent-pack-1") return { ...mockValidPack, manifest: { ...mockValidPack.manifest, name: "concurrent-pack-1" } };
         if (name === "concurrent-pack-2") return { ...mockValidPack, manifest: { ...mockValidPack.manifest, name: "concurrent-pack-2" } };
         return mockValidPack;
+      });
+
+      // Mock the installer to prevent filesystem operations
+      jest.spyOn(manager['installer'], 'installPack').mockImplementation(async (pack: PackStructure) => ({
+        success: true,
+        installed: {
+          modes: [pack.manifest.name + '-mode'],
+          workflows: [pack.manifest.name + '-workflow'],
+          agents: [],
+          hooks: []
+        },
+        skipped: {
+          modes: [],
+          workflows: [],
+          agents: [],
+          hooks: []
+        },
+        errors: [],
+        installedComponents: [
+          { type: 'mode' as const, name: pack.manifest.name + '-mode', source: 'pack' },
+          { type: 'workflow' as const, name: pack.manifest.name + '-workflow', source: 'pack' }
+        ],
+        packMetadata: {
+          packName: pack.manifest.name,
+          version: pack.manifest.version,
+          installedAt: new Date().toISOString()
+        }
+      }));
+
+      // Mock the validator
+      jest.spyOn(manager['validator'], 'validatePackStructure').mockResolvedValue({
+        valid: true,
+        errors: [],
+        warnings: []
       });
 
       const [result1, result2] = await Promise.all([
@@ -673,6 +728,8 @@ describe("StarterPackManager", () => {
 
       expect(result1.success).toBe(true);
       expect(result2.success).toBe(true);
+      expect(result1.installed.modes).toContain('concurrent-pack-1-mode');
+      expect(result2.installed.modes).toContain('concurrent-pack-2-mode');
     });
 
     it("should provide detailed error messages for debugging", async () => {
