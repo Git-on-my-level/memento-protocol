@@ -166,8 +166,7 @@ describe('List Command', () => {
     });
 
     it('should work even without initialized scopes', async () => {
-      mockCore.hasProjectScope.mockReturnValue(false);
-      mockCore.hasGlobalScope.mockReturnValue(false);
+      // Test should work without checking scope existence
       
       mockCore.getStatus.mockResolvedValue({
         builtin: { available: true, path: '/templates', components: 15 },

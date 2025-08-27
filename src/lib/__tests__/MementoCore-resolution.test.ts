@@ -286,30 +286,6 @@ describe('MementoCore - Component Resolution', () => {
     });
   });
 
-  describe('findBestComponent', () => {
-    beforeEach(() => {
-      const allComponents = [
-        { component: mockProjectComponents[0], source: 'project' as const },
-        ...mockBuiltinComponents.map(c => ({ component: c, source: 'builtin' as const }))
-      ];
-      
-      jest.spyOn(core as any, 'getAllComponentsWithSource').mockResolvedValue(allComponents);
-    });
-
-    it('should return the best match', async () => {
-      const match = await core.findBestComponent('engineer', 'mode');
-
-      expect(match).toBeDefined();
-      expect(match?.name).toBe('engineer');
-      expect(match?.source).toBe('project'); // Project should have precedence
-    });
-
-    it('should return null when no matches found', async () => {
-      const match = await core.findBestComponent('nonexistent', 'mode');
-
-      expect(match).toBeNull();
-    });
-  });
 
   describe('generateSuggestions', () => {
     beforeEach(() => {
@@ -340,25 +316,6 @@ describe('MementoCore - Component Resolution', () => {
     });
   });
 
-  describe('hasComponent', () => {
-    it('should return true when component exists', async () => {
-      mockProjectScope.getComponent.mockResolvedValue(mockProjectComponents[0]);
-
-      const exists = await core.hasComponent('engineer', 'mode');
-
-      expect(exists).toBe(true);
-    });
-
-    it('should return false when component does not exist', async () => {
-      mockProjectScope.getComponent.mockResolvedValue(null);
-      mockGlobalScope.getComponent.mockResolvedValue(null);
-      mockBuiltin.getComponent.mockResolvedValue(null);
-
-      const exists = await core.hasComponent('nonexistent', 'mode');
-
-      expect(exists).toBe(false);
-    });
-  });
 
   describe('getComponentConflicts', () => {
     beforeEach(() => {

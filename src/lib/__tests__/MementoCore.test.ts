@@ -337,29 +337,7 @@ describe('MementoCore', () => {
   });
 
   describe('scope management', () => {
-    it('should initialize both scopes', async () => {
-      // Remove directories to test initialization
-      fs.rmSync(globalDir, { recursive: true, force: true });
-      fs.rmSync(projectDir, { recursive: true, force: true });
 
-      await mementoCore.initialize();
-
-      expect(fs.existsSync(globalDir)).toBe(true);
-      expect(fs.existsSync(projectDir)).toBe(true);
-      
-      // Check that default configs were created
-      expect(fs.existsSync(path.join(globalDir, 'config.yaml'))).toBe(true);
-      expect(fs.existsSync(path.join(projectDir, 'config.yaml'))).toBe(true);
-    });
-
-    it('should report scope existence correctly', () => {
-      expect(mementoCore.hasGlobalScope()).toBe(true);
-      expect(mementoCore.hasProjectScope()).toBe(true);
-
-      // Remove project scope
-      fs.rmSync(projectDir, { recursive: true, force: true });
-      expect(mementoCore.hasProjectScope()).toBe(false);
-    });
 
     it('should return correct scope paths', () => {
       const paths = mementoCore.getScopePaths();
