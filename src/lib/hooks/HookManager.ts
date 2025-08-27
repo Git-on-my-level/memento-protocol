@@ -9,11 +9,15 @@ import { PackagePaths } from "../packagePaths";
 import { HookValidator } from "./HookValidator";
 import { ValidationError } from "../errors";
 import { ensureDirectory } from "../utils/filesystem";
+import { PermissionGenerator } from "./PermissionGenerator";
+import { HookFileManager } from "./HookFileManager";
 
 export class HookManager {
   private registry: HookRegistry;
   private configLoader: HookConfigLoader;
   private validator: HookValidator;
+  private permissionGenerator: PermissionGenerator;
+  private fileManager: HookFileManager;
   private projectRoot: string;
   private claudeDir: string;
   private mementoDir: string;
@@ -30,6 +34,8 @@ export class HookManager {
     this.registry = new HookRegistry();
     this.configLoader = new HookConfigLoader(this.definitionsDir);
     this.validator = new HookValidator(projectRoot);
+    this.permissionGenerator = new PermissionGenerator(this.claudeDir);
+    this.fileManager = new HookFileManager(projectRoot, this.hooksDir, this.definitionsDir);
   }
 
   /**
@@ -270,7 +276,7 @@ export class HookManager {
     }
 
     // Generate permissions from command files
-    const permissions = await this.generatePermissions();
+    const permissions = await this.permissionGenerator.generatePermissions();
 
     const newSettings = {
       ...existingSettings,
@@ -282,141 +288,6 @@ export class HookManager {
     logger.info("Updated .claude/settings.local.json");
   }
 
-  /**
-   * Generate permissions by reading command files
-   */
-  private async generatePermissions(): Promise<{
-    allow: string[];
-    deny: string[];
-  }> {
-    const commandsDir = path.join(this.claudeDir, "commands");
-    const allowPermissions = new Set<string>();
-
-    // Base permissions that are always needed
-    const basePermissions = [
-      "Bash(mkdir:*)",
-      "Bash(npm run build:*)",
-      "Bash(npm run dev init:*)",
-      "Bash(node:*)",
-      "Bash(npx tsx:*)",
-      "Bash(rm:*)",
-      "Bash(timeout 15 npm run dev init -- --force --quick)",
-      "Bash(gtimeout 15 npm run dev init -- --force --quick)",
-      "Bash(npm run dev:*)",
-      "Bash(npm test:*)",
-      "Bash(mv:*)",
-      "Bash(find:*)",
-      "Bash(ls:*)",
-      "Bash(npm init:*)",
-      "Bash(git tag:*)",
-      "Bash(git describe:*)",
-      "Bash(npm run:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(npm publish:*)",
-      "Bash(git push:*)",
-      "Bash(chmod:*)",
-      "Bash(scripts/npm/commit-tag-and-publish.sh:*)",
-      "Bash(cat:*)",
-      "Bash(../dist/cli.js)",
-      "Bash(../src/cli.ts)",
-      "WebFetch(domain:docs.anthropic.com)",
-      "Bash(npx memento-protocol ticket:*)",
-    ];
-
-    // Add base permissions
-    basePermissions.forEach((perm) => allowPermissions.add(perm));
-
-    try {
-      // Check if commands directory exists first
-      try {
-        await fs.access(commandsDir);
-      } catch {
-        // Commands directory doesn't exist, skip reading command files
-        logger.debug(
-          `Commands directory ${commandsDir} does not exist, skipping command file permission generation`
-        );
-        return {
-          allow: Array.from(allowPermissions).sort(),
-          deny: [],
-        };
-      }
-
-      // Read all command files and extract allowed-tools and command patterns
-      const files = await fs.readdir(commandsDir);
-
-      for (const file of files) {
-        if (file.endsWith(".md")) {
-          const filePath = path.join(commandsDir, file);
-          const content = await fs.readFile(filePath, "utf-8");
-
-          // Parse frontmatter to extract allowed-tools
-          const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
-          if (frontmatterMatch) {
-            const frontmatter = frontmatterMatch[1];
-            const toolsMatch = frontmatter.match(/allowed-tools:\s*(.+)/);
-            if (toolsMatch) {
-              const tools = toolsMatch[1].split(",").map((t) => t.trim());
-              tools.forEach((tool) => {
-                // Convert tool format to permission format
-                // Handle formats like "Bash(sh:.memento/scripts/mode-switch.sh)"
-                if (tool.startsWith("Bash(") && tool.endsWith(")")) {
-                  const innerContent = tool.slice(5, -1); // Remove "Bash(" and ")"
-                  if (innerContent.includes(":")) {
-                    // Already has pattern like "sh:.memento/scripts/mode-switch.sh"
-                    allowPermissions.add(`Bash(${innerContent}:*)`);
-                  } else {
-                    // Add :* for simple patterns
-                    allowPermissions.add(`${tool}:*`);
-                  }
-                } else {
-                  allowPermissions.add(tool);
-                }
-              });
-            }
-          }
-
-          // Also extract command patterns from the content body
-          // Look for patterns like !`sh .memento/scripts/mode-switch.sh $ARGUMENTS`
-          const commandPatternMatch = content.match(/!\`([^`]+)\`/g);
-          if (commandPatternMatch) {
-            commandPatternMatch.forEach((pattern) => {
-              // Extract the command from the backticks
-              const command = pattern.slice(2, -1); // Remove !` and `
-
-              // Convert to proper Claude Code permission format
-              // For commands like "sh .memento/scripts/mode-switch.sh $ARGUMENTS"
-              // Generate "Bash(sh .memento/scripts/mode-switch.sh)" without colons
-              const parts = command.trim().split(/\s+/);
-              if (parts.length > 0) {
-                const baseCommand = parts[0];
-                if (parts.length > 1) {
-                  // Has arguments, construct the command with space-separated format
-                  const commandPath = parts[1];
-                  // Remove $ARGUMENTS placeholder if present
-                  const cleanCommand = `${baseCommand} ${commandPath}`.replace(
-                    /\s+\$ARGUMENTS$/,
-                    ""
-                  );
-                  allowPermissions.add(`Bash(${cleanCommand})`);
-                } else {
-                  // Simple command, use command:* format
-                  allowPermissions.add(`Bash(${baseCommand}:*)`);
-                }
-              }
-            });
-          }
-        }
-      }
-    } catch (error) {
-      logger.warn(`Could not read command files for permissions: ${error}`);
-    }
-
-    return {
-      allow: Array.from(allowPermissions).sort(),
-      deny: [],
-    };
-  }
 
   /**
    * Add a new hook
@@ -433,7 +304,7 @@ export class HookManager {
     // Find the hook first to get its file paths
     const hook = await this.findExistingHook(id);
     if (hook) {
-      await this.removeHookFiles(hook);
+      await this.fileManager.removeHookFiles(hook);
     }
 
     const removed = this.registry.removeHook(id);
@@ -467,7 +338,7 @@ export class HookManager {
       const existingHook = await this.findExistingHook(hookId);
       if (existingHook) {
         logger.info(`Updating existing hook: ${hookId}`);
-        await this.removeHookFiles(existingHook);
+        await this.fileManager.removeHookFiles(existingHook);
         this.registry.removeHook(hookId);
       }
 
@@ -509,14 +380,7 @@ export class HookManager {
         }
 
         // Create script file with clean name
-        const scriptsDir = path.join(this.hooksDir, "scripts");
-        await ensureDirectory(scriptsDir);
-        const scriptPath = path.join(scriptsDir, `${templateName}.sh`);
-        await fs.writeFile(scriptPath, template.script, { mode: 0o755 });
-        // Use relative command path for portability
-        command =
-          "./" +
-          path.relative(this.projectRoot, scriptPath).replace(/\\/g, "/");
+        command = await this.fileManager.writeScriptFile(templateName, template.script);
       }
 
       // Merge template with provided config
@@ -593,20 +457,8 @@ export class HookManager {
 
       await this.addHook(hookConfig);
 
-      // Ensure definitions directory exists before saving
-      await ensureDirectory(this.definitionsDir);
-
       // Save to definitions
-      const definitionPath = path.join(
-        this.definitionsDir,
-        `${hookConfig.id}.json`
-      );
-      const definition: HookDefinition = {
-        version: "1.0.0",
-        hooks: [hookConfig],
-      };
-
-      await fs.writeFile(definitionPath, JSON.stringify(definition, null, 2));
+      await this.fileManager.saveHookDefinition(hookConfig);
 
       logger.success(`Created hook from template: ${templateName}`);
     } catch (error: any) {
@@ -646,32 +498,6 @@ export class HookManager {
     return null;
   }
 
-  /**
-   * Remove hook files (definition and script)
-   */
-  private async removeHookFiles(hook: HookConfig): Promise<void> {
-    // Remove definition file
-    const definitionPath = path.join(this.definitionsDir, `${hook.id}.json`);
-    try {
-      await fs.unlink(definitionPath);
-    } catch (error) {
-      // File might not exist, ignore
-    }
-
-    // Remove script file if it's in our scripts directory
-    if (hook.command) {
-      const absoluteCommandPath = path.isAbsolute(hook.command)
-        ? hook.command
-        : path.join(this.projectRoot, hook.command);
-      if (absoluteCommandPath.startsWith(this.hooksDir)) {
-        try {
-          await fs.unlink(absoluteCommandPath);
-        } catch (error) {
-          // File might not exist, ignore
-        }
-      }
-    }
-  }
 
   /**
    * Get all registered hooks
@@ -685,80 +511,6 @@ export class HookManager {
    */
   async cleanupTimestampedHooks(): Promise<void> {
     const allHooks = this.registry.getAllHooks();
-    const timestampPattern = /-\d{13}$/; // Matches -[13 digits] at end
-    const hooksToCleanup: Array<{ oldHook: any; baseName: string }> = [];
-
-    // First, collect all hooks that need cleanup
-    for (const { hooks } of allHooks) {
-      for (const hook of hooks) {
-        if (timestampPattern.test(hook.config.id)) {
-          const baseName = hook.config.id.replace(timestampPattern, "");
-          hooksToCleanup.push({ oldHook: hook, baseName });
-        }
-      }
-    }
-
-    // Now process them
-    for (const { oldHook, baseName } of hooksToCleanup) {
-      logger.info(`Cleaning up hook ID: ${oldHook.config.id} -> ${baseName}`);
-
-      // Create new hook config with clean ID
-      const cleanConfig = { ...oldHook.config, id: baseName };
-
-      // Update script path if it exists
-      if (
-        cleanConfig.command &&
-        cleanConfig.command.includes(oldHook.config.id)
-      ) {
-        const oldScriptPath = cleanConfig.command;
-        const newScriptPath = oldScriptPath.replace(
-          oldHook.config.id,
-          baseName
-        );
-
-        // Rename script file (resolve to absolute paths)
-        const absOld = path.isAbsolute(oldScriptPath)
-          ? oldScriptPath
-          : path.join(this.projectRoot, oldScriptPath);
-        const absNew = path.isAbsolute(newScriptPath)
-          ? newScriptPath
-          : path.join(this.projectRoot, newScriptPath);
-
-        try {
-          await fs.rename(absOld, absNew);
-          // Store as relative for portability
-          cleanConfig.command =
-            "./" + path.relative(this.projectRoot, absNew).replace(/\\/g, "/");
-        } catch (error) {
-          logger.warn(`Could not rename script file: ${error}`);
-        }
-      }
-
-      // Remove old hook from registry
-      this.registry.removeHook(oldHook.config.id);
-
-      // Add clean hook
-      this.registry.addHook(cleanConfig);
-
-      // Save new definition
-      await ensureDirectory(this.definitionsDir);
-      const definitionPath = path.join(this.definitionsDir, `${baseName}.json`);
-      const definition: HookDefinition = {
-        version: "1.0.0",
-        hooks: [cleanConfig],
-      };
-      await fs.writeFile(definitionPath, JSON.stringify(definition, null, 2));
-
-      // Remove old definition
-      const oldDefinitionPath = path.join(
-        this.definitionsDir,
-        `${oldHook.config.id}.json`
-      );
-      try {
-        await fs.unlink(oldDefinitionPath);
-      } catch (error) {
-        // Ignore if file doesn't exist
-      }
-    }
+    await this.fileManager.cleanupTimestampedHooks(allHooks, this.registry);
   }
 }
