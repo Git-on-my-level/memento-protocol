@@ -68,20 +68,26 @@ export interface AcronymConfig {
 }
 
 /**
- * Main memento configuration interface with version support
+ * Unified Memento configuration interface (replaces both MementoConfig and MementoScopeConfig)
  */
-export interface VersionedMementoConfig {
-  version?: string;
+export interface MementoConfig {
+  // Project-level settings
   defaultMode?: string;
   preferredWorkflows?: string[];
   customTemplateSources?: string[];
+  
+  // Integration settings
   integrations?: {
     [key: string]: any;
   };
+  
+  // UI preferences
   ui?: {
     colorOutput?: boolean;
     verboseLogging?: boolean;
   };
+  
+  // Component settings
   components?: {
     modes?: string[];
     workflows?: string[];
@@ -422,12 +428,6 @@ export class MementoConfigValidator implements Validator {
     }
 
     const config = value as Record<string, unknown>;
-
-    // Validate version (optional)
-    if (config.version !== undefined && !ValidationUtils.isString(config.version)) {
-      result.valid = false;
-      result.errors.push('Config version must be a string');
-    }
 
     // Validate defaultMode (optional)
     if (config.defaultMode !== undefined && !ValidationUtils.isString(config.defaultMode)) {

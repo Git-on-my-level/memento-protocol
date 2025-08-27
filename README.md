@@ -141,7 +141,7 @@ Like zsh enhances bash without replacing it, Memento Protocol enhances Claude Co
 
 - 📦 **Starter Packs**: Frontend/Backend/DevOps bundles (like oh-my-zsh themes)
 - 🌍 **Community Hub**: Share modes and workflows
-- 📝 **.mementorc**: Global config file (like .zshrc)
+- 📝 **~/.memento/config.yaml**: Global config file (unified structure with project config)
 - 🔌 **Plugin Manager**: Easy install/update (like zplug)
 
 ## Star History

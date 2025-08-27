@@ -2,22 +2,42 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { ConfigManager } from '../configManager';
+import { MementoCore } from '../MementoCore';
+import { MementoScope } from '../MementoScope';
 
 describe('ConfigManager', () => {
   let tempDir: string;
+  let globalDir: string;
   let configManager: ConfigManager;
   const originalEnv = process.env;
+
+  // Test-friendly ConfigManager that uses custom paths
+  class TestConfigManager extends ConfigManager {
+    constructor(projectRoot: string, globalPath: string) {
+      super(projectRoot);
+      // Replace the MementoCore with one that uses our custom paths
+      (this as any).mementoCore = new TestMementoCore(projectRoot, globalPath);
+    }
+  }
+
+  class TestMementoCore extends MementoCore {
+    constructor(projectRoot: string, globalPath: string) {
+      super(projectRoot);
+      // Replace the global scope with our test path
+      (this as any).globalScope = new MementoScope(globalPath, true);
+    }
+  }
 
   beforeEach(() => {
     // Create temporary directory
     tempDir = path.join(os.tmpdir(), 'memento-config-test-' + Date.now());
+    globalDir = path.join(tempDir, 'global', '.memento');
     fs.mkdirSync(tempDir, { recursive: true });
     fs.mkdirSync(path.join(tempDir, '.memento'), { recursive: true });
+    fs.mkdirSync(globalDir, { recursive: true });
     
-    // Create ConfigManager with mocked path
-    configManager = new ConfigManager(tempDir);
-    // Override the global config path to use temp directory
-    (configManager as any).globalConfigPath = path.join(tempDir, '.memento', 'config.json');
+    // Create test ConfigManager
+    configManager = new TestConfigManager(tempDir, globalDir);
     
     // Reset environment
     process.env = { ...originalEnv };
@@ -44,10 +64,7 @@ describe('ConfigManager', () => {
     });
 
     it('should merge global and project configs', async () => {
-      // Create a separate global config directory
-      const globalDir = path.join(tempDir, 'global');
-      fs.mkdirSync(globalDir, { recursive: true });
-      fs.mkdirSync(path.join(globalDir, '.memento'), { recursive: true });
+      const yaml = require('js-yaml');
       
       // Create global config
       const globalConfig = {
@@ -57,8 +74,8 @@ describe('ConfigManager', () => {
         }
       };
       fs.writeFileSync(
-        path.join(globalDir, '.memento', 'config.json'),
-        JSON.stringify(globalConfig)
+        path.join(globalDir, 'config.yaml'),
+        yaml.dump(globalConfig)
       );
 
       // Create project config
@@ -69,12 +86,9 @@ describe('ConfigManager', () => {
         }
       };
       fs.writeFileSync(
-        path.join(tempDir, '.memento', 'config.json'),
-        JSON.stringify(projectConfig)
+        path.join(tempDir, '.memento', 'config.yaml'),
+        yaml.dump(projectConfig)
       );
-
-      // Override global path for this test
-      (configManager as any).globalConfigPath = path.join(globalDir, '.memento', 'config.json');
 
       const config = await configManager.load();
       
@@ -106,14 +120,14 @@ describe('ConfigManager', () => {
 
       await configManager.save(config);
       
-      const savedPath = path.join(tempDir, '.memento', 'config.json');
+      // Config is now saved as YAML
+      const savedPath = path.join(tempDir, '.memento', 'config.yaml');
       expect(fs.existsSync(savedPath)).toBe(true);
       
-      const savedConfig = JSON.parse(fs.readFileSync(savedPath, 'utf-8'));
-      expect(savedConfig).toEqual({
-        ...config,
-        version: '1.0.0'
-      });
+      // Load and verify the config was saved correctly
+      const loadedConfig = await configManager.load();
+      expect(loadedConfig.defaultMode).toBe('architect');
+      expect(loadedConfig.preferredWorkflows).toEqual(['refactor']);
     });
 
     it('should save config to global level', async () => {
@@ -125,8 +139,10 @@ describe('ConfigManager', () => {
 
       await configManager.save(config, true);
       
-      const savedPath = path.join(tempDir, '.memento', 'config.json');
-      expect(fs.existsSync(savedPath)).toBe(true);
+      // Global config is saved in the home directory, which for this test is mocked
+      // Let's verify it was saved by checking if we can read it back
+      const globalConfig = await configManager.list(true);
+      expect(globalConfig.ui?.colorOutput).toBe(false);
     });
 
     it('should validate config before saving', async () => {
@@ -203,14 +219,6 @@ describe('ConfigManager', () => {
 
   describe('list', () => {
     it('should list all configuration with hierarchy', async () => {
-      // Create a separate global config directory
-      const globalDir = path.join(tempDir, 'global');
-      fs.mkdirSync(globalDir, { recursive: true });
-      fs.mkdirSync(path.join(globalDir, '.memento'), { recursive: true });
-      
-      // Override global path for this test
-      (configManager as any).globalConfigPath = path.join(globalDir, '.memento', 'config.json');
-      
       // Set global config
       await configManager.save({ defaultMode: 'architect' }, true);
       
@@ -224,7 +232,9 @@ describe('ConfigManager', () => {
       expect(allConfig.ui?.verboseLogging).toBe(false);
 
       const globalOnly = await configManager.list(true);
-      expect(globalOnly).toEqual({ defaultMode: 'architect' });
+      expect(globalOnly).toEqual({
+        defaultMode: 'architect'
+      });
     });
   });
 

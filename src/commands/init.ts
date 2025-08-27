@@ -109,12 +109,13 @@ function parseNonInteractiveOptions(
 }
 
 export const initCommand = new Command("init")
-  .description("Initialize Memento Protocol in the current project")
+  .description("Initialize Memento Protocol in the current project or globally")
   .option("-f, --force", "Force initialization even if .memento already exists")
   .option(
     "-n, --non-interactive",
     "Non-interactive setup (no component installation)"
   )
+  .option("--global", "Initialize global ~/.memento configuration instead of project")
   .option("-g, --gitignore", "Add .memento/ to .gitignore (defaults to false)")
   .option("-m, --modes <modes>", "Comma-separated list of modes to install")
   .option(
@@ -127,6 +128,21 @@ export const initCommand = new Command("init")
   .option("-d, --default-mode <mode>", "Set default mode")
   .action(async (options, command: Command) => {
     try {
+      // Handle global initialization
+      if (options.global) {
+        const { initGlobalCommand } = await import("./init-global");
+        // Re-run with init-global command, preserving relevant options
+        const args = ["node", "memento"];
+        
+        if (options.force) args.push("--force");
+        if (options.nonInteractive) args.push("--no-interactive");
+        if (options.defaultMode) args.push("--default-mode", options.defaultMode);
+        if (options.allRecommended) args.push("--install-examples");
+        
+        await initGlobalCommand.parseAsync(args);
+        return;
+      }
+
       const projectRoot = process.cwd();
       const dirManager = new DirectoryManager(projectRoot);
       const hookManager = new HookManager(projectRoot);

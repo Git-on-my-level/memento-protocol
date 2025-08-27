@@ -1,4 +1,5 @@
 import { spawn } from 'child_process';
+import { HookExecutor } from './HookExecutor';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { HookConfig, HookContext, HookResult } from './types';
@@ -19,9 +20,11 @@ export class HookValidationError extends Error {
 
 export class HookValidator {
   private projectRoot: string;
+  private hookExecutor: HookExecutor;
 
   constructor(projectRoot: string) {
     this.projectRoot = projectRoot;
+    this.hookExecutor = new HookExecutor(projectRoot);
   }
 
   /**
@@ -279,74 +282,16 @@ export class HookValidator {
    * Execute a hook in dry-run mode for testing
    */
   private async executeHookDryRun(hook: HookConfig, context: HookContext): Promise<HookResult> {
-    return new Promise((resolve) => {
-      const env = {
-        ...process.env,
+    // Create a test version of the hook config with dry run environment
+    const testHookConfig: HookConfig = {
+      ...hook,
+      env: {
         ...hook.env,
-        HOOK_EVENT: context.event,
-        HOOK_PROJECT_ROOT: context.projectRoot,
-        HOOK_TIMESTAMP: context.timestamp.toString(),
         HOOK_DRY_RUN: 'true', // Indicate this is a dry run
-        ...(context.sessionId && { HOOK_SESSION_ID: context.sessionId }),
-        ...(context.tool && { HOOK_TOOL: context.tool })
-      };
+      },
+      timeout: Math.min(hook.timeout || 10000, 10000) // Shorter timeout for testing
+    };
 
-      const child = spawn(hook.command, hook.args || [], {
-        env,
-        cwd: context.projectRoot,
-        shell: true
-      });
-
-      let stdout = '';
-      let stderr = '';
-
-      // Send input if needed
-      if (context.prompt) {
-        child.stdin.write(context.prompt);
-        child.stdin.end();
-      }
-
-      child.stdout.on('data', (data) => {
-        stdout += data.toString();
-      });
-
-      child.stderr.on('data', (data) => {
-        stderr += data.toString();
-      });
-
-      // Handle timeout (shorter for testing)
-      const timeout = Math.min(hook.timeout || 10000, 10000);
-      const timer = setTimeout(() => {
-        child.kill();
-        resolve({
-          success: false,
-          error: 'Hook test timeout',
-          exitCode: -1
-        });
-      }, timeout);
-
-      child.on('close', (code) => {
-        clearTimeout(timer);
-        
-        const result: HookResult = {
-          success: code === 0,
-          output: stdout,
-          error: stderr,
-          exitCode: code || 0
-        };
-
-        // Handle blocking hooks (exit code 2)
-        if (code === 2) {
-          result.shouldBlock = true;
-        }
-
-        // For UserPromptSubmit hooks, check if prompt was modified
-        if (context.event === 'UserPromptSubmit' && stdout) {
-          result.modifiedPrompt = stdout;
-        }
-
-        resolve(result);
-      });
-    });
+    return await this.hookExecutor.executeHook(testHookConfig, context);
   }
 }

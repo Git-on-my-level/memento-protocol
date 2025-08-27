@@ -291,7 +291,7 @@ Tickets follow a lifecycle:
 
 ### Coming Soon (oh-my-memento)
 - **Starter Packs**: Like oh-my-zsh bundles (Frontend Pack, Backend Pack, DevOps Pack)
-- **.mementorc**: Global config file (like ~/.zshrc)
+- **~/.memento/config.yaml**: Global config file (unified structure with project config)
 - **Community Hub**: Share modes/workflows (like awesome-zsh-plugins)
 - **Plugin Manager**: Easy installation/updates (like zplug, zinit)
 - **Visual Configurator**: GUI setup (like zsh configuration tools)

@@ -1,10 +1,8 @@
 import { listCommand } from '../list';
-import { DirectoryManager } from '../../lib/directoryManager';
-import { ComponentInstaller } from '../../lib/componentInstaller';
+import { MementoCore } from '../../lib/MementoCore';
 import { logger } from '../../lib/logger';
 
-jest.mock('../../lib/directoryManager');
-jest.mock('../../lib/componentInstaller');
+jest.mock('../../lib/MementoCore');
 jest.mock('../../lib/logger', () => ({
   logger: {
     info: jest.fn(),
@@ -15,26 +13,20 @@ jest.mock('../../lib/logger', () => ({
 }));
 
 describe('List Command', () => {
-  let mockDirManager: jest.Mocked<DirectoryManager>;
-  let mockInstaller: jest.Mocked<ComponentInstaller>;
+  let mockCore: jest.Mocked<MementoCore>;
   let originalExit: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
     
-    mockDirManager = {
-      isInitialized: jest.fn().mockReturnValue(true),
-      validateStructure: jest.fn()
+    mockCore = {
+      getStatus: jest.fn(),
+      listComponentsWithSource: jest.fn(),
+      hasProjectScope: jest.fn().mockReturnValue(true),
+      hasGlobalScope: jest.fn().mockReturnValue(true)
     } as any;
 
-    mockInstaller = {
-      listInstalledComponents: jest.fn(),
-      listAvailableComponents: jest.fn(),
-      validateDependencies: jest.fn()
-    } as any;
-
-    (DirectoryManager as jest.MockedClass<typeof DirectoryManager>).mockImplementation(() => mockDirManager);
-    (ComponentInstaller as jest.MockedClass<typeof ComponentInstaller>).mockImplementation(() => mockInstaller);
+    (MementoCore as jest.MockedClass<typeof MementoCore>).mockImplementation(() => mockCore);
     
     originalExit = process.exit;
     process.exit = jest.fn() as any;
@@ -44,85 +36,168 @@ describe('List Command', () => {
     process.exit = originalExit;
   });
 
-  describe('list available components (default)', () => {
-    it('should list available components by default', async () => {
-      mockInstaller.listAvailableComponents.mockResolvedValue({
+  describe('list components (default)', () => {
+    it('should show status summary and components by default', async () => {
+      mockCore.getStatus.mockResolvedValue({
+        builtin: { available: true, path: '/templates', components: 15 },
+        global: { exists: true, path: '/global/.memento', components: 2, hasConfig: true },
+        project: { exists: true, path: '/project/.memento', components: 3, hasConfig: true },
+        totalComponents: 20,
+        uniqueComponents: 18
+      });
+      
+      mockCore.listComponentsWithSource.mockResolvedValue({
         modes: [
-          { name: 'architect', description: 'System design', tags: ['design'], dependencies: [] },
-          { name: 'engineer', description: 'Implementation', tags: ['code'], dependencies: [] }
+          { 
+            component: { name: 'architect', type: 'mode', path: '/templates/modes/architect.md', metadata: { description: 'System design' } },
+            source: 'builtin'
+          },
+          { 
+            component: { name: 'engineer', type: 'mode', path: '/project/.memento/modes/engineer.md', metadata: { description: 'Implementation' } },
+            source: 'project'
+          }
         ],
         workflows: [
-          { name: 'review', description: 'Code review', tags: ['quality'], dependencies: ['reviewer'] }
+          { 
+            component: { name: 'review', type: 'workflow', path: '/global/.memento/workflows/review.md', metadata: { description: 'Code review' } },
+            source: 'global'
+          }
         ],
-        agents: []
+        agents: [],
+        scripts: [],
+        hooks: [],
+        commands: [],
+        templates: []
       });
 
       await listCommand.parseAsync(['node', 'test']);
 
-      expect(logger.info).toHaveBeenCalledWith('Available components:');
+      expect(logger.info).toHaveBeenCalledWith('Memento Protocol Status:');
+      expect(logger.info).toHaveBeenCalledWith('Built-in:  ✓ 15 components');
       expect(logger.info).toHaveBeenCalledWith('Modes:');
-      expect(logger.info).toHaveBeenCalledWith('  - architect: System design');
-      expect(logger.info).toHaveBeenCalledWith('  - engineer: Implementation');
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('architect'));
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('engineer'));
       expect(logger.info).toHaveBeenCalledWith('Workflows:');
-      expect(logger.info).toHaveBeenCalledWith('  - review: Code review');
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('review'));
     });
   });
 
-  describe('list installed components', () => {
-    it('should list installed modes and workflows with --installed flag', async () => {
-      mockDirManager.isInitialized.mockReturnValue(true);
-      mockInstaller.listInstalledComponents.mockResolvedValue({
-        modes: ['architect', 'engineer'],
-        workflows: ['review', 'refactor'],
-        agents: []
+  describe('legacy --installed flag', () => {
+    it('should show all components with --installed flag (legacy behavior)', async () => {
+      mockCore.getStatus.mockResolvedValue({
+        builtin: { available: true, path: '/templates', components: 15 },
+        global: { exists: true, path: '/global/.memento', components: 2, hasConfig: true },
+        project: { exists: true, path: '/project/.memento', components: 3, hasConfig: true },
+        totalComponents: 20,
+        uniqueComponents: 18
+      });
+      
+      mockCore.listComponentsWithSource.mockResolvedValue({
+        modes: [
+          { 
+            component: { name: 'architect', type: 'mode', path: '/project/.memento/modes/architect.md', metadata: { description: 'System design' } },
+            source: 'project'
+          },
+          { 
+            component: { name: 'engineer', type: 'mode', path: '/global/.memento/modes/engineer.md', metadata: { description: 'Implementation' } },
+            source: 'global'
+          }
+        ],
+        workflows: [
+          { 
+            component: { name: 'review', type: 'workflow', path: '/project/.memento/workflows/review.md', metadata: { description: 'Code review' } },
+            source: 'project'
+          },
+          { 
+            component: { name: 'refactor', type: 'workflow', path: '/templates/workflows/refactor.md', metadata: { description: 'Refactoring assistant' } },
+            source: 'builtin'
+          }
+        ],
+        agents: [],
+        scripts: [],
+        hooks: [],
+        commands: [],
+        templates: []
       });
 
       await listCommand.parseAsync(['node', 'test', '--installed']);
 
-      expect(logger.info).toHaveBeenCalledWith('Installed components:');
+      expect(logger.info).toHaveBeenCalledWith('Memento Protocol Status:');
       expect(logger.info).toHaveBeenCalledWith('Modes:');
-      expect(logger.info).toHaveBeenCalledWith('  - architect');
-      expect(logger.info).toHaveBeenCalledWith('  - engineer');
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('architect'));
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('engineer'));
       expect(logger.info).toHaveBeenCalledWith('Workflows:');
-      expect(logger.info).toHaveBeenCalledWith('  - review');
-      expect(logger.info).toHaveBeenCalledWith('  - refactor');
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('review'));
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('refactor'));
     });
 
-    it('should handle no installed components', async () => {
-      mockDirManager.isInitialized.mockReturnValue(true);
-      mockInstaller.listInstalledComponents.mockResolvedValue({
+    it('should handle no components found', async () => {
+      mockCore.getStatus.mockResolvedValue({
+        builtin: { available: true, path: '/templates', components: 15 },
+        global: { exists: false, path: '/global/.memento', components: 0, hasConfig: false },
+        project: { exists: false, path: '/project/.memento', components: 0, hasConfig: false },
+        totalComponents: 15,
+        uniqueComponents: 15
+      });
+      
+      mockCore.listComponentsWithSource.mockResolvedValue({
         modes: [],
         workflows: [],
-        agents: []
+        agents: [],
+        scripts: [],
+        hooks: [],
+        commands: [],
+        templates: []
       });
 
       await listCommand.parseAsync(['node', 'test', '--installed']);
 
-      expect(logger.info).toHaveBeenCalledWith('No components installed yet.');
+      expect(logger.info).toHaveBeenCalledWith('No components found.');
       
       // Check that the help message contains essential parts without being brittle about exact wording
       const calls = (logger.info as jest.Mock).mock.calls;
-      const helpMessage = calls.find(call => call[0].includes('memento add') && call[0].includes('to get started'));
+      const helpMessage = calls.find(call => call[0].includes('To add components'));
       expect(helpMessage).toBeDefined();
-      expect(helpMessage[0]).toMatch(/memento add mode/);
-      expect(helpMessage[0]).toMatch(/memento add workflow/);
-      expect(helpMessage[0]).toMatch(/to get started/);
+      
+      // Check for the existence of add commands in multiple calls
+      const allCalls = calls.map(call => call[0]).join('\n');
+      expect(allCalls).toMatch(/memento add mode/);
+      expect(allCalls).toMatch(/memento add workflow/);
     });
 
-    it('should error when not initialized', async () => {
-      mockDirManager.isInitialized.mockReturnValue(false);
+    it('should work even without initialized scopes', async () => {
+      mockCore.hasProjectScope.mockReturnValue(false);
+      mockCore.hasGlobalScope.mockReturnValue(false);
+      
+      mockCore.getStatus.mockResolvedValue({
+        builtin: { available: true, path: '/templates', components: 15 },
+        global: { exists: false, path: '/global/.memento', components: 0, hasConfig: false },
+        project: { exists: false, path: '/project/.memento', components: 0, hasConfig: false },
+        totalComponents: 15,
+        uniqueComponents: 15
+      });
+      
+      mockCore.listComponentsWithSource.mockResolvedValue({
+        modes: [],
+        workflows: [],
+        agents: [],
+        scripts: [],
+        hooks: [],
+        commands: [],
+        templates: []
+      });
 
       await listCommand.parseAsync(['node', 'test', '--installed']);
 
-      expect(logger.error).toHaveBeenCalledWith('Memento Protocol is not initialized in this project.');
-      expect(logger.info).toHaveBeenCalledWith('Run "memento init" first.');
-      expect(process.exit).toHaveBeenCalledWith(1);
+      // Should not error, just show available builtin components
+      expect(logger.info).toHaveBeenCalledWith('Memento Protocol Status:');
+      expect(logger.info).toHaveBeenCalledWith('Built-in:  ✓ 15 components');
     });
   });
 
   describe('error handling', () => {
     it('should handle errors in listing', async () => {
-      mockInstaller.listAvailableComponents.mockRejectedValue(new Error('Read error'));
+      mockCore.getStatus.mockRejectedValue(new Error('Read error'));
 
       await listCommand.parseAsync(['node', 'test']);
 
