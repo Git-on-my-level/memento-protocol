@@ -1,37 +1,54 @@
 import { addCommand } from '../add';
-import { DirectoryManager } from '../../lib/directoryManager';
-import { ComponentInstaller } from '../../lib/componentInstaller';
+import { MementoCore } from '../../lib/MementoCore';
 import { logger } from '../../lib/logger';
+import inquirer from 'inquirer';
+import * as fs from 'fs';
 
-jest.mock('../../lib/directoryManager');
-jest.mock('../../lib/componentInstaller');
+jest.mock('../../lib/MementoCore');
 jest.mock('../../lib/logger', () => ({
   logger: {
     info: jest.fn(),
     success: jest.fn(),
     error: jest.fn(),
+    warn: jest.fn(),
   }
+}));
+jest.mock('inquirer', () => ({
+  prompt: jest.fn()
+}));
+jest.mock('fs', () => ({
+  existsSync: jest.fn(),
+  mkdirSync: jest.fn(),
+  readFileSync: jest.fn(),
+  writeFileSync: jest.fn()
 }));
 
 describe('Add Command', () => {
-  let mockDirManager: jest.Mocked<DirectoryManager>;
-  let mockInstaller: jest.Mocked<ComponentInstaller>;
+  let mockCore: jest.Mocked<MementoCore>;
   let originalExit: any;
+  let mockInquirer: jest.Mocked<typeof inquirer>;
+  let mockFs: jest.Mocked<typeof fs>;
 
   beforeEach(() => {
     jest.clearAllMocks();
     
-    mockDirManager = {
-      isInitialized: jest.fn().mockReturnValue(true)
+    mockCore = {
+      findComponents: jest.fn(),
+      getComponentsByTypeWithSource: jest.fn(),
+      getComponentConflicts: jest.fn(),
+      getScopes: jest.fn(),
+      clearCache: jest.fn(),
+      generateSuggestions: jest.fn()
     } as any;
 
-    mockInstaller = {
-      installComponent: jest.fn(),
-      interactiveInstall: jest.fn()
-    } as any;
+    mockInquirer = inquirer as jest.Mocked<typeof inquirer>;
+    mockFs = fs as jest.Mocked<typeof fs>;
+    
+    // Mock fs methods
+    (mockFs.existsSync as jest.Mock).mockReturnValue(true);
+    (mockFs.readFileSync as jest.Mock).mockReturnValue('# Component content');
 
-    (DirectoryManager as jest.MockedClass<typeof DirectoryManager>).mockImplementation(() => mockDirManager);
-    (ComponentInstaller as jest.MockedClass<typeof ComponentInstaller>).mockImplementation(() => mockInstaller);
+    (MementoCore as jest.MockedClass<typeof MementoCore>).mockImplementation(() => mockCore);
     
     originalExit = process.exit;
     process.exit = jest.fn() as any;
@@ -42,57 +59,259 @@ describe('Add Command', () => {
   });
 
   describe('add mode', () => {
-    it('should install a specific mode', async () => {
+    it('should install a specific mode when exact match found', async () => {
+      const mockComponent = {
+        component: {
+          name: 'architect',
+          type: 'mode' as const,
+          path: '/templates/modes/architect.md',
+          metadata: { description: 'System design mode' }
+        },
+        source: 'builtin' as const,
+        name: 'architect',
+        score: 100,
+        matchType: 'exact' as const
+      };
+      
+      mockCore.findComponents.mockResolvedValue([mockComponent]);
+      mockCore.getComponentConflicts.mockResolvedValue([]);
+      mockCore.getScopes.mockReturnValue({
+        project: { getPath: () => '/project/.memento' } as any,
+        global: { getPath: () => '/global/.memento' } as any
+      });
+
       await addCommand.parseAsync(['node', 'test', 'mode', 'architect']);
 
-      expect(mockInstaller.installComponent).toHaveBeenCalledWith('mode', 'architect');
+      expect(mockCore.findComponents).toHaveBeenCalledWith('architect', 'mode', {
+        maxResults: 5,
+        minScore: 30
+      });
+      expect(logger.success).toHaveBeenCalledWith("Successfully installed mode 'architect' to project scope.");
     });
 
     it('should start interactive mode selection when no name provided', async () => {
+      const mockComponents = [
+        {
+          component: {
+            name: 'architect',
+            type: 'mode' as const,
+            path: '/templates/modes/architect.md',
+            metadata: { description: 'System design mode' }
+          },
+          source: 'builtin' as const
+        },
+        {
+          component: {
+            name: 'engineer',
+            type: 'mode' as const,
+            path: '/templates/modes/engineer.md',
+            metadata: { description: 'Implementation mode' }
+          },
+          source: 'builtin' as const
+        }
+      ];
+      
+      mockCore.getComponentsByTypeWithSource.mockResolvedValue(mockComponents);
+      mockInquirer.prompt.mockResolvedValue({
+        selected: {
+          component: mockComponents[0].component,
+          source: mockComponents[0].source
+        }
+      });
+      mockCore.getComponentConflicts.mockResolvedValue([]);
+      mockCore.getScopes.mockReturnValue({
+        project: { getPath: () => '/project/.memento' } as any,
+        global: { getPath: () => '/global/.memento' } as any
+      });
+
       await addCommand.parseAsync(['node', 'test', 'mode']);
 
-      expect(mockInstaller.interactiveInstall).toHaveBeenCalledWith('mode');
+      expect(mockCore.getComponentsByTypeWithSource).toHaveBeenCalledWith('mode');
+      expect(mockInquirer.prompt).toHaveBeenCalled();
     });
 
-    it('should handle installation errors', async () => {
-      mockInstaller.installComponent.mockRejectedValue(new Error('Component not found'));
+    it('should handle no matches found', async () => {
+      mockCore.findComponents.mockResolvedValue([]);
+      mockCore.generateSuggestions.mockResolvedValue(['architect', 'engineer']);
 
       await addCommand.parseAsync(['node', 'test', 'mode', 'invalid']);
 
-      expect(logger.error).toHaveBeenCalledWith('Failed to add component:', expect.any(Error));
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(mockCore.findComponents).toHaveBeenCalledWith('invalid', 'mode', {
+        maxResults: 5,
+        minScore: 30
+      });
+      expect(logger.error).toHaveBeenCalledWith("Mode 'invalid' not found.");
+      expect(logger.info).toHaveBeenCalledWith('Did you mean one of these?');
     });
   });
 
   describe('add workflow', () => {
-    it('should install a specific workflow', async () => {
+    it('should install a specific workflow when exact match found', async () => {
+      const mockComponent = {
+        component: {
+          name: 'review',
+          type: 'workflow' as const,
+          path: '/templates/workflows/review.md',
+          metadata: { description: 'Code review workflow' }
+        },
+        source: 'builtin' as const,
+        name: 'review',
+        score: 100,
+        matchType: 'exact' as const
+      };
+      
+      mockCore.findComponents.mockResolvedValue([mockComponent]);
+      mockCore.getComponentConflicts.mockResolvedValue([]);
+      mockCore.getScopes.mockReturnValue({
+        project: { getPath: () => '/project/.memento' } as any,
+        global: { getPath: () => '/global/.memento' } as any
+      });
+
       await addCommand.parseAsync(['node', 'test', 'workflow', 'review']);
 
-      expect(mockInstaller.installComponent).toHaveBeenCalledWith('workflow', 'review');
+      expect(mockCore.findComponents).toHaveBeenCalledWith('review', 'workflow', {
+        maxResults: 5,
+        minScore: 30
+      });
+      expect(logger.success).toHaveBeenCalledWith("Successfully installed workflow 'review' to project scope.");
     });
 
     it('should start interactive workflow selection when no name provided', async () => {
+      const mockComponents = [
+        {
+          component: {
+            name: 'review',
+            type: 'workflow' as const,
+            path: '/templates/workflows/review.md',
+            metadata: { description: 'Code review workflow' }
+          },
+          source: 'builtin' as const
+        }
+      ];
+      
+      mockCore.getComponentsByTypeWithSource.mockResolvedValue(mockComponents);
+      mockInquirer.prompt.mockResolvedValue({
+        selected: {
+          component: mockComponents[0].component,
+          source: mockComponents[0].source
+        }
+      });
+      mockCore.getComponentConflicts.mockResolvedValue([]);
+      mockCore.getScopes.mockReturnValue({
+        project: { getPath: () => '/project/.memento' } as any,
+        global: { getPath: () => '/global/.memento' } as any
+      });
+
       await addCommand.parseAsync(['node', 'test', 'workflow']);
 
-      expect(mockInstaller.interactiveInstall).toHaveBeenCalledWith('workflow');
+      expect(mockCore.getComponentsByTypeWithSource).toHaveBeenCalledWith('workflow');
+      expect(mockInquirer.prompt).toHaveBeenCalled();
     });
   });
 
   describe('validation', () => {
-    it('should error when not initialized', async () => {
-      mockDirManager.isInitialized.mockReturnValue(false);
+    it('should handle installation errors', async () => {
+      mockCore.findComponents.mockRejectedValue(new Error('Unexpected error'));
 
       await addCommand.parseAsync(['node', 'test', 'mode', 'architect']);
 
-      expect(logger.error).toHaveBeenCalledWith('Memento Protocol is not initialized in this project.');
-      expect(logger.info).toHaveBeenCalledWith('Run "memento init" first.');
+      expect(logger.error).toHaveBeenCalledWith('Failed to add component:', expect.any(Error));
       expect(process.exit).toHaveBeenCalledWith(1);
     });
 
     it('should handle invalid component type', async () => {
       await addCommand.parseAsync(['node', 'test', 'invalid']);
 
-      expect(process.exit).toHaveBeenCalled();
+      expect(logger.error).toHaveBeenCalledWith('Invalid component type: invalid');
+      expect(process.exit).toHaveBeenCalledWith(1);
+    });
+    
+    it('should handle multiple matches with user selection', async () => {
+      const mockComponents = [
+        {
+          component: {
+            name: 'architect',
+            type: 'mode' as const,
+            path: '/templates/modes/architect.md',
+            metadata: { description: 'System design mode' }
+          },
+          source: 'builtin' as const,
+          name: 'architect',
+          score: 90,
+          matchType: 'substring' as const
+        },
+        {
+          component: {
+            name: 'architect-pro',
+            type: 'mode' as const,
+            path: '/global/.memento/modes/architect-pro.md',
+            metadata: { description: 'Advanced system design mode' }
+          },
+          source: 'global' as const,
+          name: 'architect-pro',
+          score: 80,
+          matchType: 'substring' as const
+        }
+      ];
+      
+      mockCore.findComponents.mockResolvedValue(mockComponents);
+      mockInquirer.prompt.mockResolvedValue({
+        selected: mockComponents[0]
+      });
+      mockCore.getComponentConflicts.mockResolvedValue([]);
+      mockCore.getScopes.mockReturnValue({
+        project: { getPath: () => '/project/.memento' } as any,
+        global: { getPath: () => '/global/.memento' } as any
+      });
+
+      await addCommand.parseAsync(['node', 'test', 'mode', 'arch']);
+
+      expect(mockCore.findComponents).toHaveBeenCalledWith('arch', 'mode', {
+        maxResults: 5,
+        minScore: 30
+      });
+      expect(mockInquirer.prompt).toHaveBeenCalled();
+      expect(logger.success).toHaveBeenCalledWith("Successfully installed mode 'architect' to project scope.");
+    });
+  });
+  
+  describe('conflict handling', () => {
+    it('should handle component conflicts with confirmation', async () => {
+      const mockComponent = {
+        component: {
+          name: 'architect',
+          type: 'mode' as const,
+          path: '/templates/modes/architect.md',
+          metadata: { description: 'System design mode' }
+        },
+        source: 'builtin' as const,
+        name: 'architect',
+        score: 100,
+        matchType: 'exact' as const
+      };
+      
+      mockCore.findComponents.mockResolvedValue([mockComponent]);
+      mockCore.getComponentConflicts.mockResolvedValue([
+        { source: 'project', component: mockComponent.component }
+      ]);
+      mockInquirer.prompt.mockResolvedValue({ shouldOverwrite: true });
+      mockCore.getScopes.mockReturnValue({
+        project: { getPath: () => '/project/.memento' } as any,
+        global: { getPath: () => '/global/.memento' } as any
+      });
+
+      await addCommand.parseAsync(['node', 'test', 'mode', 'architect']);
+
+      expect(logger.warn).toHaveBeenCalledWith("Mode 'architect' already exists in project scope.");
+      expect(mockInquirer.prompt).toHaveBeenCalledWith([
+        {
+          type: 'confirm',
+          name: 'shouldOverwrite',
+          message: 'Do you want to overwrite it?',
+          default: false
+        }
+      ]);
+      expect(logger.success).toHaveBeenCalledWith("Successfully installed mode 'architect' to project scope.");
     });
   });
 });

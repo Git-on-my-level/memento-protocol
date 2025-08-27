@@ -1,5 +1,6 @@
 import { Hook } from './Hook';
-import { HookContext } from './types';
+import { HookContext, HookResult } from './types';
+import { HookExecutor } from './HookExecutor';
 
 export class SessionStartHook extends Hook {
   shouldRun(_context: HookContext): boolean {
@@ -7,9 +8,19 @@ export class SessionStartHook extends Hook {
     return true;
   }
 
-  protected async runCommand(context: HookContext): Promise<any> {
+  async execute(context: HookContext): Promise<HookResult> {
+    if (!this.shouldRun(context)) {
+      return { success: true };
+    }
+
     // SessionStart hooks don't receive prompt input
     const modifiedContext = { ...context, prompt: undefined };
-    return super.runCommand(modifiedContext);
+
+    // Update hook executor if project root changed
+    if (context.projectRoot !== this.hookExecutor.getScriptExecutor()['projectRoot']) {
+      this.hookExecutor = new HookExecutor(context.projectRoot);
+    }
+
+    return await this.hookExecutor.executeHook(this.config, modifiedContext);
   }
 }

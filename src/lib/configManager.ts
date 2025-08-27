@@ -5,6 +5,8 @@ import { logger } from './logger';
 import { ConfigMigrator } from './ConfigMigrator';
 import { ConfigSchemaRegistry, VersionedMementoConfig } from './configSchema';
 import { ValidationError, ConfigurationError } from './errors';
+import { MementoCore } from './MementoCore';
+import { MementoScopeConfig } from './MementoScope';
 
 export interface MementoConfig {
   // Project-level settings
@@ -38,55 +40,39 @@ export class ConfigManager {
   private projectConfigPath: string;
   private migrator: ConfigMigrator;
   private schemaRegistry: ConfigSchemaRegistry;
+  private mementoCore: MementoCore;
 
   constructor(projectRoot: string) {
+    // Keep old paths for backward compatibility with JSON migration
     this.globalConfigPath = path.join(os.homedir(), '.memento', 'config.json');
     this.projectConfigPath = path.join(projectRoot, '.memento', 'config.json');
     this.migrator = new ConfigMigrator();
     this.schemaRegistry = ConfigSchemaRegistry.getInstance();
+    this.mementoCore = new MementoCore(projectRoot);
   }
 
   /**
    * Load configuration with hierarchy: defaults -> global -> project -> env
    */
   async load(): Promise<MementoConfig> {
-    const defaultConfig: VersionedMementoConfig = {
-      version: ConfigMigrator.getCurrentVersion(),
-      ui: {
-        colorOutput: true,
-        verboseLogging: false
-      }
-    };
+    // First, migrate any existing JSON configs to YAML
+    await this.migrateExistingConfigs();
 
-    // Merge global config if exists
-    const globalConfig = await this.loadConfigFile(this.globalConfigPath);
-    const mergedConfig = this.mergeConfigs(defaultConfig, globalConfig);
-
-    // Merge project config if exists
-    const projectConfig = await this.loadConfigFile(this.projectConfigPath);
-    const finalConfig = this.mergeConfigs(mergedConfig, projectConfig);
-
-    // Apply environment variable overrides
-    const result = this.applyEnvironmentOverrides(finalConfig);
-
-    // Strip version from result for backward compatibility
-    const { version, ...configWithoutVersion } = result;
-    return configWithoutVersion;
+    // Now use MementoCore for clean YAML-based configuration
+    const config = await this.mementoCore.getConfig();
+    
+    // Convert MementoScopeConfig to MementoConfig (they're compatible)
+    return config as MementoConfig;
   }
 
   /**
    * Save configuration to project or global level
    */
   async save(config: MementoConfig, global: boolean = false): Promise<void> {
-    const configPath = global ? this.globalConfigPath : this.projectConfigPath;
-    const configDir = path.dirname(configPath);
+    // First, migrate any existing JSON configs to YAML
+    await this.migrateExistingConfigs();
 
-    // Ensure directory exists
-    if (!fs.existsSync(configDir)) {
-      fs.mkdirSync(configDir, { recursive: true });
-    }
-
-    // Add version to config before validation and saving
+    // Add version for validation (backward compatibility)
     const versionedConfig: VersionedMementoConfig = {
       version: ConfigMigrator.getCurrentVersion(),
       ...config
@@ -95,49 +81,30 @@ export class ConfigManager {
     // Validate config before saving using schema validator
     this.validateConfig(versionedConfig);
 
-    // Write config file
-    fs.writeFileSync(configPath, JSON.stringify(versionedConfig, null, 2));
-    logger.success(`Configuration saved to ${configPath}`);
+    // Save using MementoCore (as YAML)
+    const { version, ...configWithoutVersion } = versionedConfig;
+    await this.mementoCore.saveConfig(configWithoutVersion as MementoScopeConfig, global);
   }
 
   /**
    * Get a specific configuration value
    */
   async get(key: string): Promise<any> {
-    const config = await this.load();
-    return this.getNestedValue(config, key);
+    return await this.mementoCore.getConfigValue(key);
   }
 
   /**
    * Set a specific configuration value
    */
   async set(key: string, value: any, global: boolean = false): Promise<void> {
-    const configPath = global ? this.globalConfigPath : this.projectConfigPath;
-    const versionedConfig = await this.loadConfigFile(configPath) || {};
-    
-    // Strip version for manipulation, then re-add it in save()
-    const { version, ...config } = versionedConfig as VersionedMementoConfig;
-    
-    this.setNestedValue(config, key, value);
-    await this.save(config, global);
+    await this.mementoCore.setConfigValue(key, value, global);
   }
 
   /**
    * Remove a configuration key
    */
   async unset(key: string, global: boolean = false): Promise<void> {
-    const configPath = global ? this.globalConfigPath : this.projectConfigPath;
-    const versionedConfig = await this.loadConfigFile(configPath);
-    
-    if (!versionedConfig) {
-      return;
-    }
-
-    // Strip version for manipulation, then re-add it in save()
-    const { version, ...config } = versionedConfig as VersionedMementoConfig;
-    
-    this.unsetNestedValue(config, key);
-    await this.save(config, global);
+    await this.mementoCore.unsetConfigValue(key, global);
   }
 
   /**
@@ -145,9 +112,9 @@ export class ConfigManager {
    */
   async list(global: boolean = false): Promise<MementoConfig> {
     if (global) {
-      const versionedConfig = await this.loadConfigFile(this.globalConfigPath) || {};
-      const { version, ...config } = versionedConfig as VersionedMementoConfig;
-      return config;
+      const scopes = this.mementoCore.getScopes();
+      const globalConfig = await scopes.global.getConfig();
+      return (globalConfig || {}) as MementoConfig;
     }
     return await this.load();
   }
@@ -235,96 +202,6 @@ export class ConfigManager {
     }
   }
 
-  /**
-   * Merge two configurations, with right taking precedence
-   */
-  private mergeConfigs(left: VersionedMementoConfig, right: VersionedMementoConfig | null): VersionedMementoConfig {
-    if (!right) return left;
-
-    return {
-      ...left,
-      ...right,
-      // Always use the latest version
-      version: right.version || left.version || ConfigMigrator.getCurrentVersion(),
-      ui: {
-        ...left.ui,
-        ...right.ui
-      },
-      integrations: {
-        ...left.integrations,
-        ...right.integrations
-      },
-      components: {
-        ...left.components,
-        ...right.components
-      }
-    };
-  }
-
-  /**
-   * Apply environment variable overrides
-   */
-  private applyEnvironmentOverrides(config: VersionedMementoConfig): VersionedMementoConfig {
-    // MEMENTO_DEFAULT_MODE
-    if (process.env.MEMENTO_DEFAULT_MODE) {
-      config.defaultMode = process.env.MEMENTO_DEFAULT_MODE;
-    }
-
-    // MEMENTO_COLOR_OUTPUT
-    if (process.env.MEMENTO_COLOR_OUTPUT !== undefined) {
-      config.ui = config.ui || {};
-      config.ui.colorOutput = process.env.MEMENTO_COLOR_OUTPUT === 'true';
-    }
-
-    // MEMENTO_VERBOSE
-    if (process.env.MEMENTO_VERBOSE !== undefined) {
-      config.ui = config.ui || {};
-      config.ui.verboseLogging = process.env.MEMENTO_VERBOSE === 'true';
-    }
-
-    return config;
-  }
-
-  /**
-   * Get nested value from object using dot notation
-   */
-  private getNestedValue(obj: any, key: string): any {
-    return key.split('.').reduce((current, part) => current?.[part], obj);
-  }
-
-  /**
-   * Set nested value in object using dot notation
-   */
-  private setNestedValue(obj: any, key: string, value: any): void {
-    const parts = key.split('.');
-    const last = parts.pop()!;
-    
-    let current = obj;
-    for (const part of parts) {
-      if (!(part in current) || typeof current[part] !== 'object') {
-        current[part] = {};
-      }
-      current = current[part];
-    }
-    
-    current[last] = value;
-  }
-
-  /**
-   * Unset nested value in object using dot notation
-   */
-  private unsetNestedValue(obj: any, key: string): void {
-    const parts = key.split('.');
-    const last = parts.pop()!;
-    
-    let current = obj;
-    for (const part of parts) {
-      if (!(part in current)) return;
-      current = current[part];
-    }
-    
-    delete current[last];
-  }
 
   /**
    * Check if a configuration file exists and needs migration
@@ -452,9 +329,10 @@ export class ConfigManager {
    * Get configuration file paths
    */
   getConfigPaths(): { global: string; project: string } {
+    const scopePaths = this.mementoCore.getScopePaths();
     return {
-      global: this.globalConfigPath,
-      project: this.projectConfigPath
+      global: path.join(scopePaths.global, 'config.yaml'),
+      project: path.join(scopePaths.project, 'config.yaml')
     };
   }
 
@@ -464,5 +342,49 @@ export class ConfigManager {
   async cleanupBackups(global: boolean = false, keepCount: number = 5): Promise<void> {
     const configPath = global ? this.globalConfigPath : this.projectConfigPath;
     await this.migrator.cleanupBackups(configPath, keepCount);
+  }
+
+  /**
+   * Migrate existing JSON configurations to YAML format
+   * This is called automatically during load/save operations
+   */
+  private async migrateExistingConfigs(): Promise<void> {
+    await this.migrateJsonToYaml(this.globalConfigPath, true);
+    await this.migrateJsonToYaml(this.projectConfigPath, false);
+  }
+
+  /**
+   * Migrate a single JSON config file to YAML
+   */
+  private async migrateJsonToYaml(jsonPath: string, isGlobal: boolean): Promise<void> {
+    if (!fs.existsSync(jsonPath)) {
+      return; // No JSON file to migrate
+    }
+
+    try {
+      // Load the JSON config
+      const jsonConfig = await this.loadConfigFile(jsonPath);
+      if (!jsonConfig) {
+        return;
+      }
+
+      // Remove version for YAML storage
+      const { version, ...configWithoutVersion } = jsonConfig as VersionedMementoConfig;
+      
+      // Save to YAML using MementoCore
+      await this.mementoCore.saveConfig(configWithoutVersion as MementoScopeConfig, isGlobal);
+      
+      // Create backup of JSON file before removing
+      const backupPath = `${jsonPath}.backup-${Date.now()}`;
+      fs.copyFileSync(jsonPath, backupPath);
+      fs.unlinkSync(jsonPath);
+      
+      const scopeType = isGlobal ? 'global' : 'project';
+      logger.info(`Migrated ${scopeType} configuration from JSON to YAML (backup: ${backupPath})`);
+      
+    } catch (error: any) {
+      const scopeType = isGlobal ? 'global' : 'project';
+      logger.warn(`Failed to migrate ${scopeType} configuration from JSON to YAML: ${error.message}`);
+    }
   }
 }
