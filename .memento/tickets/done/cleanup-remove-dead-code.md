@@ -6,11 +6,11 @@
 Remove unused code that adds unnecessary complexity and maintenance burden.
 
 ## Tasks
-- [ ] Delete unused error classes in `src/lib/errors.ts`:
-  - `ComponentError` (0 usages)
-  - `NetworkError` (0 usages)
-- [ ] Run tests to ensure nothing breaks
-- [ ] Verify no imports are affected
+- [x] Delete unused error classes in `src/lib/errors.ts`:
+  - `ComponentError` (0 usages) ✅
+  - `NetworkError` (0 usages) ✅
+- [x] Run tests to ensure nothing breaks ✅
+- [x] Verify no imports are affected ✅
 
 ## Impact
 - **Code reduction**: ~20 lines
