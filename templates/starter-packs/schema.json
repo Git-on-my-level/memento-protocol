@@ -1,0 +1,224 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Memento Protocol Starter Pack",
+  "description": "Definition schema for Memento Protocol starter packs - curated bundles of modes, workflows, and agents",
+  "type": "object",
+  "required": [
+    "name",
+    "version",
+    "description",
+    "author",
+    "components"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Unique identifier for the starter pack",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "minLength": 2,
+      "maxLength": 50
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of the starter pack",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9-]+)?$"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of what this pack provides",
+      "minLength": 10,
+      "maxLength": 200
+    },
+    "author": {
+      "type": "string",
+      "description": "Author or organization that created this pack",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "tags": {
+      "type": "array",
+      "description": "Tags for categorizing and discovering packs",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$"
+      },
+      "uniqueItems": true,
+      "maxItems": 10
+    },
+    "category": {
+      "type": "string",
+      "description": "Primary category for the pack",
+      "enum": [
+        "frontend",
+        "backend",
+        "fullstack",
+        "devops",
+        "mobile",
+        "ai-ml",
+        "data",
+        "general"
+      ]
+    },
+    "mementoProtocolVersion": {
+      "type": "string",
+      "description": "Minimum required Memento Protocol version",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "components": {
+      "type": "object",
+      "description": "Components included in this starter pack",
+      "properties": {
+        "modes": {
+          "type": "array",
+          "description": "Modes to install with this pack",
+          "items": {
+            "$ref": "#/definitions/component"
+          }
+        },
+        "workflows": {
+          "type": "array",
+          "description": "Workflows to install with this pack",
+          "items": {
+            "$ref": "#/definitions/component"
+          }
+        },
+        "agents": {
+          "type": "array",
+          "description": "Agents to install with this pack",
+          "items": {
+            "$ref": "#/definitions/component"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "configuration": {
+      "type": "object",
+      "description": "Default configuration settings for the pack",
+      "properties": {
+        "defaultMode": {
+          "type": "string",
+          "description": "Default mode to activate after installation"
+        },
+        "customCommands": {
+          "type": "object",
+          "description": "Custom Claude Code commands to generate",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "description": {
+                "type": "string"
+              },
+              "template": {
+                "type": "string"
+              }
+            },
+            "required": ["description", "template"]
+          }
+        },
+        "projectSettings": {
+          "type": "object",
+          "description": "Project-specific settings to configure",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "hooks": {
+      "type": "array",
+      "description": "Hook configurations to set up",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Hook name"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether to enable this hook by default"
+          },
+          "config": {
+            "type": "object",
+            "description": "Hook-specific configuration",
+            "additionalProperties": true
+          }
+        },
+        "required": ["name", "enabled"]
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "description": "Other starter packs this pack depends on",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$"
+      },
+      "uniqueItems": true
+    },
+    "compatibleWith": {
+      "type": "array",
+      "description": "Project types this pack is compatible with",
+      "items": {
+        "type": "string",
+        "enum": [
+          "javascript",
+          "typescript",
+          "react",
+          "vue",
+          "angular",
+          "node",
+          "python",
+          "java",
+          "go",
+          "rust",
+          "php",
+          "ruby",
+          "generic"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "postInstall": {
+      "type": "object",
+      "description": "Actions to take after installation",
+      "properties": {
+        "message": {
+          "type": "string",
+          "description": "Message to display after installation"
+        },
+        "commands": {
+          "type": "array",
+          "description": "Commands to run after installation",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "definitions": {
+    "component": {
+      "type": "object",
+      "description": "A component (mode, workflow, or agent) to install",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Component name"
+        },
+        "required": {
+          "type": "boolean",
+          "description": "Whether this component is required",
+          "default": true
+        },
+        "customConfig": {
+          "type": "object",
+          "description": "Component-specific configuration overrides",
+          "additionalProperties": true
+        }
+      },
+      "required": ["name"]
+    }
+  }
+}

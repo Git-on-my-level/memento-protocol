@@ -6,6 +6,7 @@ import { HookManager } from "../lib/hooks/HookManager";
 import { CommandGenerator } from "../lib/commandGenerator";
 import { ProjectDetector } from "../lib/projectDetector";
 import { InteractiveSetup } from "../lib/interactiveSetup";
+import { StarterPackManager } from "../lib/StarterPackManager";
 import { logger } from "../lib/logger";
 
 interface NonInteractiveOptions {
@@ -126,6 +127,7 @@ export const initCommand = new Command("init")
   .option("-a, --all-recommended", "Install all recommended components")
   .option("-c, --config <path>", "Path to configuration file")
   .option("-d, --default-mode <mode>", "Set default mode")
+  .option("-s, --starter-pack [pack]", "Install a starter pack (interactive selection if no pack specified)")
   .action(async (options, command: Command) => {
     try {
       // Handle global initialization
@@ -148,6 +150,7 @@ export const initCommand = new Command("init")
       const hookManager = new HookManager(projectRoot);
       const commandGenerator = new CommandGenerator(projectRoot);
       const projectDetector = new ProjectDetector(projectRoot);
+      const starterPackManager = new StarterPackManager(projectRoot);
 
       // Check if already initialized
       if (dirManager.isInitialized() && !options.force) {
@@ -169,13 +172,31 @@ export const initCommand = new Command("init")
         }`
       );
 
-      // Run setup flow
-      const interactiveSetup = new InteractiveSetup(projectRoot);
-      let setupOptions;
-
       // Check for CI environment or explicit non-interactive mode
       const isNonInteractive =
         options.nonInteractive || process.env.CI === "true";
+
+      // Handle starter pack installation first if requested
+      let packResult = null;
+      if (options.starterPack !== undefined) {
+        packResult = await handleStarterPackInstallation(
+          starterPackManager,
+          options.starterPack,
+          isNonInteractive,
+          options.force
+        );
+        
+        // If pack installation failed, stop here
+        if (!packResult.success) {
+          logger.error("Starter pack installation failed:");
+          packResult.errors.forEach(error => logger.error(`  ${error}`));
+          process.exit(1);
+        }
+      }
+
+      // Run setup flow
+      const interactiveSetup = new InteractiveSetup(projectRoot);
+      let setupOptions;
 
       if (isNonInteractive) {
         // Non-interactive setup with customization options
@@ -192,13 +213,21 @@ export const initCommand = new Command("init")
             (nonInteractiveOpts.workflows &&
               nonInteractiveOpts.workflows.length > 0) ||
             (nonInteractiveOpts.hooks && nonInteractiveOpts.hooks.length > 0) ||
-            nonInteractiveOpts.defaultMode
+            nonInteractiveOpts.defaultMode ||
+            packResult  // If we installed a pack, consider that as explicit selection
         );
 
         if (hasExplicitSelections) {
           selectedModes = nonInteractiveOpts.modes || [];
           selectedWorkflows = nonInteractiveOpts.workflows || [];
           selectedHooks = nonInteractiveOpts.hooks || [];
+          
+          // Add components from starter pack if we have one
+          if (packResult) {
+            selectedModes.push(...packResult.installed.modes.filter(mode => !selectedModes.includes(mode)));
+            selectedWorkflows.push(...packResult.installed.workflows.filter(workflow => !selectedWorkflows.includes(workflow)));
+            // Note: agents are handled differently - they're installed directly by the pack
+          }
         } else if (options.allRecommended) {
           selectedModes = projectInfo.suggestedModes;
           selectedWorkflows = projectInfo.suggestedWorkflows;
@@ -213,7 +242,7 @@ export const initCommand = new Command("init")
           selectedWorkflows,
           selectedHooks,
           selectedLanguages: [],
-          defaultMode: nonInteractiveOpts.defaultMode,
+          defaultMode: nonInteractiveOpts.defaultMode || packResult?.defaultMode,
           addToGitignore: nonInteractiveOpts.addToGitignore || false,
         };
       } else {
@@ -268,6 +297,11 @@ export const initCommand = new Command("init")
           `  - Installed hooks: ${setupOptions.selectedHooks.join(", ")}`
         );
       }
+      if (packResult?.postInstallMessage) {
+        logger.space();
+        logger.info("Starter Pack Information:");
+        logger.info(packResult.postInstallMessage);
+      }
       logger.space();
       logger.info('Run "memento --help" to see all available commands.');
       logger.info('Run "memento hook list" to see installed hooks.');
@@ -276,3 +310,79 @@ export const initCommand = new Command("init")
       process.exit(1);
     }
   });
+
+/**
+ * Handle starter pack installation based on options
+ */
+async function handleStarterPackInstallation(
+  starterPackManager: StarterPackManager,
+  packName: string | boolean,
+  isNonInteractive: boolean,
+  force?: boolean
+): Promise<{
+  success: boolean;
+  installed: { modes: string[]; workflows: string[]; agents: string[] };
+  skipped: { modes: string[]; workflows: string[]; agents: string[] };
+  errors: string[];
+  postInstallMessage?: string;
+  defaultMode?: string;
+}> {
+  // If --starter-pack was provided without a value, show interactive selection
+  if (packName === true && !isNonInteractive) {
+    const availablePacks = await starterPackManager.listPacks();
+    
+    if (availablePacks.length === 0) {
+      logger.warn("No starter packs available.");
+      return { success: true, installed: { modes: [], workflows: [], agents: [] }, skipped: { modes: [], workflows: [], agents: [] }, errors: [] };
+    }
+
+    const inquirer = (await import('inquirer')).default;
+    const { selectedPack } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'selectedPack',
+        message: 'Select a starter pack to install:',
+        choices: [
+          { name: 'Skip starter pack installation', value: null },
+          ...availablePacks.map(pack => ({
+            name: `${pack.name} - ${pack.description}`,
+            value: pack.name
+          }))
+        ]
+      }
+    ]);
+
+    if (!selectedPack) {
+      return { success: true, installed: { modes: [], workflows: [], agents: [] }, skipped: { modes: [], workflows: [], agents: [] }, errors: [] };
+    }
+    
+    packName = selectedPack;
+  } else if (packName === true) {
+    // Non-interactive mode but no pack name provided
+    logger.warn("--starter-pack requires a pack name in non-interactive mode");
+    return { success: false, installed: { modes: [], workflows: [], agents: [] }, skipped: { modes: [], workflows: [], agents: [] }, errors: ["Pack name required"] };
+  }
+
+  if (typeof packName === 'string') {
+    logger.info(`Installing starter pack: ${packName}`);
+    const pack = await starterPackManager.loadPack(packName);
+    const result = await starterPackManager.installPack(pack, { force, interactive: !isNonInteractive });
+    
+    if (result.success) {
+      logger.success(`Starter pack '${packName}' installed successfully`);
+      if (result.installed.modes.length > 0) {
+        logger.info(`  Modes: ${result.installed.modes.join(', ')}`);
+      }
+      if (result.installed.workflows.length > 0) {
+        logger.info(`  Workflows: ${result.installed.workflows.join(', ')}`);
+      }
+      if (result.installed.agents.length > 0) {
+        logger.info(`  Agents: ${result.installed.agents.join(', ')}`);
+      }
+    }
+    
+    return { ...result, defaultMode: pack.configuration?.defaultMode };
+  }
+
+  return { success: true, installed: { modes: [], workflows: [], agents: [] }, skipped: { modes: [], workflows: [], agents: [] }, errors: [] };
+}

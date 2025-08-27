@@ -42,10 +42,7 @@
       "Bash(timeout 15 npm run dev init -- --force --quick)",
       "WebFetch(domain:docs.anthropic.com)"
     ],
-    "deny": [],
-    "additionalDirectories": [
-      "/Users/dazheng"
-    ]
+    "deny": []
   },
   "hooks": {
     "UserPromptSubmit": [

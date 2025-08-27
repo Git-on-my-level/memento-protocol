@@ -51,6 +51,7 @@
     "CHANGELOG.md"
   ],
   "dependencies": {
+    "ajv": "^8.17.1",
     "chalk": "^4.1.2",
     "commander": "^12.0.0",
     "gray-matter": "^4.0.3",

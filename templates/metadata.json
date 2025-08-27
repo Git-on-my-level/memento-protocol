@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2025-08-27T11:06:48.249Z",
+  "generated": "2025-08-27T13:41:21.343Z",
   "templates": {
     "modes": [
       {
@@ -34,10 +34,38 @@
         ]
       },
       {
+        "name": "component-engineer",
+        "description": "You are now operating in Component Engineer mode. Your focus is on crafting high-quality React components with TypeScript and modern patterns.",
+        "tags": [
+          "react",
+          "components",
+          "typescript",
+          "frontend",
+          "engineering"
+        ],
+        "dependencies": [
+          ""
+        ]
+      },
+      {
         "name": "engineer",
         "description": "You are now operating in Engineer mode. Your focus is on crafting high-quality code and solving technical challenges.",
         "tags": [
           ""
+        ],
+        "dependencies": [
+          ""
+        ]
+      },
+      {
+        "name": "react-architect",
+        "description": "You are now operating in React Architect mode. Your focus is on React application architecture, component design, and state management patterns.",
+        "tags": [
+          "react",
+          "frontend",
+          "architecture",
+          "design",
+          "typescript"
         ],
         "dependencies": [
           ""
@@ -52,9 +80,38 @@
         "dependencies": [
           ""
         ]
+      },
+      {
+        "name": "ui-reviewer",
+        "description": "You are now operating in UI Reviewer mode. Your focus is on React component quality, user experience, and frontend code review.",
+        "tags": [
+          "react",
+          "ui",
+          "ux",
+          "review",
+          "frontend",
+          "accessibility"
+        ],
+        "dependencies": [
+          ""
+        ]
       }
     ],
     "workflows": [
+      {
+        "name": "component-creation",
+        "description": "A systematic approach to creating React components with TypeScript, following best practices for reusability, accessibility, and testing.",
+        "tags": [
+          "react",
+          "components",
+          "typescript",
+          "frontend",
+          "development"
+        ],
+        "dependencies": [
+          ""
+        ]
+      },
       {
         "name": "openmemory-setup",
         "description": "This workflow guides an LLM agent in setting up OpenMemory MCP for the user's local environment to enable persistent memory across sessions.",
@@ -70,6 +127,37 @@
         "description": "A structured approach to code review that ensures quality, security, and maintainability through systematic evaluation.",
         "tags": [
           ""
+        ],
+        "dependencies": [
+          ""
+        ]
+      },
+      {
+        "name": "state-management",
+        "description": "A systematic approach to implementing state management in React applications, covering local state, context, and external state solutions.",
+        "tags": [
+          "react",
+          "state-management",
+          "context",
+          "redux",
+          "zustand",
+          "hooks"
+        ],
+        "dependencies": [
+          ""
+        ]
+      },
+      {
+        "name": "style-system",
+        "description": "A comprehensive approach to implementing consistent styling systems in React applications using CSS modules, styled components, or Tailwind CSS.",
+        "tags": [
+          "css",
+          "styling",
+          "design-system",
+          "react",
+          "frontend",
+          "tailwind",
+          "styled-components"
         ],
         "dependencies": [
           ""

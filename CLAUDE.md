@@ -261,11 +261,84 @@ Tickets follow a lifecycle:
 3. Test installation via CLI commands
 4. For agents, ensure proper .claude/agents/ targeting
 
+### Adding New Starter Packs
+1. Create pack definition in `templates/starter-packs/[pack-name].json`:
+   ```json
+   {
+     "name": "pack-name",
+     "version": "1.0.0", 
+     "description": "Pack description",
+     "author": "author-name",
+     "category": "frontend|backend|fullstack|devops|mobile|ai-ml|data|general",
+     "components": {
+       "modes": [{ "name": "mode-name", "required": true }],
+       "workflows": [{ "name": "workflow-name", "required": false }],
+       "agents": [{ "name": "agent-name", "required": false }]
+     }
+   }
+   ```
+2. Validate against schema: `templates/starter-packs/schema.json`
+3. Test pack loading and installation
+4. Ensure all referenced components exist in templates
+5. Add to available packs documentation
+
 ### Hook Development
 1. Create hook definition JSON in templates/hooks/
 2. Create corresponding shell script
 3. Define trigger events and configuration options
 4. Test with real Claude Code interactions
+
+### StarterPackManager API
+The `StarterPackManager` class handles pack operations:
+
+```typescript
+import { StarterPackManager } from '../lib/StarterPackManager';
+
+const manager = new StarterPackManager(projectRoot);
+
+// List available packs
+const packs = await manager.listPacks();
+
+// Load specific pack
+const pack = await manager.loadPack('frontend-react');
+
+// Validate pack definition
+const validation = await manager.validatePack(packData);
+
+// Resolve dependencies
+const deps = await manager.resolveDependencies(pack);
+
+// Install pack (Phase 2 - currently stub)
+const result = await manager.installPack(pack, { force: true });
+```
+
+**Key Features:**
+- JSON schema validation against `templates/starter-packs/schema.json`
+- Component reference validation (ensures modes/workflows/agents exist)
+- Dependency resolution with circular dependency detection
+- Installation simulation (actual installation in Phase 2)
+
+### Testing Guidelines for Starter Packs
+1. **Schema Validation**: Test pack definitions against JSON schema
+2. **Component References**: Ensure all referenced components exist
+3. **Dependency Resolution**: Test dependency chains and circular detection
+4. **Installation Simulation**: Verify pack installation logic
+5. **Error Handling**: Test invalid packs, missing components, conflicts
+
+Example test structure:
+```typescript
+describe('StarterPackManager', () => {
+  it('should load valid pack', async () => {
+    const pack = await manager.loadPack('frontend-react');
+    expect(pack.name).toBe('frontend-react');
+  });
+
+  it('should validate pack schema', async () => {
+    const result = await manager.validatePack(validPackData);
+    expect(result.valid).toBe(true);
+  });
+});
+```
 
 ### Code Style
 - TypeScript with strict mode
@@ -278,6 +351,7 @@ Tickets follow a lifecycle:
 - inquirer: Interactive prompts
 - esbuild: Build tool
 - jest/ts-jest: Testing framework
+- ajv: JSON schema validation for starter packs
 
 ## Recent Enhancements
 
@@ -289,8 +363,14 @@ Tickets follow a lifecycle:
 - **Hook System**: Event-driven automation like zsh hooks (precmd, preexec, chpwd)
 - **Alias System**: Custom commands work like zsh aliases
 
+### Starter Packs System
+- **Current**: Functional pack loading, validation, and dependency resolution
+- **JSON Schema**: Complete validation with component reference checking
+- **Available Packs**: `frontend-react` pack with React development setup
+- **Management**: StarterPackManager handles installation and dependencies
+
 ### Coming Soon (oh-my-memento)
-- **Starter Packs**: Like oh-my-zsh bundles (Frontend Pack, Backend Pack, DevOps Pack)
+- **More Packs**: Backend API, DevOps, Data Science starter packs
 - **~/.memento/config.yaml**: Global config file (unified structure with project config)
 - **Community Hub**: Share modes/workflows (like awesome-zsh-plugins)
 - **Plugin Manager**: Easy installation/updates (like zplug, zinit)
