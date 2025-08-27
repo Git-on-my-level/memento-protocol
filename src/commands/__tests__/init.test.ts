@@ -319,6 +319,90 @@ describe("Init Command", () => {
       );
       expect(process.exit).toHaveBeenCalledWith(1);
     });
+  });
 
+  describe("global initialization", () => {
+    it("should delegate to init-global command when --global flag is used", async () => {
+      // Mock the dynamic import and init-global command
+      const mockInitGlobalParseAsync = jest.fn().mockResolvedValue(undefined);
+      const mockInitGlobalCommand = {
+        parseAsync: mockInitGlobalParseAsync
+      };
+
+      // Mock the dynamic import
+      jest.doMock("../init-global", () => ({
+        initGlobalCommand: mockInitGlobalCommand
+      }));
+
+      await initCommand.parseAsync([
+        "node", 
+        "test", 
+        "--global",
+        "--force",
+        "--default-mode", "architect",
+        "--all-recommended"
+      ]);
+
+      expect(mockInitGlobalParseAsync).toHaveBeenCalledWith([
+        "node",
+        "memento", 
+        "--force",
+        "--default-mode", "architect",
+        "--install-examples"
+      ]);
+
+      // Should not run regular project initialization
+      expect(mockDirManager.initializeStructure).not.toHaveBeenCalled();
+      expect(mockProjectDetector.detect).not.toHaveBeenCalled();
+    });
+
+    it("should handle global initialization with non-interactive mode", async () => {
+      // Mock the dynamic import and init-global command  
+      const mockInitGlobalParseAsync = jest.fn().mockResolvedValue(undefined);
+      const mockInitGlobalCommand = {
+        parseAsync: mockInitGlobalParseAsync
+      };
+
+      jest.doMock("../init-global", () => ({
+        initGlobalCommand: mockInitGlobalCommand
+      }));
+
+      await initCommand.parseAsync([
+        "node",
+        "test", 
+        "--global",
+        "--non-interactive",
+        "--default-mode", "engineer"
+      ]);
+
+      expect(mockInitGlobalParseAsync).toHaveBeenCalledWith([
+        "node",
+        "memento",
+        "--no-interactive",
+        "--default-mode", "engineer"
+      ]);
+    });
+
+    it("should handle global initialization errors gracefully", async () => {
+      // Mock the dynamic import to throw an error
+      const mockInitGlobalParseAsync = jest.fn().mockRejectedValue(
+        new Error("Global initialization failed")
+      );
+      const mockInitGlobalCommand = {
+        parseAsync: mockInitGlobalParseAsync
+      };
+
+      jest.doMock("../init-global", () => ({
+        initGlobalCommand: mockInitGlobalCommand
+      }));
+
+      await expect(initCommand.parseAsync([
+        "node",
+        "test",
+        "--global"
+      ])).rejects.toThrow("Global initialization failed");
+
+      expect(mockInitGlobalParseAsync).toHaveBeenCalled();
+    });
   });
 });

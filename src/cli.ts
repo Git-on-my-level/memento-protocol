@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { initCommand } from "./commands/init";
+import { initGlobalCommand } from "./commands/init-global";
 import { addCommand } from "./commands/add";
 import { listCommand } from "./commands/list";
 import { ticketCommand } from "./commands/ticket";
@@ -29,6 +30,8 @@ program
 Examples:
   $ memento                        # Initialize or update Memento Protocol
   $ memento init                   # Explicitly initialize Memento Protocol
+  $ memento init --global          # Initialize global ~/.memento configuration
+  $ memento init-global            # Initialize global configuration (alternative)
   $ memento update                 # Explicitly update components
   $ memento add mode architect     # Add the architect mode
   $ memento add workflow review    # Add the code review workflow
@@ -55,6 +58,7 @@ Documentation: https://github.com/git-on-my-level/memento-protocol#readme`
 
 // Register commands
 program.addCommand(initCommand);
+program.addCommand(initGlobalCommand);
 program.addCommand(addCommand);
 program.addCommand(listCommand);
 program.addCommand(ticketCommand);
