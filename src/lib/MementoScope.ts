@@ -1,10 +1,10 @@
-import * as fs from 'fs';
-import * as path from 'path';
 import * as yaml from 'js-yaml';
 import { logger } from './logger';
 import { ConfigurationError } from './errors';
 import { MementoConfig } from './configSchema';
 import { SimpleCache } from './SimpleCache';
+import { FileSystemAdapter } from './adapters/FileSystemAdapter';
+import { NodeFileSystemAdapter } from './adapters/NodeFileSystemAdapter';
 
 export interface ComponentInfo {
   name: string;
@@ -22,19 +22,28 @@ export class MementoScope {
   private configPath: string;
   private cache: SimpleCache;
   private isGlobal: boolean;
+  private fs: FileSystemAdapter;
 
-  constructor(scopePath: string, isGlobal: boolean = false) {
+  constructor(scopePath: string, isGlobal: boolean = false, fsAdapter?: FileSystemAdapter) {
     this.scopePath = scopePath;
-    this.configPath = path.join(scopePath, 'config.yaml');
     this.isGlobal = isGlobal;
     this.cache = new SimpleCache(300000); // 5 minutes TTL
+    this.fs = fsAdapter || new NodeFileSystemAdapter();
+    this.configPath = this.joinPath(scopePath, 'config.yaml');
+  }
+
+  /**
+   * Helper method to join paths using the filesystem adapter
+   */
+  private joinPath(...paths: string[]): string {
+    return this.fs.join(...paths);
   }
 
   /**
    * Check if this scope exists (has a directory)
    */
   exists(): boolean {
-    return fs.existsSync(this.scopePath);
+    return this.fs.existsSync(this.scopePath);
   }
 
   /**
@@ -62,13 +71,13 @@ export class MementoScope {
       return cached;
     }
 
-    if (!fs.existsSync(this.configPath)) {
+    if (!this.fs.existsSync(this.configPath)) {
       this.cache.set(cacheKey, null);
       return null;
     }
 
     try {
-      const content = fs.readFileSync(this.configPath, 'utf-8');
+      const content = this.fs.readFileSync(this.configPath, 'utf-8') as string;
       const config = yaml.load(content) as MementoConfig;
       
       // Validate basic structure
@@ -92,8 +101,8 @@ export class MementoScope {
    */
   async saveConfig(config: MementoConfig): Promise<void> {
     // Ensure directory exists
-    if (!fs.existsSync(this.scopePath)) {
-      fs.mkdirSync(this.scopePath, { recursive: true });
+    if (!this.fs.existsSync(this.scopePath)) {
+      this.fs.mkdirSync(this.scopePath, { recursive: true });
     }
 
     try {
@@ -103,7 +112,7 @@ export class MementoScope {
         forceQuotes: false,
       });
       
-      fs.writeFileSync(this.configPath, yamlContent, 'utf-8');
+      this.fs.writeFileSync(this.configPath, yamlContent, { encoding: 'utf-8' });
       
       // Invalidate config cache
       this.cache.invalidatePattern('config');
@@ -138,19 +147,19 @@ export class MementoScope {
     const componentTypes = ['modes', 'workflows', 'scripts', 'hooks', 'agents', 'commands', 'templates'];
 
     for (const componentType of componentTypes) {
-      const componentDir = path.join(this.scopePath, componentType);
+      const componentDir = this.joinPath(this.scopePath, componentType);
       
-      if (fs.existsSync(componentDir)) {
+      if (this.fs.existsSync(componentDir)) {
         try {
-          const files = fs.readdirSync(componentDir);
+          const files = this.fs.readdirSync(componentDir);
           
           for (const file of files) {
-            const filePath = path.join(componentDir, file);
-            const stats = fs.statSync(filePath);
+            const filePath = this.joinPath(componentDir, file);
+            const stats = this.fs.statSync(filePath);
             
             if (stats.isFile()) {
               // Extract name without extension
-              const name = path.parse(file).name;
+              const name = this.fs.basename(file, this.fs.extname(file));
               
               components.push({
                 name,
@@ -208,13 +217,13 @@ export class MementoScope {
    */
   private async extractMetadata(filePath: string): Promise<any> {
     try {
-      const ext = path.extname(filePath).toLowerCase();
+      const ext = this.fs.extname(filePath).toLowerCase();
       
       if (ext === '.md') {
         // Try to extract frontmatter using gray-matter
         try {
           const matter = require('gray-matter');
-          const content = fs.readFileSync(filePath, 'utf-8');
+          const content = this.fs.readFileSync(filePath, 'utf-8') as string;
           const parsed = matter(content);
           return parsed.data || {};
         } catch {
@@ -224,7 +233,7 @@ export class MementoScope {
       } else if (ext === '.json') {
         // For JSON files, try to parse for metadata
         try {
-          const content = fs.readFileSync(filePath, 'utf-8');
+          const content = this.fs.readFileSync(filePath, 'utf-8') as string;
           const parsed = JSON.parse(content);
           return parsed.metadata || parsed;
         } catch {
@@ -233,7 +242,7 @@ export class MementoScope {
       } else if (ext === '.yaml' || ext === '.yml') {
         // For YAML files, try to parse
         try {
-          const content = fs.readFileSync(filePath, 'utf-8');
+          const content = this.fs.readFileSync(filePath, 'utf-8') as string;
           const parsed = yaml.load(content);
           return parsed || {};
         } catch {
@@ -242,7 +251,7 @@ export class MementoScope {
       }
       
       // For other file types, return basic info
-      const stats = fs.statSync(filePath);
+      const stats = this.fs.statSync(filePath);
       return {
         size: stats.size,
         modified: stats.mtime,
@@ -258,22 +267,22 @@ export class MementoScope {
    * Initialize the scope directory structure
    */
   async initialize(): Promise<void> {
-    if (!fs.existsSync(this.scopePath)) {
-      fs.mkdirSync(this.scopePath, { recursive: true });
+    if (!this.fs.existsSync(this.scopePath)) {
+      this.fs.mkdirSync(this.scopePath, { recursive: true });
     }
 
     // Create standard component directories
     const componentDirs = ['modes', 'workflows', 'scripts', 'hooks', 'agents', 'commands', 'templates'];
     
     for (const dir of componentDirs) {
-      const dirPath = path.join(this.scopePath, dir);
-      if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
+      const dirPath = this.joinPath(this.scopePath, dir);
+      if (!this.fs.existsSync(dirPath)) {
+        this.fs.mkdirSync(dirPath, { recursive: true });
       }
     }
 
     // Create default config if it doesn't exist
-    if (!fs.existsSync(this.configPath)) {
+    if (!this.fs.existsSync(this.configPath)) {
       const defaultConfig: MementoConfig = {
         ui: {
           colorOutput: true,

@@ -2,6 +2,7 @@ import { addCommand } from '../add';
 import { MementoCore } from '../../lib/MementoCore';
 import { logger } from '../../lib/logger';
 import inquirer from 'inquirer';
+import { createTestFileSystem } from '../../lib/testing';
 import * as fs from 'fs';
 
 jest.mock('../../lib/MementoCore');
@@ -17,21 +18,37 @@ jest.mock('inquirer', () => ({
   prompt: jest.fn()
 }));
 jest.mock('fs', () => ({
-  existsSync: jest.fn(),
-  mkdirSync: jest.fn(),
   readFileSync: jest.fn(),
-  writeFileSync: jest.fn()
+  writeFileSync: jest.fn(),
+  existsSync: jest.fn(),
+}));
+jest.mock('../../lib/utils/filesystem', () => ({
+  ensureDirectorySync: jest.fn(),
 }));
 
 describe('Add Command', () => {
   let mockCore: jest.Mocked<MementoCore>;
   let originalExit: any;
   let mockInquirer: jest.Mocked<typeof inquirer>;
+  let testFs: any;
   let mockFs: jest.Mocked<typeof fs>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
     
+    // Setup fs mocks
+    mockFs = fs as jest.Mocked<typeof fs>;
+    mockFs.readFileSync.mockReturnValue('# Mock Component Content\n\nThis is a mock component.');
+    mockFs.writeFileSync.mockReturnValue();
+    mockFs.existsSync.mockReturnValue(true);
+    
+    // Create test filesystem
+    testFs = await createTestFileSystem({
+      '/project/.memento/config.json': JSON.stringify({ version: '1.0.0' }, null, 2),
+      '/project/.memento/modes/architect.md': '# Architect Mode\n\nSystem design mode',
+      '/project/.memento/workflows/review.md': '# Review Workflow\n\nCode review workflow'
+    });
+
     mockCore = {
       findComponents: jest.fn(),
       getComponentsByTypeWithSource: jest.fn(),
@@ -42,11 +59,6 @@ describe('Add Command', () => {
     } as any;
 
     mockInquirer = inquirer as jest.Mocked<typeof inquirer>;
-    mockFs = fs as jest.Mocked<typeof fs>;
-    
-    // Mock fs methods
-    (mockFs.existsSync as jest.Mock).mockReturnValue(true);
-    (mockFs.readFileSync as jest.Mock).mockReturnValue('# Component content');
 
     (MementoCore as jest.MockedClass<typeof MementoCore>).mockImplementation(() => mockCore);
     
@@ -76,8 +88,8 @@ describe('Add Command', () => {
       mockCore.findComponents.mockResolvedValue([mockComponent]);
       mockCore.getComponentConflicts.mockResolvedValue([]);
       mockCore.getScopes.mockReturnValue({
-        project: { getPath: () => '/project/.memento' } as any,
-        global: { getPath: () => '/global/.memento' } as any
+        project: { getPath: () => '/project/.memento', fs: testFs } as any,
+        global: { getPath: () => '/global/.memento', fs: testFs } as any
       });
 
       await addCommand.parseAsync(['node', 'test', 'mode', 'architect']);
@@ -120,8 +132,8 @@ describe('Add Command', () => {
       });
       mockCore.getComponentConflicts.mockResolvedValue([]);
       mockCore.getScopes.mockReturnValue({
-        project: { getPath: () => '/project/.memento' } as any,
-        global: { getPath: () => '/global/.memento' } as any
+        project: { getPath: () => '/project/.memento', fs: testFs } as any,
+        global: { getPath: () => '/global/.memento', fs: testFs } as any
       });
 
       await addCommand.parseAsync(['node', 'test', 'mode']);
@@ -163,8 +175,8 @@ describe('Add Command', () => {
       mockCore.findComponents.mockResolvedValue([mockComponent]);
       mockCore.getComponentConflicts.mockResolvedValue([]);
       mockCore.getScopes.mockReturnValue({
-        project: { getPath: () => '/project/.memento' } as any,
-        global: { getPath: () => '/global/.memento' } as any
+        project: { getPath: () => '/project/.memento', fs: testFs } as any,
+        global: { getPath: () => '/global/.memento', fs: testFs } as any
       });
 
       await addCommand.parseAsync(['node', 'test', 'workflow', 'review']);
@@ -198,8 +210,8 @@ describe('Add Command', () => {
       });
       mockCore.getComponentConflicts.mockResolvedValue([]);
       mockCore.getScopes.mockReturnValue({
-        project: { getPath: () => '/project/.memento' } as any,
-        global: { getPath: () => '/global/.memento' } as any
+        project: { getPath: () => '/project/.memento', fs: testFs } as any,
+        global: { getPath: () => '/global/.memento', fs: testFs } as any
       });
 
       await addCommand.parseAsync(['node', 'test', 'workflow']);
@@ -260,8 +272,8 @@ describe('Add Command', () => {
       });
       mockCore.getComponentConflicts.mockResolvedValue([]);
       mockCore.getScopes.mockReturnValue({
-        project: { getPath: () => '/project/.memento' } as any,
-        global: { getPath: () => '/global/.memento' } as any
+        project: { getPath: () => '/project/.memento', fs: testFs } as any,
+        global: { getPath: () => '/global/.memento', fs: testFs } as any
       });
 
       await addCommand.parseAsync(['node', 'test', 'mode', 'arch']);
@@ -296,8 +308,8 @@ describe('Add Command', () => {
       ]);
       mockInquirer.prompt.mockResolvedValue({ shouldOverwrite: true });
       mockCore.getScopes.mockReturnValue({
-        project: { getPath: () => '/project/.memento' } as any,
-        global: { getPath: () => '/global/.memento' } as any
+        project: { getPath: () => '/project/.memento', fs: testFs } as any,
+        global: { getPath: () => '/global/.memento', fs: testFs } as any
       });
 
       await addCommand.parseAsync(['node', 'test', 'mode', 'architect']);

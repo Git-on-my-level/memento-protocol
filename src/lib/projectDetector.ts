@@ -1,6 +1,5 @@
-import * as fs from 'fs/promises';
-import * as path from 'path';
 import { logger } from './logger';
+import { FileSystemAdapter, NodeFileSystemAdapter } from './adapters';
 
 export interface ProjectInfo {
   type: 'typescript' | 'javascript' | 'go' | 'unknown' | 'web' | 'backend' | 'fullstack' | 'cli' | 'library';
@@ -13,9 +12,11 @@ export interface ProjectInfo {
 
 export class ProjectDetector {
   private projectRoot: string;
+  private fs: FileSystemAdapter;
 
-  constructor(projectRoot: string) {
+  constructor(projectRoot: string, fs?: FileSystemAdapter) {
     this.projectRoot = projectRoot;
+    this.fs = fs || new NodeFileSystemAdapter();
   }
 
   /**
@@ -103,12 +104,7 @@ export class ProjectDetector {
    * Check if a file exists
    */
   private async fileExists(filename: string): Promise<boolean> {
-    try {
-      await fs.access(path.join(this.projectRoot, filename));
-      return true;
-    } catch {
-      return false;
-    }
+    return await this.fs.exists(this.fs.join(this.projectRoot, filename));
   }
 
   /**
@@ -116,7 +112,7 @@ export class ProjectDetector {
    */
   private async readFile(filename: string): Promise<string | null> {
     try {
-      return await fs.readFile(path.join(this.projectRoot, filename), 'utf-8');
+      return await this.fs.readFile(this.fs.join(this.projectRoot, filename), 'utf8') as string;
     } catch {
       return null;
     }
@@ -127,7 +123,7 @@ export class ProjectDetector {
    */
   private async readJsonFile(filename: string): Promise<any> {
     try {
-      const content = await fs.readFile(path.join(this.projectRoot, filename), 'utf-8');
+      const content = await this.fs.readFile(this.fs.join(this.projectRoot, filename), 'utf8') as string;
       return JSON.parse(content);
     } catch {
       return {};

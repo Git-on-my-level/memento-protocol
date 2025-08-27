@@ -1,7 +1,7 @@
 import { Command } from 'commander';
-import * as fs from 'fs';
-import * as path from 'path';
 import { logger } from '../lib/logger';
+import { FileSystemAdapter } from '../lib/adapters/FileSystemAdapter';
+import { NodeFileSystemAdapter } from '../lib/adapters/NodeFileSystemAdapter';
 
 interface AcronymConfig {
   acronyms: Record<string, string>;
@@ -14,20 +14,22 @@ interface AcronymConfig {
 class AcronymManager {
   private configPath: string;
   private config: AcronymConfig;
+  private fs: FileSystemAdapter;
 
-  constructor(projectRoot: string) {
-    this.configPath = path.join(projectRoot, '.memento', 'acronyms.json');
+  constructor(projectRoot: string, fsAdapter?: FileSystemAdapter) {
+    this.fs = fsAdapter || new NodeFileSystemAdapter();
+    this.configPath = this.fs.join(projectRoot, '.memento', 'acronyms.json');
     this.config = this.loadConfig();
   }
 
   private loadConfig(): AcronymConfig {
-    if (fs.existsSync(this.configPath)) {
-      try {
-        const content = fs.readFileSync(this.configPath, 'utf-8');
+    try {
+      if (this.fs.existsSync(this.configPath)) {
+        const content = this.fs.readFileSync(this.configPath, 'utf-8') as string;
         return JSON.parse(content);
-      } catch (error) {
-        logger.warn('Failed to load acronym config, using defaults');
       }
+    } catch (error) {
+      logger.warn('Failed to load acronym config, using defaults');
     }
     
     return {
@@ -40,11 +42,11 @@ class AcronymManager {
   }
 
   private saveConfig(): void {
-    const dir = path.dirname(this.configPath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    const dir = this.fs.dirname(this.configPath);
+    if (!this.fs.existsSync(dir)) {
+      this.fs.mkdirSync(dir, { recursive: true });
     }
-    fs.writeFileSync(this.configPath, JSON.stringify(this.config, null, 2));
+    this.fs.writeFileSync(this.configPath, JSON.stringify(this.config, null, 2));
   }
 
   add(acronym: string, expansion: string): void {

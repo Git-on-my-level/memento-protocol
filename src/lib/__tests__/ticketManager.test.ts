@@ -1,34 +1,26 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
 import { TicketManager } from '../ticketManager';
+import { createTestMementoProject } from '../testing/createTestFileSystem';
+import { MemoryFileSystemAdapter } from '../adapters/MemoryFileSystemAdapter';
 
 describe('TicketManager', () => {
-  let tempDir: string;
+  let fs: MemoryFileSystemAdapter;
+  let projectRoot: string;
   let ticketManager: TicketManager;
 
-  beforeEach(() => {
-    // Create temporary directory
-    tempDir = path.join(os.tmpdir(), 'memento-test-' + Date.now());
-    fs.mkdirSync(tempDir, { recursive: true });
-    fs.mkdirSync(path.join(tempDir, '.memento'), { recursive: true });
-    
-    ticketManager = new TicketManager(tempDir);
-  });
-
-  afterEach(() => {
-    // Clean up temporary directory
-    fs.rmSync(tempDir, { recursive: true, force: true });
+  beforeEach(async () => {
+    projectRoot = '/project';
+    fs = await createTestMementoProject(projectRoot);
+    ticketManager = new TicketManager(projectRoot, fs);
   });
 
   describe('create', () => {
     it('should create a new ticket with markdown file', async () => {
       const ticketPath = await ticketManager.create('test-feature');
       
-      expect(ticketPath).toBe(path.join(tempDir, '.memento', 'tickets', 'next', 'test-feature.md'));
-      expect(fs.existsSync(ticketPath)).toBe(true);
+      expect(ticketPath).toBe(fs.join(projectRoot, '.memento', 'tickets', 'next', 'test-feature.md'));
+      expect(await fs.exists(ticketPath)).toBe(true);
       
-      const content = fs.readFileSync(ticketPath, 'utf-8');
+      const content = await fs.readFile(ticketPath, 'utf8') as string;
       expect(content).toContain('# test-feature');
       expect(content).toContain('## Description');
       expect(content).toContain('## Tasks');
@@ -65,8 +57,9 @@ describe('TicketManager', () => {
     });
 
     it('should handle empty ticket directories', async () => {
-      // Create new manager with empty directory
-      const emptyManager = new TicketManager(tempDir + '-empty');
+      // Create new manager with empty project
+      const emptyFs = await createTestMementoProject('/empty-project');
+      const emptyManager = new TicketManager('/empty-project', emptyFs);
       const tickets = await emptyManager.list();
       
       expect(tickets).toHaveLength(0);
@@ -74,8 +67,8 @@ describe('TicketManager', () => {
 
     it('should ignore non-markdown files', async () => {
       // Create a non-markdown file in tickets directory
-      fs.writeFileSync(
-        path.join(tempDir, '.memento', 'tickets', 'next', 'not-a-ticket.txt'),
+      await fs.writeFile(
+        fs.join(projectRoot, '.memento', 'tickets', 'next', 'not-a-ticket.txt'),
         'This should be ignored'
       );
       
@@ -93,11 +86,11 @@ describe('TicketManager', () => {
       await ticketManager.move('test-feature', 'in-progress');
       
       // Check file was moved
-      const oldPath = path.join(tempDir, '.memento', 'tickets', 'next', 'test-feature.md');
-      const newPath = path.join(tempDir, '.memento', 'tickets', 'in-progress', 'test-feature.md');
+      const oldPath = fs.join(projectRoot, '.memento', 'tickets', 'next', 'test-feature.md');
+      const newPath = fs.join(projectRoot, '.memento', 'tickets', 'in-progress', 'test-feature.md');
       
-      expect(fs.existsSync(oldPath)).toBe(false);
-      expect(fs.existsSync(newPath)).toBe(true);
+      expect(await fs.exists(oldPath)).toBe(false);
+      expect(await fs.exists(newPath)).toBe(true);
     });
 
     it('should throw error if ticket not found', async () => {
@@ -117,7 +110,7 @@ describe('TicketManager', () => {
       
       await ticketManager.delete('test-feature');
       
-      expect(fs.existsSync(ticketPath)).toBe(false);
+      expect(await fs.exists(ticketPath)).toBe(false);
     });
 
     it('should throw error if ticket not found', async () => {
@@ -130,8 +123,8 @@ describe('TicketManager', () => {
       
       await ticketManager.delete('test-feature');
       
-      const donePath = path.join(tempDir, '.memento', 'tickets', 'done', 'test-feature.md');
-      expect(fs.existsSync(donePath)).toBe(false);
+      const donePath = fs.join(projectRoot, '.memento', 'tickets', 'done', 'test-feature.md');
+      expect(await fs.exists(donePath)).toBe(false);
     });
   });
 
@@ -149,8 +142,8 @@ describe('TicketManager', () => {
 
     it('should find ticket without extension for backwards compatibility', async () => {
       // Create a ticket without .md extension
-      const oldStylePath = path.join(tempDir, '.memento', 'tickets', 'next', 'old-ticket');
-      fs.writeFileSync(oldStylePath, 'Old style ticket');
+      const oldStylePath = fs.join(projectRoot, '.memento', 'tickets', 'next', 'old-ticket');
+      await fs.writeFile(oldStylePath, 'Old style ticket');
       
       const found = (ticketManager as any).findTicket('old-ticket');
       

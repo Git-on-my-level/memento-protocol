@@ -11,6 +11,8 @@ import { PackRegistry } from "./packs/PackRegistry";
 import { PackValidator } from "./packs/PackValidator";
 import { PackInstaller } from "./packs/PackInstaller";
 import { IPackSource } from "./packs/PackSource";
+import { FileSystemAdapter } from "./adapters/FileSystemAdapter";
+import { NodeFileSystemAdapter } from "./adapters/NodeFileSystemAdapter";
 
 /**
  * Clean StarterPackManager that orchestrates pack operations using specialized components
@@ -20,11 +22,13 @@ export class StarterPackManager {
   private registry: PackRegistry;
   private validator: PackValidator;
   private installer: PackInstaller;
+  private fs: FileSystemAdapter;
 
-  constructor(projectRoot: string) {
-    this.registry = new PackRegistry();
-    this.validator = new PackValidator();
-    this.installer = new PackInstaller(projectRoot);
+  constructor(projectRoot: string, fs?: FileSystemAdapter) {
+    this.fs = fs || new NodeFileSystemAdapter();
+    this.registry = new PackRegistry(this.fs);
+    this.validator = new PackValidator(this.fs);
+    this.installer = new PackInstaller(projectRoot, this.fs);
   }
 
   /**

@@ -1,10 +1,9 @@
-import * as fs from "fs/promises";
-import * as path from "path";
-import { existsSync } from "fs";
 import matter from "gray-matter";
 import { DirectoryManager } from "./directoryManager";
 import { logger } from "./logger";
 import { PackagePaths } from "./packagePaths";
+import { FileSystemAdapter } from "./adapters/FileSystemAdapter";
+import { NodeFileSystemAdapter } from "./adapters/NodeFileSystemAdapter";
 
 interface ComponentMetadata {
   name: string;
@@ -23,12 +22,14 @@ interface ComponentMetadata {
 export class ComponentInstaller {
   private dirManager: DirectoryManager;
   private templatesDir: string;
+  private fs: FileSystemAdapter;
 
-  constructor(projectRoot: string) {
-    this.dirManager = new DirectoryManager(projectRoot);
+  constructor(projectRoot: string, fs?: FileSystemAdapter, templatesDir?: string) {
+    this.fs = fs || new NodeFileSystemAdapter();
+    this.dirManager = new DirectoryManager(projectRoot, this.fs);
 
-    // Use centralized package path resolution
-    this.templatesDir = PackagePaths.getTemplatesDir();
+    // Use provided templatesDir or fall back to centralized package path resolution
+    this.templatesDir = templatesDir || PackagePaths.getTemplatesDir();
   }
 
   /**
@@ -36,7 +37,7 @@ export class ComponentInstaller {
    */
   private async parseTemplateFrontmatter(filePath: string): Promise<ComponentMetadata | null> {
     try {
-      const content = await fs.readFile(filePath, "utf-8");
+      const content = await this.fs.readFile(filePath, "utf-8") as string;
       const parsed = matter(content);
       const data = parsed.data;
 
@@ -70,16 +71,16 @@ export class ComponentInstaller {
   private async scanComponentDirectory(dirPath: string, extension = ".md"): Promise<ComponentMetadata[]> {
     const components: ComponentMetadata[] = [];
     
-    if (!existsSync(dirPath)) {
+    if (!(await this.fs.exists(dirPath))) {
       return components;
     }
 
     try {
-      const files = await fs.readdir(dirPath);
+      const files = await this.fs.readdir(dirPath);
       
       for (const file of files) {
         if (file.endsWith(extension)) {
-          const filePath = path.join(dirPath, file);
+          const filePath = this.fs.join(dirPath, file);
           const metadata = await this.parseTemplateFrontmatter(filePath);
           
           if (metadata) {
@@ -102,9 +103,9 @@ export class ComponentInstaller {
     workflows: ComponentMetadata[];
     agents: ComponentMetadata[];
   }> {
-    const modesPath = path.join(this.templatesDir, "modes");
-    const workflowsPath = path.join(this.templatesDir, "workflows");
-    const agentsPath = path.join(this.templatesDir, "agents");
+    const modesPath = this.fs.join(this.templatesDir, "modes");
+    const workflowsPath = this.fs.join(this.templatesDir, "workflows");
+    const agentsPath = this.fs.join(this.templatesDir, "agents");
 
     const [modes, workflows, agents] = await Promise.all([
       this.scanComponentDirectory(modesPath),
@@ -171,13 +172,13 @@ export class ComponentInstaller {
       throw new Error(`Invalid component type: ${type}`);
     }
     
-    const componentPath = path.join(
+    const componentPath = this.fs.join(
       this.templatesDir,
       templateSubdir,
       `${name}.md`
     );
 
-    if (!existsSync(componentPath)) {
+    if (!(await this.fs.exists(componentPath))) {
       throw new Error(`Component ${type} '${name}' not found in templates`);
     }
 
@@ -214,7 +215,7 @@ export class ComponentInstaller {
     }
 
     // Copy component file
-    const content = await fs.readFile(componentPath, "utf-8");
+    const content = await this.fs.readFile(componentPath, "utf-8") as string;
     let destType: "modes" | "workflows" | "integrations" | "agents";
     if (type === "mode") {
       destType = "modes";
@@ -229,7 +230,7 @@ export class ComponentInstaller {
     const destPath = this.dirManager.getComponentPath(destType, name);
 
     // WARNING: This writeFile will OVERWRITE any existing custom component if force=true
-    await fs.writeFile(destPath, content);
+    await this.fs.writeFile(destPath, content);
 
     // Reload manifest to get any updates from dependency installation
     manifest = await this.dirManager.getManifest();
@@ -307,9 +308,9 @@ export class ComponentInstaller {
     const missing: { component: string; dependencies: string[] }[] = [];
 
     // Check workflow dependencies
-    const workflowsPath = path.join(this.templatesDir, "workflows");
+    const workflowsPath = this.fs.join(this.templatesDir, "workflows");
     for (const workflow of manifest.components.workflows) {
-      const workflowPath = path.join(workflowsPath, `${workflow}.md`);
+      const workflowPath = this.fs.join(workflowsPath, `${workflow}.md`);
       const meta = await this.parseTemplateFrontmatter(workflowPath);
       
       if (meta?.dependencies && meta.dependencies.length > 0) {
@@ -328,9 +329,9 @@ export class ComponentInstaller {
 
     // Check agent dependencies (though agents typically don't have dependencies)
     if (manifest.components.agents) {
-      const agentsPath = path.join(this.templatesDir, "agents");
+      const agentsPath = this.fs.join(this.templatesDir, "agents");
       for (const agent of manifest.components.agents) {
-        const agentPath = path.join(agentsPath, `${agent}.md`);
+        const agentPath = this.fs.join(agentsPath, `${agent}.md`);
         const meta = await this.parseTemplateFrontmatter(agentPath);
         
         if (meta?.dependencies && meta.dependencies.length > 0) {

@@ -1,3 +1,5 @@
+import { FileSystemAdapter } from "./adapters/FileSystemAdapter";
+import { NodeFileSystemAdapter } from "./adapters/NodeFileSystemAdapter";
 import { ComponentInstaller } from "./componentInstaller";
 import { UpdateManager } from "./updateManager";
 import { logger } from "./logger";
@@ -9,12 +11,14 @@ export class UpsertManager {
   private updater: UpdateManager;
   private dirManager: DirectoryManager;
   private commandGenerator: CommandGenerator;
+  private fs: FileSystemAdapter;
 
-  constructor(projectRoot: string) {
-    this.dirManager = new DirectoryManager(projectRoot);
-    this.installer = new ComponentInstaller(projectRoot);
-    this.updater = new UpdateManager(projectRoot);
-    this.commandGenerator = new CommandGenerator(projectRoot);
+  constructor(projectRoot: string, fs?: FileSystemAdapter) {
+    this.fs = fs || new NodeFileSystemAdapter();
+    this.dirManager = new DirectoryManager(projectRoot, this.fs);
+    this.installer = new ComponentInstaller(projectRoot, this.fs);
+    this.updater = new UpdateManager(projectRoot, this.fs);
+    this.commandGenerator = new CommandGenerator(projectRoot, this.fs);
   }
 
   async upsert(force = false) {

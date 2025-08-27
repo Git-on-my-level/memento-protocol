@@ -2,9 +2,9 @@
  * PackInstaller handles the actual installation of starter pack components
  */
 
-import * as fs from "fs/promises";
 import * as path from "path";
-import { existsSync } from "fs";
+import { FileSystemAdapter } from "../adapters/FileSystemAdapter";
+import { NodeFileSystemAdapter } from "../adapters/NodeFileSystemAdapter";
 import {
   PackStructure,
   PackInstallOptions,
@@ -22,12 +22,14 @@ export class PackInstaller {
   // projectRoot will be used in future implementation
   private mementoDir: string;
   private claudeDir: string;
+  private fs: FileSystemAdapter;
 
-  constructor(projectRoot: string) {
+  constructor(projectRoot: string, fs?: FileSystemAdapter) {
+    this.fs = fs || new NodeFileSystemAdapter();
     // this._projectRoot = projectRoot; // TODO: store for future use
     this.directoryManager = new DirectoryManager(projectRoot);
-    this.mementoDir = path.join(projectRoot, '.memento');
-    this.claudeDir = path.join(projectRoot, '.claude');
+    this.mementoDir = this.fs.join(projectRoot, '.memento');
+    this.claudeDir = this.fs.join(projectRoot, '.claude');
   }
 
   /**
@@ -201,13 +203,13 @@ export class PackInstaller {
   private async installComponent(
     componentType: 'modes' | 'workflows' | 'agents' | 'hooks',
     componentName: string,
-    _packName: string,
-    _source: IPackSource,
+    packName: string,
+    source: IPackSource,
     options: PackInstallOptions
   ): Promise<boolean> {
     try {
-      // TODO: Implement getComponentPath method on IPackSource interface
-      const sourcePath = ""; // await source.getComponentPath(packName, componentType, componentName);
+      // Get the component path from the pack source
+      const sourcePath = await source.getComponentPath(packName, componentType, componentName);
       
       let targetPath: string;
       if (componentType === 'agents') {
@@ -219,7 +221,7 @@ export class PackInstaller {
       }
 
       // Check for conflicts
-      if (existsSync(targetPath) && !options.force) {
+      if (await this.fs.exists(targetPath) && !options.force) {
         logger.debug(`Component '${componentName}' already exists, skipping`);
         return false;
       }
@@ -230,8 +232,8 @@ export class PackInstaller {
       }
 
       // Copy the component file
-      await fs.mkdir(path.dirname(targetPath), { recursive: true });
-      await fs.copyFile(sourcePath, targetPath);
+      await this.fs.mkdir(this.fs.dirname(targetPath), { recursive: true });
+      await this.fs.copyFile(sourcePath, targetPath);
 
       return true;
     } catch (error) {
@@ -251,14 +253,14 @@ export class PackInstaller {
       return;
     }
 
-    const configPath = path.join(this.mementoDir, 'config.json');
+    const configPath = this.fs.join(this.mementoDir, 'config.json');
     let existingConfig: Record<string, unknown> = {};
 
     // Load existing config if it exists
-    if (existsSync(configPath)) {
+    if (await this.fs.exists(configPath)) {
       try {
-        const configContent = await fs.readFile(configPath, 'utf-8');
-        existingConfig = JSON.parse(configContent);
+        const configContent = await this.fs.readFile(configPath, 'utf-8');
+        existingConfig = JSON.parse(configContent as string);
       } catch (error) {
         logger.warn(`Error reading existing config: ${error}`);
       }
@@ -272,7 +274,7 @@ export class PackInstaller {
     };
 
     // Write updated config
-    await fs.writeFile(configPath, JSON.stringify(mergedConfig, null, 2));
+    await this.fs.writeFile(configPath, JSON.stringify(mergedConfig, null, 2));
     logger.debug('Updated project configuration');
   }
 
@@ -309,12 +311,12 @@ export class PackInstaller {
         let targetPath: string;
         
         if (componentType === 'agents') {
-          targetPath = path.join(this.claudeDir, 'agents', `${component.name}.md`);
+          targetPath = this.fs.join(this.claudeDir, 'agents', `${component.name}.md`);
         } else {
-          targetPath = path.join(this.mementoDir, componentType, `${component.name}.md`);
+          targetPath = this.fs.join(this.mementoDir, componentType, `${component.name}.md`);
         }
 
-        if (existsSync(targetPath)) {
+        if (await this.fs.exists(targetPath)) {
           conflicts.push(`${componentType.slice(0, -1)} '${component.name}' already exists`);
         }
       }
@@ -330,14 +332,14 @@ export class PackInstaller {
     packManifest: PackStructure['manifest'],
     source: any
   ): Promise<void> {
-    const manifestPath = path.join(this.mementoDir, 'packs.json');
+    const manifestPath = this.fs.join(this.mementoDir, 'packs.json');
     let projectManifest: ProjectPackManifest = { packs: {} };
 
     // Load existing manifest
-    if (existsSync(manifestPath)) {
+    if (await this.fs.exists(manifestPath)) {
       try {
-        const content = await fs.readFile(manifestPath, 'utf-8');
-        projectManifest = JSON.parse(content);
+        const content = await this.fs.readFile(manifestPath, 'utf-8');
+        projectManifest = JSON.parse(content as string);
       } catch (error) {
         logger.warn(`Error reading project pack manifest: ${error}`);
       }
@@ -351,7 +353,7 @@ export class PackInstaller {
     };
 
     // Save updated manifest
-    await fs.writeFile(manifestPath, JSON.stringify(projectManifest, null, 2));
+    await this.fs.writeFile(manifestPath, JSON.stringify(projectManifest, null, 2));
     logger.debug(`Updated project pack manifest for '${packManifest.name}'`);
   }
 
@@ -359,15 +361,15 @@ export class PackInstaller {
    * Load the project pack manifest
    */
   private async loadProjectManifest(): Promise<ProjectPackManifest> {
-    const manifestPath = path.join(this.mementoDir, 'packs.json');
+    const manifestPath = this.fs.join(this.mementoDir, 'packs.json');
     
-    if (!existsSync(manifestPath)) {
+    if (!await this.fs.exists(manifestPath)) {
       return { packs: {} };
     }
 
     try {
-      const content = await fs.readFile(manifestPath, 'utf-8');
-      return JSON.parse(content);
+      const content = await this.fs.readFile(manifestPath, 'utf-8');
+      return JSON.parse(content as string);
     } catch (error) {
       logger.warn(`Error reading project pack manifest: ${error}`);
       return { packs: {} };
@@ -382,14 +384,14 @@ export class PackInstaller {
     
     // Ensure pack-specific directories exist
     const packDirs = [
-      path.join(this.mementoDir, 'modes'),
-      path.join(this.mementoDir, 'workflows'),
-      path.join(this.mementoDir, 'hooks'),
-      path.join(this.claudeDir, 'agents'),
+      this.fs.join(this.mementoDir, 'modes'),
+      this.fs.join(this.mementoDir, 'workflows'),
+      this.fs.join(this.mementoDir, 'hooks'),
+      this.fs.join(this.claudeDir, 'agents'),
     ];
 
     for (const dir of packDirs) {
-      await fs.mkdir(dir, { recursive: true });
+      await this.fs.mkdir(dir, { recursive: true });
     }
   }
 }

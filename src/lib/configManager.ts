@@ -1,8 +1,8 @@
-import * as fs from 'fs';
-import * as path from 'path';
 import { ConfigSchemaRegistry, MementoConfig } from './configSchema';
 import { ValidationError } from './errors';
 import { MementoCore } from './MementoCore';
+import { FileSystemAdapter } from './adapters/FileSystemAdapter';
+import { NodeFileSystemAdapter } from './adapters/NodeFileSystemAdapter';
 
 /**
  * Simplified configuration manager with YAML-only support
@@ -11,9 +11,11 @@ import { MementoCore } from './MementoCore';
 export class ConfigManager {
   private mementoCore: MementoCore;
   private schemaRegistry: ConfigSchemaRegistry;
+  private fs: FileSystemAdapter;
 
-  constructor(projectRoot: string) {
-    this.mementoCore = new MementoCore(projectRoot);
+  constructor(projectRoot: string, fsAdapter?: FileSystemAdapter) {
+    this.fs = fsAdapter || new NodeFileSystemAdapter();
+    this.mementoCore = new MementoCore(projectRoot, this.fs);
     this.schemaRegistry = ConfigSchemaRegistry.getInstance();
   }
 
@@ -79,7 +81,7 @@ export class ConfigManager {
     const paths = this.getConfigPaths();
     const configPath = global ? paths.global : paths.project;
     
-    if (!fs.existsSync(configPath)) {
+    if (!this.fs.existsSync(configPath)) {
       return {
         valid: false,
         errors: [`Configuration file not found: ${configPath}`],
@@ -116,8 +118,8 @@ export class ConfigManager {
   getConfigPaths(): { global: string; project: string } {
     const scopePaths = this.mementoCore.getScopePaths();
     return {
-      global: path.join(scopePaths.global, 'config.yaml'),
-      project: path.join(scopePaths.project, 'config.yaml')
+      global: this.fs.join(scopePaths.global, 'config.yaml'),
+      project: this.fs.join(scopePaths.project, 'config.yaml')
     };
   }
 

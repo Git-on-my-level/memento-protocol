@@ -386,9 +386,42 @@ async function handleStarterPackInstallation(
     // Load pack to get default mode for return value
     try {
       const packStructure = await starterPackManager.loadPack(packName);
-      return { ...result, defaultMode: packStructure.manifest.configuration?.defaultMode };
+      return { 
+        success: result.success,
+        installed: {
+          modes: [...result.installed.modes],
+          workflows: [...result.installed.workflows],
+          agents: [...result.installed.agents],
+          hooks: [...result.installed.hooks]
+        },
+        skipped: {
+          modes: [...result.skipped.modes],
+          workflows: [...result.skipped.workflows],
+          agents: [...result.skipped.agents],
+          hooks: [...result.skipped.hooks]
+        },
+        errors: [...result.errors],
+        postInstallMessage: result.postInstallMessage,
+        defaultMode: packStructure.manifest.configuration?.defaultMode
+      };
     } catch {
-      return result;
+      return {
+        success: result.success,
+        installed: {
+          modes: [...result.installed.modes],
+          workflows: [...result.installed.workflows],
+          agents: [...result.installed.agents],
+          hooks: [...result.installed.hooks]
+        },
+        skipped: {
+          modes: [...result.skipped.modes],
+          workflows: [...result.skipped.workflows],
+          agents: [...result.skipped.agents],
+          hooks: [...result.skipped.hooks]
+        },
+        errors: [...result.errors],
+        postInstallMessage: result.postInstallMessage
+      };
     }
   }
 

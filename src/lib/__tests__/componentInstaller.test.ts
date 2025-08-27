@@ -1,12 +1,12 @@
-import * as fs from 'fs/promises';
-import { existsSync } from 'fs';
 import matter from 'gray-matter';
 import { ComponentInstaller } from '../componentInstaller';
 import { DirectoryManager } from '../directoryManager';
 import { logger } from '../logger';
+import { 
+  createTestFileSystem,
+  FileSystemAdapter
+} from '../testing';
 
-jest.mock('fs/promises');
-jest.mock('fs');
 jest.mock('gray-matter');
 jest.mock('../directoryManager');
 jest.mock('../logger', () => ({
@@ -21,10 +21,19 @@ jest.mock('../logger', () => ({
 describe('ComponentInstaller', () => {
   let installer: ComponentInstaller;
   let mockDirManager: jest.Mocked<DirectoryManager>;
+  let testFs: FileSystemAdapter;
   const mockProjectRoot = '/test/project';
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
+    
+    // Create test filesystem with template structure
+    testFs = await createTestFileSystem({
+      // Template structure (PackagePaths.getTemplatesDir() returns /test/templates in test mode)
+      '/test/templates/modes/architect.md': '---\nname: architect\ndescription: System design\ntags: []\ndependencies: []\n---\n# Content',
+      '/test/templates/workflows/review.md': '---\nname: review\ndescription: Code review\ntags: []\ndependencies: []\n---\n# Content',
+      '/test/templates/agents/research.md': '---\nname: research\ndescription: Research agent\ntags: []\ndependencies: []\n---\n# Content'
+    });
     
     // Create fresh directory manager mock
     mockDirManager = {
@@ -36,36 +45,21 @@ describe('ComponentInstaller', () => {
 
     (DirectoryManager as jest.MockedClass<typeof DirectoryManager>).mockImplementation(() => mockDirManager);
     
-    installer = new ComponentInstaller(mockProjectRoot);
+    installer = new ComponentInstaller(mockProjectRoot, testFs, '/test/templates');
   });
 
   describe('listAvailableComponents', () => {
     it('should list available modes and workflows from frontmatter', async () => {
-      // Simple, deterministic mock setup
-      (existsSync as jest.Mock).mockReturnValue(true);
-      
-      (fs.readdir as jest.Mock).mockImplementation((path: string) => {
-        if (path.includes('modes')) return Promise.resolve(['architect.md']);
-        if (path.includes('workflows')) return Promise.resolve(['review.md']);
-        return Promise.resolve([]);
-      });
-
-      (fs.readFile as jest.Mock).mockImplementation((path: string) => {
-        if (path.includes('architect.md')) {
-          return Promise.resolve('---\nname: architect\ndescription: System design\n---\n# Content');
-        }
-        if (path.includes('review.md')) {
-          return Promise.resolve('---\nname: review\ndescription: Code review\n---\n# Content');
-        }
-        return Promise.resolve('');
-      });
-
+      // Mock matter parsing
       (matter as any).mockImplementation((content: string) => {
         if (content.includes('architect')) {
           return { data: { name: 'architect', description: 'System design', tags: [], dependencies: [] } };
         }
         if (content.includes('review')) {
           return { data: { name: 'review', description: 'Code review', tags: [], dependencies: [] } };
+        }
+        if (content.includes('research')) {
+          return { data: { name: 'research', description: 'Research agent', tags: [], dependencies: [] } };
         }
         return { data: {} };
       });
@@ -76,12 +70,16 @@ describe('ComponentInstaller', () => {
       expect(result.modes[0].name).toBe('architect');
       expect(result.workflows).toHaveLength(1);
       expect(result.workflows[0].name).toBe('review');
+      expect(result.agents).toHaveLength(1);
+      expect(result.agents[0].name).toBe('research');
     });
 
     it('should handle missing template directories', async () => {
-      (existsSync as jest.Mock).mockReturnValue(false);
+      // Create installer with empty filesystem
+      const emptyFs = await createTestFileSystem({});
+      const emptyInstaller = new ComponentInstaller(mockProjectRoot, emptyFs, '/test/templates');
 
-      const result = await installer.listAvailableComponents();
+      const result = await emptyInstaller.listAvailableComponents();
 
       expect(result.modes).toEqual([]);
       expect(result.workflows).toEqual([]);
@@ -124,19 +122,18 @@ describe('ComponentInstaller', () => {
         components: { modes: [], workflows: [], updated: '' }
       };
 
-      (existsSync as jest.Mock).mockReturnValue(true);
-      (fs.readFile as jest.Mock).mockResolvedValue('---\nname: architect\n---\n# Content');
       (matter as any).mockReturnValue({
         data: { name: 'architect', description: 'System design', dependencies: [] }
       });
-      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
       
       mockDirManager.getManifest.mockResolvedValue(mockManifest);
       mockDirManager.getComponentPath.mockReturnValue('/test/.memento/modes/architect.md');
 
       await installer.installComponent('mode', 'architect');
 
-      expect(fs.writeFile).toHaveBeenCalled();
+      // Verify the file was written to the destination path
+      const writtenContent = await testFs.readFile('/test/.memento/modes/architect.md', 'utf-8');
+      expect(writtenContent).toContain('System design');
       expect(logger.success).toHaveBeenCalledWith("Installed mode 'architect'");
     });
 
@@ -145,18 +142,16 @@ describe('ComponentInstaller', () => {
         components: { modes: ['architect'], workflows: [] }
       };
 
-      (existsSync as jest.Mock).mockReturnValue(true);
       mockDirManager.getManifest.mockResolvedValue(mockManifest);
 
       await installer.installComponent('mode', 'architect');
 
       expect(logger.warn).toHaveBeenCalledWith("mode 'architect' is already installed");
-      expect(fs.writeFile).not.toHaveBeenCalled();
+      // Verify file was NOT written
+      expect(await testFs.exists('/test/.memento/modes/architect.md')).toBe(false);
     });
 
     it('should throw error for non-existent component', async () => {
-      (existsSync as jest.Mock).mockReturnValue(false);
-
       await expect(installer.installComponent('mode', 'nonexistent'))
         .rejects.toThrow("Component mode 'nonexistent' not found in templates");
     });
@@ -164,12 +159,6 @@ describe('ComponentInstaller', () => {
 
   describe('interactiveInstall', () => {
     it('should display available components', async () => {
-      (existsSync as jest.Mock).mockReturnValue(true);
-      (fs.readdir as jest.Mock).mockImplementation((path: string) => {
-        if (path.includes('modes')) return Promise.resolve(['architect.md']);
-        return Promise.resolve([]);
-      });
-      (fs.readFile as jest.Mock).mockResolvedValue('---\nname: architect\ndescription: System design\n---\n# Content');
       (matter as any).mockReturnValue({
         data: { name: 'architect', description: 'System design', tags: [], dependencies: [] }
       });
@@ -181,9 +170,14 @@ describe('ComponentInstaller', () => {
     });
 
     it('should handle no available components', async () => {
-      (existsSync as jest.Mock).mockReturnValue(false);
+      // Create installer with no workflow templates
+      const noWorkflowFs = await createTestFileSystem({
+        '/test/templates/modes/architect.md': '---\nname: architect\ndescription: System design\n---\n# Content',
+        '/test/templates/agents/research.md': '---\nname: research\ndescription: Research agent\n---\n# Content'
+      });
+      const noWorkflowInstaller = new ComponentInstaller(mockProjectRoot, noWorkflowFs, '/test/templates');
 
-      await installer.interactiveInstall('workflow');
+      await noWorkflowInstaller.interactiveInstall('workflow');
 
       expect(logger.error).toHaveBeenCalledWith('No workflows available for installation');
     });

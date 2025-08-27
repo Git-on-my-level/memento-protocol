@@ -1,34 +1,29 @@
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { existsSync } from 'fs';
 import { DirectoryManager } from '../directoryManager';
-
-jest.mock('fs/promises');
-jest.mock('fs');
+import { createTestFileSystem } from '../testing';
+import { MemoryFileSystemAdapter } from '../adapters/MemoryFileSystemAdapter';
 
 describe('DirectoryManager', () => {
   let dirManager: DirectoryManager;
+  let fs: MemoryFileSystemAdapter;
   const mockProjectRoot = '/test/project';
   const mockMementoDir = '/test/project/.memento';
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    dirManager = new DirectoryManager(mockProjectRoot);
+  beforeEach(async () => {
+    fs = await createTestFileSystem({});
+    dirManager = new DirectoryManager(mockProjectRoot, fs);
   });
 
   describe('isInitialized', () => {
-    it('should return true when .memento directory exists', () => {
-      (existsSync as jest.Mock).mockReturnValue(true);
+    it('should return true when .memento directory exists', async () => {
+      // Create the .memento directory
+      await fs.mkdir(mockMementoDir, { recursive: true });
 
       const result = dirManager.isInitialized();
       
       expect(result).toBe(true);
-      expect(existsSync).toHaveBeenCalledWith(mockMementoDir);
     });
 
     it('should return false when .memento directory does not exist', () => {
-      (existsSync as jest.Mock).mockReturnValue(false);
-
       const result = dirManager.isInitialized();
       
       expect(result).toBe(false);
@@ -37,54 +32,55 @@ describe('DirectoryManager', () => {
 
   describe('initializeStructure', () => {
     it('should create all required directories', async () => {
-      (existsSync as jest.Mock).mockReturnValue(false);
-      (fs.mkdir as jest.Mock).mockResolvedValue(undefined);
-      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
-
       await dirManager.initializeStructure();
 
       const expectedDirs = [
         mockMementoDir,
-        path.join(mockMementoDir, 'modes'),
-        path.join(mockMementoDir, 'workflows'),
-        path.join(mockMementoDir, 'integrations'),
-        path.join(mockMementoDir, 'tickets'),
+        fs.join(mockMementoDir, 'modes'),
+        fs.join(mockMementoDir, 'workflows'),
+        fs.join(mockMementoDir, 'integrations'),
+        fs.join(mockMementoDir, 'scripts'),
+        fs.join(mockMementoDir, 'tickets'),
+        '/test/project/.claude',
+        '/test/project/.claude/agents',
       ];
 
       expectedDirs.forEach(dir => {
-        expect(fs.mkdir).toHaveBeenCalledWith(dir, { recursive: true });
+        expect(fs.existsSync(dir)).toBe(true);
       });
     });
 
     it('should create manifest.json file', async () => {
-      (existsSync as jest.Mock).mockReturnValue(false);
-      (fs.mkdir as jest.Mock).mockResolvedValue(undefined);
-      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
-
       await dirManager.initializeStructure();
 
-      const manifestPath = path.join(mockMementoDir, 'manifest.json');
-      expect(fs.writeFile).toHaveBeenCalledWith(
-        manifestPath,
-        expect.stringContaining('"version": "1.0.0"')
-      );
+      const manifestPath = fs.join(mockMementoDir, 'manifest.json');
+      expect(fs.existsSync(manifestPath)).toBe(true);
+      
+      const content = await fs.readFile(manifestPath, 'utf-8') as string;
+      const manifest = JSON.parse(content);
+      expect(manifest.version).toBe('1.0.0');
+      expect(manifest).toHaveProperty('components');
     });
 
     it('should not overwrite existing manifest', async () => {
-      (existsSync as jest.Mock).mockImplementation((path: string) => {
-        return path.endsWith('manifest.json');
-      });
-      (fs.mkdir as jest.Mock).mockResolvedValue(undefined);
+      const manifestPath = fs.join(mockMementoDir, 'manifest.json');
+      const originalManifest = { version: '0.9.0', custom: 'data' };
+      
+      // Pre-create directories and manifest
+      await fs.mkdir(mockMementoDir, { recursive: true });
+      await fs.writeFile(manifestPath, JSON.stringify(originalManifest));
 
       await dirManager.initializeStructure();
 
-      expect(fs.writeFile).not.toHaveBeenCalled();
+      const content = await fs.readFile(manifestPath, 'utf-8') as string;
+      const manifest = JSON.parse(content);
+      expect(manifest).toEqual(originalManifest);
     });
   });
 
   describe('validateStructure', () => {
     it('should report valid when all directories exist', async () => {
-      (existsSync as jest.Mock).mockReturnValue(true);
+      await dirManager.initializeStructure();
 
       const result = await dirManager.validateStructure();
 
@@ -93,21 +89,29 @@ describe('DirectoryManager', () => {
     });
 
     it('should report missing directories', async () => {
-      (existsSync as jest.Mock).mockImplementation((path: string) => {
-        return !path.includes('modes') && !path.includes('workflows');
-      });
+      // Create only some directories
+      await fs.mkdir(mockMementoDir, { recursive: true });
+      await fs.mkdir(fs.join(mockMementoDir, 'integrations'));
+      await fs.mkdir(fs.join(mockMementoDir, 'scripts'));
+      await fs.mkdir(fs.join(mockMementoDir, 'tickets'));
+      await fs.mkdir('/test/project/.claude/agents', { recursive: true });
 
       const result = await dirManager.validateStructure();
 
       expect(result.valid).toBe(false);
       expect(result.missing).toContain('modes');
       expect(result.missing).toContain('workflows');
+      expect(result.missing).toContain('manifest.json');
     });
 
     it('should check for manifest.json', async () => {
-      (existsSync as jest.Mock).mockImplementation((path: string) => {
-        return !path.endsWith('manifest.json');
-      });
+      // Create all directories but no manifest
+      const dirs = ['modes', 'workflows', 'integrations', 'scripts', 'tickets'];
+      await fs.mkdir(mockMementoDir, { recursive: true });
+      for (const dir of dirs) {
+        await fs.mkdir(fs.join(mockMementoDir, dir));
+      }
+      await fs.mkdir('/test/project/.claude/agents', { recursive: true });
 
       const result = await dirManager.validateStructure();
 
@@ -118,51 +122,51 @@ describe('DirectoryManager', () => {
 
   describe('ensureGitignore', () => {
     it('should add .memento to gitignore if not present', async () => {
-      (existsSync as jest.Mock).mockReturnValue(true);
-      (fs.readFile as jest.Mock).mockResolvedValue('node_modules/\n');
-      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
+      const gitignorePath = fs.join(mockProjectRoot, '.gitignore');
+      await fs.writeFile(gitignorePath, 'node_modules/\n');
 
       await dirManager.ensureGitignore();
 
-      const gitignorePath = path.join(mockProjectRoot, '.gitignore');
-      expect(fs.writeFile).toHaveBeenCalledWith(
-        gitignorePath,
-        expect.stringContaining('.memento/')
-      );
+      const content = await fs.readFile(gitignorePath, 'utf-8') as string;
+      expect(content).toContain('.memento/');
+      expect(content).toContain('# Memento Protocol');
     });
 
     it('should not duplicate .memento entry', async () => {
-      (existsSync as jest.Mock).mockReturnValue(true);
-      (fs.readFile as jest.Mock).mockResolvedValue('node_modules/\n.memento/\n');
+      const gitignorePath = fs.join(mockProjectRoot, '.gitignore');
+      const originalContent = 'node_modules/\n.memento/\n';
+      await fs.writeFile(gitignorePath, originalContent);
 
       await dirManager.ensureGitignore();
 
-      expect(fs.writeFile).not.toHaveBeenCalled();
+      const content = await fs.readFile(gitignorePath, 'utf-8') as string;
+      expect(content).toBe(originalContent);
     });
 
     it('should create gitignore if it does not exist', async () => {
-      (existsSync as jest.Mock).mockReturnValue(false);
-      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
-
       await dirManager.ensureGitignore();
 
-      expect(fs.writeFile).toHaveBeenCalledWith(
-        path.join(mockProjectRoot, '.gitignore'),
-        expect.stringContaining('# Memento Protocol\n.memento/')
-      );
+      const gitignorePath = fs.join(mockProjectRoot, '.gitignore');
+      const content = await fs.readFile(gitignorePath, 'utf-8') as string;
+      expect(content).toContain('# Memento Protocol');
+      expect(content).toContain('.memento/');
     });
 
     it('should recognize various .memento patterns', async () => {
       const patterns = ['.memento', '.memento/', '/.memento', '/.memento/'];
       
       for (const pattern of patterns) {
-        jest.clearAllMocks();
-        (existsSync as jest.Mock).mockReturnValue(true);
-        (fs.readFile as jest.Mock).mockResolvedValue(`node_modules/\n${pattern}\n`);
+        // Reset filesystem for each test
+        fs.reset();
+        
+        const gitignorePath = fs.join(mockProjectRoot, '.gitignore');
+        const originalContent = `node_modules/\n${pattern}\n`;
+        await fs.writeFile(gitignorePath, originalContent);
 
         await dirManager.ensureGitignore();
 
-        expect(fs.writeFile).not.toHaveBeenCalled();
+        const content = await fs.readFile(gitignorePath, 'utf-8') as string;
+        expect(content).toBe(originalContent); // Should not be modified
       }
     });
   });
@@ -178,6 +182,10 @@ describe('DirectoryManager', () => {
       expect(path).toBe('/test/project/.memento/workflows/review.md');
     });
 
+    it('should return correct path for agents', () => {
+      const path = dirManager.getComponentPath('agents', 'researcher');
+      expect(path).toBe('/test/project/.claude/agents/researcher.md');
+    });
   });
 
   describe('getManifest', () => {
@@ -190,15 +198,17 @@ describe('DirectoryManager', () => {
         }
       };
 
-      (fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(mockManifest));
+      const manifestPath = fs.join(mockMementoDir, 'manifest.json');
+      await fs.mkdir(mockMementoDir, { recursive: true });
+      await fs.writeFile(manifestPath, JSON.stringify(mockManifest));
 
       const result = await dirManager.getManifest();
 
       expect(result).toEqual(mockManifest);
-      expect(fs.readFile).toHaveBeenCalledWith(
-        path.join(mockMementoDir, 'manifest.json'),
-        'utf-8'
-      );
+    });
+    
+    it('should throw error when manifest does not exist', async () => {
+      await expect(dirManager.getManifest()).rejects.toThrow('Memento Protocol is not initialized');
     });
   });
 
@@ -212,14 +222,12 @@ describe('DirectoryManager', () => {
         }
       };
 
-      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
-
+      await fs.mkdir(mockMementoDir, { recursive: true });
       await dirManager.updateManifest(manifest);
 
-      expect(fs.writeFile).toHaveBeenCalledWith(
-        path.join(mockMementoDir, 'manifest.json'),
-        JSON.stringify(manifest, null, 2)
-      );
+      const manifestPath = fs.join(mockMementoDir, 'manifest.json');
+      const content = await fs.readFile(manifestPath, 'utf-8') as string;
+      expect(JSON.parse(content)).toEqual(manifest);
     });
   });
 });
