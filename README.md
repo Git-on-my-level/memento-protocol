@@ -70,6 +70,28 @@ npm install -g memento-protocol
 memento init
 ```
 
+## Starter Packs: Ready-to-Use Bundles
+
+Get up and running instantly with curated collections of modes, workflows, and agents:
+
+```bash
+# Install with automatic detection
+npx memento-protocol init --starter-pack
+
+# Or specify a pack directly
+npx memento-protocol init --starter-pack frontend-react
+```
+
+### Available Packs
+
+| Pack | Description | Includes |
+|------|-------------|----------|
+| **frontend-react** | Complete React development setup | `component-engineer`, `react-architect`, `ui-reviewer` modes + creation workflows |
+| **backend-api** | RESTful API development | `api-architect`, `backend-engineer`, `security-reviewer` modes + testing workflows |
+| **fullstack** | End-to-end development | Both frontend and backend capabilities combined |
+
+*Just like oh-my-zsh themes transform your terminal experience, starter packs transform Claude Code for your project type.*
+
 ## Daily Workflow
 
 ```bash
@@ -105,9 +127,10 @@ memento init
 
 - 📚 [Installation Guide](docs/INSTALLATION.md) - Detailed setup instructions
 - 🚀 [Quick Start](docs/QUICKSTART.md) - Get running in 5 minutes
+- 📦 [Starter Packs Guide](docs/STARTER_PACKS.md) - Ready-to-use bundles for different project types
 - 🎨 [Creating Modes](docs/MODES.md) - Build custom AI personalities
 - 🔧 [Workflows](docs/WORKFLOWS.md) - Automate complex tasks
-- 🪝 [Hooks Guide](docs/HOOKS.md) - Event-driven automation
+- 🪝 [Hooks Guide](docs/HOOKS_GUIDE.md) - Event-driven automation
 - 📖 [API Reference](docs/API.md) - Programmatic usage
 
 ## Examples
@@ -139,10 +162,10 @@ Like zsh enhances bash without replacing it, Memento Protocol enhances Claude Co
 
 ## Coming Soon
 
-- 📦 **Starter Packs**: Frontend/Backend/DevOps bundles (like oh-my-zsh themes)
 - 🌍 **Community Hub**: Share modes and workflows
 - 📝 **~/.memento/config.yaml**: Global config file (unified structure with project config)
 - 🔌 **Plugin Manager**: Easy install/update (like zplug)
+- 📊 **Analytics**: Track productivity and usage patterns
 
 ## Star History
 

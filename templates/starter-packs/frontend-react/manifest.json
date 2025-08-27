@@ -1,0 +1,93 @@
+{
+  "name": "frontend-react",
+  "version": "1.0.0",
+  "description": "Complete React frontend development setup with TypeScript support and best practices",
+  "author": "memento-protocol",
+  "tags": ["react", "frontend", "typescript", "web"],
+  "category": "frontend",
+  "mementoProtocolVersion": "1.0.0",
+  "components": {
+    "modes": [
+      {
+        "name": "component-engineer",
+        "required": true
+      },
+      {
+        "name": "react-architect",
+        "required": false
+      },
+      {
+        "name": "ui-reviewer",
+        "required": true
+      }
+    ],
+    "workflows": [
+      {
+        "name": "component-creation",
+        "required": true
+      },
+      {
+        "name": "state-management",
+        "required": true
+      },
+      {
+        "name": "style-system",
+        "required": true
+      }
+    ],
+    "agents": [
+      {
+        "name": "claude-code-research",
+        "required": false
+      },
+      {
+        "name": "file-content-analyzer",
+        "required": false,
+        "description": "Useful for analyzing component structure"
+      }
+    ]
+  },
+  "configuration": {
+    "defaultMode": "component-engineer",
+    "customCommands": {
+      "component": {
+        "description": "Create a new React component using component-creation workflow",
+        "template": "/component [name] - Execute component-creation workflow for [name] component"
+      },
+      "state": {
+        "description": "Implement state management pattern",
+        "template": "/state [type] - Execute state-management workflow for [type] state"
+      },
+      "styles": {
+        "description": "Set up styling system",
+        "template": "/styles [approach] - Execute style-system workflow with [approach]"
+      }
+    },
+    "projectSettings": {
+      "typescript": true,
+      "testFramework": "jest",
+      "stylingApproach": "tailwind",
+      "stateManagement": "context"
+    }
+  },
+  "hooks": [
+    {
+      "name": "git-context-loader",
+      "enabled": true,
+      "config": {
+        "includeStatus": true
+      }
+    },
+    {
+      "name": "project-overview",
+      "enabled": true
+    }
+  ],
+  "compatibleWith": ["javascript", "typescript", "react"],
+  "postInstall": {
+    "message": "React Frontend Starter Pack installed! 🎉\n\nAvailable modes:\n- `/mode component-engineer` - Component development focus\n- `/mode react-architect` - React architecture planning\n- `/mode ui-reviewer` - UI/UX code reviews\n\nQuick commands:\n- `/component ButtonComponent` - Create new React component\n- `/state global` - Set up state management\n- `/styles tailwind` - Configure styling system\n\nWorkflows available: component-creation, state-management, style-system",
+    "commands": [
+      "memento config set defaultMode component-engineer"
+    ]
+  }
+}
