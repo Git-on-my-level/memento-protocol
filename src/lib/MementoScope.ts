@@ -3,36 +3,14 @@ import * as path from 'path';
 import * as yaml from 'js-yaml';
 import { logger } from './logger';
 import { ConfigurationError } from './errors';
+import { MementoConfig } from './configSchema';
+import { SimpleCache } from './SimpleCache';
 
 export interface ComponentInfo {
   name: string;
   type: 'mode' | 'workflow' | 'script' | 'hook' | 'agent' | 'command' | 'template';
   path: string;
   metadata?: any;
-}
-
-export interface MementoScopeConfig {
-  // Project-level settings
-  defaultMode?: string;
-  preferredWorkflows?: string[];
-  customTemplateSources?: string[];
-  
-  // Integration settings
-  integrations?: {
-    [key: string]: any;
-  };
-  
-  // UI preferences
-  ui?: {
-    colorOutput?: boolean;
-    verboseLogging?: boolean;
-  };
-  
-  // Component settings
-  components?: {
-    modes?: string[];
-    workflows?: string[];
-  };
 }
 
 /**
@@ -42,14 +20,14 @@ export interface MementoScopeConfig {
 export class MementoScope {
   private scopePath: string;
   private configPath: string;
-  private cachedConfig: MementoScopeConfig | null = null;
-  private cachedComponents: ComponentInfo[] | null = null;
+  private cache: SimpleCache;
   private isGlobal: boolean;
 
   constructor(scopePath: string, isGlobal: boolean = false) {
     this.scopePath = scopePath;
     this.configPath = path.join(scopePath, 'config.yaml');
     this.isGlobal = isGlobal;
+    this.cache = new SimpleCache(300000); // 5 minutes TTL
   }
 
   /**
@@ -77,23 +55,25 @@ export class MementoScope {
    * Load configuration from config.yaml
    * Returns null if config doesn't exist, throws on parse errors
    */
-  async getConfig(): Promise<MementoScopeConfig | null> {
-    if (this.cachedConfig !== null) {
-      return this.cachedConfig;
+  async getConfig(): Promise<MementoConfig | null> {
+    const cacheKey = 'config';
+    const cached = this.cache.get<MementoConfig | null>(cacheKey);
+    if (cached !== null) {
+      return cached;
     }
 
     if (!fs.existsSync(this.configPath)) {
-      this.cachedConfig = null;
+      this.cache.set(cacheKey, null);
       return null;
     }
 
     try {
       const content = fs.readFileSync(this.configPath, 'utf-8');
-      const config = yaml.load(content) as MementoScopeConfig;
+      const config = yaml.load(content) as MementoConfig;
       
       // Validate basic structure
       if (config && typeof config === 'object') {
-        this.cachedConfig = config;
+        this.cache.set(cacheKey, config);
         return config;
       } else {
         throw new Error('Configuration must be an object');
@@ -110,7 +90,7 @@ export class MementoScope {
   /**
    * Save configuration to config.yaml
    */
-  async saveConfig(config: MementoScopeConfig): Promise<void> {
+  async saveConfig(config: MementoConfig): Promise<void> {
     // Ensure directory exists
     if (!fs.existsSync(this.scopePath)) {
       fs.mkdirSync(this.scopePath, { recursive: true });
@@ -125,8 +105,8 @@ export class MementoScope {
       
       fs.writeFileSync(this.configPath, yamlContent, 'utf-8');
       
-      // Invalidate cache
-      this.cachedConfig = null;
+      // Invalidate config cache
+      this.cache.invalidatePattern('config');
       
       const scopeType = this.isGlobal ? 'global' : 'project';
       logger.success(`Configuration saved to ${scopeType} scope: ${this.configPath}`);
@@ -143,12 +123,14 @@ export class MementoScope {
    * Discover all components in this scope
    */
   async getComponents(): Promise<ComponentInfo[]> {
-    if (this.cachedComponents !== null) {
-      return this.cachedComponents;
+    const cacheKey = 'components';
+    const cached = this.cache.get<ComponentInfo[]>(cacheKey);
+    if (cached !== null) {
+      return cached;
     }
 
     if (!this.exists()) {
-      this.cachedComponents = [];
+      this.cache.set(cacheKey, []);
       return [];
     }
 
@@ -184,7 +166,7 @@ export class MementoScope {
       }
     }
 
-    this.cachedComponents = components;
+    this.cache.set(cacheKey, components);
     return components;
   }
 
@@ -200,16 +182,23 @@ export class MementoScope {
    * Get components by type
    */
   async getComponentsByType(type: ComponentInfo['type']): Promise<ComponentInfo[]> {
+    const cacheKey = `components:${type}`;
+    const cached = this.cache.get<ComponentInfo[]>(cacheKey);
+    if (cached !== null) {
+      return cached;
+    }
+
     const components = await this.getComponents();
-    return components.filter(c => c.type === type);
+    const filtered = components.filter(c => c.type === type);
+    this.cache.set(cacheKey, filtered);
+    return filtered;
   }
 
   /**
    * Clear all caches
    */
   clearCache(): void {
-    this.cachedConfig = null;
-    this.cachedComponents = null;
+    this.cache.clear();
   }
 
   /**
@@ -285,7 +274,7 @@ export class MementoScope {
 
     // Create default config if it doesn't exist
     if (!fs.existsSync(this.configPath)) {
-      const defaultConfig: MementoScopeConfig = {
+      const defaultConfig: MementoConfig = {
         ui: {
           colorOutput: true,
           verboseLogging: false

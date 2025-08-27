@@ -2,7 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import * as yaml from 'js-yaml';
-import { MementoScope, MementoScopeConfig } from '../MementoScope';
+import { MementoScope } from '../MementoScope';
+import { MementoConfig } from '../configSchema';
 
 describe('MementoScope', () => {
   let tempDir: string;
@@ -52,7 +53,7 @@ describe('MementoScope', () => {
     });
 
     it('should save and load configuration correctly', async () => {
-      const testConfig: MementoScopeConfig = {
+      const testConfig: MementoConfig = {
         defaultMode: 'architect',
         preferredWorkflows: ['review', 'refactor'],
         ui: {
@@ -73,7 +74,7 @@ describe('MementoScope', () => {
     });
 
     it('should cache configuration after first load', async () => {
-      const testConfig: MementoScopeConfig = {
+      const testConfig: MementoConfig = {
         defaultMode: 'engineer'
       };
 
@@ -93,8 +94,8 @@ describe('MementoScope', () => {
     });
 
     it('should invalidate cache after saving', async () => {
-      const config1: MementoScopeConfig = { defaultMode: 'architect' };
-      const config2: MementoScopeConfig = { defaultMode: 'engineer' };
+      const config1: MementoConfig = { defaultMode: 'architect' };
+      const config2: MementoConfig = { defaultMode: 'engineer' };
 
       await mementoScope.saveConfig(config1);
       const loaded1 = await mementoScope.getConfig();
@@ -116,7 +117,7 @@ describe('MementoScope', () => {
       const newDir = path.join(tempDir, 'nested', 'deep');
       const nestedScope = new MementoScope(newDir, false);
       
-      const testConfig: MementoScopeConfig = { defaultMode: 'test' };
+      const testConfig: MementoConfig = { defaultMode: 'test' };
       await nestedScope.saveConfig(testConfig);
 
       expect(fs.existsSync(newDir)).toBe(true);
@@ -298,7 +299,7 @@ describe('MementoScope', () => {
   describe('clearCache()', () => {
     it('should clear both config and component caches', async () => {
       // Set up config and components
-      const testConfig: MementoScopeConfig = { defaultMode: 'architect' };
+      const testConfig: MementoConfig = { defaultMode: 'architect' };
       await mementoScope.saveConfig(testConfig);
       
       fs.mkdirSync(path.join(tempDir, 'modes'), { recursive: true });
@@ -364,7 +365,7 @@ describe('MementoScope', () => {
     it('should not overwrite existing config', async () => {
       // Create scope manually with custom config
       fs.mkdirSync(tempDir, { recursive: true });
-      const existingConfig: MementoScopeConfig = {
+      const existingConfig: MementoConfig = {
         defaultMode: 'existing'
       };
       await mementoScope.saveConfig(existingConfig);

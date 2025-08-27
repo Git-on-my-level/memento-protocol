@@ -1,11 +1,13 @@
 import * as path from 'path';
 import * as os from 'os';
-import { MementoScope, MementoScopeConfig, ComponentInfo } from './MementoScope';
+import { MementoScope, ComponentInfo } from './MementoScope';
+import { MementoConfig } from './configSchema';
 import { ScriptExecutor, ScriptResult, ScriptExecutorOptions } from './ScriptExecutor';
 import { BuiltinComponentProvider } from './BuiltinComponentProvider';
 import { FuzzyMatcher, FuzzyMatch, FuzzyMatchOptions } from './fuzzyMatcher';
 import { ErrorHandler } from './ErrorHandler';
 import { logger } from './logger';
+import { SimpleCache } from './SimpleCache';
 
 /**
  * Central manager for all Memento configuration and components
@@ -32,8 +34,7 @@ export class MementoCore {
   private projectScope: MementoScope;
   private builtinProvider: BuiltinComponentProvider;
   private scriptExecutor: ScriptExecutor;
-  private mergedConfigCache: MementoScopeConfig | null = null;
-  private allComponentsCache: Array<{ component: ComponentInfo; source: 'builtin' | 'global' | 'project' }> | null = null;
+  private cache: SimpleCache;
   private errorHandler: ErrorHandler;
   private projectRoot: string;
 
@@ -46,19 +47,22 @@ export class MementoCore {
     this.projectScope = new MementoScope(projectPath, false);
     this.builtinProvider = new BuiltinComponentProvider();
     this.scriptExecutor = new ScriptExecutor(projectRoot);
+    this.cache = new SimpleCache(300000); // 5 minutes TTL for config/component caching
     this.errorHandler = new ErrorHandler(this);
   }
 
   /**
    * Get merged configuration with precedence: project → global → defaults
    */
-  async getConfig(): Promise<MementoScopeConfig> {
-    if (this.mergedConfigCache !== null) {
-      return this.mergedConfigCache;
+  async getConfig(): Promise<MementoConfig> {
+    const cacheKey = 'config:merged';
+    const cached = this.cache.get<MementoConfig>(cacheKey);
+    if (cached !== null) {
+      return cached;
     }
 
     // Start with default configuration
-    const defaults: MementoScopeConfig = {
+    const defaults: MementoConfig = {
       ui: {
         colorOutput: true,
         verboseLogging: false
@@ -76,7 +80,7 @@ export class MementoCore {
     // Apply environment variable overrides
     merged = this.applyEnvironmentOverrides(merged);
 
-    this.mergedConfigCache = merged;
+    this.cache.set(cacheKey, merged);
     return merged;
   }
 
@@ -237,8 +241,10 @@ export class MementoCore {
    * Get all components with source information (internal helper)
    */
   private async getAllComponentsWithSource(): Promise<Array<{ component: ComponentInfo; source: 'builtin' | 'global' | 'project' }>> {
-    if (this.allComponentsCache !== null) {
-      return this.allComponentsCache;
+    const cacheKey = 'components:all';
+    const cached = this.cache.get<Array<{ component: ComponentInfo; source: 'builtin' | 'global' | 'project' }>>(cacheKey);
+    if (cached !== null) {
+      return cached;
     }
 
     const allComponents: Array<{ component: ComponentInfo; source: 'builtin' | 'global' | 'project' }> = [];
@@ -273,19 +279,19 @@ export class MementoCore {
       logger.debug(`Failed to load project components: ${error.message}`);
     }
 
-    this.allComponentsCache = allComponents;
+    this.cache.set(cacheKey, allComponents);
     return allComponents;
   }
 
   /**
    * Save configuration to project or global scope
    */
-  async saveConfig(config: MementoScopeConfig, global: boolean = false): Promise<void> {
+  async saveConfig(config: MementoConfig, global: boolean = false): Promise<void> {
     const scope = global ? this.globalScope : this.projectScope;
     await scope.saveConfig(config);
     
-    // Clear merged config cache
-    this.clearCache();
+    // Invalidate config-related cache entries
+    this.cache.invalidatePattern('config');
   }
 
   /**
@@ -306,8 +312,8 @@ export class MementoCore {
     this.setNestedValue(currentConfig, key, value);
     await scope.saveConfig(currentConfig);
     
-    // Clear merged config cache
-    this.clearCache();
+    // Invalidate config-related cache entries
+    this.cache.invalidatePattern('config');
   }
 
   /**
@@ -324,8 +330,8 @@ export class MementoCore {
     this.unsetNestedValue(currentConfig, key);
     await scope.saveConfig(currentConfig);
     
-    // Clear merged config cache
-    this.clearCache();
+    // Invalidate config-related cache entries
+    this.cache.invalidatePattern('config');
   }
 
   /**
@@ -522,8 +528,7 @@ export class MementoCore {
    * Clear all caches
    */
   clearCache(): void {
-    this.mergedConfigCache = null;
-    this.allComponentsCache = null;
+    this.cache.clear();
     this.globalScope.clearCache();
     this.projectScope.clearCache();
     this.builtinProvider.clearCache();
@@ -589,7 +594,7 @@ export class MementoCore {
   /**
    * Merge two configurations, with right taking precedence over left
    */
-  private mergeConfigs(left: MementoScopeConfig, right: MementoScopeConfig | null): MementoScopeConfig {
+  private mergeConfigs(left: MementoConfig, right: MementoConfig | null): MementoConfig {
     if (!right) return left;
 
     return {
@@ -613,7 +618,7 @@ export class MementoCore {
   /**
    * Apply environment variable overrides
    */
-  private applyEnvironmentOverrides(config: MementoScopeConfig): MementoScopeConfig {
+  private applyEnvironmentOverrides(config: MementoConfig): MementoConfig {
     const result = { ...config };
 
     // MEMENTO_DEFAULT_MODE

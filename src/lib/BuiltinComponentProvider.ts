@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ComponentInfo } from './MementoScope';
 import { logger } from './logger';
+import { SimpleCache } from './SimpleCache';
 
 export interface BuiltinComponentInfo extends ComponentInfo {
   templatePath: string;
@@ -15,21 +16,24 @@ export interface BuiltinComponentInfo extends ComponentInfo {
 export class BuiltinComponentProvider {
   private templatesPath: string;
   private metadataPath: string;
-  private cachedComponents: BuiltinComponentInfo[] | null = null;
+  private cache: SimpleCache;
 
   constructor(packageRoot?: string) {
     // Default to the package's templates directory
     const root = packageRoot || this.findPackageRoot();
     this.templatesPath = path.join(root, 'templates');
     this.metadataPath = path.join(this.templatesPath, 'metadata.json');
+    this.cache = new SimpleCache(600000); // 10 minutes TTL for built-in components (rarely change)
   }
 
   /**
    * Get all built-in components from templates directory
    */
   async getComponents(): Promise<BuiltinComponentInfo[]> {
-    if (this.cachedComponents !== null) {
-      return this.cachedComponents;
+    const cacheKey = 'components';
+    const cached = this.cache.get<BuiltinComponentInfo[]>(cacheKey);
+    if (cached !== null) {
+      return cached;
     }
 
     const components: BuiltinComponentInfo[] = [];
@@ -45,12 +49,13 @@ export class BuiltinComponentProvider {
         components.push(...discoveredComponents);
       }
 
-      this.cachedComponents = components;
+      this.cache.set(cacheKey, components);
       return components;
     } catch (error: any) {
       logger.debug(`Failed to load built-in components: ${error.message}`);
-      this.cachedComponents = [];
-      return [];
+      const emptyComponents: BuiltinComponentInfo[] = [];
+      this.cache.set(cacheKey, emptyComponents);
+      return emptyComponents;
     }
   }
 
@@ -66,8 +71,16 @@ export class BuiltinComponentProvider {
    * Get built-in components by type
    */
   async getComponentsByType(type: ComponentInfo['type']): Promise<BuiltinComponentInfo[]> {
+    const cacheKey = `components:${type}`;
+    const cached = this.cache.get<BuiltinComponentInfo[]>(cacheKey);
+    if (cached !== null) {
+      return cached;
+    }
+
     const components = await this.getComponents();
-    return components.filter(c => c.type === type);
+    const filtered = components.filter(c => c.type === type);
+    this.cache.set(cacheKey, filtered);
+    return filtered;
   }
 
   /**
@@ -88,7 +101,7 @@ export class BuiltinComponentProvider {
    * Clear the component cache
    */
   clearCache(): void {
-    this.cachedComponents = null;
+    this.cache.clear();
   }
 
   /**

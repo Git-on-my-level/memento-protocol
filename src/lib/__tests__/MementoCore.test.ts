@@ -3,7 +3,8 @@ import * as path from 'path';
 import * as os from 'os';
 import * as yaml from 'js-yaml';
 import { MementoCore } from '../MementoCore';
-import { MementoScope, MementoScopeConfig } from '../MementoScope';
+import { MementoScope } from '../MementoScope';
+import { MementoConfig } from '../configSchema';
 
 describe('MementoCore', () => {
   let tempDir: string;
@@ -65,7 +66,7 @@ describe('MementoCore', () => {
 
     it('should merge global and project configurations with project taking precedence', async () => {
       // Create global config
-      const globalConfig: MementoScopeConfig = {
+      const globalConfig: MementoConfig = {
         defaultMode: 'architect',
         ui: {
           colorOutput: false,
@@ -81,7 +82,7 @@ describe('MementoCore', () => {
       );
 
       // Create project config
-      const projectConfig: MementoScopeConfig = {
+      const projectConfig: MementoConfig = {
         preferredWorkflows: ['review'],
         ui: {
           verboseLogging: true
@@ -127,7 +128,7 @@ describe('MementoCore', () => {
       const config1 = await mementoCore.getConfig();
       
       // Modify project config
-      const newConfig: MementoScopeConfig = { defaultMode: 'different' };
+      const newConfig: MementoConfig = { defaultMode: 'different' };
       fs.writeFileSync(
         path.join(projectDir, 'config.yaml'),
         yaml.dump(newConfig)
@@ -260,7 +261,7 @@ describe('MementoCore', () => {
   describe('configuration management', () => {
     describe('saveConfig()', () => {
       it('should save to project scope by default', async () => {
-        const testConfig: MementoScopeConfig = {
+        const testConfig: MementoConfig = {
           defaultMode: 'test',
           ui: { colorOutput: false }
         };
@@ -271,12 +272,12 @@ describe('MementoCore', () => {
         expect(fs.existsSync(projectConfigPath)).toBe(true);
         
         const savedContent = fs.readFileSync(projectConfigPath, 'utf-8');
-        const savedConfig = yaml.load(savedContent) as MementoScopeConfig;
+        const savedConfig = yaml.load(savedContent) as MementoConfig;
         expect(savedConfig).toEqual(testConfig);
       });
 
       it('should save to global scope when requested', async () => {
-        const testConfig: MementoScopeConfig = {
+        const testConfig: MementoConfig = {
           defaultMode: 'global-test'
         };
 
@@ -286,7 +287,7 @@ describe('MementoCore', () => {
         expect(fs.existsSync(globalConfigPath)).toBe(true);
         
         const savedContent = fs.readFileSync(globalConfigPath, 'utf-8');
-        const savedConfig = yaml.load(savedContent) as MementoScopeConfig;
+        const savedConfig = yaml.load(savedContent) as MementoConfig;
         expect(savedConfig).toEqual(testConfig);
       });
     });
@@ -310,7 +311,7 @@ describe('MementoCore', () => {
         
         const globalConfigPath = path.join(globalDir, 'config.yaml');
         const content = fs.readFileSync(globalConfigPath, 'utf-8');
-        const config = yaml.load(content) as MementoScopeConfig;
+        const config = yaml.load(content) as MementoConfig;
         
         expect(config.defaultMode).toBe('global');
       });
@@ -383,7 +384,7 @@ describe('MementoCore', () => {
       fs.mkdirSync(path.join(globalDir, 'modes'), { recursive: true });
       fs.writeFileSync(path.join(globalDir, 'modes', 'test.md'), '# Test');
       
-      const globalConfig: MementoScopeConfig = { defaultMode: 'test' };
+      const globalConfig: MementoConfig = { defaultMode: 'test' };
       fs.writeFileSync(
         path.join(globalDir, 'config.yaml'),
         yaml.dump(globalConfig)
@@ -412,7 +413,7 @@ describe('MementoCore', () => {
       await mementoCore.getAllComponents();
 
       // Create a config file
-      const config: MementoScopeConfig = { defaultMode: 'original' };
+      const config: MementoConfig = { defaultMode: 'original' };
       fs.writeFileSync(
         path.join(projectDir, 'config.yaml'),
         yaml.dump(config)
@@ -422,7 +423,7 @@ describe('MementoCore', () => {
       mementoCore.clearCache();
 
       // Modify config file directly
-      const newConfig: MementoScopeConfig = { defaultMode: 'modified' };
+      const newConfig: MementoConfig = { defaultMode: 'modified' };
       fs.writeFileSync(
         path.join(projectDir, 'config.yaml'),
         yaml.dump(newConfig)
@@ -441,7 +442,7 @@ describe('MementoCore', () => {
       process.env.MEMENTO_VERBOSE = 'true';
 
       // Create base config
-      const baseConfig: MementoScopeConfig = {
+      const baseConfig: MementoConfig = {
         defaultMode: 'base',
         ui: {
           colorOutput: true,
