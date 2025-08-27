@@ -321,8 +321,8 @@ async function handleStarterPackInstallation(
   force?: boolean
 ): Promise<{
   success: boolean;
-  installed: { modes: string[]; workflows: string[]; agents: string[] };
-  skipped: { modes: string[]; workflows: string[]; agents: string[] };
+  installed: { modes: string[]; workflows: string[]; agents: string[]; hooks: string[] };
+  skipped: { modes: string[]; workflows: string[]; agents: string[]; hooks: string[] };
   errors: string[];
   postInstallMessage?: string;
   defaultMode?: string;
@@ -333,7 +333,7 @@ async function handleStarterPackInstallation(
     
     if (availablePacks.length === 0) {
       logger.warn("No starter packs available.");
-      return { success: true, installed: { modes: [], workflows: [], agents: [] }, skipped: { modes: [], workflows: [], agents: [] }, errors: [] };
+      return { success: true, installed: { modes: [], workflows: [], agents: [], hooks: [] }, skipped: { modes: [], workflows: [], agents: [], hooks: [] }, errors: [] };
     }
 
     const inquirer = (await import('inquirer')).default;
@@ -345,28 +345,27 @@ async function handleStarterPackInstallation(
         choices: [
           { name: 'Skip starter pack installation', value: null },
           ...availablePacks.map(pack => ({
-            name: `${pack.name} - ${pack.description}`,
-            value: pack.name
+            name: `${pack.manifest.name} - ${pack.manifest.description}`,
+            value: pack.manifest.name
           }))
         ]
       }
     ]);
 
     if (!selectedPack) {
-      return { success: true, installed: { modes: [], workflows: [], agents: [] }, skipped: { modes: [], workflows: [], agents: [] }, errors: [] };
+      return { success: true, installed: { modes: [], workflows: [], agents: [], hooks: [] }, skipped: { modes: [], workflows: [], agents: [], hooks: [] }, errors: [] };
     }
     
     packName = selectedPack;
   } else if (packName === true) {
     // Non-interactive mode but no pack name provided
     logger.warn("--starter-pack requires a pack name in non-interactive mode");
-    return { success: false, installed: { modes: [], workflows: [], agents: [] }, skipped: { modes: [], workflows: [], agents: [] }, errors: ["Pack name required"] };
+    return { success: false, installed: { modes: [], workflows: [], agents: [], hooks: [] }, skipped: { modes: [], workflows: [], agents: [], hooks: [] }, errors: ["Pack name required"] };
   }
 
   if (typeof packName === 'string') {
     logger.info(`Installing starter pack: ${packName}`);
-    const pack = await starterPackManager.loadPack(packName);
-    const result = await starterPackManager.installPack(pack, { force, interactive: !isNonInteractive });
+    const result = await starterPackManager.installPack(packName, { force, interactive: !isNonInteractive });
     
     if (result.success) {
       logger.success(`Starter pack '${packName}' installed successfully`);
@@ -379,10 +378,19 @@ async function handleStarterPackInstallation(
       if (result.installed.agents.length > 0) {
         logger.info(`  Agents: ${result.installed.agents.join(', ')}`);
       }
+      if (result.installed.hooks.length > 0) {
+        logger.info(`  Hooks: ${result.installed.hooks.join(', ')}`);
+      }
     }
     
-    return { ...result, defaultMode: pack.configuration?.defaultMode };
+    // Load pack to get default mode for return value
+    try {
+      const packStructure = await starterPackManager.loadPack(packName);
+      return { ...result, defaultMode: packStructure.manifest.configuration?.defaultMode };
+    } catch {
+      return result;
+    }
   }
 
-  return { success: true, installed: { modes: [], workflows: [], agents: [] }, skipped: { modes: [], workflows: [], agents: [] }, errors: [] };
+  return { success: true, installed: { modes: [], workflows: [], agents: [], hooks: [] }, skipped: { modes: [], workflows: [], agents: [], hooks: [] }, errors: [] };
 }

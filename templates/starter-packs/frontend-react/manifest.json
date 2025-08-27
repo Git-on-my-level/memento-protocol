@@ -19,11 +19,6 @@
       {
         "name": "ui-reviewer",
         "required": true
-      },
-      {
-        "name": "engineer",
-        "required": false,
-        "description": "General purpose engineering mode as fallback"
       }
     ],
     "workflows": [
@@ -38,11 +33,6 @@
       {
         "name": "style-system",
         "required": true
-      },
-      {
-        "name": "review",
-        "required": false,
-        "description": "General code review workflow"
       }
     ],
     "agents": [
