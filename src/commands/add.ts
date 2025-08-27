@@ -6,6 +6,7 @@ import chalk from 'chalk';
 import inquirer from 'inquirer';
 import * as fs from 'fs';
 import * as path from 'path';
+import { ensureDirectorySync } from '../lib/utils/filesystem';
 
 export const addCommand = new Command('add')
   .description('Add components to your Memento Protocol setup')
@@ -260,7 +261,7 @@ async function installComponent(
   
   // Ensure target directory exists
   if (!fs.existsSync(targetDir)) {
-    fs.mkdirSync(targetDir, { recursive: true });
+    ensureDirectorySync(targetDir);
   }
   
   // Write the component

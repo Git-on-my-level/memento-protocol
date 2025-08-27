@@ -35,28 +35,6 @@ export class ConfigurationError extends MementoError {
   }
 }
 
-export class ComponentError extends MementoError {
-  constructor(message: string, public component: string, suggestion?: string) {
-    super(
-      message,
-      "COMPONENT_ERROR",
-      suggestion || `Try running "memento list" to see available components`
-    );
-    this.name = "ComponentError";
-  }
-}
-
-export class NetworkError extends MementoError {
-  constructor(message: string, suggestion?: string) {
-    super(
-      message,
-      "NETWORK_ERROR",
-      suggestion || "Check your internet connection and try again"
-    );
-    this.name = "NetworkError";
-  }
-}
-
 export class ValidationError extends MementoError {
   constructor(message: string, field: string, suggestion?: string) {
     super(

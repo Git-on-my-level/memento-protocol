@@ -2,10 +2,8 @@ import * as path from 'path';
 import * as os from 'os';
 import { MementoScope, ComponentInfo } from './MementoScope';
 import { MementoConfig } from './configSchema';
-import { ScriptExecutor, ScriptResult, ScriptExecutorOptions } from './ScriptExecutor';
 import { BuiltinComponentProvider } from './BuiltinComponentProvider';
 import { FuzzyMatcher, FuzzyMatch, FuzzyMatchOptions } from './fuzzyMatcher';
-import { ErrorHandler } from './ErrorHandler';
 import { logger } from './logger';
 import { SimpleCache } from './SimpleCache';
 
@@ -33,22 +31,16 @@ export class MementoCore {
   private globalScope: MementoScope;
   private projectScope: MementoScope;
   private builtinProvider: BuiltinComponentProvider;
-  private scriptExecutor: ScriptExecutor;
   private cache: SimpleCache;
-  private errorHandler: ErrorHandler;
-  private projectRoot: string;
 
   constructor(projectRoot: string) {
-    this.projectRoot = projectRoot;
     const globalPath = path.join(os.homedir(), '.memento');
     const projectPath = path.join(projectRoot, '.memento');
     
     this.globalScope = new MementoScope(globalPath, true);
     this.projectScope = new MementoScope(projectPath, false);
     this.builtinProvider = new BuiltinComponentProvider();
-    this.scriptExecutor = new ScriptExecutor(projectRoot);
     this.cache = new SimpleCache(300000); // 5 minutes TTL for config/component caching
-    this.errorHandler = new ErrorHandler(this);
   }
 
   /**
@@ -335,33 +327,6 @@ export class MementoCore {
   }
 
   /**
-   * Initialize both scopes
-   */
-  async initialize(): Promise<void> {
-    // Initialize global scope first
-    await this.globalScope.initialize();
-    
-    // Initialize project scope
-    await this.projectScope.initialize();
-    
-    logger.success('Initialized Memento Protocol (global and project scopes)');
-  }
-
-  /**
-   * Check if project scope exists
-   */
-  hasProjectScope(): boolean {
-    return this.projectScope.exists();
-  }
-
-  /**
-   * Check if global scope exists
-   */
-  hasGlobalScope(): boolean {
-    return this.globalScope.exists();
-  }
-
-  /**
    * Get scope instances for direct access (internal use)
    */
   getScopes(): { global: MementoScope; project: MementoScope } {
@@ -382,56 +347,10 @@ export class MementoCore {
   }
 
   /**
-   * Get project root directory
-   */
-  getProjectRoot(): string {
-    return this.projectRoot;
-  }
-
-  /**
-   * Execute a script by name, searching project scope first, then global scope
-   */
-  async executeScript(name: string, args?: string[], options?: ScriptExecutorOptions): Promise<ScriptResult> {
-    return await this.scriptExecutor.executeByName(name, args, options);
-  }
-
-  /**
-   * List all available scripts from both scopes
-   */
-  async listScripts(): Promise<{ 
-    project: any[]; 
-    global: any[]; 
-    all: any[];
-  }> {
-    return await this.scriptExecutor.listScripts();
-  }
-
-  /**
-   * Find a script by name, returning the script and its context
-   */
-  async findScript(name: string): Promise<{ script: any; context: any } | null> {
-    return await this.scriptExecutor.findScript(name);
-  }
-
-  /**
-   * Get the script executor instance for advanced operations
-   */
-  getScriptExecutor(): ScriptExecutor {
-    return this.scriptExecutor;
-  }
-
-  /**
    * Get the built-in component provider instance for advanced operations
    */
   getBuiltinProvider(): BuiltinComponentProvider {
     return this.builtinProvider;
-  }
-
-  /**
-   * Get the error handler instance for advanced error handling
-   */
-  getErrorHandler(): ErrorHandler {
-    return this.errorHandler;
   }
 
   /**
@@ -476,17 +395,6 @@ export class MementoCore {
     return enhancedMatches;
   }
 
-  /**
-   * Find the best component match using fuzzy search
-   */
-  async findBestComponent(
-    query: string,
-    type?: ComponentInfo['type'],
-    options: FuzzyMatchOptions = {}
-  ): Promise<ComponentSearchResult | null> {
-    const matches = await this.findComponents(query, type, { ...options, maxResults: 1 });
-    return matches.length > 0 ? matches[0] : null;
-  }
 
   /**
    * Generate suggestions for when a component is not found
@@ -503,14 +411,6 @@ export class MementoCore {
       : allComponents;
 
     return FuzzyMatcher.generateSuggestions(query, filteredComponents, maxSuggestions);
-  }
-
-  /**
-   * Check if a component exists in any scope
-   */
-  async hasComponent(name: string, type: ComponentInfo['type']): Promise<boolean> {
-    const result = await this.resolveComponent(name, type);
-    return result !== null;
   }
 
   /**
