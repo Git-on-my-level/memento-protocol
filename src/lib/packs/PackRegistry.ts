@@ -6,7 +6,6 @@ import * as path from "path";
 import {
   PackStructure,
   PackDependencyResult,
-  PackManifest,
 } from "../types/packs";
 import { logger } from "../logger";
 import { MementoError } from "../errors";

@@ -8,8 +8,7 @@ import { existsSync } from "fs";
 import {
   PackManifest,
   PackStructure,
-  LocalPackSource,
-  PackError,
+  LocalPackSource as LocalPackSourceInterface,
 } from "../types/packs";
 import { logger } from "../logger";
 import { MementoError } from "../errors";
@@ -36,7 +35,7 @@ export interface IPackSource {
   /**
    * Get the source identifier
    */
-  getSourceInfo(): LocalPackSource;
+  getSourceInfo(): LocalPackSourceInterface;
 }
 
 /**
@@ -162,7 +161,7 @@ export class LocalPackSource implements IPackSource {
     return existsSync(packPath) && existsSync(manifestPath);
   }
 
-  getSourceInfo(): LocalPackSource {
+  getSourceInfo(): LocalPackSourceInterface {
     return {
       name: 'local',
       type: 'local',

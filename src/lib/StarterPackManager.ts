@@ -1,5 +1,4 @@
 import { logger } from "./logger";
-import { MementoError } from "./errors";
 import {
   PackStructure,
   PackInstallOptions,

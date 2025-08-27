@@ -698,15 +698,19 @@ describe("Init Command", () => {
 
     it("should install starter pack components with agents", async () => {
       const mockPack = {
-        name: "fullstack-pack",
-        version: "1.0.0",
-        description: "Fullstack development pack",
-        author: "test",
-        components: {
-          modes: [{ name: "engineer", required: true }],
-          workflows: [{ name: "review", required: true }],
-          agents: [{ name: "claude-code-research", required: false }]
-        }
+        manifest: {
+          name: "fullstack-pack",
+          version: "1.0.0",
+          description: "Fullstack development pack",
+          author: "test",
+          components: {
+            modes: [{ name: "engineer", required: true }],
+            workflows: [{ name: "review", required: true }],
+            agents: [{ name: "claude-code-research", required: false }]
+          }
+        },
+        path: "/path/to/pack",
+        componentsPath: "/path/to/pack/components"
       };
 
       mockStarterPackManager.loadPack.mockResolvedValue(mockPack);
@@ -732,13 +736,17 @@ describe("Init Command", () => {
 
     it("should respect force flag when installing starter pack", async () => {
       const mockPack = {
-        name: "test-pack",
-        version: "1.0.0",
-        description: "Test pack",
-        author: "test",
-        components: {
-          modes: [{ name: "engineer", required: true }]
-        }
+        manifest: {
+          name: "test-pack",
+          version: "1.0.0",
+          description: "Test pack",
+          author: "test",
+          components: {
+            modes: [{ name: "engineer", required: true }]
+          }
+        },
+        path: "/path/to/pack",
+        componentsPath: "/path/to/pack/components"
       };
 
       mockDirManager.isInitialized.mockReturnValue(true); // Already initialized
@@ -763,16 +771,20 @@ describe("Init Command", () => {
 
     it("should handle starter pack with default mode configuration", async () => {
       const mockPack = {
-        name: "configured-pack",
-        version: "1.0.0",
-        description: "Pack with default mode",
-        author: "test",
-        components: {
-          modes: [{ name: "architect", required: true }, { name: "engineer", required: true }]
+        manifest: {
+          name: "configured-pack",
+          version: "1.0.0",
+          description: "Pack with default mode",
+          author: "test",
+          components: {
+            modes: [{ name: "architect", required: true }, { name: "engineer", required: true }]
+          },
+          configuration: {
+            defaultMode: "architect"
+          }
         },
-        configuration: {
-          defaultMode: "architect"
-        }
+        path: "/path/to/pack",
+        componentsPath: "/path/to/pack/components"
       };
 
       mockStarterPackManager.loadPack.mockResolvedValue(mockPack);
@@ -838,16 +850,20 @@ describe("Init Command", () => {
       });
 
       const mockPack = {
-        name: "test-pack",
-        version: "1.0.0",
-        description: "Test pack",
-        author: "test",
-        components: {
-          modes: [{ name: "engineer", required: true }]
+        manifest: {
+          name: "test-pack",
+          version: "1.0.0",
+          description: "Test pack",
+          author: "test",
+          components: {
+            modes: [{ name: "engineer", required: true }]
+          },
+          configuration: {
+            defaultMode: "engineer"
+          }
         },
-        configuration: {
-          defaultMode: "engineer"
-        }
+        path: "/path/to/pack",
+        componentsPath: "/path/to/pack/components"
       };
 
       mockStarterPackManager.loadPack.mockResolvedValue(mockPack);
