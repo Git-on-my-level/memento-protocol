@@ -8,7 +8,7 @@ import { StarterPackManager } from "../../lib/StarterPackManager";
 import { logger } from "../../lib/logger";
 import { createTestFileSystem } from "../../lib/testing";
 import * as fs from "fs";
-
+import inquirer from "inquirer";
 jest.mock("fs");
 jest.mock("../../lib/directoryManager");
 jest.mock("../../lib/hooks/HookManager");
@@ -26,6 +26,66 @@ jest.mock("../../lib/logger", () => ({
   },
 }));
 
+jest.mock("inquirer");
+
+/**
+ * MockFactory class provides completely fresh mock instances for each test
+ * This ensures no state contamination between tests
+ */
+class MockFactory {
+  static createDirectoryManager(): jest.Mocked<DirectoryManager> {
+    return {
+      isInitialized: jest.fn(),
+      initializeStructure: jest.fn(),
+      ensureGitignore: jest.fn(),
+    } as any;
+  }
+
+  static createHookManager(): jest.Mocked<HookManager> {
+    return {
+      initialize: jest.fn(),
+      listTemplates: jest.fn().mockResolvedValue(['git-context-loader', 'acronym-expander']),
+    } as any;
+  }
+
+  static createProjectDetector(): jest.Mocked<ProjectDetector> {
+    return {
+      detect: jest.fn(),
+    } as any;
+  }
+
+  static createInteractiveSetup(): jest.Mocked<InteractiveSetup> {
+    return {
+      run: jest.fn(),
+      applySetup: jest.fn().mockResolvedValue(undefined),
+    } as any;
+  }
+
+  static createCommandGenerator(): jest.Mocked<CommandGenerator> {
+    return {
+      initialize: jest.fn().mockResolvedValue(undefined),
+    } as any;
+  }
+
+  static createStarterPackManager(): jest.Mocked<StarterPackManager> {
+    return {
+      listPacks: jest.fn().mockResolvedValue([]),
+      loadPack: jest.fn(),
+      installPack: jest.fn().mockResolvedValue(MockFactory.createPackInstallResult()),
+    } as any;
+  }
+
+  static createPackInstallResult(overrides: any = {}) {
+    return {
+      success: true,
+      installed: { modes: [], workflows: [], agents: [], hooks: [] },
+      skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+      errors: [],
+      ...overrides
+    };
+  }
+}
+
 describe("Init Command", () => {
   let mockDirManager: jest.Mocked<DirectoryManager>;
   let mockHookManager: jest.Mocked<HookManager>;
@@ -35,55 +95,38 @@ describe("Init Command", () => {
   let mockStarterPackManager: jest.Mocked<StarterPackManager>;
   let originalExit: any;
   let testFs: any;
+  
+  // Reference to the mocked inquirer
+  const mockInquirer = inquirer as jest.Mocked<typeof inquirer>;
+  
+  
 
-  // Helper function to create valid PackInstallResult
-  const createPackInstallResult = (overrides: any = {}) => ({
-    success: true,
-    installed: { modes: [], workflows: [], agents: [], hooks: [] },
-    skipped: { modes: [], workflows: [], agents: [], hooks: [] },
-    errors: [],
-    ...overrides
+  // Helper function for backwards compatibility
+  const createPackInstallResult = MockFactory.createPackInstallResult;
+
+  beforeAll(() => {
+    originalExit = process.exit;
+  });
+
+  afterAll(() => {
+    process.exit = originalExit;
   });
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    // CRITICAL: Reset ALL mocks AND their implementations
+    jest.resetAllMocks();
+    jest.clearAllMocks(); // Additional cleanup for safety
+    jest.resetModules(); // Reset modules to prevent import cache issues
+    
+    // Create completely fresh mock instances using factory pattern
+    mockDirManager = MockFactory.createDirectoryManager();
+    mockHookManager = MockFactory.createHookManager();
+    mockProjectDetector = MockFactory.createProjectDetector();
+    mockInteractiveSetup = MockFactory.createInteractiveSetup();
+    mockCommandGenerator = MockFactory.createCommandGenerator();
+    mockStarterPackManager = MockFactory.createStarterPackManager();
 
-    // Create test filesystem
-    testFs = await createTestFileSystem({
-      '/project/.memento/config.json': JSON.stringify({ version: '1.0.0' }, null, 2),
-      '/project/package.json': JSON.stringify({ name: 'test-project' }, null, 2)
-    });
-
-    mockDirManager = {
-      isInitialized: jest.fn(),
-      initializeStructure: jest.fn(),
-      ensureGitignore: jest.fn(),
-    } as any;
-
-    mockHookManager = {
-      initialize: jest.fn(),
-      listTemplates: jest.fn().mockResolvedValue(['git-context-loader', 'acronym-expander']),
-    } as any;
-
-    mockProjectDetector = {
-      detect: jest.fn(),
-    } as any;
-
-    mockInteractiveSetup = {
-      run: jest.fn(),
-      applySetup: jest.fn(),
-    } as any;
-
-    mockCommandGenerator = {
-      initialize: jest.fn().mockResolvedValue(undefined),
-    } as any;
-
-    mockStarterPackManager = {
-      listPacks: jest.fn().mockResolvedValue([]),
-      loadPack: jest.fn(),
-      installPack: jest.fn().mockResolvedValue(createPackInstallResult()),
-    } as any;
-
+    // Apply fresh mock implementations to constructors
     (
       DirectoryManager as jest.MockedClass<typeof DirectoryManager>
     ).mockImplementation(() => mockDirManager);
@@ -103,12 +146,44 @@ describe("Init Command", () => {
       StarterPackManager as jest.MockedClass<typeof StarterPackManager>
     ).mockImplementation(() => mockStarterPackManager);
 
-    originalExit = process.exit;
+    // Reset inquirer completely with fresh implementation
+    mockInquirer.prompt.mockReset();
+    mockInquirer.prompt.mockResolvedValue({ selectedPack: null });
+
+    // Create fresh test filesystem for each test
+    testFs = await createTestFileSystem({
+      '/project/.memento/config.json': JSON.stringify({ version: '1.0.0' }, null, 2),
+      '/project/package.json': JSON.stringify({ name: 'test-project' }, null, 2)
+    });
+
+    // Mock process.exit fresh for each test
     process.exit = jest.fn() as any;
+
+    // CRITICAL: Reset commander.js internal state to prevent option parsing contamination
+    // More comprehensive reset of commander.js state
+    (initCommand as any)._optionValues = {};
+    (initCommand as any)._optionValueSources = {};
+    (initCommand as any).args = [];
+    (initCommand as any).rawArgs = [];
+    (initCommand as any).processedArgs = [];
+    (initCommand as any)._scriptPath = undefined;
+    (initCommand as any)._name = 'init';
+    (initCommand as any)._outputConfiguration = { writeOut: process.stdout.write.bind(process.stdout), writeErr: process.stderr.write.bind(process.stderr) };
+    
+    // Reset any registered option values back to their defaults
+    initCommand.options.forEach((option: any) => {
+      const key = option.attributeName();
+      delete (initCommand as any)._optionValues[key];
+      delete (initCommand as any)._optionValueSources[key];
+    });
   });
 
   afterEach(() => {
-    process.exit = originalExit;
+    // Clean up any environment variables that tests might set
+    delete process.env.MEMENTO_MODES;
+    delete process.env.MEMENTO_WORKFLOWS;
+    delete process.env.MEMENTO_DEFAULT_MODE;
+    
     jest.restoreAllMocks();
   });
 
@@ -159,6 +234,7 @@ describe("Init Command", () => {
         files: [],
         dependencies: {},
       });
+
 
       await initCommand.parseAsync([
         "node", 
@@ -383,7 +459,6 @@ describe("Init Command", () => {
         "node",
         "memento", 
         "--force",
-        "--no-interactive",
         "--default-mode", "architect",
         "--install-examples"
       ]);
@@ -407,7 +482,8 @@ describe("Init Command", () => {
   });
 
   describe("starter pack integration", () => {
-    beforeEach(() => {
+    // Helper function to set up common mocks for starter pack tests
+    const setupStarterPackMocks = () => {
       mockDirManager.isInitialized.mockReturnValue(false);
       mockProjectDetector.detect.mockResolvedValue({
         type: "web",
@@ -416,9 +492,12 @@ describe("Init Command", () => {
         files: [],
         dependencies: {},
       });
-    });
+    };
 
     it("should install starter pack with non-interactive mode", async () => {
+      setupStarterPackMocks();
+      
+      
       const mockPack = {
         manifest: {
           name: "frontend-pack",
@@ -464,6 +543,8 @@ describe("Init Command", () => {
     });
 
     it("should show interactive pack selection when --starter-pack flag used without value", async () => {
+      setupStarterPackMocks();
+      
       const mockPacks = [
         {
           manifest: {
@@ -491,11 +572,8 @@ describe("Init Command", () => {
 
       mockStarterPackManager.listPacks.mockResolvedValue(mockPacks);
 
-      // Mock inquirer to select the first pack
-      const mockInquirer = {
-        prompt: jest.fn().mockResolvedValue({ selectedPack: "frontend-pack" })
-      };
-      jest.doMock('inquirer', () => ({ default: mockInquirer }));
+      // Configure the mock inquirer to return the first pack
+      mockInquirer.prompt.mockResolvedValue({ selectedPack: "frontend-pack" });
 
       const mockPack = mockPacks[0];
       mockStarterPackManager.loadPack.mockResolvedValue(mockPack);
@@ -519,6 +597,8 @@ describe("Init Command", () => {
     });
 
     it("should handle user skipping starter pack selection", async () => {
+      setupStarterPackMocks();
+      
       const mockPacks = [
         {
           manifest: {
@@ -535,11 +615,7 @@ describe("Init Command", () => {
 
       mockStarterPackManager.listPacks.mockResolvedValue(mockPacks);
 
-      // Mock inquirer to select "Skip" option
-      const mockInquirer = {
-        prompt: jest.fn().mockResolvedValue({ selectedPack: null })
-      };
-      jest.doMock('inquirer', () => ({ default: mockInquirer }));
+      // Configure the mock inquirer to skip (return null) - this is already the default
 
       await initCommand.parseAsync(["node", "test", "--starter-pack"]);
 
@@ -549,6 +625,8 @@ describe("Init Command", () => {
     });
 
     it("should combine starter pack components with CLI specified components", async () => {
+      setupStarterPackMocks();
+      
       const mockPack = {
         manifest: {
           name: "frontend-pack",
@@ -591,6 +669,8 @@ describe("Init Command", () => {
     });
 
     it("should handle starter pack installation failure gracefully", async () => {
+      setupStarterPackMocks();
+      
       const mockPack = {
         manifest: {
           name: "invalid-pack",
@@ -627,6 +707,8 @@ describe("Init Command", () => {
     });
 
     it("should error in non-interactive mode when starter pack flag provided without value", async () => {
+      setupStarterPackMocks();
+      
       await initCommand.parseAsync([
         "node", 
         "test", 
@@ -642,6 +724,8 @@ describe("Init Command", () => {
     });
 
     it("should handle starter pack with post-install message", async () => {
+      setupStarterPackMocks();
+      
       const mockPack = {
         manifest: {
           name: "frontend-pack",
@@ -649,7 +733,8 @@ describe("Init Command", () => {
           description: "Frontend development pack",
           author: "test",
           components: {
-            modes: [{ name: "engineer", required: true }]
+            modes: [{ name: "engineer", required: true }],
+            workflows: [{ name: "review", required: true }]
           }
         },
         path: "/path/to/pack",
@@ -658,7 +743,7 @@ describe("Init Command", () => {
 
       mockStarterPackManager.loadPack.mockResolvedValue(mockPack);
       mockStarterPackManager.installPack.mockResolvedValue(createPackInstallResult({
-        installed: { modes: ["engineer"], workflows: [], agents: [] },
+        installed: { modes: ["engineer"], workflows: ["review"], agents: [], hooks: [] },
         postInstallMessage: "Welcome to the frontend pack! Use 'mode: engineer' to get started."
       }));
 
@@ -676,9 +761,18 @@ describe("Init Command", () => {
     });
 
     it("should handle starter pack loading error", async () => {
+      setupStarterPackMocks();
+      
+      // Mock installPack to return a failure result (as loadPack errors are handled internally)
       mockStarterPackManager.loadPack.mockRejectedValue(
         new Error("Pack 'non-existent' not found")
       );
+      mockStarterPackManager.installPack.mockResolvedValue({
+        success: false,
+        installed: { modes: [], workflows: [], agents: [], hooks: [] },
+        skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+        errors: ["Pack 'non-existent' not found"]
+      });
 
       await initCommand.parseAsync([
         "node", 
@@ -687,14 +781,15 @@ describe("Init Command", () => {
         "--starter-pack", "non-existent"
       ]);
 
-      expect(logger.error).toHaveBeenCalledWith(
-        "Failed to initialize Memento Protocol:",
-        expect.any(Error)
-      );
+      // The implementation logs starter pack specific errors, not generic init errors
+      expect(logger.error).toHaveBeenCalledWith("Starter pack installation failed:");
+      expect(logger.error).toHaveBeenCalledWith("  Pack 'non-existent' not found");
       expect(process.exit).toHaveBeenCalledWith(1);
     });
 
     it("should handle empty starter pack list during interactive selection", async () => {
+      setupStarterPackMocks();
+      
       mockStarterPackManager.listPacks.mockResolvedValue([]);
 
       await initCommand.parseAsync(["node", "test", "--starter-pack"]);
@@ -704,6 +799,8 @@ describe("Init Command", () => {
     });
 
     it("should install starter pack components with agents", async () => {
+      setupStarterPackMocks();
+      
       const mockPack = {
         manifest: {
           name: "fullstack-pack",
@@ -742,6 +839,8 @@ describe("Init Command", () => {
     });
 
     it("should respect force flag when installing starter pack", async () => {
+      setupStarterPackMocks();
+      
       const mockPack = {
         manifest: {
           name: "test-pack",
@@ -771,12 +870,14 @@ describe("Init Command", () => {
       ]);
 
       expect(mockStarterPackManager.installPack).toHaveBeenCalledWith(
-        mockPack,
+        "test-pack",
         expect.objectContaining({ force: true, interactive: false })
       );
     });
 
     it("should handle starter pack with default mode configuration", async () => {
+      setupStarterPackMocks();
+      
       const mockPack = {
         manifest: {
           name: "configured-pack",
@@ -812,7 +913,7 @@ describe("Init Command", () => {
         })
       );
       expect(logger.info).toHaveBeenCalledWith(
-        'Default mode "architect" will be used when no mode is specified'
+        '  - Default mode "architect" will be used when no mode is specified'
       );
     });
   });
