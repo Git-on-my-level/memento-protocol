@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { TicketManager, TicketStatus } from '../lib/ticketManager';
 import { logger } from '../lib/logger';
 import { TicketError } from '../lib/errors';
+import { InputValidator } from '../lib/validation/InputValidator';
 
 const ticketCommand = new Command('ticket')
   .description('Manage tickets for persistent workspace');
@@ -12,9 +13,12 @@ ticketCommand
   .description('Create a new ticket')
   .action(async (name: string) => {
     try {
+      // Validate and sanitize ticket name for security
+      const validatedName = InputValidator.validateTicketName(name);
+      
       const ticketManager = new TicketManager(process.cwd());
-      const ticketPath = await ticketManager.create(name);
-      logger.success(`Created ticket: ${name}`);
+      const ticketPath = await ticketManager.create(validatedName);
+      logger.success(`Created ticket: ${validatedName}`);
       logger.info(`Location: ${ticketPath}`);
     } catch (error) {
       throw error;
@@ -67,15 +71,18 @@ ticketCommand
   .requiredOption('--to <status>', 'Target status (next, in-progress, done)')
   .action(async (name: string, options: { to: string }) => {
     try {
+      // Validate and sanitize ticket name for security
+      const validatedName = InputValidator.validateTicketName(name);
+      
       const ticketManager = new TicketManager(process.cwd());
       
       // Validate status
       if (!['next', 'in-progress', 'done'].includes(options.to)) {
-        throw new TicketError('move', name, `invalid status '${options.to}'`, 'Valid statuses are: next, in-progress, done. Example: memento ticket move <name> --to in-progress');
+        throw new TicketError('move', validatedName, `invalid status '${options.to}'`, 'Valid statuses are: next, in-progress, done. Example: memento ticket move <name> --to in-progress');
       }
       
-      await ticketManager.move(name, options.to as TicketStatus);
-      logger.success(`Moved ticket '${name}' to ${options.to}`);
+      await ticketManager.move(validatedName, options.to as TicketStatus);
+      logger.success(`Moved ticket '${validatedName}' to ${options.to}`);
     } catch (error) {
       throw error;
     }
@@ -87,9 +94,12 @@ ticketCommand
   .description('Delete a ticket')
   .action(async (name: string) => {
     try {
+      // Validate and sanitize ticket name for security
+      const validatedName = InputValidator.validateTicketName(name);
+      
       const ticketManager = new TicketManager(process.cwd());
-      await ticketManager.delete(name);
-      logger.success(`Deleted ticket: ${name}`);
+      await ticketManager.delete(validatedName);
+      logger.success(`Deleted ticket: ${validatedName}`);
     } catch (error) {
       throw error;
     }

@@ -3,6 +3,7 @@ import { MementoCore, ComponentSearchResult } from '../lib/MementoCore';
 import { ComponentInfo } from '../lib/MementoScope';
 import { logger } from '../lib/logger';
 import { InvalidComponentTypeError, InvalidScopeError, ComponentInstallError } from '../lib/errors';
+import { InputValidator } from '../lib/validation/InputValidator';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
 import * as fs from 'fs';
@@ -41,15 +42,18 @@ export const addCommand = new Command('add')
         return;
       }
       
-      // Try to find the component with fuzzy matching
-      const matches = await core.findComponents(name, componentType, {
+      // Validate and sanitize the component name for security
+      const validatedName = InputValidator.validateComponentName(name, componentType);
+      
+      // Try to find the component with fuzzy matching using validated name
+      const matches = await core.findComponents(validatedName, componentType, {
         maxResults: 5,
         minScore: 30
       });
       
       if (matches.length === 0) {
         // No matches found, show suggestions
-        await handleNoMatches(core, name, componentType);
+        await handleNoMatches(core, validatedName, componentType);
         return;
       }
       
@@ -241,11 +245,30 @@ async function installComponent(
   }
   logger.info('');
   
+  // Validate source path for security
+  const projectRoot = process.cwd();
+  try {
+    InputValidator.validateFilePath(component.path, projectRoot, 'source component path');
+  } catch (validationError) {
+    throw new ComponentInstallError(
+      component.type,
+      component.name,
+      `Source path validation failed: ${validationError instanceof Error ? validationError.message : 'Invalid path'}`,
+      'Ensure component path is within the project boundaries'
+    );
+  }
+  
   // Get the source content
   let sourceContent: string;
   try {
     sourceContent = fs.readFileSync(component.path, 'utf-8');
+    
+    // Validate template content for security
+    InputValidator.validateTemplateContent(sourceContent, `${component.type} ${component.name}`);
   } catch (error: any) {
+    if (error.name === 'ValidationError') {
+      throw error; // Re-throw validation errors
+    }
     throw new ComponentInstallError(
       component.type,
       component.name,
@@ -257,8 +280,17 @@ async function installComponent(
   // Determine target path
   const scopes = core.getScopes();
   const targetScopeObj = targetScope === 'global' ? scopes.global : scopes.project;
-  const targetDir = path.join(targetScopeObj.getPath(), `${component.type}s`);
-  const targetPath = path.join(targetDir, path.basename(component.path));
+  const scopePath = targetScopeObj.getPath();
+  
+  // Validate scope path
+  const validatedScopePath = InputValidator.validateFilePath(scopePath, projectRoot, 'target scope path');
+  
+  const targetDir = path.join(validatedScopePath, `${component.type}s`);
+  const fileName = path.basename(component.path);
+  
+  // Validate filename
+  const validatedFileName = InputValidator.validateFileName(fileName, 'component filename');
+  const targetPath = path.join(targetDir, validatedFileName);
   
   // Ensure target directory exists
   if (!fs.existsSync(targetDir)) {

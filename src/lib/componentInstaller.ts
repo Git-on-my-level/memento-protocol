@@ -5,6 +5,7 @@ import { PackagePaths } from "./packagePaths";
 import { FileSystemAdapter } from "./adapters/FileSystemAdapter";
 import { NodeFileSystemAdapter } from "./adapters/NodeFileSystemAdapter";
 import { ComponentNotFoundError, ComponentInstallError, InvalidComponentTypeError, DependencyError } from "./errors";
+import { InputValidator } from "./validation/InputValidator";
 
 interface ComponentMetadata {
   name: string;
@@ -183,6 +184,9 @@ export class ComponentInstaller {
     name: string,
     force = false
   ): Promise<void> {
+    // Validate and sanitize component name for security
+    const validatedName = InputValidator.validateComponentName(name, type);
+    
     // Check if component exists in templates
     let templateSubdir: string;
     if (type === "mode") {
@@ -195,10 +199,14 @@ export class ComponentInstaller {
       throw new InvalidComponentTypeError(type, ['mode', 'workflow', 'agent']);
     }
     
+    // Validate template filename
+    const fileName = `${validatedName}.md`;
+    const validatedFileName = InputValidator.validateFileName(fileName, 'template filename');
+    
     const componentPath = this.fs.join(
       this.templatesDir,
       templateSubdir,
-      `${name}.md`
+      validatedFileName
     );
 
     if (!(await this.fs.exists(componentPath))) {
@@ -207,7 +215,7 @@ export class ComponentInstaller {
         : type === 'workflow' ? available.workflows.map(w => w.name)
         : available.agents.map(a => a.name);
       
-      throw new ComponentNotFoundError(type, name, availableOfType);
+      throw new ComponentNotFoundError(type, validatedName, availableOfType);
     }
 
     // Check if already installed
@@ -223,30 +231,38 @@ export class ComponentInstaller {
       throw new InvalidComponentTypeError(type, ['mode', 'workflow', 'agent']);
     }
 
-    if (componentList.includes(name) && !force) {
+    if (componentList.includes(validatedName) && !force) {
       // SAFE: Preserving existing user customization
       throw new ComponentInstallError(
         type,
-        name,
+        validatedName,
         'component already exists',
-        `Use --force to overwrite: memento add ${type} ${name} --force`
+        `Use --force to overwrite: memento add ${type} ${validatedName} --force`
       );
     }
 
     // Check dependencies using frontmatter parsing
-    logger.progress(`Parsing component metadata for ${name}`);
+    logger.progress(`Parsing component metadata for ${validatedName}`);
     const componentMetadata = await this.parseTemplateFrontmatter(componentPath);
     const component = componentMetadata;
     logger.clearProgress();
 
     if (component?.dependencies && component.dependencies.length > 0) {
+      // Validate dependencies array for security
+      const validatedDependencies = InputValidator.validateStringArray(
+        component.dependencies, 
+        'component dependencies', 
+        20, // max 20 dependencies
+        100 // max 100 chars per dependency name
+      );
+      
       // Check for missing dependencies first
-      const missingDeps = component.dependencies.filter(
+      const missingDeps = validatedDependencies.filter(
         (dep) => !manifest.components.modes.includes(dep)
       );
       
       if (missingDeps.length > 0 && !force) {
-        throw new DependencyError(`${type}:${name}`, missingDeps);
+        throw new DependencyError(`${type}:${validatedName}`, missingDeps);
       }
       
       logger.progress(`Installing ${component.dependencies.length} dependencies`);
@@ -271,8 +287,12 @@ export class ComponentInstaller {
     }
 
     // Copy component file
-    logger.progress(`Installing ${type} ${name}`);
+    logger.progress(`Installing ${type} ${validatedName}`);
     const content = await this.fs.readFile(componentPath, "utf-8") as string;
+    
+    // Validate template content for security before installation
+    InputValidator.validateTemplateContent(content, `${type} ${validatedName}`);
+    
     let destType: "modes" | "workflows" | "integrations" | "agents";
     if (type === "mode") {
       destType = "modes";
@@ -284,7 +304,20 @@ export class ComponentInstaller {
       throw new InvalidComponentTypeError(type, ['mode', 'workflow', 'agent']);
     }
     
-    const destPath = this.dirManager.getComponentPath(destType, name);
+    const destPath = this.dirManager.getComponentPath(destType, validatedName);
+    
+    // Validate destination path for security - ensure it stays within project bounds
+    try {
+      // We'll use process.cwd() as the project root for validation
+      InputValidator.validateFilePath(destPath, process.cwd(), 'component destination path');
+    } catch (pathError) {
+      throw new ComponentInstallError(
+        type,
+        validatedName,
+        `Destination path validation failed: ${pathError instanceof Error ? pathError.message : 'Invalid path'}`,
+        'Component installation path is not safe'
+      );
+    }
 
     // WARNING: This writeFile will OVERWRITE any existing custom component if force=true
     await this.fs.writeFile(destPath, content);
@@ -308,16 +341,16 @@ export class ComponentInstaller {
     }
 
     // Update manifest
-    if (!componentList.includes(name)) {
-      componentList.push(name);
+    if (!componentList.includes(validatedName)) {
+      componentList.push(validatedName);
     }
     manifest.components.updated = new Date().toISOString();
     await this.dirManager.updateManifest(manifest);
 
-    if (force && componentList.includes(name)) {
-      logger.success(`Reinstalled ${type} '${name}'`);
+    if (force && componentList.includes(validatedName)) {
+      logger.success(`Reinstalled ${type} '${validatedName}'`);
     } else {
-      logger.success(`Installed ${type} '${name}'`);
+      logger.success(`Installed ${type} '${validatedName}'`);
     }
   }
 

@@ -1,6 +1,7 @@
 import { FileSystemAdapter } from './adapters/FileSystemAdapter';
 import { NodeFileSystemAdapter } from './adapters/NodeFileSystemAdapter';
 import { TicketError } from './errors';
+import { InputValidator } from './validation/InputValidator';
 
 export type TicketStatus = 'next' | 'in-progress' | 'done';
 
@@ -61,15 +62,34 @@ export class TicketManager {
    * Create a new ticket
    */
   async create(name: string): Promise<string> {
+    // Validate and sanitize ticket name for security
+    const validatedName = InputValidator.validateTicketName(name);
+    
     // Check if ticket already exists
-    if (this.findTicket(name)) {
-      throw new TicketError('create', name, 'ticket already exists');
+    if (this.findTicket(validatedName)) {
+      throw new TicketError('create', validatedName, 'ticket already exists');
     }
 
-    const ticketPath = this.fs.join(this.ticketsDir, 'next', `${name}.md`);
+    // Validate filename for ticket
+    const fileName = `${validatedName}.md`;
+    const validatedFileName = InputValidator.validateFileName(fileName, 'ticket filename');
+    
+    const ticketPath = this.fs.join(this.ticketsDir, 'next', validatedFileName);
+    
+    // Validate ticket path for security
+    try {
+      InputValidator.validateFilePath(ticketPath, process.cwd(), 'ticket file path');
+    } catch (pathError) {
+      throw new TicketError(
+        'create', 
+        validatedName, 
+        `path validation failed: ${pathError instanceof Error ? pathError.message : 'Invalid path'}`,
+        'Ticket path is not safe for creation'
+      );
+    }
     
     // Create initial content
-    const content = `# ${name}
+    const content = `# ${validatedName}
 
 ## Description
 [Add ticket description here]
@@ -84,6 +104,9 @@ export class TicketManager {
 ---
 Created: ${new Date().toISOString()}
 `;
+
+    // Validate template content before writing
+    InputValidator.validateTemplateContent(content, `ticket ${validatedName}`);
 
     this.fs.writeFileSync(ticketPath, content);
     return ticketPath;
@@ -117,20 +140,41 @@ Created: ${new Date().toISOString()}
    * Move a ticket to a different status
    */
   async move(name: string, toStatus: TicketStatus): Promise<void> {
-    const ticket = this.findTicket(name);
+    // Validate and sanitize ticket name for security
+    const validatedName = InputValidator.validateTicketName(name);
+    
+    const ticket = this.findTicket(validatedName);
     if (!ticket) {
-      throw new TicketError('move', name, 'ticket not found');
+      throw new TicketError('move', validatedName, 'ticket not found');
     }
 
     if (ticket.status === toStatus) {
-      throw new TicketError('move', name, `already in '${toStatus}' status`, 'No action needed - ticket is already in the target status');
+      throw new TicketError('move', validatedName, `already in '${toStatus}' status`, 'No action needed - ticket is already in the target status');
     }
 
     const filename = this.fs.basename(ticket.path);
-    const newPath = this.fs.join(this.ticketsDir, toStatus, filename);
+    // Validate filename for security
+    const validatedFileName = InputValidator.validateFileName(filename, 'ticket filename');
+    const newPath = this.fs.join(this.ticketsDir, toStatus, validatedFileName);
+    
+    // Validate destination path
+    try {
+      InputValidator.validateFilePath(newPath, process.cwd(), 'ticket destination path');
+    } catch (pathError) {
+      throw new TicketError(
+        'move', 
+        validatedName, 
+        `destination path validation failed: ${pathError instanceof Error ? pathError.message : 'Invalid path'}`,
+        'Ticket move destination is not safe'
+      );
+    }
     
     // Use read+write+unlink pattern since FileSystemAdapter doesn't have rename
     const content = await this.fs.readFile(ticket.path, 'utf8') as string;
+    
+    // Validate content before writing (in case it was tampered with)
+    InputValidator.validateTemplateContent(content, `ticket ${validatedName} content`);
+    
     await this.fs.writeFile(newPath, content);
     await this.fs.unlink(ticket.path);
   }
@@ -139,15 +183,30 @@ Created: ${new Date().toISOString()}
    * Delete a ticket
    */
   async delete(name: string): Promise<void> {
-    const ticket = this.findTicket(name);
+    // Validate and sanitize ticket name for security
+    const validatedName = InputValidator.validateTicketName(name);
+    
+    const ticket = this.findTicket(validatedName);
     if (!ticket) {
-      throw new TicketError('delete', name, 'ticket not found');
+      throw new TicketError('delete', validatedName, 'ticket not found');
+    }
+
+    // Validate the ticket path before deletion to prevent directory traversal
+    try {
+      InputValidator.validateFilePath(ticket.path, process.cwd(), 'ticket deletion path');
+    } catch (pathError) {
+      throw new TicketError(
+        'delete', 
+        validatedName, 
+        `path validation failed: ${pathError instanceof Error ? pathError.message : 'Invalid path'}`,
+        'Ticket deletion path is not safe'
+      );
     }
 
     try {
       await this.fs.unlink(ticket.path);
     } catch (error: any) {
-      throw new TicketError('delete', name, `failed to delete ticket file: ${error.message}`, 'Check file permissions and try again');
+      throw new TicketError('delete', validatedName, `failed to delete ticket file: ${error.message}`, 'Check file permissions and try again');
     }
   }
 }
