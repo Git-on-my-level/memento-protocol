@@ -27,19 +27,26 @@ export class CommandGenerator {
    * Initialize the command system by generating all default commands
    */
   async initialize(): Promise<void> {
+    const steps = ['directories', 'validation', 'ticket commands', 'mode commands', 'memento commands'];
+    
     // Ensure directories exist
+    logger.step(1, steps.length, 'Creating command directories');
     await this.ensureDirectories();
 
     // Validate dependencies before generating commands
+    logger.step(2, steps.length, 'Validating dependencies');
     await this.validateDependencies();
 
     // Generate ticket commands
+    logger.step(3, steps.length, 'Generating ticket commands');
     await this.generateTicketCommands();
 
     // Generate mode commands
+    logger.step(4, steps.length, 'Generating mode commands');
     await this.generateModeCommands();
 
     // Generate memento commands
+    logger.step(5, steps.length, 'Generating memento commands');
     await this.generateMementoCommands();
 
     logger.success("Claude Code custom commands generated");

@@ -94,5 +94,14 @@ export const logger = {
     if (process.stdout.isTTY) {
       process.stdout.write('\r\x1b[K'); // Clear current line
     }
+  },
+
+  step: (current: number, total: number, message: string) => {
+    const progress = Math.round((current / total) * 100);
+    if (process.stdout.isTTY) {
+      process.stdout.write(`\r${colors.cyan}⟳${colors.reset} ${message}... (${current}/${total} - ${progress}%)`);
+    } else {
+      console.log(`⟳ ${message}... (${current}/${total} - ${progress}%)`);
+    }
   }
 };

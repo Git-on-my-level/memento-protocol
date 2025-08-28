@@ -34,18 +34,24 @@ export class UpsertManager {
     );
 
     // 1. Get available and installed components
+    logger.progress('Analyzing component differences');
     const available = await this.installer.listAvailableComponents();
     const installed = await this.installer.listInstalledComponents();
+    logger.clearProgress();
 
     // 2. Install new modes
     const newModes = available.modes.filter(
       (mode) => !installed.modes.includes(mode.name)
     );
     if (newModes.length > 0) {
-      logger.info("Installing new modes...");
-      for (const mode of newModes) {
+      logger.progress(`Installing ${newModes.length} new modes`);
+      for (let i = 0; i < newModes.length; i++) {
+        const mode = newModes[i];
+        logger.step(i + 1, newModes.length, `Installing mode ${mode.name}`);
         await this.installer.installComponent("mode", mode.name, force);
       }
+      logger.clearProgress();
+      logger.success(`Installed ${newModes.length} new modes`);
     }
 
     // 3. Install new workflows
@@ -53,19 +59,26 @@ export class UpsertManager {
       (workflow) => !installed.workflows.includes(workflow.name)
     );
     if (newWorkflows.length > 0) {
-      logger.info("Installing new workflows...");
-      for (const workflow of newWorkflows) {
+      logger.progress(`Installing ${newWorkflows.length} new workflows`);
+      for (let i = 0; i < newWorkflows.length; i++) {
+        const workflow = newWorkflows[i];
+        logger.step(i + 1, newWorkflows.length, `Installing workflow ${workflow.name}`);
         await this.installer.installComponent("workflow", workflow.name, force);
       }
+      logger.clearProgress();
+      logger.success(`Installed ${newWorkflows.length} new workflows`);
     }
 
     // 4. Update existing components
-    logger.info("Checking for updates to existing components...");
+    logger.progress('Checking for updates to existing components');
     await this.updater.updateAll(force);
+    logger.clearProgress();
 
     // 5. Regenerate custom commands
-    logger.info("Updating Claude Code custom commands...");
+    logger.progress('Updating Claude Code custom commands');
     await this.commandGenerator.initialize();
+    logger.clearProgress();
+    logger.success('Custom commands updated');
 
     logger.success("Upsert complete.");
   }

@@ -164,13 +164,16 @@ export const initCommand = new Command("init")
 
       
       // Initialize directory structure
-      logger.info("Initializing Memento Protocol...");
+      logger.progress("Initializing Memento Protocol directories");
       await dirManager.initializeStructure();
+      logger.clearProgress();
+      logger.success("Directory structure initialized");
 
 
       // Detect project type
-      logger.info("Detecting project type...");
+      logger.progress("Detecting project type");
       const projectInfo = await projectDetector.detect();
+      logger.clearProgress();
       
       logger.info(
         `Project type: ${projectInfo.type}${
@@ -188,12 +191,14 @@ export const initCommand = new Command("init")
       // Handle starter pack installation first if requested
       let packResult = null;
       if (options.starterPack !== undefined) {
+        logger.progress("Preparing starter pack installation");
         packResult = await handleStarterPackInstallation(
           starterPackManager,
           options.starterPack,
           isNonInteractive,
           options.force
         );
+        logger.clearProgress();
         
         // If pack installation failed, stop here
         if (!packResult.success) {
@@ -280,21 +285,27 @@ export const initCommand = new Command("init")
       
       if (shouldApplySetup) {
         logger.space();
-        logger.info("Installing selected components...");
+        logger.progress("Installing selected components");
         await interactiveSetup.applySetup({
           ...setupOptions,
           force: options.force,
         });
+        logger.clearProgress();
+        logger.success("Components installed successfully");
       }
 
       // Generate hook infrastructure
       logger.space();
-      logger.info("Generating Claude Code hook infrastructure...");
+      logger.progress("Generating Claude Code hook infrastructure");
       await hookManager.initialize();
+      logger.clearProgress();
+      logger.success("Hook infrastructure generated");
 
       // Generate custom commands
-      logger.info("Generating Claude Code custom commands...");
+      logger.progress("Generating Claude Code custom commands");
       await commandGenerator.initialize();
+      logger.clearProgress();
+      logger.success("Custom commands generated");
 
       logger.space();
       logger.success("Memento Protocol initialized successfully!");
@@ -382,8 +393,9 @@ async function handleStarterPackInstallation(
   }
 
   if (typeof packName === 'string') {
-    logger.info(`Installing starter pack: ${packName}`);
+    logger.progress(`Installing starter pack: ${packName}`);
     const result = await starterPackManager.installPack(packName, { force, interactive: !isNonInteractive });
+    logger.clearProgress();
     
     if (result.success) {
       logger.success(`Starter pack '${packName}' installed successfully`);

@@ -48,9 +48,10 @@ export class DirectoryManager {
       this.fs.join(this.claudeDir, "agents"),
     ];
 
-    for (const dir of directories) {
+    for (let i = 0; i < directories.length; i++) {
+      const dir = directories[i];
       try {
-        logger.debug(`Creating directory: ${dir}`);
+        logger.step(i + 1, directories.length, `Creating ${this.fs.basename(dir)} directory`);
         // Safe: mkdir with recursive:true creates only if not exists
         await this.fs.mkdir(dir, { recursive: true });
       } catch (error) {
@@ -63,6 +64,7 @@ export class DirectoryManager {
     }
 
     // Create a manifest file to track installed components
+    logger.progress('Creating project manifest');
     const manifestPath = this.fs.join(this.mementoDir, "manifest.json");
     if (!this.fs.existsSync(manifestPath)) {
       const manifest = {
@@ -77,9 +79,12 @@ export class DirectoryManager {
       };
       await this.fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
     }
+    logger.clearProgress();
 
     // Copy essential scripts for custom commands
+    logger.progress('Copying essential scripts');
     await this.copyEssentialScripts();
+    logger.clearProgress();
   }
 
   /**
@@ -226,20 +231,30 @@ export class DirectoryManager {
     try {
       // Get list of script files from templates
       const scriptFiles = await this.fs.readdir(templateScriptsDir);
+      const filesToCopy = scriptFiles.filter(scriptFile => {
+        const destPath = this.fs.join(mementoScriptsDir, scriptFile);
+        return !this.fs.existsSync(destPath);
+      });
+      
+      if (filesToCopy.length === 0) {
+        logger.debug("All scripts already exist, skipping");
+        return;
+      }
 
-      for (const scriptFile of scriptFiles) {
+      for (let i = 0; i < filesToCopy.length; i++) {
+        const scriptFile = filesToCopy[i];
         const sourcePath = this.fs.join(templateScriptsDir, scriptFile);
         const destPath = this.fs.join(mementoScriptsDir, scriptFile);
+        
+        if (filesToCopy.length > 1) {
+          logger.step(i + 1, filesToCopy.length, `Copying script ${scriptFile}`);
+        }
 
-        // Only copy if the destination doesn't exist (don't overwrite user modifications)
-        if (!this.fs.existsSync(destPath)) {
-          logger.debug(`Copying script: ${scriptFile}`);
-          await this.fs.copyFile(sourcePath, destPath);
+        await this.fs.copyFile(sourcePath, destPath);
 
-          // Make the script executable (on Unix-like systems)
-          if (process.platform !== "win32") {
-            await this.fs.chmod(destPath, 0o755);
-          }
+        // Make the script executable (on Unix-like systems)
+        if (process.platform !== "win32") {
+          await this.fs.chmod(destPath, 0o755);
         }
       }
 

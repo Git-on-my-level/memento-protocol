@@ -168,11 +168,17 @@ export class PackInstaller {
 
     logger.debug(`Installing ${components.length} ${componentType}`);
 
-    for (const component of components) {
+    for (let i = 0; i < components.length; i++) {
+      const component = components[i];
+      
       try {
+        if (components.length > 1) {
+          logger.step(i + 1, components.length, `Installing ${componentType.slice(0, -1)} ${component.name}`);
+        }
+        
         if (options.skipOptional && !component.required) {
           logger.debug(`Skipping optional ${componentType.slice(0, -1)} '${component.name}'`);
-(skipped[componentType] as string[]).push(component.name);
+          (skipped[componentType] as string[]).push(component.name);
           continue;
         }
 
@@ -185,10 +191,10 @@ export class PackInstaller {
         );
 
         if (success) {
-(installed[componentType] as string[]).push(component.name);
+          (installed[componentType] as string[]).push(component.name);
           logger.debug(`Installed ${componentType.slice(0, -1)} '${component.name}'`);
         } else {
-(skipped[componentType] as string[]).push(component.name);
+          (skipped[componentType] as string[]).push(component.name);
           logger.debug(`Skipped ${componentType.slice(0, -1)} '${component.name}' due to conflict`);
         }
       } catch (error) {
@@ -302,27 +308,35 @@ export class PackInstaller {
   private async checkConflicts(manifest: PackStructure['manifest']): Promise<string[]> {
     const conflicts: string[] = [];
     const componentTypes = ['modes', 'workflows', 'agents', 'hooks'] as const;
+    
+    logger.progress('Checking for installation conflicts');
+    
+    try {
+      for (const componentType of componentTypes) {
+        const components = manifest.components[componentType];
+        if (!components) continue;
 
-    for (const componentType of componentTypes) {
-      const components = manifest.components[componentType];
-      if (!components) continue;
+        for (const component of components) {
+          let targetPath: string;
+          
+          if (componentType === 'agents') {
+            targetPath = this.fs.join(this.claudeDir, 'agents', `${component.name}.md`);
+          } else {
+            targetPath = this.fs.join(this.mementoDir, componentType, `${component.name}.md`);
+          }
 
-      for (const component of components) {
-        let targetPath: string;
-        
-        if (componentType === 'agents') {
-          targetPath = this.fs.join(this.claudeDir, 'agents', `${component.name}.md`);
-        } else {
-          targetPath = this.fs.join(this.mementoDir, componentType, `${component.name}.md`);
-        }
-
-        if (await this.fs.exists(targetPath)) {
-          conflicts.push(`${componentType.slice(0, -1)} '${component.name}' already exists`);
+          if (await this.fs.exists(targetPath)) {
+            conflicts.push(`${componentType.slice(0, -1)} '${component.name}' already exists`);
+          }
         }
       }
+      
+      logger.clearProgress();
+      return conflicts;
+    } catch (error) {
+      logger.clearProgress();
+      throw error;
     }
-
-    return conflicts;
   }
 
   /**
@@ -380,18 +394,29 @@ export class PackInstaller {
    * Ensure necessary directories exist
    */
   private async ensureDirectories(): Promise<void> {
-    await this.directoryManager.initializeStructure();
+    logger.progress('Ensuring pack directories exist');
     
-    // Ensure pack-specific directories exist
-    const packDirs = [
-      this.fs.join(this.mementoDir, 'modes'),
-      this.fs.join(this.mementoDir, 'workflows'),
-      this.fs.join(this.mementoDir, 'hooks'),
-      this.fs.join(this.claudeDir, 'agents'),
-    ];
+    try {
+      await this.directoryManager.initializeStructure();
+      
+      // Ensure pack-specific directories exist
+      const packDirs = [
+        this.fs.join(this.mementoDir, 'modes'),
+        this.fs.join(this.mementoDir, 'workflows'),
+        this.fs.join(this.mementoDir, 'hooks'),
+        this.fs.join(this.claudeDir, 'agents'),
+      ];
 
-    for (const dir of packDirs) {
-      await this.fs.mkdir(dir, { recursive: true });
+      for (let i = 0; i < packDirs.length; i++) {
+        const dir = packDirs[i];
+        logger.step(i + 1, packDirs.length, `Creating directory ${this.fs.basename(dir)}`);
+        await this.fs.mkdir(dir, { recursive: true });
+      }
+      
+      logger.clearProgress();
+    } catch (error) {
+      logger.clearProgress();
+      throw error;
     }
   }
 }
