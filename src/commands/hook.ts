@@ -35,19 +35,19 @@ hookCommand
         return;
       }
       
-      console.log('\nConfigured Hooks:\n');
+      logger.info('Configured Hooks:');\n      logger.space();
       
       for (const { event, hooks: eventHooks } of hooks) {
         if (eventHooks.length > 0) {
-          console.log(`  ${event}:`);
+          logger.info(`  ${event}:`);
           for (const hook of eventHooks) {
             const status = hook.enabled ? '✓' : '✗';
-            console.log(`    ${status} ${hook.name} (${hook.id})`);
+            logger.info(`    ${status} ${hook.name} (${hook.id})`);
             if (hook.config.description) {
-              console.log(`       ${hook.config.description}`);
+              logger.info(`       ${hook.config.description}`);
             }
           }
-          console.log();
+          logger.space();
         }
       }
     } catch (error) {
@@ -200,12 +200,12 @@ hookCommand
         return;
       }
       
-      console.log('\nAvailable Hook Templates:\n');
+      logger.info('Available Hook Templates:');\n      logger.space();
       
       for (const template of templates) {
-        console.log(`  - ${template}`);
+        logger.info(`  - ${template}`);
       }
-      console.log('\nUse "memento hook add <template>" to add a hook\n');
+      logger.space();\n      logger.info('Use "memento hook add <template>" to add a hook');
     } catch (error) {
       handleError(error);
     }

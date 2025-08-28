@@ -49,12 +49,13 @@ configCommand
   .action(async (key: string) => {
     try {
       const configManager = new ConfigManager(process.cwd());
-      const value = await configManager.get(key);
+      const trimmedKey = key.trim();
+      const value = await configManager.get(trimmedKey);
       
       if (value === undefined) {
-        logger.info(`Configuration key '${key}' is not set`);
+        logger.info(`Configuration key '${trimmedKey}' is not set`);
       } else {
-        logger.info(`${key} = ${JSON.stringify(value, null, 2)}`);
+        logger.info(`${trimmedKey} = ${JSON.stringify(value, null, 2)}`);
       }
     } catch (error) {
       logger.error(`Failed to get configuration: ${error}`);
@@ -71,16 +72,20 @@ configCommand
     try {
       const configManager = new ConfigManager(process.cwd());
       
+      // Trim whitespace from key and value to prevent user confusion
+      const trimmedKey = key.trim();
+      const trimmedValue = value.trim();
+      
       // Try to parse value as JSON, fallback to string
-      let parsedValue: any = value;
+      let parsedValue: any = trimmedValue;
       try {
-        parsedValue = JSON.parse(value);
+        parsedValue = JSON.parse(trimmedValue);
       } catch {
         // Keep as string if not valid JSON
       }
       
-      await configManager.set(key, parsedValue, options.global || false);
-      logger.success(`Configuration updated: ${key} = ${JSON.stringify(parsedValue)}`);
+      await configManager.set(trimmedKey, parsedValue, options.global || false);
+      logger.success(`Configuration updated: ${trimmedKey} = ${JSON.stringify(parsedValue)}`);
     } catch (error) {
       logger.error(`Failed to set configuration: ${error}`);
       process.exit(1);
@@ -95,8 +100,9 @@ configCommand
   .action(async (key: string, options: { global: boolean }) => {
     try {
       const configManager = new ConfigManager(process.cwd());
-      await configManager.unset(key, options.global || false);
-      logger.success(`Configuration key '${key}' removed`);
+      const trimmedKey = key.trim();
+      await configManager.unset(trimmedKey, options.global || false);
+      logger.success(`Configuration key '${trimmedKey}' removed`);
     } catch (error) {
       logger.error(`Failed to unset configuration: ${error}`);
       process.exit(1);

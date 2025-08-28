@@ -131,7 +131,16 @@ Safety features:
 
         await updateManager.showDiff(type as "mode" | "workflow", name);
       } catch (error: any) {
-        logger.error(`Failed to show diff: ${error.message}`);
+        // Provide more specific error guidance
+        if (error.message.includes("Invalid component format")) {
+          logger.error("Invalid component format. Use format: mode:name or workflow:name");
+          logger.info("Examples: mode:engineer, workflow:review, mode:autonomous-project-manager");
+        } else if (error.message.includes("not found") || error.message.includes("does not exist")) {
+          logger.error(`Component not found: ${error.message}`);
+          logger.info("Run 'memento list' to see available components");
+        } else {
+          logger.error(`Failed to show diff: ${error.message}`);
+        }
         process.exit(1);
       }
     });
