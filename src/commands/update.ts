@@ -13,6 +13,41 @@ export function createUpdateCommand(): Command {
       "[component]",
       "specific component to update (e.g., mode:architect)"
     )
+    .addHelpText('after', `
+Examples:
+  $ memento update                                # Update all components
+  $ memento update --check                        # Check for updates without installing
+  $ memento update --force                        # Force update, overwriting local changes
+  $ memento update mode:engineer                  # Update specific engineer mode
+  $ memento update workflow:review                # Update specific review workflow
+  $ memento update mode:architect --force         # Force update architect mode
+
+Checking for updates:
+  $ memento update --check                        # See available updates
+  $ memento update mode:engineer --check          # Check specific component only
+
+Handling local modifications:
+  $ memento update                                # Will warn about local changes
+  $ memento update --force                        # Override local changes
+  $ memento update diff mode:engineer             # View differences before updating
+
+Component format:
+  mode:engineer                                   # Update engineer mode
+  workflow:review                                # Update code review workflow
+  mode:autonomous-project-manager                 # Update specific mode by full name
+
+Update workflow:
+  $ memento update --check                        # 1. Check what updates are available
+  $ memento update diff mode:engineer             # 2. Review changes if needed
+  $ memento update mode:engineer                  # 3. Apply the update
+  $ memento update --force                        # 4. Force update all if conflicts
+
+Safety features:
+  - Local modifications are detected and preserved by default
+  - Use --force only when you want to discard local changes
+  - Use 'diff' subcommand to review changes before updating
+  - Backup recommendations are shown for important changes
+`)
     .action(async (component: string | undefined, options: any) => {
       try {
         const projectRoot = process.cwd();

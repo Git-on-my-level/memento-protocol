@@ -5,7 +5,36 @@ import { TicketError } from '../lib/errors';
 import { InputValidator } from '../lib/validation/InputValidator';
 
 const ticketCommand = new Command('ticket')
-  .description('Manage tickets for persistent workspace');
+  .description('Manage tickets for persistent workspace')
+  .addHelpText('after', `
+Examples:
+  $ memento ticket create "authentication system"  # Create a new ticket
+  $ memento ticket create "fix login bug"          # Create ticket for bug fix
+  $ memento ticket create auth                     # Create simple ticket name
+  $ memento ticket list                            # List all tickets by status
+  $ memento ticket move auth --to in-progress      # Move ticket to in-progress
+  $ memento ticket move auth --to done             # Mark ticket as completed
+  $ memento ticket move "login bug" --to next      # Move back to next status
+  $ memento ticket delete auth                     # Delete a ticket
+  $ memento ticket delete "completed feature"      # Delete completed ticket
+
+Typical workflow:
+  $ memento ticket create "user registration"      # Create new ticket
+  $ memento ticket move "user registration" --to in-progress  # Start work
+  # Work on the feature...
+  $ memento ticket move "user registration" --to done         # Mark complete
+
+Valid statuses for --to option:
+  next        - Ticket is queued for future work
+  in-progress - Ticket is currently being worked on  
+  done        - Ticket has been completed
+
+Ticket organization:
+  - Tickets are stored in .memento/tickets/[status]/
+  - Each ticket is a markdown file for context and notes
+  - Use tickets to maintain persistent context across Claude Code sessions
+  - Reference ticket context in prompts: "Continue work on auth ticket"
+`);
 
 // Create subcommand
 ticketCommand

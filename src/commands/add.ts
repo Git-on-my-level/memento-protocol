@@ -17,6 +17,37 @@ export const addCommand = new Command('add')
   .option('-s, --source <scope>', 'Install from specific scope (builtin, global)', 'builtin')
   .option('-f, --force', 'Force installation even if component already exists')
   .option('--global', 'Install to global scope (~/.memento) instead of project')
+  .addHelpText('after', `
+Examples:
+  $ memento add mode                              # Interactive mode selection
+  $ memento add mode engineer                     # Add engineer mode exactly
+  $ memento add mode eng                          # Fuzzy match (finds engineer)
+  $ memento add mode apm                          # Acronym match (finds autonomous-project-manager)
+  $ memento add workflow review                   # Add code review workflow  
+  $ memento add workflow debug                    # Add debugging workflow
+  $ memento add agent claude-code-research        # Add research agent for Claude Code
+  $ memento add hook git-context-loader          # Add git context hook
+  $ memento add script deployment                 # Add deployment script
+  $ memento add template api-endpoint             # Add API endpoint template
+
+Installing from different scopes:
+  $ memento add mode engineer --source builtin   # From built-in templates
+  $ memento add mode my-custom --source global   # From global ~/.memento
+  $ memento add workflow review --global          # Install to global scope
+
+Force installation (overwrite existing):
+  $ memento add mode engineer --force             # Overwrite existing engineer mode
+  $ memento add workflow review --force --global  # Force overwrite in global scope
+
+Interactive selection:
+  $ memento add mode                              # Choose from available modes
+  $ memento add workflow                          # Choose from available workflows
+  $ memento add agent                             # Choose from available agents
+
+Multiple component types:
+  $ memento add mode engineer && memento add workflow review
+  $ memento add hook git-context && memento add hook test-on-save
+`)
   .action(async (type: string, name?: string, options?: any) => {
     try {
       const core = new MementoCore(process.cwd());

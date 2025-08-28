@@ -189,6 +189,49 @@ export const initGlobalCommand = new Command("init-global")
   .option("--no-verbose-logging", "Disable verbose logging by default")  
   .option("--install-examples", "Install example global components")
   .option("--no-install-examples", "Skip installing example components")
+  .addHelpText('after', `
+Examples:
+  $ memento init-global                           # Interactive global setup
+  $ memento init-global --force                   # Force reinitialize ~/.memento
+  $ memento init-global --no-interactive          # Quick setup with defaults
+  $ memento init-global --default-mode engineer   # Set global default mode
+  $ memento init-global --no-color-output         # Disable colors globally
+  $ memento init-global --verbose-logging         # Enable verbose logging globally
+  $ memento init-global --no-install-examples     # Skip example components
+
+Non-interactive setup:
+  $ memento init-global --no-interactive --default-mode architect --color-output --install-examples
+
+Advanced setup:
+  $ memento init-global --force --default-mode engineer --verbose-logging --install-examples
+
+What global initialization does:
+  - Creates ~/.memento directory structure
+  - Generates ~/.memento/config.yaml with global preferences
+  - Sets up global component directories (modes, workflows, etc.)
+  - Installs example components if requested
+  - Configures global defaults that apply to all projects
+
+Global vs project initialization:
+  memento init-global    # Sets up global ~/.memento configuration
+  memento init           # Sets up project-specific .memento configuration
+  memento init --global  # Alternative way to initialize global config
+
+Global configuration benefits:
+  - Default mode applied to all projects
+  - Shared components across projects
+  - Consistent UI preferences (colors, verbosity)
+  - Custom global workflows and modes
+  - Template sources for team sharing
+
+Configuration file created:
+  ~/.memento/config.yaml - Global configuration with detailed comments
+  
+After global initialization:
+  - Run 'memento init' in projects to inherit global settings
+  - Edit ~/.memento/config.yaml to customize global preferences
+  - Add components to ~/.memento/ for reuse across projects
+`)
   .action(async (options: GlobalInitOptions, _cmd?: Command, fsAdapter?: FileSystemAdapter) => {
     try {
       const fs = fsAdapter || new NodeFileSystemAdapter();

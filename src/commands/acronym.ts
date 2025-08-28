@@ -72,7 +72,45 @@ class AcronymManager {
 }
 
 const acronymCommand = new Command('acronym')
-  .description('Manage acronym expansions for Claude Code');
+  .description('Manage acronym expansions for Claude Code')
+  .addHelpText('after', `
+Examples:
+  $ memento acronym add apm "autonomous project manager"  # Add acronym expansion
+  $ memento acronym add eng "engineer"                    # Add simple acronym
+  $ memento acronym add dbg "debug and troubleshoot"     # Add debugging acronym
+  $ memento acronym add rev "code review workflow"       # Add review acronym
+  $ memento acronym list                                  # Show all acronyms
+  $ memento acronym ls                                    # Same as list (alias)
+  $ memento acronym remove apm                           # Remove an acronym
+  $ memento acronym rm eng                               # Same as remove (alias)
+
+Common acronym patterns:
+  $ memento acronym add apm "autonomous-project-manager"  # Mode names
+  $ memento acronym add cw "code-warrior"                # Alternative mode names
+  $ memento acronym add rv "review"                      # Workflow shortcuts
+  $ memento acronym add opt "optimize"                   # Workflow abbreviations
+  $ memento acronym add tdd "test-driven-development"    # Development practices
+  $ memento acronym add api "application programming interface"  # Technical terms
+
+Bulk setup example:
+  $ memento acronym add apm "autonomous-project-manager"
+  $ memento acronym add eng "engineer" 
+  $ memento acronym add arch "architect"
+  $ memento acronym add rev "review"
+  $ memento acronym add dbg "debug"
+
+How acronyms work:
+  - Used by fuzzy matching in 'memento add mode apm' -> finds 'autonomous-project-manager'
+  - Case-insensitive by default (APM = apm)
+  - Whole word matching for better accuracy
+  - Stored in .memento/acronyms.json for persistence
+  - Works across all component types (modes, workflows, agents, etc.)
+
+Configuration:
+  - Settings stored in .memento/acronyms.json
+  - Supports case-sensitive and whole-word-only options
+  - Automatically created when first acronym is added
+`);
 
 acronymCommand
   .command('add <acronym> <expansion>')

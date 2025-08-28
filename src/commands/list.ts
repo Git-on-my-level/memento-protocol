@@ -12,6 +12,40 @@ export const listCommand = new Command('list')
   .option('-v, --verbose', 'Show detailed component information')
   .option('-c, --conflicts', 'Show only components with conflicts across scopes')
   .option('--installed', 'Legacy option: show all components (equivalent to no filter)')
+  .addHelpText('after', `
+Examples:
+  $ memento list                                  # Show all components with status summary
+  $ memento list --verbose                        # Show components with descriptions and tags
+  $ memento list --installed                      # Show all installed components (legacy)
+
+Filter by component type:
+  $ memento list --type mode                      # Show only modes
+  $ memento list --type workflow                  # Show only workflows
+  $ memento list --type agent                     # Show only agents
+  $ memento list --type hook                      # Show only hooks
+  $ memento list --type script                    # Show only scripts
+
+Filter by scope:
+  $ memento list --scope builtin                  # Show only built-in components
+  $ memento list --scope global                   # Show only global (~/.memento) components
+  $ memento list --scope project                  # Show only project-specific components
+
+Combined filters:
+  $ memento list --type mode --scope builtin      # Show built-in modes only
+  $ memento list --type workflow --scope project  # Show project workflows only
+  $ memento list --type agent --verbose           # Show agents with detailed info
+
+Conflict detection:
+  $ memento list --conflicts                      # Show components that exist in multiple scopes
+  $ memento list --conflicts --verbose            # Show conflicts with descriptions
+
+Status indicators:
+  ● = Project scope (highest precedence, active)
+  ○ = Global scope (medium precedence)
+  ◦ = Built-in scope (lowest precedence)
+  (active) = Component will be used (highest precedence)
+  (overridden) = Component exists but is shadowed by higher precedence
+`)
   .action(async (options) => {
     try {
       const core = new MementoCore(process.cwd());

@@ -129,6 +129,29 @@ export const initCommand = new Command("init")
   .option("-c, --config <path>", "Path to configuration file")
   .option("-d, --default-mode <mode>", "Set default mode")
   .option("-s, --starter-pack [pack]", "Install a starter pack (interactive selection if no pack specified)")
+  .addHelpText('after', `
+Examples:
+  $ memento init                                    # Interactive initialization
+  $ memento init --force                            # Force reinitialize existing project
+  $ memento init --non-interactive                  # Quick setup with no components
+  $ memento init --all-recommended                  # Install all recommended components
+  $ memento init --starter-pack                     # Interactive starter pack selection
+  $ memento init --starter-pack frontend-react     # Install React starter pack
+  $ memento init --modes engineer,architect         # Install specific modes
+  $ memento init --workflows review,debug           # Install specific workflows
+  $ memento init --hooks git-context,test-on-save  # Install specific hooks
+  $ memento init --default-mode architect          # Set architect as default mode
+  $ memento init --gitignore                        # Add .memento/ to .gitignore
+  $ memento init --config ./setup.json             # Use configuration file
+  $ memento init --global                           # Initialize global ~/.memento
+
+Non-interactive with environment variables:
+  $ MEMENTO_MODES=engineer,reviewer MEMENTO_DEFAULT_MODE=engineer memento init --non-interactive
+  $ MEMENTO_WORKFLOWS=review,optimize memento init --non-interactive
+
+Complete setup example:
+  $ memento init --modes engineer,architect --workflows review,debug --default-mode engineer --gitignore
+`)
   .action(async (options, command: Command) => {
     try {
       

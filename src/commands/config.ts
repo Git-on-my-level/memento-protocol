@@ -3,7 +3,44 @@ import { ConfigManager } from '../lib/configManager';
 import { logger } from '../lib/logger';
 
 const configCommand = new Command('config')
-  .description('Manage Memento configuration');
+  .description('Manage Memento configuration')
+  .addHelpText('after', `
+Examples:
+  $ memento config get defaultMode                # Get current default mode
+  $ memento config get ui.colorOutput             # Get color output setting
+  $ memento config set defaultMode engineer       # Set default mode to engineer
+  $ memento config set ui.colorOutput true        # Enable colored output
+  $ memento config set ui.verboseLogging false    # Disable verbose logging
+  $ memento config unset defaultMode              # Remove default mode setting
+  $ memento config list                           # List all configuration values
+  $ memento config list --global                  # List only global configuration
+
+Setting different value types:
+  $ memento config set defaultMode "engineer"     # String value
+  $ memento config set ui.colorOutput true        # Boolean value
+  $ memento config set maxComponents 10           # Number value
+  $ memento config set customModes '["dev","prod"]'  # JSON array value
+  $ memento config set theme.colors '{"primary":"blue","accent":"green"}'  # JSON object
+
+Global vs project configuration:
+  $ memento config set defaultMode architect --global     # Set in global ~/.memento
+  $ memento config set ui.colorOutput false --global      # Set global color setting
+  $ memento config unset defaultMode --global             # Remove from global config
+  $ memento config list --global                          # Show only global settings
+
+Configuration hierarchy (highest precedence first):
+  1. Project .memento/config.yaml
+  2. Global ~/.memento/config.yaml
+  3. Built-in defaults
+
+Common configuration keys:
+  defaultMode              - Default AI mode to use
+  ui.colorOutput           - Enable/disable colored terminal output
+  ui.verboseLogging        - Enable/disable verbose logging
+  integrations.git.*       - Git-specific settings
+  components.modes[]       - List of installed modes
+  components.workflows[]   - List of installed workflows
+`);
 
 // Get subcommand
 configCommand
