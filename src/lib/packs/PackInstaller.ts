@@ -13,7 +13,7 @@ import {
   ProjectPackManifest,
 } from "../types/packs";
 import { logger } from "../logger";
-import { MementoError } from "../errors";
+import { MementoError, PackError, ComponentInstallError } from "../errors";
 import { DirectoryManager } from "../directoryManager";
 import { IPackSource } from "./PackSource";
 
@@ -125,12 +125,12 @@ export class PackInstaller {
     const packInfo = projectManifest.packs[packName];
     
     if (!packInfo) {
-      return {
-        success: false,
-        installed: { modes: [], workflows: [], agents: [], hooks: [] },
-        skipped: { modes: [], workflows: [], agents: [], hooks: [] },
-        errors: [`Pack '${packName}' is not installed`],
-      };
+      throw new PackError(
+        packName,
+        'uninstall',
+        'pack is not installed',
+        `Check installed packs with: memento list --type pack`
+      );
     }
 
     // TODO: Implement actual uninstallation logic
@@ -243,10 +243,11 @@ export class PackInstaller {
 
       return true;
     } catch (error) {
-      throw new MementoError(
-        `Failed to install ${componentType.slice(0, -1)} '${componentName}'`,
-        'COMPONENT_INSTALL_ERROR',
-        `Error: ${error}`
+      throw new ComponentInstallError(
+        componentType.slice(0, -1),
+        componentName,
+        `pack component installation failed: ${error}`,
+        `Check if the component exists in the pack and paths are correct`
       );
     }
   }

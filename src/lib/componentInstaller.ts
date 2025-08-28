@@ -4,6 +4,7 @@ import { logger } from "./logger";
 import { PackagePaths } from "./packagePaths";
 import { FileSystemAdapter } from "./adapters/FileSystemAdapter";
 import { NodeFileSystemAdapter } from "./adapters/NodeFileSystemAdapter";
+import { ComponentNotFoundError, ComponentInstallError, InvalidComponentTypeError, DependencyError } from "./errors";
 
 interface ComponentMetadata {
   name: string;
@@ -191,7 +192,7 @@ export class ComponentInstaller {
     } else if (type === "agent") {
       templateSubdir = "agents";
     } else {
-      throw new Error(`Invalid component type: ${type}`);
+      throw new InvalidComponentTypeError(type, ['mode', 'workflow', 'agent']);
     }
     
     const componentPath = this.fs.join(
@@ -201,7 +202,12 @@ export class ComponentInstaller {
     );
 
     if (!(await this.fs.exists(componentPath))) {
-      throw new Error(`Component ${type} '${name}' not found in templates`);
+      const available = await this.listAvailableComponents();
+      const availableOfType = type === 'mode' ? available.modes.map(m => m.name) 
+        : type === 'workflow' ? available.workflows.map(w => w.name)
+        : available.agents.map(a => a.name);
+      
+      throw new ComponentNotFoundError(type, name, availableOfType);
     }
 
     // Check if already installed
@@ -214,13 +220,17 @@ export class ComponentInstaller {
     } else if (type === "agent") {
       componentList = manifest.components.agents || [];
     } else {
-      throw new Error(`Invalid component type: ${type}`);
+      throw new InvalidComponentTypeError(type, ['mode', 'workflow', 'agent']);
     }
 
     if (componentList.includes(name) && !force) {
       // SAFE: Preserving existing user customization
-      logger.warn(`${type} '${name}' is already installed`);
-      return;
+      throw new ComponentInstallError(
+        type,
+        name,
+        'component already exists',
+        `Use --force to overwrite: memento add ${type} ${name} --force`
+      );
     }
 
     // Check dependencies using frontmatter parsing
@@ -230,12 +240,31 @@ export class ComponentInstaller {
     logger.clearProgress();
 
     if (component?.dependencies && component.dependencies.length > 0) {
+      // Check for missing dependencies first
+      const missingDeps = component.dependencies.filter(
+        (dep) => !manifest.components.modes.includes(dep)
+      );
+      
+      if (missingDeps.length > 0 && !force) {
+        throw new DependencyError(`${type}:${name}`, missingDeps);
+      }
+      
       logger.progress(`Installing ${component.dependencies.length} dependencies`);
       for (let i = 0; i < component.dependencies.length; i++) {
         const dep = component.dependencies[i];
         if (!manifest.components.modes.includes(dep) || force) {
           logger.step(i + 1, component.dependencies.length, `Installing dependency: ${dep}`);
-          await this.installComponent("mode", dep, force);
+          try {
+            await this.installComponent("mode", dep, force);
+          } catch (error) {
+            logger.clearProgress();
+            throw new ComponentInstallError(
+              type,
+              name,
+              `failed to install dependency '${dep}': ${error}`,
+              `Install dependency manually first: memento add mode ${dep}`
+            );
+          }
         }
       }
       logger.clearProgress();
@@ -252,7 +281,7 @@ export class ComponentInstaller {
     } else if (type === "agent") {
       destType = "agents";
     } else {
-      throw new Error(`Invalid component type: ${type}`);
+      throw new InvalidComponentTypeError(type, ['mode', 'workflow', 'agent']);
     }
     
     const destPath = this.dirManager.getComponentPath(destType, name);
@@ -275,7 +304,7 @@ export class ComponentInstaller {
         componentList = manifest.components.agents;
       }
     } else {
-      throw new Error(`Invalid component type: ${type}`);
+      throw new InvalidComponentTypeError(type, ['mode', 'workflow', 'agent']);
     }
 
     // Update manifest
@@ -305,7 +334,7 @@ export class ComponentInstaller {
     } else if (type === "agent") {
       components = available.agents;
     } else {
-      throw new Error(`Invalid component type: ${type}`);
+      throw new InvalidComponentTypeError(type, ['mode', 'workflow', 'agent']);
     }
 
     if (components.length === 0) {

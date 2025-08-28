@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { MementoCore, ComponentSearchResult } from '../lib/MementoCore';
 import { ComponentInfo } from '../lib/MementoScope';
 import { logger } from '../lib/logger';
+import { InvalidComponentTypeError, InvalidScopeError, ComponentInstallError } from '../lib/errors';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
 import * as fs from 'fs';
@@ -23,17 +24,13 @@ export const addCommand = new Command('add')
       // Validate component type
       const validTypes: ComponentInfo['type'][] = ['mode', 'workflow', 'agent', 'script', 'hook', 'command', 'template'];
       if (!validTypes.includes(type as ComponentInfo['type'])) {
-        logger.error(`Invalid component type: ${type}`);
-        logger.info(`Valid types are: ${validTypes.join(', ')}`);
-        process.exit(1);
+        throw new InvalidComponentTypeError(type, validTypes);
       }
       
       // Validate source scope
       const validSources = ['builtin', 'global'];
       if (opts.source && !validSources.includes(opts.source)) {
-        logger.error(`Invalid source scope: ${opts.source}`);
-        logger.info(`Valid sources are: ${validSources.join(', ')}`);
-        process.exit(1);
+        throw new InvalidScopeError(opts.source, validSources);
       }
       
       const componentType = type as ComponentInfo['type'];
@@ -66,8 +63,7 @@ export const addCommand = new Command('add')
       await showMultipleMatches(core, matches, opts);
       
     } catch (error) {
-      logger.error('Failed to add component:', error);
-      process.exit(1);
+      throw error;
     }
   });
 
@@ -250,7 +246,12 @@ async function installComponent(
   try {
     sourceContent = fs.readFileSync(component.path, 'utf-8');
   } catch (error: any) {
-    throw new Error(`Failed to read source component: ${error.message}`);
+    throw new ComponentInstallError(
+      component.type,
+      component.name,
+      `Unable to read source component file at ${component.path}`,
+      `Check if the file exists and you have read permissions. Try: ls -la "${path.dirname(component.path)}"`
+    );
   }
   
   // Determine target path
@@ -285,7 +286,24 @@ async function installComponent(
     }
     
   } catch (error: any) {
-    throw new Error(`Failed to write component: ${error.message}`);
+    const reason = error.code === 'EACCES'
+      ? 'permission denied'
+      : error.code === 'ENOSPC'
+      ? 'insufficient disk space'
+      : error.code === 'EROFS'
+      ? 'read-only file system'
+      : `write failed (${error.message})`;
+
+    throw new ComponentInstallError(
+      component.type,
+      component.name,
+      reason,
+      error.code === 'EACCES'
+        ? `Check directory permissions: ls -la "${path.dirname(targetPath)}"`
+        : error.code === 'ENOSPC'
+        ? `Free up disk space and try again`
+        : `Verify the target directory exists and is writable: ls -la "${path.dirname(targetPath)}"`
+    );
   }
 }
 

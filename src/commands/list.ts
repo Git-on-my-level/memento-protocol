@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { MementoCore } from '../lib/MementoCore';
 import { ComponentInfo } from '../lib/MementoScope';
 import { logger } from '../lib/logger';
+import { InvalidComponentTypeError, InvalidScopeError } from '../lib/errors';
 import chalk from 'chalk';
 
 export const listCommand = new Command('list')
@@ -19,15 +20,13 @@ export const listCommand = new Command('list')
       // Validate type filter
       const validTypes: ComponentInfo['type'][] = ['mode', 'workflow', 'agent', 'script', 'hook', 'command', 'template'];
       if (options.type && !validTypes.includes(options.type)) {
-        logger.error(`Invalid component type '${options.type}'. Valid types are: ${validTypes.join(', ')}`);
-        process.exit(1);
+        throw new InvalidComponentTypeError(options.type, validTypes);
       }
       
       // Validate scope filter
       const validScopes = ['builtin', 'global', 'project'];
       if (options.scope && !validScopes.includes(options.scope)) {
-        logger.error(`Invalid scope '${options.scope}'. Valid scopes are: ${validScopes.join(', ')}`);
-        process.exit(1);
+        throw new InvalidScopeError(options.scope, validScopes);
       }
 
       // Show status summary
@@ -49,8 +48,7 @@ export const listCommand = new Command('list')
         });
       }
     } catch (error) {
-      logger.error('Failed to list components:', error);
-      process.exit(1);
+      throw error;
     }
   });
 

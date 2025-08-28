@@ -1,5 +1,6 @@
 import { FileSystemAdapter } from './adapters/FileSystemAdapter';
 import { NodeFileSystemAdapter } from './adapters/NodeFileSystemAdapter';
+import { TicketError } from './errors';
 
 export type TicketStatus = 'next' | 'in-progress' | 'done';
 
@@ -62,7 +63,7 @@ export class TicketManager {
   async create(name: string): Promise<string> {
     // Check if ticket already exists
     if (this.findTicket(name)) {
-      throw new Error(`Ticket '${name}' already exists`);
+      throw new TicketError('create', name, 'ticket already exists');
     }
 
     const ticketPath = this.fs.join(this.ticketsDir, 'next', `${name}.md`);
@@ -118,11 +119,11 @@ Created: ${new Date().toISOString()}
   async move(name: string, toStatus: TicketStatus): Promise<void> {
     const ticket = this.findTicket(name);
     if (!ticket) {
-      throw new Error(`Ticket '${name}' not found`);
+      throw new TicketError('move', name, 'ticket not found');
     }
 
     if (ticket.status === toStatus) {
-      throw new Error(`Ticket '${name}' is already in ${toStatus}`);
+      throw new TicketError('move', name, `already in '${toStatus}' status`, 'No action needed - ticket is already in the target status');
     }
 
     const filename = this.fs.basename(ticket.path);
@@ -140,9 +141,13 @@ Created: ${new Date().toISOString()}
   async delete(name: string): Promise<void> {
     const ticket = this.findTicket(name);
     if (!ticket) {
-      throw new Error(`Ticket '${name}' not found`);
+      throw new TicketError('delete', name, 'ticket not found');
     }
 
-    await this.fs.unlink(ticket.path);
+    try {
+      await this.fs.unlink(ticket.path);
+    } catch (error: any) {
+      throw new TicketError('delete', name, `failed to delete ticket file: ${error.message}`, 'Check file permissions and try again');
+    }
   }
 }

@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import { TicketManager, TicketStatus } from '../lib/ticketManager';
 import { logger } from '../lib/logger';
+import { TicketError } from '../lib/errors';
 
 const ticketCommand = new Command('ticket')
   .description('Manage tickets for persistent workspace');
@@ -16,8 +17,7 @@ ticketCommand
       logger.success(`Created ticket: ${name}`);
       logger.info(`Location: ${ticketPath}`);
     } catch (error) {
-      logger.error(`Failed to create ticket: ${error}`);
-      process.exit(1);
+      throw error;
     }
   });
 
@@ -56,8 +56,7 @@ ticketCommand
         }
       });
     } catch (error) {
-      logger.error(`Failed to list tickets: ${error}`);
-      process.exit(1);
+      throw error;
     }
   });
 
@@ -72,15 +71,13 @@ ticketCommand
       
       // Validate status
       if (!['next', 'in-progress', 'done'].includes(options.to)) {
-        logger.error(`Invalid status: ${options.to}. Must be one of: next, in-progress, done`);
-        process.exit(1);
+        throw new TicketError('move', name, `invalid status '${options.to}'`, 'Valid statuses are: next, in-progress, done. Example: memento ticket move <name> --to in-progress');
       }
       
       await ticketManager.move(name, options.to as TicketStatus);
       logger.success(`Moved ticket '${name}' to ${options.to}`);
     } catch (error) {
-      logger.error(`Failed to move ticket: ${error}`);
-      process.exit(1);
+      throw error;
     }
   });
 
@@ -94,8 +91,7 @@ ticketCommand
       await ticketManager.delete(name);
       logger.success(`Deleted ticket: ${name}`);
     } catch (error) {
-      logger.error(`Failed to delete ticket: ${error}`);
-      process.exit(1);
+      throw error;
     }
   });
 

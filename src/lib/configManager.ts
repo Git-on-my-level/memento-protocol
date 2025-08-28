@@ -1,5 +1,5 @@
 import { ConfigSchemaRegistry, MementoConfig } from './configSchema';
-import { ValidationError } from './errors';
+import { ValidationError, ConfigurationError, FileSystemError } from './errors';
 import { MementoCore } from './MementoCore';
 import { FileSystemAdapter } from './adapters/FileSystemAdapter';
 import { NodeFileSystemAdapter } from './adapters/NodeFileSystemAdapter';
@@ -82,10 +82,11 @@ export class ConfigManager {
     const configPath = global ? paths.global : paths.project;
     
     if (!this.fs.existsSync(configPath)) {
+      const scopeName = global ? 'global' : 'project';
       return {
         valid: false,
         errors: [`Configuration file not found: ${configPath}`],
-        warnings: []
+        warnings: [`Initialize ${scopeName} configuration with: memento init${global ? '-global' : ''}`]
       };
     }
 
@@ -96,18 +97,23 @@ export class ConfigManager {
       if (!config) {
         return {
           valid: false,
-          errors: ['Failed to load configuration'],
-          warnings: []
+          errors: ['Failed to load configuration - file may be corrupted or empty'],
+          warnings: [`Check file format: cat "${configPath}"`, 'Reinitialize if needed: memento init --force']
         };
       }
 
       const result = this.schemaRegistry.getMementoConfigValidator().validate(config);
       return result;
     } catch (error: any) {
+      const isParseError = error.message.includes('YAML') || error.message.includes('parse');
+      const suggestions = isParseError 
+        ? [`Check YAML syntax: yamllint "${configPath}"`, 'Fix syntax errors and try again']
+        : ['Check configuration values against schema', 'Use memento config list to see valid options'];
+
       return {
         valid: false,
-        errors: [`Failed to parse or validate configuration: ${error.message}`],
-        warnings: []
+        errors: [`Configuration ${isParseError ? 'parsing' : 'validation'} failed: ${error.message}`],
+        warnings: suggestions
       };
     }
   }
