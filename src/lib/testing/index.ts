@@ -64,3 +64,85 @@ export {
   createSampleTicket,
   createSampleMode
 } from './fileSystemTestUtils';
+
+// Test data factory for building test data consistently
+export { 
+  TestDataFactory,
+  ComponentBuilder,
+  PackBuilder,
+  ConfigBuilder,
+  TicketBuilder,
+  HookBuilder,
+  CliOptionsBuilder,
+  PackValidationResultBuilder,
+  PackInstallationResultBuilder,
+  PackDependencyResultBuilder
+} from './TestDataFactory';
+
+// Error scenario testing framework
+export { ErrorScenarios } from './ErrorScenarios';
+
+// Test categorization and organization system
+export { 
+  TestCategories, 
+  TestRegistry, 
+  JestTestCategories,
+  type TestMetadata,
+  type TestCategory,
+  type TestSpeed,
+  type TestDependency,
+  type TestEnvironment,
+  type TestPriority,
+  type TestFilter,
+  type TestSuiteInfo,
+  type TestInfo,
+  type TestExecution
+} from './TestCategories';
+
+// Comprehensive mock factory for consistent mocking
+export {
+  MockFactory,
+  FileSystemMockBuilder,
+  InquirerMockBuilder,
+  LoggerMockBuilder,
+  ChildProcessMockBuilder,
+  CommanderMockBuilder,
+  AxiosMockBuilder,
+  MockPresets,
+  setupMockFactory,
+  type MockCallInfo,
+  type FileSystemFile,
+  type FileSystemMockConfig,
+  type InquirerPromptResponse,
+  type ChildProcessMockConfig,
+  type MockState
+} from './MockFactory';
+
+// Comprehensive testing patterns for standardized test scenarios
+export {
+  TestPatterns,
+  aaa,
+  gwt,
+  sev,
+  table,
+  property,
+  cli,
+  fs as fsPatterns,
+  asyncPatterns,
+  integration,
+  performance,
+  assertions,
+  organization,
+  createTestContext,
+  TestScenarios,
+  type TestContext,
+  type AAAPattern,
+  type GWTPattern,
+  type SEVPattern,
+  type TableTestScenario,
+  type CLITestConfig,
+  type InteractiveStep,
+  type AsyncTestConfig,
+  type PerformanceTestConfig,
+  type EventuallyConfig
+} from './TestPatterns';

@@ -133,6 +133,59 @@ npx memento-protocol init --starter-pack frontend-react
 - 🪝 [Hooks Guide](docs/HOOKS_GUIDE.md) - Event-driven automation
 - 📖 [API Reference](docs/API.md) - Programmatic usage
 
+## Testing Framework
+
+Memento Protocol includes a comprehensive testing framework designed for modern TypeScript development. Write maintainable, consistent tests with powerful utilities and patterns.
+
+### Key Features
+
+- **🏗️ TestDataFactory**: Builder patterns for consistent test data creation
+- **🎭 MockFactory**: Intelligent mock management with state tracking  
+- **💥 ErrorScenarios**: Standardized error testing utilities
+- **📊 TestCategories**: Test organization and metadata system
+- **🧪 Testing Patterns**: AAA, GWT, table-driven, and integration patterns
+- **📁 Filesystem Testing**: In-memory filesystem adapters for isolation
+- **⚡ Quick Setup**: One-line test environment creation
+
+### Quick Example
+
+```typescript
+import { createFullTestEnvironment, TestDataFactory } from '@/lib/testing';
+
+describe('Config Management', () => {
+  it('should load and validate configuration', async () => {
+    const testEnv = await createFullTestEnvironment({
+      name: 'Config test',
+      filesystem: {
+        '/project/.memento/config.json': JSON.stringify(
+          TestDataFactory.config()
+            .withProjectType('typescript')
+            .withVersion('2.0.0')
+            .build()
+        )
+      },
+      mocks: ['fs', 'inquirer']
+    });
+
+    try {
+      const config = await configManager.load('/project', testEnv.fs);
+      expect(config.projectType).toBe('typescript');
+      await testEnv.assert.fileExists('/project/.memento/config.json');
+    } finally {
+      await testEnv.cleanup();
+    }
+  });
+});
+```
+
+### Documentation
+
+- 📋 [**Testing Guide**](src/lib/testing/TESTING_GUIDE.md) - Comprehensive framework documentation  
+- 🔄 [**Migration Template**](src/lib/testing/migrate-tests.template.ts) - Upgrade existing tests
+- ✅ [**Integration Tests**](src/lib/testing/__tests__/testing.test.ts) - Real-world usage examples
+
+The testing framework follows the same philosophy as Memento Protocol: enhance your development experience without complexity. Start simple, scale as needed.
+
 ## Examples
 
 ### Switch Modes with Fuzzy Matching

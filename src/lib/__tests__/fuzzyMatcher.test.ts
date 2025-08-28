@@ -1,7 +1,7 @@
 import { FuzzyMatcher } from '../fuzzyMatcher';
 import { ComponentInfo } from '../MementoScope';
 
-describe('FuzzyMatcher', () => {
+describe('FuzzyMatcher [unit][fast][isolated]', () => {
   const mockComponents: Array<{ component: ComponentInfo; source: 'builtin' | 'global' | 'project' }> = [
     {
       component: {
@@ -60,7 +60,7 @@ describe('FuzzyMatcher', () => {
   ];
 
   describe('findMatches', () => {
-    it('should find exact matches with highest score', () => {
+    it('[unit][fast] should find exact matches with highest score', () => {
       const matches = FuzzyMatcher.findMatches('engineer', mockComponents);
       
       expect(matches).toHaveLength(1);
