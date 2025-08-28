@@ -3,6 +3,7 @@ import { NodeFileSystemAdapter } from "./adapters/NodeFileSystemAdapter";
 import { FileSystemError } from "./errors";
 import { logger } from "./logger";
 import { PackagePaths } from "./packagePaths";
+import { withFileOperations, safeWriteFile, safeCopyFile, resourceManager } from "./utils/ResourceManager";
 
 export class DirectoryManager {
   private projectRoot: string;
@@ -37,54 +38,57 @@ export class DirectoryManager {
    * Deleting them would be catastrophic and violate user trust.
    */
   async initializeStructure(): Promise<void> {
-    const directories = [
-      this.mementoDir,
-      this.fs.join(this.mementoDir, "modes"),
-      this.fs.join(this.mementoDir, "workflows"),
-      this.fs.join(this.mementoDir, "integrations"),
-      this.fs.join(this.mementoDir, "scripts"),
-      this.fs.join(this.mementoDir, "tickets"),
-      this.claudeDir,
-      this.fs.join(this.claudeDir, "agents"),
-    ];
+    return withFileOperations(async () => {
+      const directories = [
+        this.mementoDir,
+        this.fs.join(this.mementoDir, "modes"),
+        this.fs.join(this.mementoDir, "workflows"),
+        this.fs.join(this.mementoDir, "integrations"),
+        this.fs.join(this.mementoDir, "scripts"),
+        this.fs.join(this.mementoDir, "tickets"),
+        this.claudeDir,
+        this.fs.join(this.claudeDir, "agents"),
+      ];
 
-    for (let i = 0; i < directories.length; i++) {
-      const dir = directories[i];
       try {
-        logger.step(i + 1, directories.length, `Creating ${this.fs.basename(dir)} directory`);
-        // Safe: mkdir with recursive:true creates only if not exists
-        await this.fs.mkdir(dir, { recursive: true });
+        for (let i = 0; i < directories.length; i++) {
+          const dir = directories[i];
+          logger.step(i + 1, directories.length, `Creating ${this.fs.basename(dir)} directory`);
+        }
+        
+        // Use safe directory creation that handles partial failures
+        await resourceManager.ensureDirectoriesWithAdapter(directories, this.fs);
       } catch (error) {
         throw new FileSystemError(
-          `Failed to create directory: ${dir}`,
-          dir,
+          `Failed to create directory structure: ${error}`,
+          this.mementoDir,
           "Ensure you have write permissions in the project directory"
         );
       }
-    }
 
-    // Create a manifest file to track installed components
-    logger.progress('Creating project manifest');
-    const manifestPath = this.fs.join(this.mementoDir, "manifest.json");
-    if (!this.fs.existsSync(manifestPath)) {
-      const manifest = {
-        version: "1.0.0",
-        created: new Date().toISOString(),
-        components: {
-          modes: [],
-          workflows: [],
-          integrations: [],
-          agents: [],
-        },
-      };
-      await this.fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
-    }
-    logger.clearProgress();
+      // Create a manifest file to track installed components
+      logger.progress('Creating project manifest');
+      const manifestPath = this.fs.join(this.mementoDir, "manifest.json");
+      if (!this.fs.existsSync(manifestPath)) {
+        const manifest = {
+          version: "1.0.0",
+          created: new Date().toISOString(),
+          components: {
+            modes: [],
+            workflows: [],
+            integrations: [],
+            agents: [],
+          },
+        };
+        await safeWriteFile(manifestPath, JSON.stringify(manifest, null, 2));
+      }
+      logger.clearProgress();
 
-    // Copy essential scripts for custom commands
-    logger.progress('Copying essential scripts');
-    await this.copyEssentialScripts();
-    logger.clearProgress();
+      // Copy essential scripts for custom commands
+      logger.progress('Copying essential scripts');
+      await this.copyEssentialScripts();
+      logger.clearProgress();
+    });
   }
 
   /**
@@ -132,43 +136,45 @@ export class DirectoryManager {
    * Ensure .gitignore includes .memento directory
    */
   async ensureGitignore(): Promise<void> {
-    const gitignorePath = this.fs.join(this.projectRoot, ".gitignore");
-    const mementoEntry = ".memento/";
+    return withFileOperations(async () => {
+      const gitignorePath = this.fs.join(this.projectRoot, ".gitignore");
+      const mementoEntry = ".memento/";
 
-    let gitignoreContent = "";
+      let gitignoreContent = "";
 
-    // Read existing .gitignore if it exists
-    if (this.fs.existsSync(gitignorePath)) {
-      gitignoreContent = await this.fs.readFile(gitignorePath, "utf-8") as string;
-    }
-
-    // Check if .memento is already in .gitignore
-    const lines = gitignoreContent.split("\n");
-    const hasMementoEntry = lines.some(
-      (line) =>
-        line.trim() === ".memento" ||
-        line.trim() === ".memento/" ||
-        line.trim() === "/.memento" ||
-        line.trim() === "/.memento/"
-    );
-
-    if (!hasMementoEntry) {
-      // Add .memento entry
-      if (gitignoreContent && !gitignoreContent.endsWith("\n")) {
-        gitignoreContent += "\n";
+      // Read existing .gitignore if it exists
+      if (this.fs.existsSync(gitignorePath)) {
+        gitignoreContent = await this.fs.readFile(gitignorePath, "utf-8") as string;
       }
 
-      // Add a comment if this is the first entry
-      if (!gitignoreContent.trim()) {
-        gitignoreContent += "# Memento Protocol\n";
-      } else {
-        gitignoreContent += "\n# Memento Protocol\n";
+      // Check if .memento is already in .gitignore
+      const lines = gitignoreContent.split("\n");
+      const hasMementoEntry = lines.some(
+        (line) =>
+          line.trim() === ".memento" ||
+          line.trim() === ".memento/" ||
+          line.trim() === "/.memento" ||
+          line.trim() === "/.memento/"
+      );
+
+      if (!hasMementoEntry) {
+        // Add .memento entry
+        if (gitignoreContent && !gitignoreContent.endsWith("\n")) {
+          gitignoreContent += "\n";
+        }
+
+        // Add a comment if this is the first entry
+        if (!gitignoreContent.trim()) {
+          gitignoreContent += "# Memento Protocol\n";
+        } else {
+          gitignoreContent += "\n# Memento Protocol\n";
+        }
+
+        gitignoreContent += mementoEntry + "\n";
+
+        await safeWriteFile(gitignorePath, gitignoreContent, { backup: true });
       }
-
-      gitignoreContent += mementoEntry + "\n";
-
-      await this.fs.writeFile(gitignorePath, gitignoreContent);
-    }
+    });
   }
 
   /**
@@ -188,27 +194,31 @@ export class DirectoryManager {
    * Get the manifest data
    */
   async getManifest(): Promise<any> {
-    const manifestPath = this.fs.join(this.mementoDir, "manifest.json");
+    return withFileOperations(async () => {
+      const manifestPath = this.fs.join(this.mementoDir, "manifest.json");
 
-    if (!this.fs.existsSync(manifestPath)) {
-      throw new Error(
-        `Memento Protocol is not initialized in this project.\n\n` +
-          `To fix this, run:\n` +
-          `  npx memento-protocol init\n\n` +
-          `This will create the necessary .memento directory structure and manifest file.`
-      );
-    }
+      if (!this.fs.existsSync(manifestPath)) {
+        throw new Error(
+          `Memento Protocol is not initialized in this project.\n\n` +
+            `To fix this, run:\n` +
+            `  npx memento-protocol init\n\n` +
+            `This will create the necessary .memento directory structure and manifest file.`
+        );
+      }
 
-    const content = await this.fs.readFile(manifestPath, "utf-8") as string;
-    return JSON.parse(content);
+      const content = await this.fs.readFile(manifestPath, "utf-8") as string;
+      return JSON.parse(content);
+    });
   }
 
   /**
    * Update the manifest data
    */
   async updateManifest(manifest: any): Promise<void> {
-    const manifestPath = this.fs.join(this.mementoDir, "manifest.json");
-    await this.fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
+    return withFileOperations(async () => {
+      const manifestPath = this.fs.join(this.mementoDir, "manifest.json");
+      await safeWriteFile(manifestPath, JSON.stringify(manifest, null, 2), { backup: true });
+    });
   }
 
   /**
@@ -216,51 +226,54 @@ export class DirectoryManager {
    * These scripts are required for custom commands to work properly
    */
   private async copyEssentialScripts(): Promise<void> {
-    const templatesDir = PackagePaths.getTemplatesDir();
-    const templateScriptsDir = this.fs.join(templatesDir, "scripts");
-    const mementoScriptsDir = this.fs.join(this.mementoDir, "scripts");
+    return withFileOperations(async () => {
+      const templatesDir = PackagePaths.getTemplatesDir();
+      const templateScriptsDir = this.fs.join(templatesDir, "scripts");
+      const mementoScriptsDir = this.fs.join(this.mementoDir, "scripts");
 
-    // Check if template scripts directory exists
-    if (!this.fs.existsSync(templateScriptsDir)) {
-      logger.debug(
-        "No template scripts directory found, skipping script copying"
-      );
-      return;
-    }
-
-    try {
-      // Get list of script files from templates
-      const scriptFiles = await this.fs.readdir(templateScriptsDir);
-      const filesToCopy = scriptFiles.filter(scriptFile => {
-        const destPath = this.fs.join(mementoScriptsDir, scriptFile);
-        return !this.fs.existsSync(destPath);
-      });
-      
-      if (filesToCopy.length === 0) {
-        logger.debug("All scripts already exist, skipping");
+      // Check if template scripts directory exists
+      if (!this.fs.existsSync(templateScriptsDir)) {
+        logger.debug(
+          "No template scripts directory found, skipping script copying"
+        );
         return;
       }
 
-      for (let i = 0; i < filesToCopy.length; i++) {
-        const scriptFile = filesToCopy[i];
-        const sourcePath = this.fs.join(templateScriptsDir, scriptFile);
-        const destPath = this.fs.join(mementoScriptsDir, scriptFile);
+      try {
+        // Get list of script files from templates
+        const scriptFiles = await this.fs.readdir(templateScriptsDir);
+        const filesToCopy = scriptFiles.filter(scriptFile => {
+          const destPath = this.fs.join(mementoScriptsDir, scriptFile);
+          return !this.fs.existsSync(destPath);
+        });
         
-        if (filesToCopy.length > 1) {
-          logger.step(i + 1, filesToCopy.length, `Copying script ${scriptFile}`);
+        if (filesToCopy.length === 0) {
+          logger.debug("All scripts already exist, skipping");
+          return;
         }
 
-        await this.fs.copyFile(sourcePath, destPath);
+        for (let i = 0; i < filesToCopy.length; i++) {
+          const scriptFile = filesToCopy[i];
+          const sourcePath = this.fs.join(templateScriptsDir, scriptFile);
+          const destPath = this.fs.join(mementoScriptsDir, scriptFile);
+          
+          if (filesToCopy.length > 1) {
+            logger.step(i + 1, filesToCopy.length, `Copying script ${scriptFile}`);
+          }
 
-        // Make the script executable (on Unix-like systems)
-        if (process.platform !== "win32") {
-          await this.fs.chmod(destPath, 0o755);
+          // Use safe copy operation with backup
+          await safeCopyFile(sourcePath, destPath);
+
+          // Make the script executable (on Unix-like systems)
+          if (process.platform !== "win32") {
+            await this.fs.chmod(destPath, 0o755);
+          }
         }
+
+        logger.debug("Essential scripts copied successfully");
+      } catch (error) {
+        logger.warn(`Failed to copy essential scripts: ${error}`);
       }
-
-      logger.debug("Essential scripts copied successfully");
-    } catch (error) {
-      logger.warn(`Failed to copy essential scripts: ${error}`);
-    }
+    });
   }
 }

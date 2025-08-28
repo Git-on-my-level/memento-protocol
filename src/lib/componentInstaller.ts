@@ -6,6 +6,7 @@ import { FileSystemAdapter } from "./adapters/FileSystemAdapter";
 import { NodeFileSystemAdapter } from "./adapters/NodeFileSystemAdapter";
 import { ComponentNotFoundError, ComponentInstallError, InvalidComponentTypeError, DependencyError } from "./errors";
 import { InputValidator } from "./validation/InputValidator";
+import { withFileOperations, safeWriteFile } from "./utils/ResourceManager";
 
 interface ComponentMetadata {
   name: string;
@@ -38,77 +39,81 @@ export class ComponentInstaller {
    * Parse frontmatter from a template file
    */
   private async parseTemplateFrontmatter(filePath: string): Promise<ComponentMetadata | null> {
-    try {
-      const content = await this.fs.readFile(filePath, "utf-8") as string;
-      const parsed = matter(content);
-      const data = parsed.data;
+    return withFileOperations(async () => {
+      try {
+        const content = await this.fs.readFile(filePath, "utf-8") as string;
+        const parsed = matter(content);
+        const data = parsed.data;
 
-      // Validate required fields
-      if (!data.name || !data.description) {
-        logger.warn(`Template ${filePath} missing required frontmatter fields (name, description)`);
+        // Validate required fields
+        if (!data.name || !data.description) {
+          logger.warn(`Template ${filePath} missing required frontmatter fields (name, description)`);
+          return null;
+        }
+
+        return {
+          name: data.name,
+          description: data.description,
+          author: data.author,
+          version: data.version,
+          tags: data.tags || [],
+          dependencies: data.dependencies || [],
+          tools: data.tools,
+          model: data.model,
+          event: data.event,
+          priority: data.priority,
+        };
+      } catch (error) {
+        logger.warn(`Error parsing frontmatter from ${filePath}: ${error}`);
         return null;
       }
-
-      return {
-        name: data.name,
-        description: data.description,
-        author: data.author,
-        version: data.version,
-        tags: data.tags || [],
-        dependencies: data.dependencies || [],
-        tools: data.tools,
-        model: data.model,
-        event: data.event,
-        priority: data.priority,
-      };
-    } catch (error) {
-      logger.warn(`Error parsing frontmatter from ${filePath}: ${error}`);
-      return null;
-    }
+    });
   }
 
   /**
    * Scan a directory for template files and parse their metadata
    */
   private async scanComponentDirectory(dirPath: string, extension = ".md"): Promise<ComponentMetadata[]> {
-    const components: ComponentMetadata[] = [];
-    
-    if (!(await this.fs.exists(dirPath))) {
-      return components;
-    }
+    return withFileOperations(async () => {
+      const components: ComponentMetadata[] = [];
+      
+      if (!(await this.fs.exists(dirPath))) {
+        return components;
+      }
 
-    try {
-      const files = await this.fs.readdir(dirPath);
-      const templateFiles = files.filter(file => file.endsWith(extension));
-      
-      if (templateFiles.length > 0) {
-        logger.progress(`Scanning ${templateFiles.length} template files`);
-      }
-      
-      for (let i = 0; i < templateFiles.length; i++) {
-        const file = templateFiles[i];
-        const filePath = this.fs.join(dirPath, file);
+      try {
+        const files = await this.fs.readdir(dirPath);
+        const templateFiles = files.filter(file => file.endsWith(extension));
         
-        if (templateFiles.length > 1) {
-          logger.step(i + 1, templateFiles.length, `Parsing ${file}`);
+        if (templateFiles.length > 0) {
+          logger.progress(`Scanning ${templateFiles.length} template files`);
         }
         
-        const metadata = await this.parseTemplateFrontmatter(filePath);
-        
-        if (metadata) {
-          components.push(metadata);
+        for (let i = 0; i < templateFiles.length; i++) {
+          const file = templateFiles[i];
+          const filePath = this.fs.join(dirPath, file);
+          
+          if (templateFiles.length > 1) {
+            logger.step(i + 1, templateFiles.length, `Parsing ${file}`);
+          }
+          
+          const metadata = await this.parseTemplateFrontmatter(filePath);
+          
+          if (metadata) {
+            components.push(metadata);
+          }
         }
-      }
-      
-      if (templateFiles.length > 0) {
+        
+        if (templateFiles.length > 0) {
+          logger.clearProgress();
+        }
+      } catch (error) {
         logger.clearProgress();
+        logger.warn(`Error scanning directory ${dirPath}: ${error}`);
       }
-    } catch (error) {
-      logger.clearProgress();
-      logger.warn(`Error scanning directory ${dirPath}: ${error}`);
-    }
-    
-    return components;
+      
+      return components;
+    });
   }
 
   /**
@@ -286,41 +291,46 @@ export class ComponentInstaller {
       logger.clearProgress();
     }
 
-    // Copy component file
+    // Copy component file with safe resource management
     logger.progress(`Installing ${type} ${validatedName}`);
-    const content = await this.fs.readFile(componentPath, "utf-8") as string;
     
-    // Validate template content for security before installation
-    InputValidator.validateTemplateContent(content, `${type} ${validatedName}`);
-    
-    let destType: "modes" | "workflows" | "integrations" | "agents";
-    if (type === "mode") {
-      destType = "modes";
-    } else if (type === "workflow") {
-      destType = "workflows";
-    } else if (type === "agent") {
-      destType = "agents";
-    } else {
-      throw new InvalidComponentTypeError(type, ['mode', 'workflow', 'agent']);
-    }
-    
-    const destPath = this.dirManager.getComponentPath(destType, validatedName);
-    
-    // Validate destination path for security - ensure it stays within project bounds
-    try {
-      // We'll use process.cwd() as the project root for validation
-      InputValidator.validateFilePath(destPath, process.cwd(), 'component destination path');
-    } catch (pathError) {
-      throw new ComponentInstallError(
-        type,
-        validatedName,
-        `Destination path validation failed: ${pathError instanceof Error ? pathError.message : 'Invalid path'}`,
-        'Component installation path is not safe'
-      );
-    }
+    await withFileOperations(async () => {
+      const content = await this.fs.readFile(componentPath, "utf-8") as string;
+      
+      // Validate template content for security before installation
+      InputValidator.validateTemplateContent(content, `${type} ${validatedName}`);
+      
+      let destType: "modes" | "workflows" | "integrations" | "agents";
+      if (type === "mode") {
+        destType = "modes";
+      } else if (type === "workflow") {
+        destType = "workflows";
+      } else if (type === "agent") {
+        destType = "agents";
+      } else {
+        throw new InvalidComponentTypeError(type, ['mode', 'workflow', 'agent']);
+      }
+      
+      const destPath = this.dirManager.getComponentPath(destType, validatedName);
+      
+      // Validate destination path for security - ensure it stays within project bounds
+      try {
+        // We'll use process.cwd() as the project root for validation
+        InputValidator.validateFilePath(destPath, process.cwd(), 'component destination path');
+      } catch (pathError) {
+        throw new ComponentInstallError(
+          type,
+          validatedName,
+          `Destination path validation failed: ${pathError instanceof Error ? pathError.message : 'Invalid path'}`,
+          'Component installation path is not safe'
+        );
+      }
 
-    // WARNING: This writeFile will OVERWRITE any existing custom component if force=true
-    await this.fs.writeFile(destPath, content);
+      // WARNING: This writeFile will OVERWRITE any existing custom component if force=true
+      // Use safeWriteFile for atomic operations with backup support
+      await safeWriteFile(destPath, content, { backup: !force });
+    });
+    
     logger.clearProgress();
 
     // Reload manifest to get any updates from dependency installation
@@ -395,51 +405,28 @@ export class ComponentInstaller {
     valid: boolean;
     missing: { component: string; dependencies: string[] }[];
   }> {
-    const manifest = await this.dirManager.getManifest();
-    const missing: { component: string; dependencies: string[] }[] = [];
-    
-    const totalComponents = manifest.components.workflows.length + (manifest.components.agents?.length || 0);
-    
-    if (totalComponents === 0) {
-      return { valid: true, missing: [] };
-    }
-    
-    logger.progress('Validating component dependencies');
-    let processedCount = 0;
-
-    try {
-      // Check workflow dependencies
-      const workflowsPath = this.fs.join(this.templatesDir, "workflows");
-      for (const workflow of manifest.components.workflows) {
-        processedCount++;
-        logger.step(processedCount, totalComponents, `Validating workflow ${workflow}`);
-        
-        const workflowPath = this.fs.join(workflowsPath, `${workflow}.md`);
-        const meta = await this.parseTemplateFrontmatter(workflowPath);
-        
-        if (meta?.dependencies && meta.dependencies.length > 0) {
-          const missingDeps = meta.dependencies.filter(
-            (dep) => !manifest.components.modes.includes(dep)
-          );
-
-          if (missingDeps.length > 0) {
-            missing.push({
-              component: `workflow:${workflow}`,
-              dependencies: missingDeps,
-            });
-          }
-        }
+    return withFileOperations(async () => {
+      const manifest = await this.dirManager.getManifest();
+      const missing: { component: string; dependencies: string[] }[] = [];
+      
+      const totalComponents = manifest.components.workflows.length + (manifest.components.agents?.length || 0);
+      
+      if (totalComponents === 0) {
+        return { valid: true, missing: [] };
       }
+      
+      logger.progress('Validating component dependencies');
+      let processedCount = 0;
 
-      // Check agent dependencies (though agents typically don't have dependencies)
-      if (manifest.components.agents) {
-        const agentsPath = this.fs.join(this.templatesDir, "agents");
-        for (const agent of manifest.components.agents) {
+      try {
+        // Check workflow dependencies
+        const workflowsPath = this.fs.join(this.templatesDir, "workflows");
+        for (const workflow of manifest.components.workflows) {
           processedCount++;
-          logger.step(processedCount, totalComponents, `Validating agent ${agent}`);
+          logger.step(processedCount, totalComponents, `Validating workflow ${workflow}`);
           
-          const agentPath = this.fs.join(agentsPath, `${agent}.md`);
-          const meta = await this.parseTemplateFrontmatter(agentPath);
+          const workflowPath = this.fs.join(workflowsPath, `${workflow}.md`);
+          const meta = await this.parseTemplateFrontmatter(workflowPath);
           
           if (meta?.dependencies && meta.dependencies.length > 0) {
             const missingDeps = meta.dependencies.filter(
@@ -448,22 +435,47 @@ export class ComponentInstaller {
 
             if (missingDeps.length > 0) {
               missing.push({
-                component: `agent:${agent}`,
+                component: `workflow:${workflow}`,
                 dependencies: missingDeps,
               });
             }
           }
         }
+
+        // Check agent dependencies (though agents typically don't have dependencies)
+        if (manifest.components.agents) {
+          const agentsPath = this.fs.join(this.templatesDir, "agents");
+          for (const agent of manifest.components.agents) {
+            processedCount++;
+            logger.step(processedCount, totalComponents, `Validating agent ${agent}`);
+            
+            const agentPath = this.fs.join(agentsPath, `${agent}.md`);
+            const meta = await this.parseTemplateFrontmatter(agentPath);
+            
+            if (meta?.dependencies && meta.dependencies.length > 0) {
+              const missingDeps = meta.dependencies.filter(
+                (dep) => !manifest.components.modes.includes(dep)
+              );
+
+              if (missingDeps.length > 0) {
+                missing.push({
+                  component: `agent:${agent}`,
+                  dependencies: missingDeps,
+                });
+              }
+            }
+          }
+        }
+        
+        logger.clearProgress();
+        return {
+          valid: missing.length === 0,
+          missing,
+        };
+      } catch (error) {
+        logger.clearProgress();
+        throw error;
       }
-      
-      logger.clearProgress();
-      return {
-        valid: missing.length === 0,
-        missing,
-      };
-    } catch (error) {
-      logger.clearProgress();
-      throw error;
-    }
+    });
   }
 }

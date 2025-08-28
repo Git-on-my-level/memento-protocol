@@ -11,6 +11,7 @@ import { hookCommand } from "./commands/hook";
 import { acronymCommand } from "./commands/acronym";
 import { logger } from "./lib/logger";
 import { handleError } from "./lib/errors";
+import { resourceManager } from "./lib/utils/ResourceManager";
 
 // Version will be injected during build
 const version = process.env.VERSION || "0.1.0";
@@ -99,13 +100,56 @@ program.addCommand(upsertCommand);
 program.addCommand(hookCommand);
 program.addCommand(acronymCommand);
 
-// Global error handling
-process.on("unhandledRejection", (error) => {
+// Enhanced global error handling with resource cleanup
+process.on("unhandledRejection", async (error) => {
+  logger.debug("Unhandled promise rejection detected, cleaning up resources...");
+  try {
+    await resourceManager.cleanup();
+  } catch (cleanupError) {
+    logger.debug(`Resource cleanup failed: ${cleanupError}`);
+  }
   handleError(error, program.opts().verbose);
 });
 
-process.on("uncaughtException", (error) => {
+process.on("uncaughtException", async (error) => {
+  logger.debug("Uncaught exception detected, cleaning up resources...");
+  try {
+    await resourceManager.cleanup();
+  } catch (cleanupError) {
+    logger.debug(`Resource cleanup failed: ${cleanupError}`);
+  }
   handleError(error, program.opts().verbose);
+});
+
+// Graceful shutdown handlers
+process.on("SIGINT", async () => {
+  logger.debug("SIGINT received, performing graceful shutdown...");
+  try {
+    await resourceManager.cleanup();
+    process.exit(0);
+  } catch (error) {
+    logger.debug(`Shutdown cleanup failed: ${error}`);
+    process.exit(1);
+  }
+});
+
+process.on("SIGTERM", async () => {
+  logger.debug("SIGTERM received, performing graceful shutdown...");
+  try {
+    await resourceManager.cleanup();
+    process.exit(0);
+  } catch (error) {
+    logger.debug(`Shutdown cleanup failed: ${error}`);
+    process.exit(1);
+  }
+});
+
+// Handle process exit to ensure cleanup
+process.on("exit", (code) => {
+  const stats = resourceManager.getResourceStats();
+  if (stats.totalResources > 0) {
+    logger.debug(`Process exiting with ${stats.totalResources} uncleaned resources`);
+  }
 });
 
 // Check if no command is provided before parsing

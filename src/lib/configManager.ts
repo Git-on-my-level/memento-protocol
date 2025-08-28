@@ -1,9 +1,10 @@
 import { ConfigSchemaRegistry, MementoConfig } from './configSchema';
-import { ValidationError, ConfigurationError, FileSystemError } from './errors';
+import { ValidationError } from './errors';
 import { MementoCore } from './MementoCore';
 import { FileSystemAdapter } from './adapters/FileSystemAdapter';
 import { NodeFileSystemAdapter } from './adapters/NodeFileSystemAdapter';
 import { InputValidator } from './validation/InputValidator';
+import { withFileOperations } from './utils/ResourceManager';
 
 /**
  * Simplified configuration manager with YAML-only support
@@ -24,56 +25,68 @@ export class ConfigManager {
    * Load configuration with hierarchy: defaults -> global -> project -> env
    */
   async load(): Promise<MementoConfig> {
-    return await this.mementoCore.getConfig();
+    return withFileOperations(async () => {
+      return await this.mementoCore.getConfig();
+    });
   }
 
   /**
    * Save configuration to project or global level
    */
   async save(config: MementoConfig, global: boolean = false): Promise<void> {
-    // Validate config before saving
-    this.validateConfig(config);
-    
-    // Additional security validation for config content
-    this.validateConfigSecurity(config);
-    
-    // Save using MementoCore (as YAML)
-    await this.mementoCore.saveConfig(config, global);
+    return withFileOperations(async () => {
+      // Validate config before saving
+      this.validateConfig(config);
+      
+      // Additional security validation for config content
+      this.validateConfigSecurity(config);
+      
+      // Save using MementoCore (as YAML)
+      await this.mementoCore.saveConfig(config, global);
+    });
   }
 
   /**
    * Get a specific configuration value
    */
   async get(key: string): Promise<any> {
-    return await this.mementoCore.getConfigValue(key);
+    return withFileOperations(async () => {
+      return await this.mementoCore.getConfigValue(key);
+    });
   }
 
   /**
    * Set a specific configuration value
    */
   async set(key: string, value: any, global: boolean = false): Promise<void> {
-    // Validate configuration key and value for security
-    const validatedValue = InputValidator.validateConfigValue(key, value);
-    await this.mementoCore.setConfigValue(key, validatedValue, global);
+    return withFileOperations(async () => {
+      // Validate configuration key and value for security
+      const validatedValue = InputValidator.validateConfigValue(key, value);
+      await this.mementoCore.setConfigValue(key, validatedValue, global);
+    });
   }
 
   /**
    * Remove a configuration key
    */
   async unset(key: string, global: boolean = false): Promise<void> {
-    await this.mementoCore.unsetConfigValue(key, global);
+    return withFileOperations(async () => {
+      await this.mementoCore.unsetConfigValue(key, global);
+    });
   }
 
   /**
    * List all configuration values
    */
   async list(global: boolean = false): Promise<MementoConfig> {
-    if (global) {
-      const scopes = this.mementoCore.getScopes();
-      const globalConfig = await scopes.global.getConfig();
-      return (globalConfig || {}) as MementoConfig;
-    }
-    return await this.load();
+    return withFileOperations(async () => {
+      if (global) {
+        const scopes = this.mementoCore.getScopes();
+        const globalConfig = await scopes.global.getConfig();
+        return (globalConfig || {}) as MementoConfig;
+      }
+      return await this.load();
+    });
   }
 
   /**
@@ -84,44 +97,46 @@ export class ConfigManager {
     errors: string[];
     warnings: string[];
   }> {
-    const paths = this.getConfigPaths();
-    const configPath = global ? paths.global : paths.project;
-    
-    if (!this.fs.existsSync(configPath)) {
-      const scopeName = global ? 'global' : 'project';
-      return {
-        valid: false,
-        errors: [`Configuration file not found: ${configPath}`],
-        warnings: [`Initialize ${scopeName} configuration with: memento init${global ? '-global' : ''}`]
-      };
-    }
-
-    try {
-      const scope = global ? this.mementoCore.getScopes().global : this.mementoCore.getScopes().project;
-      const config = await scope.getConfig();
+    return withFileOperations(async () => {
+      const paths = this.getConfigPaths();
+      const configPath = global ? paths.global : paths.project;
       
-      if (!config) {
+      if (!this.fs.existsSync(configPath)) {
+        const scopeName = global ? 'global' : 'project';
         return {
           valid: false,
-          errors: ['Failed to load configuration - file may be corrupted or empty'],
-          warnings: [`Check file format: cat "${configPath}"`, 'Reinitialize if needed: memento init --force']
+          errors: [`Configuration file not found: ${configPath}`],
+          warnings: [`Initialize ${scopeName} configuration with: memento init${global ? '-global' : ''}`]
         };
       }
 
-      const result = this.schemaRegistry.getMementoConfigValidator().validate(config);
-      return result;
-    } catch (error: any) {
-      const isParseError = error.message.includes('YAML') || error.message.includes('parse');
-      const suggestions = isParseError 
-        ? [`Check YAML syntax: yamllint "${configPath}"`, 'Fix syntax errors and try again']
-        : ['Check configuration values against schema', 'Use memento config list to see valid options'];
+      try {
+        const scope = global ? this.mementoCore.getScopes().global : this.mementoCore.getScopes().project;
+        const config = await scope.getConfig();
+        
+        if (!config) {
+          return {
+            valid: false,
+            errors: ['Failed to load configuration - file may be corrupted or empty'],
+            warnings: [`Check file format: cat "${configPath}"`, 'Reinitialize if needed: memento init --force']
+          };
+        }
 
-      return {
-        valid: false,
-        errors: [`Configuration ${isParseError ? 'parsing' : 'validation'} failed: ${error.message}`],
-        warnings: suggestions
-      };
-    }
+        const result = this.schemaRegistry.getMementoConfigValidator().validate(config);
+        return result;
+      } catch (error: any) {
+        const isParseError = error.message.includes('YAML') || error.message.includes('parse');
+        const suggestions = isParseError 
+          ? [`Check YAML syntax: yamllint "${configPath}"`, 'Fix syntax errors and try again']
+          : ['Check configuration values against schema', 'Use memento config list to see valid options'];
+
+        return {
+          valid: false,
+          errors: [`Configuration ${isParseError ? 'parsing' : 'validation'} failed: ${error.message}`],
+          warnings: suggestions
+        };
+      }
+    });
   }
 
   /**

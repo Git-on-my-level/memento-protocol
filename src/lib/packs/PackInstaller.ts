@@ -16,6 +16,7 @@ import { logger } from "../logger";
 import { MementoError, PackError, ComponentInstallError } from "../errors";
 import { DirectoryManager } from "../directoryManager";
 import { IPackSource } from "./PackSource";
+import { withTempDirectory, withFileOperations, safeCopyFile, safeWriteFile, resourceManager } from "../utils/ResourceManager";
 
 export class PackInstaller {
   private directoryManager: DirectoryManager;
@@ -40,25 +41,26 @@ export class PackInstaller {
     source: IPackSource,
     options: PackInstallOptions = {}
   ): Promise<PackInstallationResult> {
-    const { manifest } = packStructure;
-    
-    logger.info(`Installing starter pack '${manifest.name}' v${manifest.version}`);
+    return withFileOperations(async () => {
+      const { manifest } = packStructure;
+      
+      logger.info(`Installing starter pack '${manifest.name}' v${manifest.version}`);
 
-    // Ensure directories exist
-    await this.ensureDirectories();
+      // Ensure directories exist
+      await this.ensureDirectories();
 
-    // Check for conflicts if not forcing
-    if (!options.force) {
-      const conflicts = await this.checkConflicts(manifest);
-      if (conflicts.length > 0) {
-        return {
-          success: false,
-          installed: { modes: [], workflows: [], agents: [], hooks: [] },
-          skipped: { modes: [], workflows: [], agents: [], hooks: [] },
-          errors: conflicts.map(c => `Conflict: ${c}`),
-        };
+      // Check for conflicts if not forcing
+      if (!options.force) {
+        const conflicts = await this.checkConflicts(manifest);
+        if (conflicts.length > 0) {
+          return {
+            success: false,
+            installed: { modes: [], workflows: [], agents: [], hooks: [] },
+            skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+            errors: conflicts.map(c => `Conflict: ${c}`),
+          };
+        }
       }
-    }
 
     // Track installation results
     const installed = { modes: [] as string[], workflows: [] as string[], agents: [] as string[], hooks: [] as string[] };
@@ -113,6 +115,7 @@ export class PackInstaller {
         errors: [...errors, `Installation failed: ${error}`] as readonly string[],
       };
     }
+    });
   }
 
   /**
@@ -213,76 +216,80 @@ export class PackInstaller {
     source: IPackSource,
     options: PackInstallOptions
   ): Promise<boolean> {
-    try {
-      // Get the component path from the pack source
-      const sourcePath = await source.getComponentPath(packName, componentType, componentName);
-      
-      let targetPath: string;
-      if (componentType === 'agents') {
-        // Agents go to .claude directory
-        targetPath = path.join(this.claudeDir, 'agents', `${componentName}.md`);
-      } else {
-        // Other components go to .memento directory
-        targetPath = path.join(this.mementoDir, componentType, `${componentName}.md`);
-      }
+    return withFileOperations(async () => {
+      try {
+        // Get the component path from the pack source
+        const sourcePath = await source.getComponentPath(packName, componentType, componentName);
+        
+        let targetPath: string;
+        if (componentType === 'agents') {
+          // Agents go to .claude directory
+          targetPath = path.join(this.claudeDir, 'agents', `${componentName}.md`);
+        } else {
+          // Other components go to .memento directory
+          targetPath = path.join(this.mementoDir, componentType, `${componentName}.md`);
+        }
 
-      // Check for conflicts
-      if (await this.fs.exists(targetPath) && !options.force) {
-        logger.debug(`Component '${componentName}' already exists, skipping`);
-        return false;
-      }
+        // Check for conflicts
+        if (await this.fs.exists(targetPath) && !options.force) {
+          logger.debug(`Component '${componentName}' already exists, skipping`);
+          return false;
+        }
 
-      if (options.dryRun) {
-        logger.info(`[DRY RUN] Would install ${componentType.slice(0, -1)} '${componentName}'`);
+        if (options.dryRun) {
+          logger.info(`[DRY RUN] Would install ${componentType.slice(0, -1)} '${componentName}'`);
+          return true;
+        }
+
+        // Ensure target directory exists and copy with safe operations
+        await this.fs.mkdir(this.fs.dirname(targetPath), { recursive: true });
+        await safeCopyFile(sourcePath, targetPath, { backup: !options.force });
+
         return true;
+      } catch (error) {
+        throw new ComponentInstallError(
+          componentType.slice(0, -1),
+          componentName,
+          `pack component installation failed: ${error}`,
+          `Check if the component exists in the pack and paths are correct`
+        );
       }
-
-      // Copy the component file
-      await this.fs.mkdir(this.fs.dirname(targetPath), { recursive: true });
-      await this.fs.copyFile(sourcePath, targetPath);
-
-      return true;
-    } catch (error) {
-      throw new ComponentInstallError(
-        componentType.slice(0, -1),
-        componentName,
-        `pack component installation failed: ${error}`,
-        `Check if the component exists in the pack and paths are correct`
-      );
-    }
+    });
   }
 
   /**
    * Install pack configuration
    */
   private async installConfiguration(manifest: PackStructure['manifest']): Promise<void> {
-    if (!manifest.configuration) {
-      return;
-    }
-
-    const configPath = this.fs.join(this.mementoDir, 'config.json');
-    let existingConfig: Record<string, unknown> = {};
-
-    // Load existing config if it exists
-    if (await this.fs.exists(configPath)) {
-      try {
-        const configContent = await this.fs.readFile(configPath, 'utf-8');
-        existingConfig = JSON.parse(configContent as string);
-      } catch (error) {
-        logger.warn(`Error reading existing config: ${error}`);
+    return withFileOperations(async () => {
+      if (!manifest.configuration) {
+        return;
       }
-    }
 
-    // Merge configurations
-    const mergedConfig = {
-      ...existingConfig,
-      ...manifest.configuration.projectSettings,
-      defaultMode: manifest.configuration.defaultMode || existingConfig.defaultMode,
-    };
+      const configPath = this.fs.join(this.mementoDir, 'config.json');
+      let existingConfig: Record<string, unknown> = {};
 
-    // Write updated config
-    await this.fs.writeFile(configPath, JSON.stringify(mergedConfig, null, 2));
-    logger.debug('Updated project configuration');
+      // Load existing config if it exists
+      if (await this.fs.exists(configPath)) {
+        try {
+          const configContent = await this.fs.readFile(configPath, 'utf-8');
+          existingConfig = JSON.parse(configContent as string);
+        } catch (error) {
+          logger.warn(`Error reading existing config: ${error}`);
+        }
+      }
+
+      // Merge configurations
+      const mergedConfig = {
+        ...existingConfig,
+        ...manifest.configuration.projectSettings,
+        defaultMode: manifest.configuration.defaultMode || existingConfig.defaultMode,
+      };
+
+      // Write updated config with safe file operations
+      await safeWriteFile(configPath, JSON.stringify(mergedConfig, null, 2), { backup: true });
+      logger.debug('Updated project configuration');
+    });
   }
 
   /**
@@ -347,29 +354,31 @@ export class PackInstaller {
     packManifest: PackStructure['manifest'],
     source: any
   ): Promise<void> {
-    const manifestPath = this.fs.join(this.mementoDir, 'packs.json');
-    let projectManifest: ProjectPackManifest = { packs: {} };
+    return withFileOperations(async () => {
+      const manifestPath = this.fs.join(this.mementoDir, 'packs.json');
+      let projectManifest: ProjectPackManifest = { packs: {} };
 
-    // Load existing manifest
-    if (await this.fs.exists(manifestPath)) {
-      try {
-        const content = await this.fs.readFile(manifestPath, 'utf-8');
-        projectManifest = JSON.parse(content as string);
-      } catch (error) {
-        logger.warn(`Error reading project pack manifest: ${error}`);
+      // Load existing manifest
+      if (await this.fs.exists(manifestPath)) {
+        try {
+          const content = await this.fs.readFile(manifestPath, 'utf-8');
+          projectManifest = JSON.parse(content as string);
+        } catch (error) {
+          logger.warn(`Error reading project pack manifest: ${error}`);
+        }
       }
-    }
 
-    // Update with new pack info
-    projectManifest.packs[packManifest.name] = {
-      version: packManifest.version,
-      installedAt: new Date().toISOString(),
-      source,
-    };
+      // Update with new pack info
+      projectManifest.packs[packManifest.name] = {
+        version: packManifest.version,
+        installedAt: new Date().toISOString(),
+        source,
+      };
 
-    // Save updated manifest
-    await this.fs.writeFile(manifestPath, JSON.stringify(projectManifest, null, 2));
-    logger.debug(`Updated project pack manifest for '${packManifest.name}'`);
+      // Save updated manifest with safe file operations
+      await safeWriteFile(manifestPath, JSON.stringify(projectManifest, null, 2), { backup: true });
+      logger.debug(`Updated project pack manifest for '${packManifest.name}'`);
+    });
   }
 
   /**
@@ -400,7 +409,7 @@ export class PackInstaller {
     try {
       await this.directoryManager.initializeStructure();
       
-      // Ensure pack-specific directories exist
+      // Ensure pack-specific directories exist with safe operations
       const packDirs = [
         this.fs.join(this.mementoDir, 'modes'),
         this.fs.join(this.mementoDir, 'workflows'),
@@ -411,8 +420,10 @@ export class PackInstaller {
       for (let i = 0; i < packDirs.length; i++) {
         const dir = packDirs[i];
         logger.step(i + 1, packDirs.length, `Creating directory ${this.fs.basename(dir)}`);
-        await this.fs.mkdir(dir, { recursive: true });
       }
+      
+      // Use safe directory creation with adapter
+      await resourceManager.ensureDirectoriesWithAdapter(packDirs, this.fs);
       
       logger.clearProgress();
     } catch (error) {
