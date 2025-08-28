@@ -1,52 +1,41 @@
 import { CommandGenerator } from "../commandGenerator";
-import * as fs from "fs/promises";
-import * as path from "path";
-import { existsSync } from "fs";
-
-// Mock the fs module
-jest.mock("fs/promises");
-jest.mock("fs");
-
-const mockFs = fs as jest.Mocked<typeof fs>;
-const mockExistsSync = existsSync as jest.MockedFunction<typeof existsSync>;
+import { createTestFileSystem } from "../testing";
+import { MemoryFileSystemAdapter } from "../adapters/MemoryFileSystemAdapter";
 
 describe("CommandGenerator", () => {
-  let tempDir: string;
+  let projectRoot: string;
   let commandGenerator: CommandGenerator;
+  let fs: MemoryFileSystemAdapter;
 
-  beforeEach(() => {
-    tempDir = "/tmp/test-project";
-    commandGenerator = new CommandGenerator(tempDir);
-    
-    // Mock filesystem operations
-    mockFs.mkdir.mockResolvedValue(undefined);
-    mockFs.writeFile.mockResolvedValue(undefined);
-    mockExistsSync.mockReturnValue(true); // Assume all dependencies exist by default
-    
-    jest.clearAllMocks();
+  beforeEach(async () => {
+    projectRoot = "/test/project";
+    fs = await createTestFileSystem({});
+    commandGenerator = new CommandGenerator(projectRoot, fs);
   });
 
   describe("initialize", () => {
     it("should validate dependencies before generating commands", async () => {
-      // All dependencies exist
-      mockExistsSync.mockReturnValue(true);
+      // Create required dependencies
+      await fs.mkdir(`${projectRoot}/.memento/scripts`, { recursive: true });
+      await fs.writeFile(`${projectRoot}/.memento/scripts/ticket-context.sh`, "#!/bin/bash\necho 'test'");
+      await fs.writeFile(`${projectRoot}/.memento/scripts/mode-switch.sh`, "#!/bin/bash\necho 'test'");
       
       await commandGenerator.initialize();
       
-      // Should have checked for required script files
-      expect(mockExistsSync).toHaveBeenCalledWith(
-        path.join(tempDir, ".memento/scripts/ticket-context.sh")
-      );
-      expect(mockExistsSync).toHaveBeenCalledWith(
-        path.join(tempDir, ".memento/scripts/mode-switch.sh")
-      );
+      // Should have generated command files
+      const ticketExists = await fs.exists(`${projectRoot}/.claude/commands/ticket.md`);
+      const modeExists = await fs.exists(`${projectRoot}/.claude/commands/mode.md`);
+      const mementoExists = await fs.exists(`${projectRoot}/.claude/commands/memento.md`);
+      
+      expect(ticketExists).toBe(true);
+      expect(modeExists).toBe(true);
+      expect(mementoExists).toBe(true);
     });
 
     it("should throw error if required scripts are missing", async () => {
-      // Mock missing scripts
-      mockExistsSync.mockImplementation((filepath) => {
-        return !filepath.toString().includes("ticket-context.sh");
-      });
+      // Only create the mode script, leave ticket script missing
+      await fs.mkdir(`${projectRoot}/.memento/scripts`, { recursive: true });
+      await fs.writeFile(`${projectRoot}/.memento/scripts/mode-switch.sh`, "#!/bin/bash\necho 'test'");
 
       await expect(commandGenerator.initialize()).rejects.toThrow(
         "Missing required scripts for custom commands"
@@ -54,17 +43,15 @@ describe("CommandGenerator", () => {
     });
 
     it("should generate ticket command with correct allowed-tools pattern", async () => {
-      mockExistsSync.mockReturnValue(true);
+      // Create required dependencies
+      await fs.mkdir(`${projectRoot}/.memento/scripts`, { recursive: true });
+      await fs.writeFile(`${projectRoot}/.memento/scripts/ticket-context.sh`, "#!/bin/bash\necho 'test'");
+      await fs.writeFile(`${projectRoot}/.memento/scripts/mode-switch.sh`, "#!/bin/bash\necho 'test'");
       
       await commandGenerator.initialize();
       
-      // Find the call that wrote the ticket.md file
-      const ticketWriteCall = mockFs.writeFile.mock.calls.find(call => 
-        call[0].toString().includes("ticket.md")
-      );
-      
-      expect(ticketWriteCall).toBeDefined();
-      const content = ticketWriteCall![1] as string;
+      // Read the generated ticket.md file
+      const content = await fs.readFile(`${projectRoot}/.claude/commands/ticket.md`, 'utf8');
       
       // Should use the correct pattern without colon prefix
       expect(content).toContain("allowed-tools: Bash(sh .memento/scripts/ticket-context.sh)");
@@ -72,17 +59,15 @@ describe("CommandGenerator", () => {
     });
 
     it("should generate mode command with correct allowed-tools pattern", async () => {
-      mockExistsSync.mockReturnValue(true);
+      // Create required dependencies
+      await fs.mkdir(`${projectRoot}/.memento/scripts`, { recursive: true });
+      await fs.writeFile(`${projectRoot}/.memento/scripts/ticket-context.sh`, "#!/bin/bash\necho 'test'");
+      await fs.writeFile(`${projectRoot}/.memento/scripts/mode-switch.sh`, "#!/bin/bash\necho 'test'");
       
       await commandGenerator.initialize();
       
-      // Find the call that wrote the mode.md file
-      const modeWriteCall = mockFs.writeFile.mock.calls.find(call => 
-        call[0].toString().includes("mode.md")
-      );
-      
-      expect(modeWriteCall).toBeDefined();
-      const content = modeWriteCall![1] as string;
+      // Read the generated mode.md file
+      const content = await fs.readFile(`${projectRoot}/.claude/commands/mode.md`, 'utf8');
       
       // Should use the correct pattern without colon prefix
       expect(content).toContain("allowed-tools: Bash(sh .memento/scripts/mode-switch.sh)");
@@ -92,16 +77,19 @@ describe("CommandGenerator", () => {
 
   describe("validateDependencies", () => {
     it("should pass validation when all scripts exist", async () => {
-      mockExistsSync.mockReturnValue(true);
+      // Create all required dependencies
+      await fs.mkdir(`${projectRoot}/.memento/scripts`, { recursive: true });
+      await fs.writeFile(`${projectRoot}/.memento/scripts/ticket-context.sh`, "#!/bin/bash\necho 'test'");
+      await fs.writeFile(`${projectRoot}/.memento/scripts/mode-switch.sh`, "#!/bin/bash\necho 'test'");
       
       // This should not throw
       await expect(commandGenerator.initialize()).resolves.not.toThrow();
     });
 
     it("should fail validation when ticket script is missing", async () => {
-      mockExistsSync.mockImplementation((filepath) => {
-        return !filepath.toString().includes("ticket-context.sh");
-      });
+      // Only create the mode script
+      await fs.mkdir(`${projectRoot}/.memento/scripts`, { recursive: true });
+      await fs.writeFile(`${projectRoot}/.memento/scripts/mode-switch.sh`, "#!/bin/bash\necho 'test'");
 
       await expect(commandGenerator.initialize()).rejects.toThrow(
         "Missing required scripts for custom commands"
@@ -109,9 +97,9 @@ describe("CommandGenerator", () => {
     });
 
     it("should fail validation when mode script is missing", async () => {
-      mockExistsSync.mockImplementation((filepath) => {
-        return !filepath.toString().includes("mode-switch.sh");
-      });
+      // Only create the ticket script
+      await fs.mkdir(`${projectRoot}/.memento/scripts`, { recursive: true });
+      await fs.writeFile(`${projectRoot}/.memento/scripts/ticket-context.sh`, "#!/bin/bash\necho 'test'");
 
       await expect(commandGenerator.initialize()).rejects.toThrow(
         "Missing required scripts for custom commands"
@@ -119,7 +107,7 @@ describe("CommandGenerator", () => {
     });
 
     it("should provide helpful error message with missing files", async () => {
-      mockExistsSync.mockReturnValue(false);
+      // Don't create any scripts
 
       try {
         await commandGenerator.initialize();
@@ -129,6 +117,51 @@ describe("CommandGenerator", () => {
         expect(error.message).toContain(".memento/scripts/mode-switch.sh");
         expect(error.message).toContain("memento init --force");
       }
+    });
+  });
+
+  describe("areCommandsInstalled", () => {
+    it("should return true when all commands exist", async () => {
+      // Create the command files
+      await fs.mkdir(`${projectRoot}/.claude/commands`, { recursive: true });
+      await fs.writeFile(`${projectRoot}/.claude/commands/ticket.md`, "ticket command");
+      await fs.writeFile(`${projectRoot}/.claude/commands/mode.md`, "mode command");
+      await fs.writeFile(`${projectRoot}/.claude/commands/memento.md`, "memento command");
+
+      const result = await commandGenerator.areCommandsInstalled();
+      expect(result).toBe(true);
+    });
+
+    it("should return false when some commands are missing", async () => {
+      // Create only some command files
+      await fs.mkdir(`${projectRoot}/.claude/commands`, { recursive: true });
+      await fs.writeFile(`${projectRoot}/.claude/commands/ticket.md`, "ticket command");
+      // Missing mode.md and memento.md
+
+      const result = await commandGenerator.areCommandsInstalled();
+      expect(result).toBe(false);
+    });
+
+    it("should return false when no commands exist", async () => {
+      const result = await commandGenerator.areCommandsInstalled();
+      expect(result).toBe(false);
+    });
+  });
+
+  describe("cleanup", () => {
+    it("should remove commands directory", async () => {
+      // Create the commands directory and some files
+      await fs.mkdir(`${projectRoot}/.claude/commands`, { recursive: true });
+      await fs.writeFile(`${projectRoot}/.claude/commands/ticket.md`, "ticket command");
+      
+      // Verify it exists
+      expect(await fs.exists(`${projectRoot}/.claude/commands`)).toBe(true);
+      
+      // Clean up
+      await commandGenerator.cleanup();
+      
+      // Verify it's gone
+      expect(await fs.exists(`${projectRoot}/.claude/commands`)).toBe(false);
     });
   });
 });

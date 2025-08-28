@@ -1,5 +1,5 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import { FileSystemAdapter } from './adapters/FileSystemAdapter';
+import { NodeFileSystemAdapter } from './adapters/NodeFileSystemAdapter';
 
 export type TicketStatus = 'next' | 'in-progress' | 'done';
 
@@ -11,10 +11,12 @@ export interface TicketInfo {
 export class TicketManager {
   private mementoDir: string;
   private ticketsDir: string;
+  private fs: FileSystemAdapter;
 
-  constructor(projectRoot: string) {
-    this.mementoDir = path.join(projectRoot, '.memento');
-    this.ticketsDir = path.join(this.mementoDir, 'tickets');
+  constructor(projectRoot: string, fs?: FileSystemAdapter) {
+    this.fs = fs || new NodeFileSystemAdapter();
+    this.mementoDir = this.fs.join(projectRoot, '.memento');
+    this.ticketsDir = this.fs.join(this.mementoDir, 'tickets');
     this.ensureStatusDirectories();
   }
 
@@ -24,9 +26,9 @@ export class TicketManager {
   private ensureStatusDirectories(): void {
     const statusDirs = ['next', 'in-progress', 'done'];
     statusDirs.forEach(status => {
-      const statusDir = path.join(this.ticketsDir, status);
-      if (!fs.existsSync(statusDir)) {
-        fs.mkdirSync(statusDir, { recursive: true });
+      const statusDir = this.fs.join(this.ticketsDir, status);
+      if (!this.fs.existsSync(statusDir)) {
+        this.fs.mkdirSync(statusDir, { recursive: true });
       }
     });
   }
@@ -39,14 +41,14 @@ export class TicketManager {
     
     for (const status of statusDirs) {
       // Check with .md extension
-      const pathWithMd = path.join(this.ticketsDir, status, `${name}.md`);
-      if (fs.existsSync(pathWithMd)) {
+      const pathWithMd = this.fs.join(this.ticketsDir, status, `${name}.md`);
+      if (this.fs.existsSync(pathWithMd)) {
         return { path: pathWithMd, status };
       }
       
       // Check without extension (for backwards compatibility)
-      const pathWithoutMd = path.join(this.ticketsDir, status, name);
-      if (fs.existsSync(pathWithoutMd) && fs.statSync(pathWithoutMd).isFile()) {
+      const pathWithoutMd = this.fs.join(this.ticketsDir, status, name);
+      if (this.fs.existsSync(pathWithoutMd) && this.fs.statSync(pathWithoutMd).isFile()) {
         return { path: pathWithoutMd, status };
       }
     }
@@ -63,7 +65,7 @@ export class TicketManager {
       throw new Error(`Ticket '${name}' already exists`);
     }
 
-    const ticketPath = path.join(this.ticketsDir, 'next', `${name}.md`);
+    const ticketPath = this.fs.join(this.ticketsDir, 'next', `${name}.md`);
     
     // Create initial content
     const content = `# ${name}
@@ -82,7 +84,7 @@ export class TicketManager {
 Created: ${new Date().toISOString()}
 `;
 
-    fs.writeFileSync(ticketPath, content);
+    this.fs.writeFileSync(ticketPath, content);
     return ticketPath;
   }
 
@@ -94,12 +96,12 @@ Created: ${new Date().toISOString()}
     const statusDirs: TicketStatus[] = ['next', 'in-progress', 'done'];
     
     for (const status of statusDirs) {
-      const statusDir = path.join(this.ticketsDir, status);
-      if (fs.existsSync(statusDir)) {
-        const files = fs.readdirSync(statusDir);
+      const statusDir = this.fs.join(this.ticketsDir, status);
+      if (this.fs.existsSync(statusDir)) {
+        const files = this.fs.readdirSync(statusDir);
         files.forEach(file => {
           // Only include .md files or files without extension that are regular files
-          if (file.endsWith('.md') || (!file.includes('.') && fs.statSync(path.join(statusDir, file)).isFile())) {
+          if (file.endsWith('.md') || (!file.includes('.') && this.fs.statSync(this.fs.join(statusDir, file)).isFile())) {
             const name = file.endsWith('.md') ? file.slice(0, -3) : file;
             tickets.push({ name, status });
           }
@@ -123,10 +125,13 @@ Created: ${new Date().toISOString()}
       throw new Error(`Ticket '${name}' is already in ${toStatus}`);
     }
 
-    const filename = path.basename(ticket.path);
-    const newPath = path.join(this.ticketsDir, toStatus, filename);
+    const filename = this.fs.basename(ticket.path);
+    const newPath = this.fs.join(this.ticketsDir, toStatus, filename);
     
-    fs.renameSync(ticket.path, newPath);
+    // Use read+write+unlink pattern since FileSystemAdapter doesn't have rename
+    const content = await this.fs.readFile(ticket.path, 'utf8') as string;
+    await this.fs.writeFile(newPath, content);
+    await this.fs.unlink(ticket.path);
   }
 
   /**
@@ -138,6 +143,6 @@ Created: ${new Date().toISOString()}
       throw new Error(`Ticket '${name}' not found`);
     }
 
-    fs.unlinkSync(ticket.path);
+    await this.fs.unlink(ticket.path);
   }
 }

@@ -2,9 +2,8 @@
  * PackValidator handles validation and security checks for starter packs
  */
 
-import * as fs from "fs/promises";
-import * as path from "path";
-import { existsSync } from "fs";
+import { FileSystemAdapter } from "../adapters/FileSystemAdapter";
+import { NodeFileSystemAdapter } from "../adapters/NodeFileSystemAdapter";
 import Ajv from "ajv";
 import {
   PackManifest,
@@ -32,8 +31,10 @@ export class PackValidator {
   private ajv: Ajv;
   private schema: unknown;
   private rules: ValidationRules;
+  private fs: FileSystemAdapter;
 
-  constructor() {
+  constructor(fs?: FileSystemAdapter) {
+    this.fs = fs || new NodeFileSystemAdapter();
     this.ajv = new Ajv({ allErrors: true, strict: true });
     this.rules = {
       maxNameLength: 50,
@@ -56,19 +57,27 @@ export class PackValidator {
       return;
     }
 
-    const schemaPath = path.join(PackagePaths.getTemplatesDir(), "starter-packs", "schema.json");
+    const templatesDir = PackagePaths.getTemplatesDir();
+    const schemaPath = this.fs.join(templatesDir, "starter-packs", "schema.json");
     
-    if (!existsSync(schemaPath)) {
+    // Add debugging information in test environment
+    if (process.env.NODE_ENV === 'test') {
+      logger.debug(`PackValidator: templatesDir = ${templatesDir}`);
+      logger.debug(`PackValidator: schemaPath = ${schemaPath}`);
+      logger.debug(`PackValidator: schema exists = ${await this.fs.exists(schemaPath)}`);
+    }
+    
+    if (!await this.fs.exists(schemaPath)) {
       throw new MementoError(
-        "Pack validation schema not found",
+        `Pack validation schema not found at: ${schemaPath}`,
         "SCHEMA_MISSING",
         "Ensure Memento Protocol is properly installed"
       );
     }
 
     try {
-      const schemaContent = await fs.readFile(schemaPath, "utf-8");
-      this.schema = JSON.parse(schemaContent);
+      const schemaContent = await this.fs.readFile(schemaPath, "utf-8");
+      this.schema = JSON.parse(schemaContent as string);
       this.ajv.addSchema(this.schema as any, "packManifest");
       
       logger.debug("Pack validator initialized with schema");
@@ -159,23 +168,25 @@ export class PackValidator {
     warnings: string[]
   ): Promise<void> {
     // Check name security
-    if (manifest.name.length > this.rules.maxNameLength) {
+    if (manifest.name && manifest.name.length > this.rules.maxNameLength) {
       errors.push(`Pack name too long (max ${this.rules.maxNameLength} characters)`);
     }
 
-    if (!/^[a-z0-9-]+$/.test(manifest.name)) {
+    if (manifest.name && !/^[a-z0-9-]+$/.test(manifest.name)) {
       errors.push("Pack name must contain only lowercase letters, numbers, and hyphens");
     }
 
     // Check for forbidden patterns
-    for (const forbiddenPath of this.rules.forbiddenPaths) {
-      if (manifest.name.includes(forbiddenPath)) {
-        errors.push(`Pack name contains forbidden pattern: ${forbiddenPath}`);
+    if (manifest.name) {
+      for (const forbiddenPath of this.rules.forbiddenPaths) {
+        if (manifest.name.includes(forbiddenPath)) {
+          errors.push(`Pack name contains forbidden pattern: ${forbiddenPath}`);
+        }
       }
     }
 
     // Validate description
-    if (manifest.description.length > this.rules.maxDescriptionLength) {
+    if (manifest.description && manifest.description.length > this.rules.maxDescriptionLength) {
       errors.push(`Description too long (max ${this.rules.maxDescriptionLength} characters)`);
     }
 
@@ -207,6 +218,11 @@ export class PackValidator {
     warnings: string[]
   ): Promise<void> {
     const components = manifest.components;
+    
+    // Skip validation if components is not defined
+    if (!components) {
+      return;
+    }
 
     // Check component limits
     if (components.modes && components.modes.length > this.rules.maxComponentsPerType) {
@@ -256,7 +272,7 @@ export class PackValidator {
    */
   private async validateComponents(
     packStructure: PackStructure,
-    _source: IPackSource,
+    source: IPackSource,
     errors: string[],
     warnings: string[]
   ): Promise<void> {
@@ -269,8 +285,7 @@ export class PackValidator {
 
       for (const component of components) {
         try {
-          // TODO: Implement hasComponent method on IPackSource
-          const hasComponent = true; // await source.hasComponent(manifest.name, componentType, component.name);
+          const hasComponent = await source.hasComponent(manifest.name, componentType, component.name);
 
           if (!hasComponent) {
             errors.push(
@@ -278,8 +293,7 @@ export class PackValidator {
             );
           } else {
             // Validate component file
-            // TODO: Implement getComponentPath method on IPackSource
-            const componentPath = ""; // await source.getComponentPath(manifest.name, componentType, component.name);
+            const componentPath = await source.getComponentPath(manifest.name, componentType, component.name);
             
             await this.validateComponentFile(componentPath, errors, warnings);
           }
@@ -299,33 +313,33 @@ export class PackValidator {
     warnings: string[]
   ): Promise<void> {
     try {
-      const stats = await fs.stat(filePath);
+      const stats = await this.fs.stat(filePath);
       
       // Check file size
       if (stats.size > this.rules.maxFileSize) {
-        errors.push(`Component file too large: ${path.basename(filePath)} (${stats.size} bytes)`);
+        errors.push(`Component file too large: ${this.fs.basename(filePath)} (${stats.size} bytes)`);
       }
 
       // Check file extension
-      const ext = path.extname(filePath);
+      const ext = this.fs.extname(filePath);
       if (!this.rules.allowedFileExtensions.has(ext)) {
-        errors.push(`Forbidden file extension: ${ext} in ${path.basename(filePath)}`);
+        errors.push(`Forbidden file extension: ${ext} in ${this.fs.basename(filePath)}`);
       }
 
       // Basic content validation for markdown files
       if (ext === '.md') {
-        const content = await fs.readFile(filePath, 'utf-8');
+        const content = await this.fs.readFile(filePath, 'utf-8');
         
         if (content.includes('<script>') || content.includes('javascript:')) {
-          errors.push(`Suspicious content detected in ${path.basename(filePath)}`);
+          errors.push(`Suspicious content detected in ${this.fs.basename(filePath)}`);
         }
 
         if (content.length === 0) {
-          warnings.push(`Empty component file: ${path.basename(filePath)}`);
+          warnings.push(`Empty component file: ${this.fs.basename(filePath)}`);
         }
       }
     } catch (error) {
-      errors.push(`Cannot validate component file ${path.basename(filePath)}: ${error}`);
+      errors.push(`Cannot validate component file ${this.fs.basename(filePath)}: ${error}`);
     }
   }
 
@@ -339,7 +353,7 @@ export class PackValidator {
   ): Promise<void> {
     try {
       // Check that pack path is reasonable
-      const packPath = path.resolve(packStructure.path);
+      const packPath = this.fs.resolve(packStructure.path);
       
       for (const forbiddenPath of this.rules.forbiddenPaths) {
         if (packPath.includes(forbiddenPath)) {
@@ -348,7 +362,7 @@ export class PackValidator {
       }
 
       // Ensure components path is within pack path
-      const componentsPath = path.resolve(packStructure.componentsPath);
+      const componentsPath = this.fs.resolve(packStructure.componentsPath);
       if (!componentsPath.startsWith(packPath)) {
         errors.push("Components directory is outside pack directory");
       }

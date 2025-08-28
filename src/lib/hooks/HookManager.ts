@@ -1,5 +1,3 @@
-import * as fs from "fs/promises";
-import * as path from "path";
 import { HookRegistry } from "./HookRegistry";
 import { HookConfig, HookDefinition, HookEvent } from "./types";
 import { logger } from "../logger";
@@ -8,9 +6,10 @@ import { MementoRoutingHook } from "./builtin/MementoRoutingHook";
 import { PackagePaths } from "../packagePaths";
 import { HookValidator } from "./HookValidator";
 import { ValidationError } from "../errors";
-import { ensureDirectory } from "../utils/filesystem";
 import { PermissionGenerator } from "./PermissionGenerator";
 import { HookFileManager } from "./HookFileManager";
+import { FileSystemAdapter } from '../adapters/FileSystemAdapter';
+import { NodeFileSystemAdapter } from '../adapters/NodeFileSystemAdapter';
 
 export class HookManager {
   private registry: HookRegistry;
@@ -23,19 +22,21 @@ export class HookManager {
   private mementoDir: string;
   private hooksDir: string;
   private definitionsDir: string;
+  private fs: FileSystemAdapter;
 
-  constructor(projectRoot: string) {
+  constructor(projectRoot: string, fs?: FileSystemAdapter) {
     this.projectRoot = projectRoot;
-    this.claudeDir = path.join(projectRoot, ".claude");
-    this.mementoDir = path.join(projectRoot, ".memento");
-    this.hooksDir = path.join(this.mementoDir, "hooks");
-    this.definitionsDir = path.join(this.hooksDir, "definitions");
+    this.fs = fs || new NodeFileSystemAdapter();
+    this.claudeDir = this.fs.join(projectRoot, ".claude");
+    this.mementoDir = this.fs.join(projectRoot, ".memento");
+    this.hooksDir = this.fs.join(this.mementoDir, "hooks");
+    this.definitionsDir = this.fs.join(this.hooksDir, "definitions");
 
     this.registry = new HookRegistry();
-    this.configLoader = new HookConfigLoader(this.definitionsDir);
+    this.configLoader = new HookConfigLoader(this.definitionsDir, this.fs);
     this.validator = new HookValidator(projectRoot);
     this.permissionGenerator = new PermissionGenerator(this.claudeDir);
-    this.fileManager = new HookFileManager(projectRoot, this.hooksDir, this.definitionsDir);
+    this.fileManager = new HookFileManager(projectRoot, this.hooksDir, this.definitionsDir, this.fs);
   }
 
   /**
@@ -64,11 +65,11 @@ export class HookManager {
    * Ensure all required directories exist
    */
   private async ensureDirectories(): Promise<void> {
-    await ensureDirectory(this.claudeDir);
-    await ensureDirectory(this.hooksDir);
-    await ensureDirectory(this.definitionsDir);
-    await ensureDirectory(path.join(this.hooksDir, "scripts"));
-    await ensureDirectory(path.join(this.hooksDir, "templates"));
+    await this.fs.mkdir(this.claudeDir, { recursive: true });
+    await this.fs.mkdir(this.hooksDir, { recursive: true });
+    await this.fs.mkdir(this.definitionsDir, { recursive: true });
+    await this.fs.mkdir(this.fs.join(this.hooksDir, "scripts"), { recursive: true });
+    await this.fs.mkdir(this.fs.join(this.hooksDir, "templates"), { recursive: true });
   }
 
   /**
@@ -106,14 +107,17 @@ export class HookManager {
       event: "UserPromptSubmit",
       enabled: true,
       // Store command as relative to project root for portability
-      command:
-        "./" +
-        path
-          .relative(
-            this.projectRoot,
-            path.join(this.hooksDir, "scripts", "memento-routing.sh")
-          )
-          .replace(/\\/g, "/"),
+      command: (() => {
+        const scriptPath = this.fs.join(this.hooksDir, "scripts", "memento-routing.sh");
+        let relativePath = scriptPath;
+        if (scriptPath.startsWith(this.projectRoot)) {
+          relativePath = scriptPath.slice(this.projectRoot.length);
+          if (relativePath.startsWith('/')) {
+            relativePath = relativePath.slice(1);
+          }
+        }
+        return "./" + relativePath.replace(/\\/g, "/");
+      })(),
       priority: 100, // High priority to run first
       requirements: {
         commands: ["jq", "grep", "sed", "cat", "echo", "ls", "basename"],
@@ -123,7 +127,7 @@ export class HookManager {
     this.registry.addHook(routingConfig);
 
     // Save routing hook definition
-    const definitionPath = path.join(
+    const definitionPath = this.fs.join(
       this.definitionsDir,
       "memento-routing.json"
     );
@@ -132,7 +136,7 @@ export class HookManager {
       hooks: [routingConfig],
     };
 
-    await fs.writeFile(definitionPath, JSON.stringify(definition, null, 2));
+    await this.fs.writeFile(definitionPath, JSON.stringify(definition, null, 2));
   }
 
   /**
@@ -140,9 +144,9 @@ export class HookManager {
    */
   private async generateClaudeSettings(): Promise<void> {
     // Ensure .claude directory exists
-    await ensureDirectory(this.claudeDir);
+    await this.fs.mkdir(this.claudeDir, { recursive: true });
 
-    const settingsPath = path.join(this.claudeDir, "settings.local.json");
+    const settingsPath = this.fs.join(this.claudeDir, "settings.local.json");
 
     // Get all hooks from registry
     const allHooks = this.registry.getAllHooks();
@@ -245,7 +249,7 @@ export class HookManager {
     // Read existing settings and merge
     let existingSettings: any = {};
     try {
-      const existingContent = await fs.readFile(settingsPath, "utf-8");
+      const existingContent = await this.fs.readFile(settingsPath, "utf-8") as string;
       existingSettings = JSON.parse(existingContent);
     } catch {
       // File doesn't exist or is invalid JSON, start fresh
@@ -284,7 +288,7 @@ export class HookManager {
       hooks: mergedHooks,
     };
 
-    await fs.writeFile(settingsPath, JSON.stringify(newSettings, null, 2));
+    await this.fs.writeFile(settingsPath, JSON.stringify(newSettings, null, 2));
     logger.info("Updated .claude/settings.local.json");
   }
 
@@ -321,14 +325,14 @@ export class HookManager {
     templateName: string,
     config: Partial<HookConfig>
   ): Promise<void> {
-    const templatePath = path.join(
+    const templatePath = this.fs.join(
       PackagePaths.getTemplatesDir(),
       "hooks",
       `${templateName}.json`
     );
 
     try {
-      const templateContent = await fs.readFile(templatePath, "utf-8");
+      const templateContent = await this.fs.readFile(templatePath, "utf-8") as string;
       const template: any = JSON.parse(templateContent);
 
       // Use clean ID without timestamp
@@ -348,13 +352,13 @@ export class HookManager {
       // Check if template expects a script file
       if (template.command === "${HOOK_SCRIPT}") {
         // Look for corresponding .sh file
-        const scriptTemplatePath = path.join(
+        const scriptTemplatePath = this.fs.join(
           PackagePaths.getTemplatesDir(),
           "hooks",
           `${templateName}.sh`
         );
         try {
-          const scriptContent = await fs.readFile(scriptTemplatePath, "utf-8");
+          const scriptContent = await this.fs.readFile(scriptTemplatePath, "utf-8") as string;
           template.script = scriptContent;
           command = null; // Will be set below
         } catch (error) {
@@ -392,11 +396,15 @@ export class HookManager {
         command: (() => {
           if (!command) return command as unknown as string;
           // Ensure stored command is relative to project root
-          if (path.isAbsolute(command)) {
-            return (
-              "./" +
-              path.relative(this.projectRoot, command).replace(/\\/g, "/")
-            );
+          if (this.fs.isAbsolute(command)) {
+            let relativePath = command;
+            if (command.startsWith(this.projectRoot)) {
+              relativePath = command.slice(this.projectRoot.length);
+              if (relativePath.startsWith('/')) {
+                relativePath = relativePath.slice(1);
+              }
+            }
+            return "./" + relativePath.replace(/\\/g, "/");
           }
           return command;
         })(),
@@ -474,8 +482,8 @@ export class HookManager {
    */
   async listTemplates(): Promise<string[]> {
     try {
-      const templatesDir = path.join(PackagePaths.getTemplatesDir(), "hooks");
-      const files = await fs.readdir(templatesDir);
+      const templatesDir = this.fs.join(PackagePaths.getTemplatesDir(), "hooks");
+      const files = await this.fs.readdir(templatesDir);
       return files
         .filter((f) => f.endsWith(".json"))
         .map((f) => f.replace(".json", ""));

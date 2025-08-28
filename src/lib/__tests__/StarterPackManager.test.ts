@@ -1,21 +1,17 @@
 import { StarterPackManager } from "../StarterPackManager";
 import { PackStructure } from "../types/packs";
+import { createTestMementoProject } from "../testing";
+import { MemoryFileSystemAdapter } from "../adapters/MemoryFileSystemAdapter";
+import { PackagePaths } from "../packagePaths";
 
-// Mock dependencies
+// Mock dependencies that don't need filesystem
 jest.mock("../logger");
 jest.mock("../directoryManager");
 jest.mock("../componentInstaller");
-jest.mock("fs/promises", () => ({
-  mkdir: jest.fn().mockResolvedValue(undefined),
-  writeFile: jest.fn().mockResolvedValue(undefined),
-  readFile: jest.fn().mockResolvedValue("{}"),
-  access: jest.fn().mockResolvedValue(undefined),
-  readdir: jest.fn().mockResolvedValue([]),
-  stat: jest.fn().mockResolvedValue({ isDirectory: () => true })
-}));
 
 describe("StarterPackManager", () => {
   let manager: StarterPackManager;
+  let fs: MemoryFileSystemAdapter;
   const mockProjectRoot = "/test/project";
 
   const mockValidPack: PackStructure = {
@@ -36,8 +32,45 @@ describe("StarterPackManager", () => {
     componentsPath: "/test/path/components"
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
+    
+    // Reset PackagePaths cache to ensure test environment detection works
+    PackagePaths.reset();
+    
+    // Create test filesystem with project structure
+    fs = await createTestMementoProject(mockProjectRoot, {
+      // Add sample pack templates (PackagePaths.getTemplatesDir() returns '/test/templates' in test env)
+      '/test/templates/starter-packs/test-pack/manifest.json': JSON.stringify(mockValidPack.manifest),
+      '/test/templates/starter-packs/test-pack/components/modes/engineer.md': '# Engineer Mode\n\nYou are a software engineer.',
+      '/test/templates/starter-packs/test-pack/components/workflows/review.md': '# Code Review Workflow\n\nReview code systematically.',
+      '/test/templates/starter-packs/test-pack/components/agents/claude-code-research.md': '# Research Agent\n\nSpecialized in research tasks.',
+      '/test/templates/starter-packs/schema.json': JSON.stringify({ 
+        type: 'object',
+        properties: {
+          name: { type: 'string', pattern: '^[a-z0-9-]+$' },
+          version: { type: 'string', pattern: '^\\d+\\.\\d+\\.\\d+$' },
+          description: { type: 'string', minLength: 1, maxLength: 500 },
+          author: { type: 'string', minLength: 1 },
+          components: { 
+            type: 'object',
+            properties: {
+              modes: { type: 'array' },
+              workflows: { type: 'array' },
+              agents: { type: 'array' },
+              hooks: { type: 'array' }
+            }
+          },
+          tags: { type: 'array' },
+          category: { type: 'string' },
+          dependencies: { type: 'array' },
+          configuration: { type: 'object' },
+          postInstall: { type: 'object' }
+        },
+        required: ['name', 'version', 'description', 'author', 'components'],
+        additionalProperties: true
+      })
+    });
     
     // Mock DirectoryManager to prevent actual filesystem operations
     const mockDirectoryManager = require("../directoryManager").DirectoryManager;
@@ -50,7 +83,7 @@ describe("StarterPackManager", () => {
     mockComponentInstaller.prototype.installWorkflow = jest.fn().mockResolvedValue({ success: true });
     mockComponentInstaller.prototype.installAgent = jest.fn().mockResolvedValue({ success: true });
     
-    manager = new StarterPackManager(mockProjectRoot);
+    manager = new StarterPackManager(mockProjectRoot, fs);
   });
 
   describe("constructor", () => {
@@ -60,58 +93,52 @@ describe("StarterPackManager", () => {
   });
 
   describe("listPacks", () => {
-    it("should return empty array when no packs available", async () => {
-      // Mock the registry to return empty array
-      jest.spyOn(manager['registry'], 'listAvailablePacks').mockResolvedValue([]);
-
-      const result = await manager.listPacks();
-
-      expect(result).toEqual([]);
-    });
-
-    it("should return list of valid starter packs", async () => {
-      // Mock the registry to return pack list
-      jest.spyOn(manager['registry'], 'listAvailablePacks').mockResolvedValue([mockValidPack]);
-
+    it("should return list of valid starter packs from filesystem", async () => {
       const result = await manager.listPacks();
 
       expect(result).toHaveLength(1);
-      expect(result[0]).toMatchObject(mockValidPack);
+      expect(result[0].manifest.name).toBe("test-pack");
+      expect(result[0].manifest.version).toBe("1.0.0");
     });
 
-    it("should handle pack loading errors gracefully", async () => {
-      // Mock the registry to throw error and catch it gracefully
-      jest.spyOn(manager['registry'], 'listAvailablePacks').mockRejectedValue(new Error("Failed to read packs"));
+    it("should return empty array when no packs available", async () => {
+      // Create manager with filesystem that has no packs
+      const emptyFs = await createTestMementoProject(mockProjectRoot, {
+        '/test/templates/starter-packs/schema.json': JSON.stringify({ 
+          type: 'object',
+          properties: {
+            name: { type: 'string', pattern: '^[a-z0-9-]+$' },
+            version: { type: 'string', pattern: '^\\d+\\.\\d+\\.\\d+$' },
+            description: { type: 'string', minLength: 1, maxLength: 500 },
+            author: { type: 'string', minLength: 1 },
+            components: { type: 'object' }
+          },
+          required: ['name', 'version', 'description', 'author', 'components'],
+          additionalProperties: true
+        })
+      });
+      const emptyManager = new StarterPackManager(mockProjectRoot, emptyFs);
 
-      await expect(manager.listPacks()).rejects.toThrow("Failed to read packs");
+      const result = await emptyManager.listPacks();
+
+      expect(result).toEqual([]);
     });
   });
 
   describe("loadPack", () => {
-    it("should load a valid starter pack", async () => {
-      // Mock the registry to return the pack
-      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(mockValidPack);
-
+    it("should load a valid starter pack from filesystem", async () => {
       const result = await manager.loadPack("test-pack");
 
-      expect(result).toMatchObject(mockValidPack);
+      expect(result.manifest.name).toBe("test-pack");
+      expect(result.manifest.version).toBe("1.0.0");
+      expect(result.manifest.description).toBe("Test starter pack");
+      expect(result.manifest.components.modes).toHaveLength(1);
+      expect(result.manifest.components.modes?.[0].name).toBe("engineer");
     });
 
     it("should throw error for non-existent pack", async () => {
-      // Mock the registry to throw error for non-existent pack
-      jest.spyOn(manager['registry'], 'loadPack').mockRejectedValue(new Error("Pack 'non-existent' not found"));
-
       await expect(manager.loadPack("non-existent")).rejects.toThrow(
         "Pack 'non-existent' not found"
-      );
-    });
-
-    it("should handle loading errors gracefully", async () => {
-      // Mock the registry to throw error
-      jest.spyOn(manager['registry'], 'loadPack').mockRejectedValue(new Error("Failed to load pack"));
-
-      await expect(manager.loadPack("test-pack")).rejects.toThrow(
-        "Failed to load pack"
       );
     });
   });

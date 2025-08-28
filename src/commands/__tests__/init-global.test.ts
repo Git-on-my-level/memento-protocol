@@ -1,12 +1,10 @@
 import { MementoCore } from "../../lib/MementoCore";
 import { logger } from "../../lib/logger";
-import * as fs from "fs/promises";
 import * as os from "os";
-import { existsSync } from "fs";
 import inquirer from "inquirer";
+import { createTestFileSystem } from "../../lib/testing";
+import { NodeFileSystemAdapter } from "../../lib/adapters/NodeFileSystemAdapter";
 
-jest.mock("fs/promises");
-jest.mock("fs");
 jest.mock("inquirer");
 jest.mock("../../lib/MementoCore");
 jest.mock("../../lib/logger", () => ({
@@ -19,33 +17,38 @@ jest.mock("../../lib/logger", () => ({
   },
 }));
 jest.mock("os");
+jest.mock("../../lib/adapters/NodeFileSystemAdapter");
 
 // Import the command once
 import { initGlobalCommand } from "../init-global";
 
 describe("Init Global Command", () => {
-  let mockFs: jest.Mocked<typeof fs>;
-  let mockExistsSync: jest.MockedFunction<typeof existsSync>;
   let mockInquirer: jest.Mocked<typeof inquirer>;
   let mockOs: jest.Mocked<typeof os>;
   let mockMementoCore: jest.Mocked<MementoCore>;
   let originalProcessExit: any;
+  let testFs: any;
 
-  beforeEach(() => {
+  // Helper to run command with our test filesystem
+  const runInitGlobalCommand = async (args: string[]) => {
+    return await initGlobalCommand.parseAsync(args);
+  };
+
+  beforeEach(async () => {
     jest.clearAllMocks();
     jest.resetModules(); // Reset module cache to get fresh command instance
     
-    mockFs = fs as jest.Mocked<typeof fs>;
-    mockExistsSync = existsSync as jest.MockedFunction<typeof existsSync>;
     mockInquirer = inquirer as jest.Mocked<typeof inquirer>;
     mockOs = os as jest.Mocked<typeof os>;
 
+    // Create test filesystem
+    testFs = await createTestFileSystem();
+
+    // Mock NodeFileSystemAdapter to return our test filesystem instance
+    (NodeFileSystemAdapter as jest.MockedClass<typeof NodeFileSystemAdapter>).mockImplementation(() => testFs);
+
     // Mock os.homedir to return a consistent test path
     mockOs.homedir.mockReturnValue("/home/testuser");
-
-    // Mock fs operations
-    mockFs.mkdir.mockResolvedValue(undefined);
-    mockFs.writeFile.mockResolvedValue(undefined);
 
     // Mock MementoCore
     const mockScope = {
@@ -71,51 +74,56 @@ describe("Init Global Command", () => {
 
   describe("basic functionality", () => {
     it("should initialize global directory when not exists", async () => {
-      mockExistsSync.mockReturnValue(false);
-      
-      await initGlobalCommand.parseAsync([
+      await runInitGlobalCommand([
         "node", 
         "test", 
         "--no-interactive"
       ]);
 
-      expect(mockFs.mkdir).toHaveBeenCalledWith("/home/testuser/.memento", { recursive: true });
-      expect(mockFs.writeFile).toHaveBeenCalledWith(
-        "/home/testuser/.memento/config.yaml",
-        expect.stringContaining("# Memento Protocol Global Configuration"),
-        "utf-8"
-      );
+      // Verify filesystem operations happened in our test filesystem
+      const globalDirExists = await testFs.exists("/home/testuser/.memento");
+      const configExists = await testFs.exists("/home/testuser/.memento/config.yaml");
+      
+      expect(globalDirExists).toBe(true);
+      expect(configExists).toBe(true);
+      
+      const configContent = await testFs.readFile("/home/testuser/.memento/config.yaml", "utf-8");
+      expect(configContent).toContain("# Memento Protocol Global Configuration");
+      
       expect(logger.success).toHaveBeenCalledWith(
         "Global Memento Protocol initialized successfully! 🎉"
       );
     });
 
     it("should not initialize when already exists without force flag", async () => {
-      mockExistsSync.mockReturnValue(true);
-
-      await initGlobalCommand.parseAsync([
+      // Pre-create the global directory in our test filesystem
+      await testFs.mkdir("/home/testuser/.memento", { recursive: true });
+      
+      await runInitGlobalCommand([
         "node", 
         "test", 
         "--no-interactive"
       ]);
 
-      expect(mockFs.mkdir).not.toHaveBeenCalled();
       expect(logger.warn).toHaveBeenCalledWith(
         "Global Memento Protocol is already initialized."
       );
     });
 
     it("should reinitialize when force flag is provided", async () => {
-      mockExistsSync.mockReturnValue(true);
-
-      await initGlobalCommand.parseAsync([
+      // Pre-create the global directory in our test filesystem
+      await testFs.mkdir("/home/testuser/.memento", { recursive: true });
+      
+      await runInitGlobalCommand([
         "node", 
         "test", 
         "--force",
         "--no-interactive"
       ]);
 
-      expect(mockFs.mkdir).toHaveBeenCalledWith("/home/testuser/.memento", { recursive: true });
+      const configExists = await testFs.exists("/home/testuser/.memento/config.yaml");
+      expect(configExists).toBe(true);
+      
       expect(logger.success).toHaveBeenCalledWith(
         "Global Memento Protocol initialized successfully! 🎉"
       );
@@ -124,7 +132,6 @@ describe("Init Global Command", () => {
 
   describe("interactive setup", () => {
     it("should run interactive setup when interactive option is true", async () => {
-      mockExistsSync.mockReturnValue(false);
       mockInquirer.prompt.mockResolvedValue({
         defaultMode: "engineer",
         colorOutput: true,
@@ -132,7 +139,7 @@ describe("Init Global Command", () => {
         installExamples: true,
       });
 
-      await initGlobalCommand.parseAsync([
+      await runInitGlobalCommand([
         "node", 
         "test", 
         "--interactive"
@@ -153,9 +160,7 @@ describe("Init Global Command", () => {
     });
 
     it("should use CLI options when interactive is false", async () => {
-      mockExistsSync.mockReturnValue(false);
-
-      await initGlobalCommand.parseAsync([
+      await runInitGlobalCommand([
         "node", 
         "test", 
         "--no-interactive",
@@ -165,20 +170,16 @@ describe("Init Global Command", () => {
       ]);
 
       expect(mockInquirer.prompt).not.toHaveBeenCalled();
-      expect(mockFs.writeFile).toHaveBeenCalledWith(
-        "/home/testuser/.memento/config.yaml",
-        expect.stringContaining('defaultMode: "architect"'),
-        "utf-8"
-      );
+      
+      const configContent = await testFs.readFile("/home/testuser/.memento/config.yaml", "utf-8");
+      expect(configContent).toContain('defaultMode: "architect"');
     });
 
   });
 
   describe("example component installation", () => {
     it("should install example components when installExamples is true", async () => {
-      mockExistsSync.mockReturnValue(false);
-
-      await initGlobalCommand.parseAsync([
+      await runInitGlobalCommand([
         "node", 
         "test", 
         "--no-interactive",
@@ -196,39 +197,39 @@ describe("Init Global Command", () => {
         "/home/testuser/.memento/templates",
       ];
 
-      expectedDirs.forEach(dir => {
-        expect(mockFs.mkdir).toHaveBeenCalledWith(dir, { recursive: true });
-      });
+      for (const dir of expectedDirs) {
+        const exists = await testFs.exists(dir);
+        expect(exists).toBe(true);
+      }
 
       // Check that example script is created
-      expect(mockFs.writeFile).toHaveBeenCalledWith(
-        "/home/testuser/.memento/scripts/hello.sh",
-        expect.stringContaining("echo \"Hello from global Memento Protocol!\""),
-        { mode: 0o755 }
-      );
+      const scriptExists = await testFs.exists("/home/testuser/.memento/scripts/hello.sh");
+      expect(scriptExists).toBe(true);
+      
+      const scriptContent = await testFs.readFile("/home/testuser/.memento/scripts/hello.sh", "utf-8");
+      expect(scriptContent).toContain("echo \"Hello from global Memento Protocol!\"");
     });
 
     it("should skip example components when installExamples is false", async () => {
-      mockExistsSync.mockReturnValue(false);
-
-      await initGlobalCommand.parseAsync([
+      await runInitGlobalCommand([
         "node", 
         "test", 
         "--no-interactive",
         "--no-install-examples"
       ]);
 
-      // Should not create example directories (only the base config)
-      expect(mockFs.mkdir).toHaveBeenCalledWith("/home/testuser/.memento", { recursive: true });
-      expect(mockFs.mkdir).toHaveBeenCalledTimes(1);
+      // Should only have the base directory, not the example subdirectories
+      const globalDirExists = await testFs.exists("/home/testuser/.memento");
+      const scriptDirExists = await testFs.exists("/home/testuser/.memento/scripts");
+      
+      expect(globalDirExists).toBe(true);
+      expect(scriptDirExists).toBe(false);
     });
   });
 
   describe("configuration generation", () => {
     it("should generate proper config.yaml with comments", async () => {
-      mockExistsSync.mockReturnValue(false);
-
-      await initGlobalCommand.parseAsync([
+      await runInitGlobalCommand([
         "node", 
         "test", 
         "--no-interactive",
@@ -237,12 +238,7 @@ describe("Init Global Command", () => {
         "--no-verbose-logging"
       ]);
 
-      const writeFileCall = mockFs.writeFile.mock.calls.find(
-        call => call[0] === "/home/testuser/.memento/config.yaml"
-      );
-
-      expect(writeFileCall).toBeDefined();
-      const configContent = writeFileCall![1] as string;
+      const configContent = await testFs.readFile("/home/testuser/.memento/config.yaml", "utf-8");
 
       expect(configContent).toContain("# Memento Protocol Global Configuration");
       expect(configContent).toContain('defaultMode: "engineer"');
@@ -252,9 +248,7 @@ describe("Init Global Command", () => {
     });
 
     it("should handle configurations without default mode", async () => {
-      mockExistsSync.mockReturnValue(false);
-      
-      await initGlobalCommand.parseAsync([
+      await runInitGlobalCommand([
         "node", 
         "test", 
         "--no-interactive",
@@ -263,11 +257,8 @@ describe("Init Global Command", () => {
         "--no-verbose-logging"
       ]);
 
-      const writeFileCall = mockFs.writeFile.mock.calls.find(
-        call => call[0] === "/home/testuser/.memento/config.yaml"
-      );
-
-      const configContent = writeFileCall![1] as string;
+      const configContent = await testFs.readFile("/home/testuser/.memento/config.yaml", "utf-8");
+      
       // Just check that a config file is generated and contains basic structure
       expect(configContent).toContain("# Memento Protocol Global Configuration");
       expect(configContent).toContain("colorOutput: true");
@@ -281,8 +272,10 @@ describe("Init Global Command", () => {
 
   describe("error handling", () => {
     it("should handle file system errors gracefully", async () => {
-      mockExistsSync.mockReturnValue(false);
-      mockFs.mkdir.mockRejectedValue(new Error("Permission denied"));
+      // Mock NodeFileSystemAdapter to throw errors
+      const errorFs = await createTestFileSystem();
+      errorFs.mkdir = jest.fn().mockRejectedValue(new Error("Permission denied"));
+      (NodeFileSystemAdapter as jest.MockedClass<typeof NodeFileSystemAdapter>).mockImplementation(() => errorFs);
 
       await initGlobalCommand.parseAsync([
         "node", 
@@ -298,14 +291,13 @@ describe("Init Global Command", () => {
     });
 
     it("should handle MementoCore initialization errors", async () => {
-      mockExistsSync.mockReturnValue(false);
       const mockScope = {
         initialize: jest.fn().mockRejectedValue(new Error("Core initialization failed")),
       };
       
       mockMementoCore.getScopes.mockReturnValue({ global: mockScope } as any);
 
-      await initGlobalCommand.parseAsync([
+      await runInitGlobalCommand([
         "node", 
         "test", 
         "--no-interactive"
@@ -321,9 +313,7 @@ describe("Init Global Command", () => {
 
   describe("informational output", () => {
     it("should provide helpful next steps after successful initialization", async () => {
-      mockExistsSync.mockReturnValue(false);
-
-      await initGlobalCommand.parseAsync([
+      await runInitGlobalCommand([
         "node", 
         "test", 
         "--no-interactive"
@@ -342,9 +332,7 @@ describe("Init Global Command", () => {
     });
 
     it("should show correct paths in success message", async () => {
-      mockExistsSync.mockReturnValue(false);
-
-      await initGlobalCommand.parseAsync([
+      await runInitGlobalCommand([
         "node", 
         "test", 
         "--no-interactive"

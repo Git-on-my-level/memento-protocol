@@ -1,14 +1,12 @@
 import { Command } from "commander";
-import * as fs from "fs/promises";
-import * as path from "path";
 import * as os from "os";
-import { existsSync } from "fs";
 import inquirer from "inquirer";
 import { MementoCore } from "../lib/MementoCore";
 import { MementoConfig } from "../lib/configSchema";
 import { logger } from "../lib/logger";
 import { FileSystemError } from "../lib/errors";
-import { ensureDirectory } from "../lib/utils/filesystem";
+import { FileSystemAdapter } from "../lib/adapters/FileSystemAdapter";
+import { NodeFileSystemAdapter } from "../lib/adapters/NodeFileSystemAdapter";
 
 interface GlobalInitOptions {
   force?: boolean;
@@ -17,6 +15,13 @@ interface GlobalInitOptions {
   colorOutput?: boolean;
   verboseLogging?: boolean;
   installExamples?: boolean;
+}
+
+interface GlobalInitContext {
+  options: GlobalInitOptions;
+  globalPath: string;
+  configPath: string;
+  fs: FileSystemAdapter;
 }
 
 
@@ -140,21 +145,21 @@ async function runInteractiveSetup(): Promise<MementoConfig> {
 /**
  * Install example components to global ~/.memento
  */
-async function installExampleComponents(globalPath: string): Promise<void> {
+async function installExampleComponents(ctx: GlobalInitContext): Promise<void> {
   // This would use the component installer to add some basic global components
   // For now, we'll create placeholder directories to show the structure
   const exampleDirs = [
-    path.join(globalPath, "modes"),
-    path.join(globalPath, "workflows"), 
-    path.join(globalPath, "scripts"),
-    path.join(globalPath, "hooks"),
-    path.join(globalPath, "agents"),
-    path.join(globalPath, "commands"),
-    path.join(globalPath, "templates")
+    ctx.fs.join(ctx.globalPath, "modes"),
+    ctx.fs.join(ctx.globalPath, "workflows"), 
+    ctx.fs.join(ctx.globalPath, "scripts"),
+    ctx.fs.join(ctx.globalPath, "hooks"),
+    ctx.fs.join(ctx.globalPath, "agents"),
+    ctx.fs.join(ctx.globalPath, "commands"),
+    ctx.fs.join(ctx.globalPath, "templates")
   ];
 
   for (const dir of exampleDirs) {
-    await ensureDirectory(dir);
+    await ctx.fs.mkdir(dir, { recursive: true });
   }
 
   // Create a simple example script
@@ -163,10 +168,10 @@ async function installExampleComponents(globalPath: string): Promise<void> {
 echo "Hello from global Memento Protocol!"
 `;
 
-  await fs.writeFile(
-    path.join(globalPath, "scripts", "hello.sh"), 
+  await ctx.fs.writeFile(
+    ctx.fs.join(ctx.globalPath, "scripts", "hello.sh"), 
     exampleScript,
-    { mode: 0o755 }
+    { encoding: 'utf8' }
   );
 
   logger.info("✅ Installed example global components");
@@ -184,13 +189,21 @@ export const initGlobalCommand = new Command("init-global")
   .option("--no-verbose-logging", "Disable verbose logging by default")  
   .option("--install-examples", "Install example global components")
   .option("--no-install-examples", "Skip installing example components")
-  .action(async (options: GlobalInitOptions) => {
+  .action(async (options: GlobalInitOptions, _cmd?: Command, fsAdapter?: FileSystemAdapter) => {
     try {
-      const globalPath = path.join(os.homedir(), ".memento");
-      const configPath = path.join(globalPath, "config.yaml");
+      const fs = fsAdapter || new NodeFileSystemAdapter();
+      const globalPath = fs.join(os.homedir(), ".memento");
+      const configPath = fs.join(globalPath, "config.yaml");
+      
+      const ctx: GlobalInitContext = {
+        options,
+        globalPath,
+        configPath,
+        fs
+      };
       
       // Check if already initialized
-      if (existsSync(globalPath) && !options.force) {
+      if (await fs.exists(globalPath) && !options.force) {
         logger.warn("Global Memento Protocol is already initialized.");
         logger.info(`Location: ${globalPath}`);
         logger.info("Use --force to reinitialize and overwrite existing configuration.");
@@ -202,7 +215,7 @@ export const initGlobalCommand = new Command("init-global")
       logger.space();
 
       // Create global directory structure
-      await ensureDirectory(globalPath);
+      await fs.mkdir(globalPath, { recursive: true });
 
       let config: MementoConfig;
 
@@ -225,7 +238,7 @@ export const initGlobalCommand = new Command("init-global")
 
       // Generate and save config file
       const configContent = generateConfigYaml(config);
-      await fs.writeFile(configPath, configContent, "utf-8");
+      await ctx.fs.writeFile(ctx.configPath, configContent, { encoding: 'utf-8' });
 
       // Install example components if requested  
       const shouldInstallExamples = 
@@ -233,11 +246,11 @@ export const initGlobalCommand = new Command("init-global")
         (options.interactive !== false ? true : false);
 
       if (shouldInstallExamples) {
-        await installExampleComponents(globalPath);
+        await installExampleComponents(ctx);
       }
 
       // Initialize using MementoCore to create full structure
-      const mementoCore = new MementoCore(process.cwd());
+      const mementoCore = new MementoCore(process.cwd(), ctx.fs);
       const globalScope = mementoCore.getScopes().global;
       await globalScope.initialize();
 
@@ -245,7 +258,7 @@ export const initGlobalCommand = new Command("init-global")
       logger.success("Global Memento Protocol initialized successfully! 🎉");
       logger.space();
       logger.info("Configuration saved to:");
-      logger.info(`  ${configPath}`);
+      logger.info(`  ${ctx.configPath}`);
       logger.space();
       logger.info("What's next:");
       logger.info("  • Run 'memento init' in any project to apply global settings");

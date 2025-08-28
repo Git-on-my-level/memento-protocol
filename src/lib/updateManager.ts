@@ -1,6 +1,5 @@
-import * as fs from "fs/promises";
-import * as path from "path";
-import { existsSync } from "fs";
+import { FileSystemAdapter } from "./adapters/FileSystemAdapter";
+import { NodeFileSystemAdapter } from "./adapters/NodeFileSystemAdapter";
 import { DirectoryManager } from "./directoryManager";
 import { logger } from "./logger";
 import { createHash } from "crypto";
@@ -24,9 +23,11 @@ interface UpdateInfo {
 export class UpdateManager {
   private dirManager: DirectoryManager;
   private templatesDir: string;
+  private fs: FileSystemAdapter;
 
-  constructor(projectRoot: string) {
-    this.dirManager = new DirectoryManager(projectRoot);
+  constructor(projectRoot: string, fs?: FileSystemAdapter) {
+    this.fs = fs || new NodeFileSystemAdapter();
+    this.dirManager = new DirectoryManager(projectRoot, this.fs);
     this.templatesDir = PackagePaths.getTemplatesDir();
   }
 
@@ -77,7 +78,7 @@ export class UpdateManager {
       name
     );
 
-    if (!existsSync(componentPath)) {
+    if (!(await this.fs.exists(componentPath))) {
       throw new Error(`${type} '${name}' is not installed`);
     }
 
@@ -97,14 +98,14 @@ export class UpdateManager {
     }
 
     // Copy new version from templates
-    const templatePath = path.join(
+    const templatePath = this.fs.join(
       this.templatesDir,
       type === "mode" ? "modes" : "workflows",
       `${name}.md`
     );
 
-    const newContent = await fs.readFile(templatePath, "utf-8");
-    await fs.writeFile(componentPath, newContent);
+    const newContent = await this.fs.readFile(templatePath, "utf-8") as string;
+    await this.fs.writeFile(componentPath, newContent);
 
     // Update version info in manifest
     await this.updateVersionInfo(type, name);
@@ -150,7 +151,7 @@ export class UpdateManager {
       name
     );
 
-    if (!existsSync(componentPath)) {
+    if (!(await this.fs.exists(componentPath))) {
       return null;
     }
 
@@ -158,21 +159,21 @@ export class UpdateManager {
     const currentVersion = await this.getComponentVersion(type, name);
 
     // Get latest version from templates
-    const templatePath = path.join(
+    const templatePath = this.fs.join(
       this.templatesDir,
       type === "mode" ? "modes" : "workflows",
       `${name}.md`
     );
 
-    if (!existsSync(templatePath)) {
+    if (!(await this.fs.exists(templatePath))) {
       return null;
     }
 
-    await fs.readFile(templatePath, "utf-8"); // Verify template exists
+    await this.fs.readFile(templatePath, "utf-8"); // Verify template exists
     const templateVersion = await this.extractVersionFromTemplate(type, name);
 
     // Check if current content matches stored hash (detect local changes)
-    const currentContent = await fs.readFile(componentPath, "utf-8");
+    const currentContent = await this.fs.readFile(componentPath, "utf-8") as string;
     const currentHash = this.calculateHash(currentContent);
     const hasLocalChanges =
       currentVersion && currentVersion.hash !== currentHash;
@@ -219,13 +220,13 @@ export class UpdateManager {
     _type: "mode" | "workflow",
     _name: string
   ): Promise<string> {
-    const metadataPath = path.join(this.templatesDir, "metadata.json");
+    const metadataPath = this.fs.join(this.templatesDir, "metadata.json");
 
-    if (!existsSync(metadataPath)) {
+    if (!(await this.fs.exists(metadataPath))) {
       return "1.0.0";
     }
 
-    const content = await fs.readFile(metadataPath, "utf-8");
+    const content = await this.fs.readFile(metadataPath, "utf-8") as string;
     const metadata = JSON.parse(content);
 
     // Use global version for all templates
@@ -252,7 +253,7 @@ export class UpdateManager {
       type === "mode" ? "modes" : "workflows",
       name
     );
-    const content = await fs.readFile(componentPath, "utf-8");
+    const content = await this.fs.readFile(componentPath, "utf-8") as string;
     const hash = this.calculateHash(content);
 
     manifest.versions[versionKey][name] = {
@@ -281,22 +282,22 @@ export class UpdateManager {
       name
     );
 
-    if (!existsSync(componentPath)) {
+    if (!(await this.fs.exists(componentPath))) {
       throw new Error(`${type} '${name}' is not installed`);
     }
 
-    const templatePath = path.join(
+    const templatePath = this.fs.join(
       this.templatesDir,
       type === "mode" ? "modes" : "workflows",
       `${name}.md`
     );
 
-    if (!existsSync(templatePath)) {
+    if (!(await this.fs.exists(templatePath))) {
       throw new Error(`No template found for ${type} '${name}'`);
     }
 
-    const currentContent = await fs.readFile(componentPath, "utf-8");
-    const templateContent = await fs.readFile(templatePath, "utf-8");
+    const currentContent = await this.fs.readFile(componentPath, "utf-8") as string;
+    const templateContent = await this.fs.readFile(templatePath, "utf-8") as string;
 
     if (currentContent === templateContent) {
       logger.info(`${type} '${name}' is up to date`);

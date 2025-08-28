@@ -1,12 +1,9 @@
-import * as fs from "fs/promises";
 import { UpdateManager } from "../updateManager";
-import { DirectoryManager } from "../directoryManager";
+import { createTestMementoProject } from "../testing";
+import { MemoryFileSystemAdapter } from "../adapters/MemoryFileSystemAdapter";
+import { logger } from "../logger";
 
-// Mock the modules
-jest.mock("fs/promises");
-jest.mock("fs");
-jest.mock("../directoryManager");
-jest.mock("../componentInstaller");
+// Mock the logger
 jest.mock("../logger", () => ({
   logger: {
     info: jest.fn(),
@@ -18,23 +15,25 @@ jest.mock("../logger", () => ({
 
 describe("UpdateManager", () => {
   let updateManager: UpdateManager;
-  const mockProjectRoot = "/test/project";
+  let fs: MemoryFileSystemAdapter;
+  const projectRoot = "/test/project";
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
-
-    const mockDirManager = {
-      isInitialized: jest.fn().mockReturnValue(true),
-      getManifest: jest.fn().mockResolvedValue({
+    
+    // Create test project with filesystem
+    fs = await createTestMementoProject(projectRoot);
+    
+    // Create a basic manifest
+    await fs.writeFile(
+      fs.join(projectRoot, ".memento", "manifest.json"),
+      JSON.stringify({
         components: { modes: [], workflows: [] },
         versions: {},
-      }),
-      getComponentPath: jest.fn().mockReturnValue(""),
-    };
-
-    (DirectoryManager as jest.Mock).mockImplementation(() => mockDirManager);
-
-    updateManager = new UpdateManager(mockProjectRoot);
+      })
+    );
+    
+    updateManager = new UpdateManager(projectRoot, fs);
   });
 
   describe("checkForUpdates", () => {
@@ -46,72 +45,52 @@ describe("UpdateManager", () => {
     // Removed complex test with brittle file system mocks
 
     it("should throw error if component is not installed", async () => {
-      const mockExistsSync = require("fs").existsSync as jest.Mock;
-      mockExistsSync.mockReturnValue(false);
-
-      const dirManager =
-        new (DirectoryManager as jest.Mock<DirectoryManager>)() as jest.Mocked<DirectoryManager>;
-      (dirManager.getComponentPath as jest.Mock).mockReturnValue(
-        "/test/.memento/modes/missing.md"
-      );
-
       await expect(
         updateManager.updateComponent("mode", "missing")
       ).rejects.toThrow("mode 'missing' is not installed");
     });
 
     it("should warn about local changes without force flag", async () => {
-      const mockExistsSync = require("fs").existsSync as jest.Mock;
-      mockExistsSync.mockReturnValue(true);
-
-      const dirManager =
-        new (DirectoryManager as jest.Mock<DirectoryManager>)() as jest.Mocked<DirectoryManager>;
-      (dirManager.getManifest as jest.Mock).mockResolvedValue({
-        components: {
-          modes: ["architect"],
-          workflows: [],
-        },
-        versions: {
-          modes: {
-            architect: {
-              name: "architect",
-              version: "1.0.0",
-              hash: "abc123",
-              lastUpdated: "2024-01-01",
+      // Set up manifest with architect mode
+      await fs.writeFile(
+        fs.join(projectRoot, ".memento", "manifest.json"),
+        JSON.stringify({
+          components: {
+            modes: ["architect"],
+            workflows: [],
+          },
+          versions: {
+            modes: {
+              architect: {
+                name: "architect",
+                version: "1.0.0",
+                hash: "abc123", // Different hash to simulate local changes
+                lastUpdated: "2024-01-01",
+              },
             },
           },
-        },
-      });
-      (dirManager.getComponentPath as jest.Mock).mockReturnValue(
-        "/test/.memento/modes/architect.md"
+        })
+      );
+      
+      // Create the component with different content (local changes)
+      await fs.writeFile(
+        fs.join(projectRoot, ".memento", "modes", "architect.md"),
+        "modified content"
+      );
+      
+      // Mock templates directory with newer version
+      const templatesDir = (updateManager as any).templatesDir; // Use the actual templates dir from UpdateManager
+      await fs.mkdir(fs.join(templatesDir, "modes"), { recursive: true });
+      await fs.writeFile(
+        fs.join(templatesDir, "modes", "architect.md"),
+        "new template content"
+      );
+      await fs.writeFile(
+        fs.join(templatesDir, "metadata.json"),
+        JSON.stringify({ version: "1.1.0" })
       );
 
-      (fs.readFile as jest.Mock).mockImplementation((filePath: string) => {
-        if (!filePath) return Promise.resolve("");
-        if (
-          filePath.includes("architect.md") &&
-          filePath.includes(".memento")
-        ) {
-          return Promise.resolve("modified content");
-        }
-        if (
-          filePath.includes("architect.md") &&
-          filePath.includes("templates")
-        ) {
-          return Promise.resolve("new content");
-        }
-        if (filePath.includes("metadata.json")) {
-          return Promise.resolve(
-            JSON.stringify({
-              version: "1.1.0",
-              components: [{ name: "architect", version: "1.1.0" }],
-            })
-          );
-        }
-        return Promise.resolve("");
-      });
 
-      const { logger } = require("../logger");
       await updateManager.updateComponent("mode", "architect", false);
 
       expect(logger.warn).toHaveBeenCalledWith(
@@ -133,27 +112,20 @@ describe("UpdateManager", () => {
 
   describe("showDiff", () => {
     it("should show diff when component has changes", async () => {
-      const mockExistsSync = require("fs").existsSync as jest.Mock;
-      mockExistsSync.mockReturnValue(true);
-      const dirManager =
-        new (DirectoryManager as jest.Mock<DirectoryManager>)() as jest.Mocked<DirectoryManager>;
-
-      (dirManager.getComponentPath as jest.Mock).mockReturnValue(
-        "/test/.memento/modes/architect.md"
+      // Create component with current content
+      await fs.writeFile(
+        fs.join(projectRoot, ".memento", "modes", "architect.md"),
+        "current content"
+      );
+      
+      // Create template with different content
+      const templatesDir = (updateManager as any).templatesDir; // Use the actual templates dir from UpdateManager
+      await fs.mkdir(fs.join(templatesDir, "modes"), { recursive: true });
+      await fs.writeFile(
+        fs.join(templatesDir, "modes", "architect.md"),
+        "template content"
       );
 
-      (fs.readFile as jest.Mock).mockImplementation((filePath: string) => {
-        if (!filePath) return Promise.resolve("");
-        if (filePath.includes(".memento")) {
-          return Promise.resolve("current content");
-        }
-        if (filePath.includes("templates")) {
-          return Promise.resolve("template content");
-        }
-        return Promise.resolve("");
-      });
-
-      const { logger } = require("../logger");
       await updateManager.showDiff("mode", "architect");
 
       expect(logger.info).toHaveBeenCalledWith(
@@ -162,18 +134,21 @@ describe("UpdateManager", () => {
     });
 
     it("should indicate when component is up to date", async () => {
-      const mockExistsSync = require("fs").existsSync as jest.Mock;
-      mockExistsSync.mockReturnValue(true);
-      const dirManager =
-        new (DirectoryManager as jest.Mock<DirectoryManager>)() as jest.Mocked<DirectoryManager>;
-
-      (dirManager.getComponentPath as jest.Mock).mockReturnValue(
-        "/test/.memento/modes/architect.md"
+      // Create component and template with same content
+      const content = "same content";
+      
+      await fs.writeFile(
+        fs.join(projectRoot, ".memento", "modes", "architect.md"),
+        content
+      );
+      
+      const templatesDir = (updateManager as any).templatesDir; // Use the actual templates dir from UpdateManager
+      await fs.mkdir(fs.join(templatesDir, "modes"), { recursive: true });
+      await fs.writeFile(
+        fs.join(templatesDir, "modes", "architect.md"),
+        content
       );
 
-      (fs.readFile as jest.Mock).mockResolvedValue("same content");
-
-      const { logger } = require("../logger");
       await updateManager.showDiff("mode", "architect");
 
       expect(logger.info).toHaveBeenCalledWith(

@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import * as fs from "fs";
 import * as path from "path";
+import inquirer from "inquirer";
 import { DirectoryManager } from "../lib/directoryManager";
 import { HookManager } from "../lib/hooks/HookManager";
 import { CommandGenerator } from "../lib/commandGenerator";
@@ -130,6 +131,7 @@ export const initCommand = new Command("init")
   .option("-s, --starter-pack [pack]", "Install a starter pack (interactive selection if no pack specified)")
   .action(async (options, command: Command) => {
     try {
+      
       // Handle global initialization
       if (options.global) {
         const { initGlobalCommand } = await import("./init-global");
@@ -145,6 +147,7 @@ export const initCommand = new Command("init")
         return;
       }
 
+      
       const projectRoot = process.cwd();
       const dirManager = new DirectoryManager(projectRoot);
       const hookManager = new HookManager(projectRoot);
@@ -159,23 +162,29 @@ export const initCommand = new Command("init")
         return;
       }
 
+      
       // Initialize directory structure
       logger.info("Initializing Memento Protocol...");
       await dirManager.initializeStructure();
 
+
       // Detect project type
       logger.info("Detecting project type...");
       const projectInfo = await projectDetector.detect();
+      
       logger.info(
         `Project type: ${projectInfo.type}${
           projectInfo.framework ? ` (${projectInfo.framework})` : ""
         }`
       );
 
+      
       // Check for CI environment or explicit non-interactive mode
       const isNonInteractive =
         options.nonInteractive || process.env.CI === "true";
+        
 
+      
       // Handle starter pack installation first if requested
       let packResult = null;
       if (options.starterPack !== undefined) {
@@ -193,6 +202,7 @@ export const initCommand = new Command("init")
           process.exit(1);
         }
       }
+      
 
       // Run setup flow
       const interactiveSetup = new InteractiveSetup(projectRoot);
@@ -207,6 +217,8 @@ export const initCommand = new Command("init")
         let selectedWorkflows: string[] = [];
         let selectedHooks: string[] = [];
 
+        // DEBUG: Check packResult and nonInteractiveOpts
+
         // Prefer explicit selections from config/env/CLI over "all recommended"
         const hasExplicitSelections = Boolean(
           (nonInteractiveOpts.modes && nonInteractiveOpts.modes.length > 0) ||
@@ -216,6 +228,7 @@ export const initCommand = new Command("init")
             nonInteractiveOpts.defaultMode ||
             packResult  // If we installed a pack, consider that as explicit selection
         );
+
 
         if (hasExplicitSelections) {
           selectedModes = nonInteractiveOpts.modes || [];
@@ -245,6 +258,7 @@ export const initCommand = new Command("init")
           defaultMode: nonInteractiveOpts.defaultMode || packResult?.defaultMode,
           addToGitignore: nonInteractiveOpts.addToGitignore || false,
         };
+        
       } else {
         // Interactive setup (default)
         setupOptions = await interactiveSetup.run(projectInfo);
@@ -256,11 +270,15 @@ export const initCommand = new Command("init")
       }
 
       // Apply setup (install components and save config)
-      if (
+      
+      const shouldApplySetup = (
         setupOptions.selectedModes.length > 0 ||
         setupOptions.selectedWorkflows.length > 0 ||
-        (setupOptions.selectedHooks && setupOptions.selectedHooks.length > 0)
-      ) {
+        (setupOptions.selectedHooks && setupOptions.selectedHooks.length > 0) ||
+        setupOptions.defaultMode // Apply setup if defaultMode needs to be saved
+      );
+      
+      if (shouldApplySetup) {
         logger.space();
         logger.info("Installing selected components...");
         await interactiveSetup.applySetup({
@@ -328,6 +346,7 @@ async function handleStarterPackInstallation(
   defaultMode?: string;
 }> {
   // If --starter-pack was provided without a value, show interactive selection
+  
   if (packName === true && !isNonInteractive) {
     const availablePacks = await starterPackManager.listPacks();
     
@@ -336,7 +355,6 @@ async function handleStarterPackInstallation(
       return { success: true, installed: { modes: [], workflows: [], agents: [], hooks: [] }, skipped: { modes: [], workflows: [], agents: [], hooks: [] }, errors: [] };
     }
 
-    const inquirer = (await import('inquirer')).default;
     const { selectedPack } = await inquirer.prompt([
       {
         type: 'list',
@@ -378,7 +396,7 @@ async function handleStarterPackInstallation(
       if (result.installed.agents.length > 0) {
         logger.info(`  Agents: ${result.installed.agents.join(', ')}`);
       }
-      if (result.installed.hooks.length > 0) {
+      if (result.installed.hooks && result.installed.hooks.length > 0) {
         logger.info(`  Hooks: ${result.installed.hooks.join(', ')}`);
       }
     }
@@ -386,9 +404,44 @@ async function handleStarterPackInstallation(
     // Load pack to get default mode for return value
     try {
       const packStructure = await starterPackManager.loadPack(packName);
-      return { ...result, defaultMode: packStructure.manifest.configuration?.defaultMode };
-    } catch {
-      return result;
+      const returnValue = { 
+        success: result.success,
+        installed: {
+          modes: [...result.installed.modes],
+          workflows: [...result.installed.workflows],
+          agents: [...result.installed.agents],
+          hooks: [...(result.installed.hooks || [])]
+        },
+        skipped: {
+          modes: [...result.skipped.modes],
+          workflows: [...result.skipped.workflows],
+          agents: [...result.skipped.agents],
+          hooks: [...(result.skipped.hooks || [])]
+        },
+        errors: [...result.errors],
+        postInstallMessage: result.postInstallMessage,
+        defaultMode: packStructure.manifest.configuration?.defaultMode
+      };
+      return returnValue;
+    } catch (error) {
+      const returnValue = {
+        success: result.success,
+        installed: {
+          modes: [...result.installed.modes],
+          workflows: [...result.installed.workflows],
+          agents: [...result.installed.agents],
+          hooks: [...(result.installed.hooks || [])]
+        },
+        skipped: {
+          modes: [...result.skipped.modes],
+          workflows: [...result.skipped.workflows],
+          agents: [...result.skipped.agents],
+          hooks: [...(result.skipped.hooks || [])]
+        },
+        errors: [...result.errors],
+        postInstallMessage: result.postInstallMessage
+      };
+      return returnValue;
     }
   }
 

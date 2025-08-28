@@ -1,12 +1,11 @@
 import inquirer from 'inquirer';
-import * as path from 'path';
-import * as fs from 'fs';
 import { ProjectInfo } from './projectDetector';
 import { ComponentInstaller } from './componentInstaller';
 import { ConfigManager } from './configManager';
 import { logger } from './logger';
 import { HookManager } from './hooks/HookManager';
 import { PackagePaths } from './packagePaths';
+import { FileSystemAdapter, NodeFileSystemAdapter } from './adapters';
 
 export interface SetupOptions {
   projectInfo: ProjectInfo;
@@ -23,11 +22,13 @@ export class InteractiveSetup {
   private componentInstaller: ComponentInstaller;
   private configManager: ConfigManager;
   private hookManager: HookManager;
+  private fs: FileSystemAdapter;
 
-  constructor(projectRoot: string) {
-    this.componentInstaller = new ComponentInstaller(projectRoot);
-    this.configManager = new ConfigManager(projectRoot);
-    this.hookManager = new HookManager(projectRoot);
+  constructor(projectRoot: string, fs?: FileSystemAdapter) {
+    this.fs = fs || new NodeFileSystemAdapter();
+    this.componentInstaller = new ComponentInstaller(projectRoot, this.fs);
+    this.configManager = new ConfigManager(projectRoot, this.fs);
+    this.hookManager = new HookManager(projectRoot, this.fs);
   }
 
   /**
@@ -190,8 +191,8 @@ export class InteractiveSetup {
       const hookChoices = [];
       for (const hookName of availableHooks) {
         try {
-          const templatePath = path.join(PackagePaths.getTemplatesDir(), 'hooks', `${hookName}.json`);
-          const template = JSON.parse(fs.readFileSync(templatePath, 'utf-8'));
+          const templatePath = this.fs.join(PackagePaths.getTemplatesDir(), 'hooks', `${hookName}.json`);
+          const template = JSON.parse(this.fs.readFileSync(templatePath, 'utf8') as string);
           hookChoices.push({
             name: template.name,
             value: hookName,

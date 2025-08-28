@@ -1,52 +1,32 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
 import { ConfigManager } from '../configManager';
-import { MementoCore } from '../MementoCore';
-import { MementoScope } from '../MementoScope';
+import { createTestFileSystem } from '../testing/createTestFileSystem';
+import { MemoryFileSystemAdapter } from '../adapters/MemoryFileSystemAdapter';
 
 describe('ConfigManager', () => {
-  let tempDir: string;
-  let globalDir: string;
+  let fs: MemoryFileSystemAdapter;
   let configManager: ConfigManager;
   const originalEnv = process.env;
+  const projectRoot = '/project';
+  const globalRoot = '/home/user/.memento';
 
-  // Test-friendly ConfigManager that uses custom paths
-  class TestConfigManager extends ConfigManager {
-    constructor(projectRoot: string, globalPath: string) {
-      super(projectRoot);
-      // Replace the MementoCore with one that uses our custom paths
-      (this as any).mementoCore = new TestMementoCore(projectRoot, globalPath);
-    }
-  }
-
-  class TestMementoCore extends MementoCore {
-    constructor(projectRoot: string, globalPath: string) {
-      super(projectRoot);
-      // Replace the global scope with our test path
-      (this as any).globalScope = new MementoScope(globalPath, true);
-    }
-  }
-
-  beforeEach(() => {
-    // Create temporary directory
-    tempDir = path.join(os.tmpdir(), 'memento-config-test-' + Date.now());
-    globalDir = path.join(tempDir, 'global', '.memento');
-    fs.mkdirSync(tempDir, { recursive: true });
-    fs.mkdirSync(path.join(tempDir, '.memento'), { recursive: true });
-    fs.mkdirSync(globalDir, { recursive: true });
-    
-    // Create test ConfigManager
-    configManager = new TestConfigManager(tempDir, globalDir);
-    
-    // Reset environment
+  beforeEach(async () => {
+    // Reset environment first
     process.env = { ...originalEnv };
+    // Override home directory for tests BEFORE creating ConfigManager
+    process.env.HOME = '/home/user';
+    
+    // Create test filesystem
+    fs = await createTestFileSystem({
+      // Create directory structure
+      [`${projectRoot}/.memento/.gitkeep`]: '',
+      [`${globalRoot}/.gitkeep`]: ''
+    });
+    
+    // Create test ConfigManager with memory filesystem
+    configManager = new ConfigManager(projectRoot, fs);
   });
 
   afterEach(() => {
-    // Clean up temporary directory
-    fs.rmSync(tempDir, { recursive: true, force: true });
-    
     // Restore environment
     process.env = originalEnv;
   });
@@ -74,7 +54,7 @@ describe('ConfigManager', () => {
         }
       };
       fs.writeFileSync(
-        path.join(globalDir, 'config.yaml'),
+        `${globalRoot}/config.yaml`,
         yaml.dump(globalConfig)
       );
 
@@ -86,7 +66,7 @@ describe('ConfigManager', () => {
         }
       };
       fs.writeFileSync(
-        path.join(tempDir, '.memento', 'config.yaml'),
+        `${projectRoot}/.memento/config.yaml`,
         yaml.dump(projectConfig)
       );
 
@@ -121,7 +101,7 @@ describe('ConfigManager', () => {
       await configManager.save(config);
       
       // Config is now saved as YAML
-      const savedPath = path.join(tempDir, '.memento', 'config.yaml');
+      const savedPath = `${projectRoot}/.memento/config.yaml`;
       expect(fs.existsSync(savedPath)).toBe(true);
       
       // Load and verify the config was saved correctly
@@ -139,7 +119,7 @@ describe('ConfigManager', () => {
 
       await configManager.save(config, true);
       
-      // Global config is saved in the home directory, which for this test is mocked
+      // Global config is saved in the home directory  
       // Let's verify it was saved by checking if we can read it back
       const globalConfig = await configManager.list(true);
       expect(globalConfig.ui?.colorOutput).toBe(false);

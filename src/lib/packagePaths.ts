@@ -51,18 +51,18 @@ export class PackagePaths {
       return this._templatesDir;
     }
 
-    const packageRoot = this.getPackageRoot();
-
-    // First, check if templates exist at package root (both dev and prod)
-    const packageTemplates = path.join(packageRoot, "templates");
-    if (existsSync(packageTemplates)) {
-      this._templatesDir = packageTemplates;
-      return this._templatesDir;
-    }
-
     // In test environment (NODE_ENV=test or when running jest), return a dummy path
     if (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined) {
       this._templatesDir = '/test/templates';
+      return this._templatesDir;
+    }
+
+    const packageRoot = this.getPackageRoot();
+
+    // Check if templates exist at package root (both dev and prod)
+    const packageTemplates = path.join(packageRoot, "templates");
+    if (existsSync(packageTemplates)) {
+      this._templatesDir = packageTemplates;
       return this._templatesDir;
     }
 

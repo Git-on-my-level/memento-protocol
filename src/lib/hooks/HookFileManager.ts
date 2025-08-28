@@ -1,18 +1,19 @@
-import * as fs from "fs/promises";
-import * as path from "path";
 import { HookConfig, HookDefinition } from "./types";
 import { logger } from "../logger";
-import { ensureDirectory } from "../utils/filesystem";
+import { FileSystemAdapter } from '../adapters/FileSystemAdapter';
+import { NodeFileSystemAdapter } from '../adapters/NodeFileSystemAdapter';
 
 export class HookFileManager {
   private projectRoot: string;
   private hooksDir: string;
   private definitionsDir: string;
+  private fs: FileSystemAdapter;
 
-  constructor(projectRoot: string, hooksDir: string, definitionsDir: string) {
+  constructor(projectRoot: string, hooksDir: string, definitionsDir: string, fs?: FileSystemAdapter) {
     this.projectRoot = projectRoot;
     this.hooksDir = hooksDir;
     this.definitionsDir = definitionsDir;
+    this.fs = fs || new NodeFileSystemAdapter();
   }
 
   /**
@@ -20,21 +21,21 @@ export class HookFileManager {
    */
   async removeHookFiles(hook: HookConfig): Promise<void> {
     // Remove definition file
-    const definitionPath = path.join(this.definitionsDir, `${hook.id}.json`);
+    const definitionPath = this.fs.join(this.definitionsDir, `${hook.id}.json`);
     try {
-      await fs.unlink(definitionPath);
+      await this.fs.unlink(definitionPath);
     } catch (error) {
       // File might not exist, ignore
     }
 
     // Remove script file if it's in our scripts directory
     if (hook.command) {
-      const absoluteCommandPath = path.isAbsolute(hook.command)
+      const absoluteCommandPath = this.fs.isAbsolute(hook.command)
         ? hook.command
-        : path.join(this.projectRoot, hook.command);
+        : this.fs.join(this.projectRoot, hook.command);
       if (absoluteCommandPath.startsWith(this.hooksDir)) {
         try {
-          await fs.unlink(absoluteCommandPath);
+          await this.fs.unlink(absoluteCommandPath);
         } catch (error) {
           // File might not exist, ignore
         }
@@ -46,13 +47,21 @@ export class HookFileManager {
    * Write script file for a hook
    */
   async writeScriptFile(templateName: string, scriptContent: string): Promise<string> {
-    const scriptsDir = path.join(this.hooksDir, "scripts");
-    await ensureDirectory(scriptsDir);
-    const scriptPath = path.join(scriptsDir, `${templateName}.sh`);
-    await fs.writeFile(scriptPath, scriptContent, { mode: 0o755 });
+    const scriptsDir = this.fs.join(this.hooksDir, "scripts");
+    await this.fs.mkdir(scriptsDir, { recursive: true });
+    const scriptPath = this.fs.join(scriptsDir, `${templateName}.sh`);
+    await this.fs.writeFile(scriptPath, scriptContent);
+    await this.fs.chmod(scriptPath, 0o755);
     
-    // Return relative command path for portability
-    return "./" + path.relative(this.projectRoot, scriptPath).replace(/\\/g, "/");
+    // Calculate relative path manually since we need it to be portable
+    let relativePath = scriptPath;
+    if (scriptPath.startsWith(this.projectRoot)) {
+      relativePath = scriptPath.slice(this.projectRoot.length);
+      if (relativePath.startsWith('/')) {
+        relativePath = relativePath.slice(1);
+      }
+    }
+    return "./" + relativePath.replace(/\\/g, "/");
   }
 
   /**
@@ -60,10 +69,10 @@ export class HookFileManager {
    */
   async saveHookDefinition(hookConfig: HookConfig): Promise<void> {
     // Ensure definitions directory exists before saving
-    await ensureDirectory(this.definitionsDir);
+    await this.fs.mkdir(this.definitionsDir, { recursive: true });
 
     // Save to definitions
-    const definitionPath = path.join(
+    const definitionPath = this.fs.join(
       this.definitionsDir,
       `${hookConfig.id}.json`
     );
@@ -72,7 +81,7 @@ export class HookFileManager {
       hooks: [hookConfig],
     };
 
-    await fs.writeFile(definitionPath, JSON.stringify(definition, null, 2));
+    await this.fs.writeFile(definitionPath, JSON.stringify(definition, null, 2));
   }
 
   /**
@@ -114,18 +123,28 @@ export class HookFileManager {
         );
 
         // Rename script file (resolve to absolute paths)
-        const absOld = path.isAbsolute(oldScriptPath)
+        const absOld = this.fs.isAbsolute(oldScriptPath)
           ? oldScriptPath
-          : path.join(this.projectRoot, oldScriptPath);
-        const absNew = path.isAbsolute(newScriptPath)
+          : this.fs.join(this.projectRoot, oldScriptPath);
+        const absNew = this.fs.isAbsolute(newScriptPath)
           ? newScriptPath
-          : path.join(this.projectRoot, newScriptPath);
+          : this.fs.join(this.projectRoot, newScriptPath);
 
         try {
-          await fs.rename(absOld, absNew);
-          // Store as relative for portability
-          cleanConfig.command =
-            "./" + path.relative(this.projectRoot, absNew).replace(/\\/g, "/");
+          // For filesystem adapters that don't have rename, we'll copy and delete
+          const content = await this.fs.readFile(absOld);
+          await this.fs.writeFile(absNew, content);
+          await this.fs.unlink(absOld);
+          
+          // Calculate relative path manually
+          let relativePath = absNew;
+          if (absNew.startsWith(this.projectRoot)) {
+            relativePath = absNew.slice(this.projectRoot.length);
+            if (relativePath.startsWith('/')) {
+              relativePath = relativePath.slice(1);
+            }
+          }
+          cleanConfig.command = "./" + relativePath.replace(/\\/g, "/");
         } catch (error) {
           logger.warn(`Could not rename script file: ${error}`);
         }
@@ -141,12 +160,12 @@ export class HookFileManager {
       await this.saveHookDefinition(cleanConfig);
 
       // Remove old definition
-      const oldDefinitionPath = path.join(
+      const oldDefinitionPath = this.fs.join(
         this.definitionsDir,
         `${oldHook.config.id}.json`
       );
       try {
-        await fs.unlink(oldDefinitionPath);
+        await this.fs.unlink(oldDefinitionPath);
       } catch (error) {
         // Ignore if file doesn't exist
       }

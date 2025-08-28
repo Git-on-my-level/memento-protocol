@@ -1,11 +1,11 @@
-import * as path from 'path';
-import * as os from 'os';
 import { MementoScope, ComponentInfo } from './MementoScope';
 import { MementoConfig } from './configSchema';
 import { BuiltinComponentProvider } from './BuiltinComponentProvider';
 import { FuzzyMatcher, FuzzyMatch, FuzzyMatchOptions } from './fuzzyMatcher';
 import { logger } from './logger';
 import { SimpleCache } from './SimpleCache';
+import { FileSystemAdapter } from './adapters/FileSystemAdapter';
+import { NodeFileSystemAdapter } from './adapters/NodeFileSystemAdapter';
 
 /**
  * Central manager for all Memento configuration and components
@@ -32,13 +32,18 @@ export class MementoCore {
   private projectScope: MementoScope;
   private builtinProvider: BuiltinComponentProvider;
   private cache: SimpleCache;
+  private fs: FileSystemAdapter;
 
-  constructor(projectRoot: string) {
-    const globalPath = path.join(os.homedir(), '.memento');
-    const projectPath = path.join(projectRoot, '.memento');
+  constructor(projectRoot: string, fsAdapter?: FileSystemAdapter) {
+    this.fs = fsAdapter || new NodeFileSystemAdapter();
     
-    this.globalScope = new MementoScope(globalPath, true);
-    this.projectScope = new MementoScope(projectPath, false);
+    // Create global path using filesystem adapter for cross-platform compatibility
+    const homeDir = process.env.HOME || process.env.USERPROFILE || '/tmp';
+    const globalPath = this.fs.join(homeDir, '.memento');
+    const projectPath = this.fs.join(projectRoot, '.memento');
+    
+    this.globalScope = new MementoScope(globalPath, true, this.fs);
+    this.projectScope = new MementoScope(projectPath, false, this.fs);
     this.builtinProvider = new BuiltinComponentProvider();
     this.cache = new SimpleCache(300000); // 5 minutes TTL for config/component caching
   }

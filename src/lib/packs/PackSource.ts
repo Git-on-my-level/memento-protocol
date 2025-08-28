@@ -2,9 +2,8 @@
  * PackSource interface and implementations for loading starter packs from different sources
  */
 
-import * as fs from "fs/promises";
-import * as path from "path";
-import { existsSync } from "fs";
+import { FileSystemAdapter } from "../adapters/FileSystemAdapter";
+import { NodeFileSystemAdapter } from "../adapters/NodeFileSystemAdapter";
 import {
   PackManifest,
   PackStructure,
@@ -36,6 +35,24 @@ export interface IPackSource {
    * Get the source identifier
    */
   getSourceInfo(): LocalPackSourceInterface;
+
+  /**
+   * Get the path to a specific component file
+   */
+  getComponentPath(
+    packName: string,
+    componentType: 'modes' | 'workflows' | 'agents' | 'hooks',
+    componentName: string
+  ): Promise<string>;
+
+  /**
+   * Check if a specific component exists in the pack
+   */
+  hasComponent(
+    packName: string,
+    componentType: 'modes' | 'workflows' | 'agents' | 'hooks',
+    componentName: string
+  ): Promise<boolean>;
 }
 
 /**
@@ -43,18 +60,20 @@ export interface IPackSource {
  */
 export class LocalPackSource implements IPackSource {
   private readonly basePath: string;
+  private fs: FileSystemAdapter;
 
-  constructor(basePath: string) {
+  constructor(basePath: string, fs?: FileSystemAdapter) {
     this.basePath = basePath;
+    this.fs = fs || new NodeFileSystemAdapter();
   }
 
   async loadPack(name: string): Promise<PackStructure> {
-    const packPath = path.join(this.basePath, name);
-    const manifestPath = path.join(packPath, 'manifest.json');
-    const componentsPath = path.join(packPath, 'components');
+    const packPath = this.fs.join(this.basePath, name);
+    const manifestPath = this.fs.join(packPath, 'manifest.json');
+    const componentsPath = this.fs.join(packPath, 'components');
 
     // Check if pack directory exists
-    if (!existsSync(packPath)) {
+    if (!await this.fs.exists(packPath)) {
       throw new MementoError(
         `Pack '${name}' not found in local source`,
         'PACK_NOT_FOUND',
@@ -63,7 +82,7 @@ export class LocalPackSource implements IPackSource {
     }
 
     // Check if manifest exists
-    if (!existsSync(manifestPath)) {
+    if (!await this.fs.exists(manifestPath)) {
       throw new MementoError(
         `Pack manifest not found for '${name}'`,
         'MANIFEST_NOT_FOUND',
@@ -72,7 +91,7 @@ export class LocalPackSource implements IPackSource {
     }
 
     // Check if components directory exists
-    if (!existsSync(componentsPath)) {
+    if (!await this.fs.exists(componentsPath)) {
       throw new MementoError(
         `Components directory not found for pack '${name}'`,
         'COMPONENTS_NOT_FOUND',
@@ -82,8 +101,8 @@ export class LocalPackSource implements IPackSource {
 
     try {
       // Load and parse manifest
-      const manifestContent = await fs.readFile(manifestPath, 'utf-8');
-      const manifest = JSON.parse(manifestContent) as PackManifest;
+      const manifestContent = await this.fs.readFile(manifestPath, 'utf-8');
+      const manifest = JSON.parse(manifestContent as string) as PackManifest;
 
       // Validate basic manifest structure
       if (!manifest.name || !manifest.version || !manifest.description) {
@@ -123,22 +142,24 @@ export class LocalPackSource implements IPackSource {
   }
 
   async listPacks(): Promise<string[]> {
-    if (!existsSync(this.basePath)) {
+    if (!await this.fs.exists(this.basePath)) {
       logger.debug(`Pack source directory does not exist: ${this.basePath}`);
       return [];
     }
 
     try {
-      const entries = await fs.readdir(this.basePath, { withFileTypes: true });
+      const entries = await this.fs.readdir(this.basePath);
       const packs: string[] = [];
 
       for (const entry of entries) {
-        if (entry.isDirectory()) {
-          const packName = entry.name;
-          const manifestPath = path.join(this.basePath, packName, 'manifest.json');
-          
-          // Only include directories that have a manifest
-          if (existsSync(manifestPath)) {
+        const packName = entry;
+        const packPath = this.fs.join(this.basePath, packName);
+        const manifestPath = this.fs.join(this.basePath, packName, 'manifest.json');
+        
+        // Check if it's a directory and has a manifest
+        if (await this.fs.exists(packPath)) {
+          const stats = await this.fs.stat(packPath);
+          if (stats.isDirectory() && await this.fs.exists(manifestPath)) {
             packs.push(packName);
           } else {
             logger.debug(`Skipping directory '${packName}' - no manifest found`);
@@ -155,10 +176,10 @@ export class LocalPackSource implements IPackSource {
   }
 
   async hasPack(name: string): Promise<boolean> {
-    const packPath = path.join(this.basePath, name);
-    const manifestPath = path.join(packPath, 'manifest.json');
+    const packPath = this.fs.join(this.basePath, name);
+    const manifestPath = this.fs.join(packPath, 'manifest.json');
     
-    return existsSync(packPath) && existsSync(manifestPath);
+    return await this.fs.exists(packPath) && await this.fs.exists(manifestPath);
   }
 
   getSourceInfo(): LocalPackSourceInterface {
@@ -179,13 +200,13 @@ export class LocalPackSource implements IPackSource {
   ): Promise<boolean> {
     try {
       const packStructure = await this.loadPack(packName);
-      const componentPath = path.join(
+      const componentPath = this.fs.join(
         packStructure.componentsPath,
         componentType,
         `${componentName}.md`
       );
       
-      return existsSync(componentPath);
+      return await this.fs.exists(componentPath);
     } catch {
       return false;
     }
@@ -202,7 +223,7 @@ export class LocalPackSource implements IPackSource {
     const packStructure = await this.loadPack(packName);
     const extension = componentType === 'hooks' ? 'json' : 'md';
     
-    return path.join(
+    return this.fs.join(
       packStructure.componentsPath,
       componentType,
       `${componentName}.${extension}`

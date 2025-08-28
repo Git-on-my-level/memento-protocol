@@ -2,7 +2,6 @@
  * PackRegistry handles pack discovery, resolution, and dependency management
  */
 
-import * as path from "path";
 import {
   PackStructure,
   PackDependencyResult,
@@ -11,12 +10,16 @@ import { logger } from "../logger";
 import { MementoError } from "../errors";
 import { PackagePaths } from "../packagePaths";
 import { IPackSource, LocalPackSource } from "./PackSource";
+import { FileSystemAdapter } from "../adapters/FileSystemAdapter";
+import { NodeFileSystemAdapter } from "../adapters/NodeFileSystemAdapter";
 
 export class PackRegistry {
   private sources: Map<string, IPackSource>;
   private packCache: Map<string, PackStructure>;
+  private fs: FileSystemAdapter;
 
-  constructor() {
+  constructor(fs?: FileSystemAdapter) {
+    this.fs = fs || new NodeFileSystemAdapter();
     this.sources = new Map();
     this.packCache = new Map();
     
@@ -29,8 +32,8 @@ export class PackRegistry {
    */
   private registerDefaultSources(): void {
     // Register built-in starter packs source
-    const starterPacksDir = path.join(PackagePaths.getTemplatesDir(), "starter-packs");
-    const localSource = new LocalPackSource(starterPacksDir);
+    const starterPacksDir = this.fs.join(PackagePaths.getTemplatesDir(), "starter-packs");
+    const localSource = new LocalPackSource(starterPacksDir, this.fs);
     this.sources.set('local', localSource);
     
     logger.debug('Registered default pack sources');

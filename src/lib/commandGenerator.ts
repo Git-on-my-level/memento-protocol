@@ -1,8 +1,6 @@
-import * as fs from "fs/promises";
-import * as path from "path";
-import { existsSync } from "fs";
+import { FileSystemAdapter } from "./adapters/FileSystemAdapter";
+import { NodeFileSystemAdapter } from "./adapters/NodeFileSystemAdapter";
 import { logger } from "./logger";
-import { ensureDirectory } from "./utils/filesystem";
 
 export interface CommandTemplate {
   name: string;
@@ -16,11 +14,13 @@ export class CommandGenerator {
   private projectRoot: string;
   private claudeDir: string;
   private commandsDir: string;
+  private fs: FileSystemAdapter;
 
-  constructor(projectRoot: string) {
+  constructor(projectRoot: string, fs?: FileSystemAdapter) {
     this.projectRoot = projectRoot;
-    this.claudeDir = path.join(projectRoot, ".claude");
-    this.commandsDir = path.join(this.claudeDir, "commands");
+    this.fs = fs || new NodeFileSystemAdapter();
+    this.claudeDir = this.fs.join(projectRoot, ".claude");
+    this.commandsDir = this.fs.join(this.claudeDir, "commands");
   }
 
   /**
@@ -49,8 +49,8 @@ export class CommandGenerator {
    * Ensure all required directories exist
    */
   private async ensureDirectories(): Promise<void> {
-    await ensureDirectory(this.claudeDir);
-    await ensureDirectory(this.commandsDir);
+    await this.fs.mkdir(this.claudeDir, { recursive: true });
+    await this.fs.mkdir(this.commandsDir, { recursive: true });
   }
 
   /**
@@ -143,7 +143,7 @@ I'll now operate according to the mode guidelines shown above.`,
     filePath: string,
     template: CommandTemplate
   ): Promise<void> {
-    const fullPath = path.join(this.commandsDir, filePath);
+    const fullPath = this.fs.join(this.commandsDir, filePath);
 
     // Create frontmatter with allowed tools and metadata
     const frontmatter = [
@@ -159,7 +159,7 @@ I'll now operate according to the mode guidelines shown above.`,
 
     const content = frontmatter + template.body;
 
-    await fs.writeFile(fullPath, content);
+    await this.fs.writeFile(fullPath, content);
     logger.debug(`Generated command: ${filePath}`);
   }
 
@@ -168,18 +168,9 @@ I'll now operate according to the mode guidelines shown above.`,
    */
   async areCommandsInstalled(): Promise<boolean> {
     try {
-      const ticketExists = await fs
-        .access(path.join(this.commandsDir, "ticket.md"))
-        .then(() => true)
-        .catch(() => false);
-      const modeExists = await fs
-        .access(path.join(this.commandsDir, "mode.md"))
-        .then(() => true)
-        .catch(() => false);
-      const mementoExists = await fs
-        .access(path.join(this.commandsDir, "memento.md"))
-        .then(() => true)
-        .catch(() => false);
+      const ticketExists = await this.fs.exists(this.fs.join(this.commandsDir, "ticket.md"));
+      const modeExists = await this.fs.exists(this.fs.join(this.commandsDir, "mode.md"));
+      const mementoExists = await this.fs.exists(this.fs.join(this.commandsDir, "memento.md"));
       return ticketExists && modeExists && mementoExists;
     } catch {
       return false;
@@ -191,7 +182,7 @@ I'll now operate according to the mode guidelines shown above.`,
    */
   async cleanup(): Promise<void> {
     try {
-      await fs.rm(this.commandsDir, { recursive: true, force: true });
+      await this.fs.rmdir(this.commandsDir);
       logger.info("Cleaned up Claude Code commands");
     } catch (error) {
       logger.warn(`Failed to cleanup commands: ${error}`);
@@ -211,8 +202,8 @@ I'll now operate according to the mode guidelines shown above.`,
     const missing: string[] = [];
 
     for (const scriptPath of requiredScripts) {
-      const fullPath = path.join(this.projectRoot, scriptPath);
-      if (!existsSync(fullPath)) {
+      const fullPath = this.fs.join(this.projectRoot, scriptPath);
+      if (!this.fs.existsSync(fullPath)) {
         missing.push(scriptPath);
       }
     }
