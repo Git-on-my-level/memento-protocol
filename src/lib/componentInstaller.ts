@@ -23,11 +23,13 @@ interface ComponentMetadata {
 
 
 export class ComponentInstaller {
+  private projectRoot: string;
   private dirManager: DirectoryManager;
   private templatesDir: string;
   private fs: FileSystemAdapter;
 
   constructor(projectRoot: string, fs?: FileSystemAdapter, templatesDir?: string) {
+    this.projectRoot = projectRoot;
     this.fs = fs || new NodeFileSystemAdapter();
     this.dirManager = new DirectoryManager(projectRoot, this.fs);
 
@@ -315,8 +317,7 @@ export class ComponentInstaller {
       
       // Validate destination path for security - ensure it stays within project bounds
       try {
-        // We'll use process.cwd() as the project root for validation
-        InputValidator.validateFilePath(destPath, process.cwd(), 'component destination path');
+        InputValidator.validateFilePath(destPath, this.projectRoot, 'component destination path');
       } catch (pathError) {
         throw new ComponentInstallError(
           type,

@@ -98,7 +98,14 @@ Multiple component types:
       await showMultipleMatches(core, matches, opts);
       
     } catch (error) {
-      throw error;
+      if (error instanceof InvalidComponentTypeError) {
+        logger.error(`Invalid component type: ${type}`);
+      } else if (error instanceof InvalidScopeError) {
+        logger.error(`Invalid source scope: ${opts.source}`);
+      } else {
+        logger.error(`Failed to add component:`, error);
+      }
+      process.exit(1);
     }
   });
 
@@ -276,16 +283,24 @@ async function installComponent(
   }
   logger.info('');
   
-  // Validate source path for security
+  // Validate source path for security, but exempt built-in components
   const projectRoot = process.cwd();
   try {
-    InputValidator.validateFilePath(component.path, projectRoot, 'source component path');
+    // Built-in components are exempt from project boundary validation
+    if (source !== 'builtin') {
+      InputValidator.validateFilePath(component.path, projectRoot, 'source component path');
+    } else {
+      // For built-in components, allow absolute paths and skip boundary checking
+      InputValidator.sanitizePath(component.path, undefined, 'source component path', true);
+    }
   } catch (validationError) {
     throw new ComponentInstallError(
       component.type,
       component.name,
       `Source path validation failed: ${validationError instanceof Error ? validationError.message : 'Invalid path'}`,
-      'Ensure component path is within the project boundaries'
+      source === 'builtin' 
+        ? 'Built-in component path is invalid' 
+        : 'Ensure component path is within the project boundaries'
     );
   }
   
@@ -313,8 +328,8 @@ async function installComponent(
   const targetScopeObj = targetScope === 'global' ? scopes.global : scopes.project;
   const scopePath = targetScopeObj.getPath();
   
-  // Validate scope path
-  const validatedScopePath = InputValidator.validateFilePath(scopePath, projectRoot, 'target scope path');
+  // Scope path is controlled by MementoCore, so we trust it but validate format
+  const validatedScopePath = InputValidator.sanitizePath(scopePath, undefined, 'target scope path', true);
   
   const targetDir = path.join(validatedScopePath, `${component.type}s`);
   const fileName = path.basename(component.path);

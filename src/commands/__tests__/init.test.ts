@@ -23,6 +23,9 @@ jest.mock("../../lib/logger", () => ({
     warn: jest.fn(),
     error: jest.fn(),
     space: jest.fn(),
+    progress: jest.fn(),
+    clearProgress: jest.fn(),
+    step: jest.fn(),
   },
 }));
 
@@ -410,8 +413,8 @@ describe("Init Command", () => {
 
       await initCommand.parseAsync(["node", "test", "--force", "--non-interactive"]);
 
-      expect(logger.info).toHaveBeenCalledWith(
-        "Initializing Memento Protocol..."
+      expect(logger.progress).toHaveBeenCalledWith(
+        "Initializing Memento Protocol directories"
       );
       expect(mockDirManager.initializeStructure).toHaveBeenCalled();
     });

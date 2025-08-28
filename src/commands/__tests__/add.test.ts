@@ -12,6 +12,9 @@ jest.mock('../../lib/logger', () => ({
     success: jest.fn(),
     error: jest.fn(),
     warn: jest.fn(),
+    progress: jest.fn(),
+    clearProgress: jest.fn(),
+    step: jest.fn(),
   }
 }));
 jest.mock('inquirer', () => ({

@@ -2,6 +2,46 @@ import { DirectoryManager } from '../directoryManager';
 import { createTestFileSystem } from '../testing';
 import { MemoryFileSystemAdapter } from '../adapters/MemoryFileSystemAdapter';
 
+jest.mock('../logger', () => ({
+  logger: {
+    info: jest.fn(),
+    success: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+    progress: jest.fn(),
+    clearProgress: jest.fn(),
+    step: jest.fn(),
+  },
+}));
+
+let mockFs: any;
+
+jest.mock('../utils/ResourceManager', () => ({
+  withFileOperations: jest.fn(async (callback) => callback()),
+  safeWriteFile: jest.fn(async (filePath, content) => {
+    // Use the test filesystem instance
+    const path = require('path');
+    await mockFs?.mkdir(path.dirname(filePath), { recursive: true });
+    await mockFs?.writeFile(filePath, content);
+  }),
+  safeCopyFile: jest.fn(async (src, dest) => {
+    // Use the test filesystem instance
+    const path = require('path');
+    const content = await mockFs?.readFile(src);
+    await mockFs?.mkdir(path.dirname(dest), { recursive: true });
+    await mockFs?.writeFile(dest, content);
+  }),
+  resourceManager: {
+    cleanup: jest.fn(),
+    ensureDirectoriesWithAdapter: jest.fn(async (dirs, fs) => {
+      for (const dir of dirs) {
+        await fs.mkdir(dir, { recursive: true });
+      }
+    }),
+  },
+}));
+
 describe('DirectoryManager', () => {
   let dirManager: DirectoryManager;
   let fs: MemoryFileSystemAdapter;
@@ -10,6 +50,7 @@ describe('DirectoryManager', () => {
 
   beforeEach(async () => {
     fs = await createTestFileSystem({});
+    mockFs = fs; // Set the mockFs for ResourceManager mocks
     dirManager = new DirectoryManager(mockProjectRoot, fs);
   });
 

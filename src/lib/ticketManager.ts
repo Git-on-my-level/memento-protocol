@@ -11,11 +11,13 @@ export interface TicketInfo {
 }
 
 export class TicketManager {
+  private projectRoot: string;
   private mementoDir: string;
   private ticketsDir: string;
   private fs: FileSystemAdapter;
 
   constructor(projectRoot: string, fs?: FileSystemAdapter) {
+    this.projectRoot = projectRoot;
     this.fs = fs || new NodeFileSystemAdapter();
     this.mementoDir = this.fs.join(projectRoot, '.memento');
     this.ticketsDir = this.fs.join(this.mementoDir, 'tickets');
@@ -78,7 +80,7 @@ export class TicketManager {
     
     // Validate ticket path for security
     try {
-      InputValidator.validateFilePath(ticketPath, process.cwd(), 'ticket file path');
+      InputValidator.validateFilePath(ticketPath, this.projectRoot, 'ticket file path');
     } catch (pathError) {
       throw new TicketError(
         'create', 

@@ -1,7 +1,6 @@
 import { Command } from 'commander';
 import { TicketManager, TicketStatus } from '../lib/ticketManager';
 import { logger } from '../lib/logger';
-import { TicketError } from '../lib/errors';
 import { InputValidator } from '../lib/validation/InputValidator';
 
 const ticketCommand = new Command('ticket')
@@ -50,7 +49,8 @@ ticketCommand
       logger.success(`Created ticket: ${validatedName}`);
       logger.info(`Location: ${ticketPath}`);
     } catch (error) {
-      throw error;
+      logger.error(`Failed to create ticket: ${error}`);
+      process.exit(1);
     }
   });
 
@@ -89,7 +89,8 @@ ticketCommand
         }
       });
     } catch (error) {
-      throw error;
+      logger.error(`Failed to list tickets: ${error}`);
+      process.exit(1);
     }
   });
 
@@ -103,17 +104,18 @@ ticketCommand
       // Validate and sanitize ticket name for security
       const validatedName = InputValidator.validateTicketName(name);
       
-      const ticketManager = new TicketManager(process.cwd());
-      
       // Validate status
       if (!['next', 'in-progress', 'done'].includes(options.to)) {
-        throw new TicketError('move', validatedName, `invalid status '${options.to}'`, 'Valid statuses are: next, in-progress, done. Example: memento ticket move <name> --to in-progress');
+        logger.error(`Invalid status: ${options.to}. Must be one of: next, in-progress, done`);
+        process.exit(1);
       }
       
+      const ticketManager = new TicketManager(process.cwd());
       await ticketManager.move(validatedName, options.to as TicketStatus);
       logger.success(`Moved ticket '${validatedName}' to ${options.to}`);
     } catch (error) {
-      throw error;
+      logger.error(`Failed to move ticket: ${error}`);
+      process.exit(1);
     }
   });
 
@@ -130,7 +132,8 @@ ticketCommand
       await ticketManager.delete(validatedName);
       logger.success(`Deleted ticket: ${validatedName}`);
     } catch (error) {
-      throw error;
+      logger.error(`Failed to delete ticket: ${error}`);
+      process.exit(1);
     }
   });
 

@@ -122,7 +122,7 @@ export class InputValidator {
    * Validate and sanitize file paths to prevent directory traversal
    * Ensures paths stay within project boundaries
    */
-  static sanitizePath(inputPath: string, baseDir?: string, description = 'path'): string {
+  static sanitizePath(inputPath: string, baseDir?: string, description = 'path', allowAbsolute = false): string {
     if (!inputPath || typeof inputPath !== 'string') {
       throw new ValidationError(
         `${description} is required and must be a string`,
@@ -186,8 +186,8 @@ export class InputValidator {
       }
     }
 
-    // Block absolute paths when relative is expected
-    if (path.isAbsolute(cleanPath) && !baseDir) {
+    // Block absolute paths when relative is expected (unless explicitly allowed)
+    if (path.isAbsolute(cleanPath) && !baseDir && !allowAbsolute) {
       throw new ValidationError(
         `${description} should be relative, not absolute: "${inputPath}"`,
         'filePath',
@@ -199,38 +199,69 @@ export class InputValidator {
   }
 
   /**
-   * Validate ticket names with same rules as component names but different length limit
+   * Validate ticket names - more lenient than component names to allow natural language
    */
   static validateTicketName(name: string): string {
     if (!name || typeof name !== 'string') {
       throw new ValidationError(
         'Ticket name is required and must be a string',
         'ticketName',
-        'Provide a ticket name using letters, numbers, hyphens, and underscores'
+        'Provide a ticket name describing your task or feature'
       );
     }
 
-    if (name.length > this.MAX_TICKET_NAME_LENGTH) {
+    const trimmed = name.trim();
+    if (trimmed.length === 0) {
       throw new ValidationError(
-        `Ticket name is too long (${name.length} chars, max ${this.MAX_TICKET_NAME_LENGTH})`,
+        'Ticket name cannot be empty',
+        'ticketName',
+        'Provide a descriptive ticket name'
+      );
+    }
+
+    if (trimmed.length > this.MAX_TICKET_NAME_LENGTH) {
+      throw new ValidationError(
+        `Ticket name is too long (${trimmed.length} chars, max ${this.MAX_TICKET_NAME_LENGTH})`,
         'ticketName',
         `Use a shorter ticket name (max ${this.MAX_TICKET_NAME_LENGTH} characters)`
       );
     }
 
-    // Use component name validation logic
-    const sanitized = this.validateComponentName(name, 'ticket');
-    
-    // Additional ticket-specific validation
-    if (name.startsWith('-') || name.endsWith('-')) {
+    // Check for dangerous patterns but allow spaces and more natural language
+    this.checkDangerousPatterns(trimmed, 'ticket name');
+
+    // Check for reserved names (case-insensitive, excluding file extensions)
+    const lowerName = trimmed.toLowerCase();
+    if (this.RESERVED_NAMES.has(lowerName)) {
       throw new ValidationError(
-        `Ticket name cannot start or end with hyphens: "${name}"`,
+        `"${trimmed}" is a reserved name and cannot be used for tickets`,
         'ticketName',
-        'Remove hyphens from the beginning or end of the ticket name'
+        `Choose a different ticket name (e.g., "Feature: ${trimmed}", "Task: ${trimmed}")`
       );
     }
 
-    return sanitized;
+    // Ticket names can contain spaces, letters, numbers, and basic punctuation
+    // But should not contain filesystem-unsafe characters
+    const invalidChars = /[<>:"|?*\x00-\x1f\x80-\x9f]/g;
+    if (invalidChars.test(trimmed)) {
+      throw new ValidationError(
+        `Ticket name contains invalid characters: "${trimmed}"`,
+        'ticketName',
+        'Remove special characters like <, >, :, ", |, ?, * from the ticket name'
+      );
+    }
+
+    // Additional safety checks
+    if (trimmed.includes('..')) {
+      throw new ValidationError(
+        `Ticket name cannot contain consecutive dots: "${trimmed}"`,
+        'ticketName',
+        'Replace consecutive dots with single dots or remove them'
+      );
+    }
+
+    // Return the sanitized name (preserve original casing and spaces)
+    return trimmed;
   }
 
   /**

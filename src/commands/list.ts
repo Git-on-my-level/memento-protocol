@@ -82,7 +82,8 @@ Status indicators:
         });
       }
     } catch (error) {
-      throw error;
+      logger.error('Failed to list components:', error);
+      process.exit(1);
     }
   });
 

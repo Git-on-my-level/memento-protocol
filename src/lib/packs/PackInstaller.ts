@@ -13,10 +13,10 @@ import {
   ProjectPackManifest,
 } from "../types/packs";
 import { logger } from "../logger";
-import { MementoError, PackError, ComponentInstallError } from "../errors";
+import { PackError, ComponentInstallError } from "../errors";
 import { DirectoryManager } from "../directoryManager";
 import { IPackSource } from "./PackSource";
-import { withTempDirectory, withFileOperations, safeCopyFile, safeWriteFile, resourceManager } from "../utils/ResourceManager";
+import { withFileOperations, safeCopyFile, safeWriteFile, resourceManager } from "../utils/ResourceManager";
 
 export class PackInstaller {
   private directoryManager: DirectoryManager;

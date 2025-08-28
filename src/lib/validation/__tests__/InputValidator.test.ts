@@ -63,9 +63,9 @@ describe('InputValidator', () => {
       expect(InputValidator.validateTicketName('feature-request')).toBe('feature-request');
     });
 
-    test('should reject tickets starting or ending with hyphens', () => {
-      expect(() => InputValidator.validateTicketName('-invalid')).toThrow(ValidationError);
-      expect(() => InputValidator.validateTicketName('invalid-')).toThrow(ValidationError);
+    test('should allow tickets with hyphens', () => {
+      expect(InputValidator.validateTicketName('bug-fix-123')).toBe('bug-fix-123');
+      expect(InputValidator.validateTicketName('feature-request-auth')).toBe('feature-request-auth');
     });
   });
 
