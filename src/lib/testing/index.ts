@@ -64,3 +64,40 @@ export {
   createSampleTicket,
   createSampleMode
 } from './fileSystemTestUtils';
+
+// Simple test data factories
+export {
+  createTestComponent,
+  createTestPackManifest,
+  createTestPackStructure,
+  createTestConfig,
+  createTestTicket,
+  createTestComponents
+} from './testData';
+
+// Simple mock helpers
+export {
+  createMockLogger,
+  createMockInquirer,
+  createMockFs,
+  createMockExec,
+  createMockCommand,
+  resetAllMocks
+} from './testMocks';
+
+// Simple error testing helpers
+export {
+  expectError,
+  expectSyncError,
+  testErrors,
+  testErrorHandling
+} from './testErrors';
+
+// Simple test utilities
+export {
+  waitFor,
+  suppressConsole,
+  withTestEnv,
+  withEnvVars,
+  testScenarios
+} from './testHelpers';
