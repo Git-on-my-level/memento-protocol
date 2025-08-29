@@ -76,6 +76,17 @@ export class InvalidComponentTypeError extends MementoError {
   }
 }
 
+export class InvalidScopeError extends MementoError {
+  constructor(providedScope: string, validScopes: string[] = ['builtin', 'global', 'project']) {
+    super(
+      `Invalid scope: '${providedScope}'`,
+      "INVALID_SCOPE",
+      `Valid scopes are: ${validScopes.join(', ')}. Example: memento add mode <name> --source builtin`
+    );
+    this.name = "InvalidScopeError";
+  }
+}
+
 export class TicketError extends MementoError {
   constructor(operation: string, ticketName: string, reason: string, suggestion?: string) {
     const defaultSuggestion = operation === 'create' && reason.includes('exists')
