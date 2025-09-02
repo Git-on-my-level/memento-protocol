@@ -16,6 +16,7 @@ import { logger } from "../logger";
 import { MementoError } from "../errors";
 import { DirectoryManager } from "../directoryManager";
 import { IPackSource } from "./PackSource";
+import { ToolDependencyChecker, ToolDependency } from "./ToolDependencyChecker";
 
 export class PackInstaller {
   private directoryManager: DirectoryManager;
@@ -23,6 +24,7 @@ export class PackInstaller {
   private mementoDir: string;
   private claudeDir: string;
   private fs: FileSystemAdapter;
+  private toolChecker: ToolDependencyChecker;
 
   constructor(projectRoot: string, fs?: FileSystemAdapter) {
     this.fs = fs || new NodeFileSystemAdapter();
@@ -30,6 +32,7 @@ export class PackInstaller {
     this.directoryManager = new DirectoryManager(projectRoot);
     this.mementoDir = this.fs.join(projectRoot, '.memento');
     this.claudeDir = this.fs.join(projectRoot, '.claude');
+    this.toolChecker = new ToolDependencyChecker();
   }
 
   /**
@@ -59,6 +62,9 @@ export class PackInstaller {
         };
       }
     }
+
+    // Check tool dependencies and provide installation guidance
+    await this.checkAndReportToolDependencies(manifest, options);
 
     // Track installation results
     const installed = { modes: [] as string[], workflows: [] as string[], agents: [] as string[], hooks: [] as string[] };
@@ -393,5 +399,89 @@ export class PackInstaller {
     for (const dir of packDirs) {
       await this.fs.mkdir(dir, { recursive: true });
     }
+  }
+
+  /**
+   * Check tool dependencies and provide installation guidance
+   */
+  private async checkAndReportToolDependencies(
+    manifest: PackStructure['manifest'],
+    options: PackInstallOptions
+  ): Promise<void> {
+    // Extract tool dependencies from manifest
+    const toolDependencies = this.extractToolDependencies(manifest);
+    
+    if (toolDependencies.length === 0) {
+      return;
+    }
+
+    logger.debug(`Checking ${toolDependencies.length} tool dependencies for pack '${manifest.name}'`);
+
+    try {
+      const results = await this.toolChecker.checkToolDependencies(
+        toolDependencies,
+        { interactive: options.interactive }
+      );
+
+      const guidance = this.toolChecker.generateInstallationGuidance(results);
+      
+      // Report findings
+      if (guidance.warningMessage) {
+        if (guidance.required.length > 0) {
+          logger.warn(guidance.warningMessage);
+        } else {
+          logger.info(guidance.warningMessage);
+        }
+      }
+
+      // Show installation steps if any tools need installation
+      if (guidance.installationSteps.length > 0) {
+        logger.info('Tool installation commands:');
+        guidance.installationSteps.forEach(step => {
+          if (step.startsWith('#')) {
+            logger.info(step);
+          } else if (step.trim()) {
+            logger.info(`  ${step}`);
+          }
+        });
+      }
+
+      // Report available tools
+      const availableTools = results.filter(r => r.result.available);
+      if (availableTools.length > 0) {
+        logger.debug(
+          `Available tools: ${availableTools
+            .map(r => `${r.tool.name}${r.result.version ? ` (${r.result.version})` : ''}`)
+            .join(', ')}`
+        );
+      }
+
+    } catch (error) {
+      logger.debug(`Error checking tool dependencies: ${error}`);
+      // Don't fail installation due to tool checking errors
+    }
+  }
+
+  /**
+   * Extract tool dependencies from pack manifest
+   */
+  private extractToolDependencies(manifest: PackStructure['manifest']): ToolDependency[] {
+    const toolDependencies: ToolDependency[] = [];
+    
+    // Check if manifest has dependencies.tools field (extended manifest structure)
+    const manifestAny = manifest as any;
+    if (manifestAny.dependencies?.tools) {
+      for (const tool of manifestAny.dependencies.tools) {
+        toolDependencies.push({
+          name: tool.name,
+          version: tool.version,
+          required: tool.required !== false, // Default to required
+          installCommand: tool.installCommand,
+          description: tool.description,
+        });
+      }
+    }
+
+    return toolDependencies;
   }
 }
