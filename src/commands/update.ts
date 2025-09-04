@@ -2,6 +2,7 @@ import { Command } from "commander";
 import { UpdateManager } from "../lib/updateManager";
 import { logger } from "../lib/logger";
 import { DirectoryManager } from "../lib/directoryManager";
+import { UPDATE_ERROR_MESSAGES } from "../lib/errorMessages";
 
 export function createUpdateCommand(): Command {
   const cmd = new Command("update");
@@ -21,10 +22,7 @@ export function createUpdateCommand(): Command {
         // Check if zcc is initialized
         const dirManager = new DirectoryManager(projectRoot);
         if (!dirManager.isInitialized()) {
-          throw new Error(
-            "zcc is not initialized in this project.\n" +
-            "Run 'zcc init' to initialize zcc first."
-          );
+          throw new Error(UPDATE_ERROR_MESSAGES.NOT_INITIALIZED());
         }
         
         const updateManager = new UpdateManager(projectRoot);
@@ -61,29 +59,17 @@ export function createUpdateCommand(): Command {
           const parts = component.split(":");
           
           if (parts.length !== 2) {
-            throw new Error(
-              `Invalid component format: '${component}'.\n` +
-              'Expected format: "mode:name" or "workflow:name"\n' +
-              'Examples: mode:architect, workflow:review'
-            );
+            throw new Error(UPDATE_ERROR_MESSAGES.INVALID_COMPONENT_FORMAT(component));
           }
           
           const [type, name] = parts;
           
           if (!["mode", "workflow"].includes(type)) {
-            throw new Error(
-              `Invalid component type: '${type}'.\n` +
-              'Valid types are: mode, workflow\n' +
-              'Example: zcc update mode:architect'
-            );
+            throw new Error(UPDATE_ERROR_MESSAGES.INVALID_COMPONENT_TYPE(type));
           }
           
           if (!name || name.trim() === '') {
-            throw new Error(
-              `Component name cannot be empty.\n` +
-              'Please provide a valid component name.\n' +
-              'Example: zcc update mode:architect'
-            );
+            throw new Error(UPDATE_ERROR_MESSAGES.EMPTY_COMPONENT_NAME());
           }
 
           logger.info(`Updating ${type} '${name}'...`);
@@ -119,38 +105,23 @@ export function createUpdateCommand(): Command {
         // Check if zcc is initialized
         const dirManager = new DirectoryManager(projectRoot);
         if (!dirManager.isInitialized()) {
-          throw new Error(
-            "zcc is not initialized in this project.\n" +
-            "Run 'zcc init' to initialize zcc first."
-          );
+          throw new Error(UPDATE_ERROR_MESSAGES.NOT_INITIALIZED());
         }
         
         const parts = component.split(":");
         
         if (parts.length !== 2) {
-          throw new Error(
-            `Invalid component format: '${component}'.\n` +
-            'Expected format: "mode:name" or "workflow:name"\n' +
-            'Examples: mode:architect, workflow:review'
-          );
+          throw new Error(UPDATE_ERROR_MESSAGES.INVALID_COMPONENT_FORMAT(component));
         }
         
         const [type, name] = parts;
         
         if (!["mode", "workflow"].includes(type)) {
-          throw new Error(
-            `Invalid component type: '${type}'.\n` +
-            'Valid types are: mode, workflow\n' +
-            'Example: zcc update diff mode:architect'
-          );
+          throw new Error(UPDATE_ERROR_MESSAGES.INVALID_COMPONENT_TYPE_DIFF(type));
         }
         
         if (!name || name.trim() === '') {
-          throw new Error(
-            `Component name cannot be empty.\n` +
-            'Please provide a valid component name.\n' +
-            'Example: zcc update diff mode:architect'
-          );
+          throw new Error(UPDATE_ERROR_MESSAGES.EMPTY_COMPONENT_NAME_DIFF());
         }
         
         const updateManager = new UpdateManager(projectRoot);
