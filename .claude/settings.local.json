@@ -43,5 +43,61 @@
       "WebFetch(domain:docs.anthropic.com)"
     ],
     "deny": []
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.memento/hooks/scripts/acronym-expander.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.memento/hooks/scripts/memento-routing.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.zcc/hooks/scripts/zcc-routing.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.memento/hooks/scripts/git-context-loader.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.memento/hooks/scripts/project-overview.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
   }
 }
