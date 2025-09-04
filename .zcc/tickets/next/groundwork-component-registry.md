@@ -68,5 +68,11 @@ This is the foundation that enables:
 
 Without this, starter packs would just be "install these 10 things manually" which defeats the purpose.
 
+## Related Work
+- GitHub Issue #53: Implement Registry Pattern for Components, Hooks, and Future Plugin Architecture
+  - This ticket focuses on the component source/fetching infrastructure
+  - Issue #53 focuses on the internal registry pattern and type system
+  - Both are complementary and can be worked on in parallel
+
 ---
 Created: 2025-08-27
