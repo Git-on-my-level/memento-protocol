@@ -34,10 +34,8 @@ export class ComponentManager {
   private installer: ComponentInstaller;
   private builtinProvider: BuiltinComponentProvider;
   private fs: FileSystemAdapter;
-  private projectRoot: string;
 
   constructor(projectRoot: string, fs?: FileSystemAdapter) {
-    this.projectRoot = projectRoot;
     this.fs = fs || new NodeFileSystemAdapter();
     this.typeRegistry = ComponentTypeRegistry.getInstance(this.fs);
     this.zccCore = new ZccCore(projectRoot, this.fs);
