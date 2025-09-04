@@ -18,7 +18,7 @@ class AcronymManager {
 
   constructor(projectRoot: string, fsAdapter?: FileSystemAdapter) {
     this.fs = fsAdapter || new NodeFileSystemAdapter();
-    this.configPath = this.fs.join(projectRoot, '.memento', 'acronyms.json');
+    this.configPath = this.fs.join(projectRoot, '.zcc', 'acronyms.json');
     this.config = this.loadConfig();
   }
 

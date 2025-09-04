@@ -1,7 +1,7 @@
 ---
 name: style-system
 description: A comprehensive approach to implementing consistent styling systems in React applications using CSS modules, styled components, or Tailwind CSS.
-author: memento-protocol
+author: zcc
 version: 1.0.0
 tags: [css, styling, design-system, react, frontend, tailwind, styled-components]
 dependencies: []

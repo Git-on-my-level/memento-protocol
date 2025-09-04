@@ -1,12 +1,12 @@
 import * as yaml from 'js-yaml';
-import { MementoScope } from '../MementoScope';
-import { MementoConfig } from '../configSchema';
+import { ZccScope } from '../ZccScope';
+import { ZccConfig } from '../configSchema';
 import { createTestFileSystem, MemoryFileSystemAdapter } from '../testing';
 
-describe('MementoScope', () => {
+describe('ZccScope', () => {
   let testDir: string;
   let fs: MemoryFileSystemAdapter;
-  let mementoScope: MementoScope;
+  let mementoScope: ZccScope;
 
   beforeEach(async () => {
     // Create in-memory filesystem for each test
@@ -14,7 +14,7 @@ describe('MementoScope', () => {
     fs = await createTestFileSystem({});
     // Create the directory explicitly
     await fs.mkdir(testDir, { recursive: true });
-    mementoScope = new MementoScope(testDir, false, fs);
+    mementoScope = new ZccScope(testDir, false, fs);
   });
 
   describe('constructor and basic properties', () => {
@@ -24,7 +24,7 @@ describe('MementoScope', () => {
     });
 
     it('should create a global scope correctly', () => {
-      const globalScope = new MementoScope('/tmp/global', true, fs);
+      const globalScope = new ZccScope('/tmp/global', true, fs);
       expect(globalScope.getIsGlobal()).toBe(true);
     });
   });
@@ -47,7 +47,7 @@ describe('MementoScope', () => {
     });
 
     it('should save and load configuration correctly', async () => {
-      const testConfig: MementoConfig = {
+      const testConfig: ZccConfig = {
         defaultMode: 'architect',
         preferredWorkflows: ['review', 'refactor'],
         ui: {
@@ -68,7 +68,7 @@ describe('MementoScope', () => {
     });
 
     it('should cache configuration after first load', async () => {
-      const testConfig: MementoConfig = {
+      const testConfig: ZccConfig = {
         defaultMode: 'engineer'
       };
 
@@ -88,8 +88,8 @@ describe('MementoScope', () => {
     });
 
     it('should invalidate cache after saving', async () => {
-      const config1: MementoConfig = { defaultMode: 'architect' };
-      const config2: MementoConfig = { defaultMode: 'engineer' };
+      const config1: ZccConfig = { defaultMode: 'architect' };
+      const config2: ZccConfig = { defaultMode: 'engineer' };
 
       await mementoScope.saveConfig(config1);
       const loaded1 = await mementoScope.getConfig();
@@ -109,9 +109,9 @@ describe('MementoScope', () => {
 
     it('should create directory when saving if it does not exist', async () => {
       const newDir = fs.join(testDir, 'nested', 'deep');
-      const nestedScope = new MementoScope(newDir, false, fs);
+      const nestedScope = new ZccScope(newDir, false, fs);
       
-      const testConfig: MementoConfig = { defaultMode: 'test' };
+      const testConfig: ZccConfig = { defaultMode: 'test' };
       await nestedScope.saveConfig(testConfig);
 
       expect(fs.existsSync(newDir)).toBe(true);
@@ -293,7 +293,7 @@ describe('MementoScope', () => {
   describe('clearCache()', () => {
     it('should clear both config and component caches', async () => {
       // Set up config and components
-      const testConfig: MementoConfig = { defaultMode: 'architect' };
+      const testConfig: ZccConfig = { defaultMode: 'architect' };
       await mementoScope.saveConfig(testConfig);
       
       await fs.mkdir(fs.join(testDir, 'modes'), { recursive: true });
@@ -326,7 +326,7 @@ describe('MementoScope', () => {
       if (fs.existsSync(testDir)) {
         await fs.rmdir(testDir);
       }
-      mementoScope = new MementoScope(testDir, false, fs);
+      mementoScope = new ZccScope(testDir, false, fs);
     });
 
     it('should create scope directory and structure', async () => {
@@ -361,7 +361,7 @@ describe('MementoScope', () => {
     it('should not overwrite existing config', async () => {
       // Create scope manually with custom config
       await fs.mkdir(testDir, { recursive: true });
-      const existingConfig: MementoConfig = {
+      const existingConfig: ZccConfig = {
         defaultMode: 'existing'
       };
       await mementoScope.saveConfig(existingConfig);
@@ -386,7 +386,7 @@ describe('MementoScope', () => {
         version: '1.0.0'
       }));
 
-      const testScope = new MementoScope(fs.join(testDir, 'test'), false, fs);
+      const testScope = new ZccScope(fs.join(testDir, 'test'), false, fs);
       const metadata = await (testScope as any).extractMetadata(yamlPath);
       
       expect(metadata).toEqual({
@@ -399,7 +399,7 @@ describe('MementoScope', () => {
       const txtPath = fs.join(testDir, 'test', 'readme.txt');
       await fs.writeFile(txtPath, 'Hello world');
 
-      const testScope = new MementoScope(fs.join(testDir, 'test'), false, fs);
+      const testScope = new ZccScope(fs.join(testDir, 'test'), false, fs);
       const metadata = await (testScope as any).extractMetadata(txtPath);
       
       expect(metadata.extension).toBe('.txt');
@@ -410,7 +410,7 @@ describe('MementoScope', () => {
     it('should handle file reading errors gracefully', async () => {
       const nonExistentPath = fs.join(testDir, 'test', 'nonexistent.md');
       
-      const testScope = new MementoScope(fs.join(testDir, 'test'), false, fs);
+      const testScope = new ZccScope(fs.join(testDir, 'test'), false, fs);
       const metadata = await (testScope as any).extractMetadata(nonExistentPath);
       
       expect(metadata).toEqual({});

@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { MementoCore, ComponentSearchResult } from '../lib/MementoCore';
-import { ComponentInfo } from '../lib/MementoScope';
+import { ZccCore, ComponentSearchResult } from '../lib/ZccCore';
+import { ComponentInfo } from '../lib/ZccScope';
 import { logger } from '../lib/logger';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
@@ -9,15 +9,15 @@ import * as path from 'path';
 import { ensureDirectorySync } from '../lib/utils/filesystem';
 
 export const addCommand = new Command('add')
-  .description('Add components to your Memento Protocol setup')
+  .description('Add components to your zcc setup')
   .argument('<type>', 'Component type (mode, workflow, agent, script, hook, command, template)')
   .argument('[name]', 'Component name (supports fuzzy matching and interactive selection)')
   .option('-s, --source <scope>', 'Install from specific scope (builtin, global)', 'builtin')
   .option('-f, --force', 'Force installation even if component already exists')
-  .option('--global', 'Install to global scope (~/.memento) instead of project')
+  .option('--global', 'Install to global scope (~/.zcc) instead of project')
   .action(async (type: string, name?: string, options?: any) => {
     try {
-      const core = new MementoCore(process.cwd());
+      const core = new ZccCore(process.cwd());
       const opts = options || {};
       
       // Validate component type
@@ -75,7 +75,7 @@ export const addCommand = new Command('add')
  * Show interactive selection of all available components of a type
  */
 async function showInteractiveSelection(
-  core: MementoCore, 
+  core: ZccCore, 
   type: ComponentInfo['type'], 
   opts: any
 ): Promise<void> {
@@ -140,7 +140,7 @@ async function showInteractiveSelection(
  * Handle case where no matches were found
  */
 async function handleNoMatches(
-  core: MementoCore,
+  core: ZccCore,
   query: string,
   type: ComponentInfo['type']
 ): Promise<void> {
@@ -156,11 +156,11 @@ async function handleNoMatches(
       logger.info(`  ${chalk.cyan(suggestion)}`);
     }
     logger.info('');
-    logger.info(`Try: ${chalk.green(`memento add ${type} ${suggestions[0]}`)}`);
+    logger.info(`Try: ${chalk.green(`zcc add ${type} ${suggestions[0]}`)}`);
   } else {
     logger.info('');
     logger.info(`To see all available ${type}s:`);
-    logger.info(`  ${chalk.green(`memento list --type ${type}`)}`);
+    logger.info(`  ${chalk.green(`zcc list --type ${type}`)}`);
   }
 }
 
@@ -168,7 +168,7 @@ async function handleNoMatches(
  * Show multiple matches for user to choose from
  */
 async function showMultipleMatches(
-  core: MementoCore,
+  core: ZccCore,
   matches: ComponentSearchResult[],
   opts: any
 ): Promise<void> {
@@ -204,7 +204,7 @@ async function showMultipleMatches(
  * Install a component to the appropriate scope
  */
 async function installComponent(
-  core: MementoCore,
+  core: ZccCore,
   match: ComponentSearchResult,
   opts: any
 ): Promise<void> {

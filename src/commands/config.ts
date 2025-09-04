@@ -3,7 +3,7 @@ import { ConfigManager } from '../lib/configManager';
 import { logger } from '../lib/logger';
 
 const configCommand = new Command('config')
-  .description('Manage Memento configuration');
+  .description('Manage ZCC configuration');
 
 // Get subcommand
 configCommand

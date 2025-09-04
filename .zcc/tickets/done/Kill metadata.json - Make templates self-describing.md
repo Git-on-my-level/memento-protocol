@@ -9,7 +9,7 @@ Currently, component metadata is duplicated in templates/metadata.json and must 
 name: architect
 description: System design and architecture focus  
 version: 1.0.0
-author: memento-protocol
+author: zcc
 tags: [planning, architecture, design]
 ---
 # Architect Mode

@@ -6,30 +6,30 @@ import { PackagePaths } from "./packagePaths";
 
 export class DirectoryManager {
   private projectRoot: string;
-  private mementoDir: string;
+  private zccDir: string;
   private claudeDir: string;
   private fs: FileSystemAdapter;
 
   constructor(projectRoot: string, fs?: FileSystemAdapter) {
     this.projectRoot = projectRoot;
     this.fs = fs || new NodeFileSystemAdapter();
-    this.mementoDir = this.fs.join(projectRoot, ".memento");
+    this.zccDir = this.fs.join(projectRoot, ".zcc");
     this.claudeDir = this.fs.join(projectRoot, ".claude");
   }
 
   /**
-   * Check if Memento Protocol is already initialized
+   * Check if zcc is already initialized
    */
   isInitialized(): boolean {
-    return this.fs.existsSync(this.mementoDir);
+    return this.fs.existsSync(this.zccDir);
   }
 
   /**
-   * Initialize the .memento directory structure
+   * Initialize the .zcc directory structure
    *
    * CRITICAL SAFETY NOTE: This method MUST NEVER delete existing user data!
    * - Only create directories that don't exist
-   * - Never use fs.rm, fs.rmdir, or fs.unlink on .memento contents
+   * - Never use fs.rm, fs.rmdir, or fs.unlink on .zcc contents
    * - Never overwrite existing custom modes, workflows, or tickets
    * - The { recursive: true } option in fs.mkdir is safe - it won't overwrite existing dirs
    *
@@ -38,12 +38,12 @@ export class DirectoryManager {
    */
   async initializeStructure(): Promise<void> {
     const directories = [
-      this.mementoDir,
-      this.fs.join(this.mementoDir, "modes"),
-      this.fs.join(this.mementoDir, "workflows"),
-      this.fs.join(this.mementoDir, "integrations"),
-      this.fs.join(this.mementoDir, "scripts"),
-      this.fs.join(this.mementoDir, "tickets"),
+      this.zccDir,
+      this.fs.join(this.zccDir, "modes"),
+      this.fs.join(this.zccDir, "workflows"),
+      this.fs.join(this.zccDir, "integrations"),
+      this.fs.join(this.zccDir, "scripts"),
+      this.fs.join(this.zccDir, "tickets"),
       this.claudeDir,
       this.fs.join(this.claudeDir, "agents"),
     ];
@@ -63,7 +63,7 @@ export class DirectoryManager {
     }
 
     // Create a manifest file to track installed components
-    const manifestPath = this.fs.join(this.mementoDir, "manifest.json");
+    const manifestPath = this.fs.join(this.zccDir, "manifest.json");
     if (!this.fs.existsSync(manifestPath)) {
       const manifest = {
         version: "1.0.0",
@@ -98,7 +98,7 @@ export class DirectoryManager {
     const missing: string[] = [];
 
     for (const dir of requiredDirs) {
-      const fullPath = this.fs.join(this.mementoDir, dir);
+      const fullPath = this.fs.join(this.zccDir, dir);
       if (!this.fs.existsSync(fullPath)) {
         missing.push(dir);
       }
@@ -112,7 +112,7 @@ export class DirectoryManager {
     }
 
     // Check for manifest file
-    const manifestPath = this.fs.join(this.mementoDir, "manifest.json");
+    const manifestPath = this.fs.join(this.zccDir, "manifest.json");
     if (!this.fs.existsSync(manifestPath)) {
       missing.push("manifest.json");
     }
@@ -124,11 +124,11 @@ export class DirectoryManager {
   }
 
   /**
-   * Ensure .gitignore includes .memento directory
+   * Ensure .gitignore includes .zcc directory
    */
   async ensureGitignore(): Promise<void> {
     const gitignorePath = this.fs.join(this.projectRoot, ".gitignore");
-    const mementoEntry = ".memento/";
+    const zccEntry = ".zcc/";
 
     let gitignoreContent = "";
 
@@ -137,30 +137,30 @@ export class DirectoryManager {
       gitignoreContent = await this.fs.readFile(gitignorePath, "utf-8") as string;
     }
 
-    // Check if .memento is already in .gitignore
+    // Check if .zcc is already in .gitignore
     const lines = gitignoreContent.split("\n");
-    const hasMementoEntry = lines.some(
+    const hasZccEntry = lines.some(
       (line) =>
-        line.trim() === ".memento" ||
-        line.trim() === ".memento/" ||
-        line.trim() === "/.memento" ||
-        line.trim() === "/.memento/"
+        line.trim() === ".zcc" ||
+        line.trim() === ".zcc/" ||
+        line.trim() === "/.zcc" ||
+        line.trim() === "/.zcc/"
     );
 
-    if (!hasMementoEntry) {
-      // Add .memento entry
+    if (!hasZccEntry) {
+      // Add .zcc entry
       if (gitignoreContent && !gitignoreContent.endsWith("\n")) {
         gitignoreContent += "\n";
       }
 
       // Add a comment if this is the first entry
       if (!gitignoreContent.trim()) {
-        gitignoreContent += "# Memento Protocol\n";
+        gitignoreContent += "# ZCC (Memento Protocol)\n";
       } else {
-        gitignoreContent += "\n# Memento Protocol\n";
+        gitignoreContent += "\n# ZCC (Memento Protocol)\n";
       }
 
-      gitignoreContent += mementoEntry + "\n";
+      gitignoreContent += zccEntry + "\n";
 
       await this.fs.writeFile(gitignorePath, gitignoreContent);
     }
@@ -176,21 +176,21 @@ export class DirectoryManager {
     if (type === "agents") {
       return this.fs.join(this.claudeDir, "agents", `${name}.md`);
     }
-    return this.fs.join(this.mementoDir, type, `${name}.md`);
+    return this.fs.join(this.zccDir, type, `${name}.md`);
   }
 
   /**
    * Get the manifest data
    */
   async getManifest(): Promise<any> {
-    const manifestPath = this.fs.join(this.mementoDir, "manifest.json");
+    const manifestPath = this.fs.join(this.zccDir, "manifest.json");
 
     if (!this.fs.existsSync(manifestPath)) {
       throw new Error(
-        `Memento Protocol is not initialized in this project.\n\n` +
+        `zcc is not initialized in this project.\n\n` +
           `To fix this, run:\n` +
-          `  npx memento-protocol init\n\n` +
-          `This will create the necessary .memento directory structure and manifest file.`
+          `  npx zcc init\n\n` +
+          `This will create the necessary .zcc directory structure and manifest file.`
       );
     }
 
@@ -202,18 +202,18 @@ export class DirectoryManager {
    * Update the manifest data
    */
   async updateManifest(manifest: any): Promise<void> {
-    const manifestPath = this.fs.join(this.mementoDir, "manifest.json");
+    const manifestPath = this.fs.join(this.zccDir, "manifest.json");
     await this.fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
   }
 
   /**
-   * Copy essential scripts from templates to .memento/scripts/
+   * Copy essential scripts from templates to .zcc/scripts/
    * These scripts are required for custom commands to work properly
    */
   private async copyEssentialScripts(): Promise<void> {
     const templatesDir = PackagePaths.getTemplatesDir();
     const templateScriptsDir = this.fs.join(templatesDir, "scripts");
-    const mementoScriptsDir = this.fs.join(this.mementoDir, "scripts");
+    const zccScriptsDir = this.fs.join(this.zccDir, "scripts");
 
     // Check if template scripts directory exists
     if (!this.fs.existsSync(templateScriptsDir)) {
@@ -229,7 +229,7 @@ export class DirectoryManager {
 
       for (const scriptFile of scriptFiles) {
         const sourcePath = this.fs.join(templateScriptsDir, scriptFile);
-        const destPath = this.fs.join(mementoScriptsDir, scriptFile);
+        const destPath = this.fs.join(zccScriptsDir, scriptFile);
 
         // Only copy if the destination doesn't exist (don't overwrite user modifications)
         if (!this.fs.existsSync(destPath)) {

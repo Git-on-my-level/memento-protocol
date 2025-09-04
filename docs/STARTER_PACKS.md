@@ -50,7 +50,7 @@ The easiest way to get started:
 
 ```bash
 # Shows available packs and lets you choose
-npx memento-protocol init --starter-pack
+npx zcc init --starter-pack
 ```
 
 This will:
@@ -65,7 +65,7 @@ If you know which pack you want:
 
 ```bash
 # Install specific pack directly
-npx memento-protocol init --starter-pack frontend-react
+npx zcc init --starter-pack frontend-react
 ```
 
 ### Non-Interactive Mode
@@ -74,7 +74,7 @@ For scripts and automation:
 
 ```bash
 # Silent installation
-npx memento-protocol init --starter-pack frontend-react --non-interactive --force
+npx zcc init --starter-pack frontend-react --non-interactive --force
 ```
 
 ### Adding to Existing Project
@@ -115,7 +115,7 @@ memento init --starter-pack backend-api --force
 
 **Quick Start:**
 ```bash
-npx memento-protocol init --starter-pack frontend-react
+npx zcc init --starter-pack frontend-react
 
 # Then use enhanced commands
 /component Button          # Create new component
@@ -424,8 +424,8 @@ memento init --starter-pack frontend-react --dry-run
 cat templates/starter-packs/frontend-react.json
 
 # Check installed components
-ls .memento/modes/
-ls .memento/workflows/
+ls .zcc/modes/
+ls .zcc/workflows/
 ```
 
 ### Advanced Scenarios

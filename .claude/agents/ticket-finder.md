@@ -40,7 +40,7 @@ Find relevant tickets by analyzing:
 ### Relevant Tickets Found
 ```
 📋 **[STATUS] Ticket Title**
-Path: .memento/tickets/[status]/[filename].md
+Path: .zcc/tickets/[status]/[filename].md
 Priority: [High/Medium/Low]
 Match: [Why this ticket is relevant]
 

@@ -1,7 +1,7 @@
 ---
 name: summarize
 description: A systematic approach to compressing context and extracting essential information from codebases, directories, or complex topics.
-author: Memento Protocol
+author: zcc
 version: 1.0.0
 tags: []
 dependencies: []
@@ -121,7 +121,7 @@ Structure the summary for maximum utility:
 
 ## Output Format
 
-The workflow produces a structured summary saved to `.memento/tickets/[current]/summaries/[timestamp].md`:
+The workflow produces a structured summary saved to `.zcc/tickets/[current]/summaries/[timestamp].md`:
 
 ```markdown
 # Summary: [Topic/Scope]
@@ -179,7 +179,7 @@ Depth: [level of detail]
 
 ## Integration Points
 
-- Store in `.memento/tickets/[task]/summaries/`
+- Store in `.zcc/tickets/[task]/summaries/`
 - Link from main ticket documentation
 - Reference when switching modes
 - Use as input for reviews

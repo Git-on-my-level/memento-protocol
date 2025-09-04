@@ -1,10 +1,10 @@
 {
-  "name": "memento-protocol",
+  "name": "zcc",
   "version": "0.9.0",
   "description": "The zsh for Claude Code - Power tools for AI-assisted development",
   "main": "dist/cli.js",
   "bin": {
-    "memento": "dist/cli.js"
+    "zcc": "dist/cli.js"
   },
   "scripts": {
     "build": "npm run validate && node scripts/build.js",
@@ -16,7 +16,7 @@
     "clean": "rm -rf dist",
     "validate": "node scripts/validate-dependencies.js",
     "prepublishOnly": "npm run test && npm run build",
-    "postinstall": "echo 'Thank you for installing Memento Protocol! Run \"memento --help\" to get started.'"
+    "postinstall": "echo 'Thank you for installing zcc! Run \"zcc --help\" to get started.'"
   },
   "keywords": [
     "claude",
@@ -33,16 +33,16 @@
     "customization",
     "automation"
   ],
-  "author": "Memento Protocol Contributors",
+  "author": "zcc Contributors",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/git-on-my-level/memento-protocol.git"
+    "url": "git+https://github.com/git-on-my-level/zcc.git"
   },
   "bugs": {
-    "url": "https://github.com/git-on-my-level/memento-protocol/issues"
+    "url": "https://github.com/git-on-my-level/zcc/issues"
   },
-  "homepage": "https://github.com/git-on-my-level/memento-protocol#readme",
+  "homepage": "https://github.com/git-on-my-level/zcc#readme",
   "files": [
     "dist/",
     "templates/",

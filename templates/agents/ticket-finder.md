@@ -1,7 +1,7 @@
 ---
 name: ticket-finder
 description: Find relevant tickets based on current work, files being modified, or keywords
-author: Memento Protocol
+author: zcc
 version: 1.0.0
 tags: []
 dependencies: []
@@ -44,7 +44,7 @@ Find relevant tickets by analyzing:
 ### Relevant Tickets Found
 ```
 📋 **[STATUS] Ticket Title**
-Path: .memento/tickets/[status]/[filename].md
+Path: .zcc/tickets/[status]/[filename].md
 
 Brief description of the ticket content...
 ```

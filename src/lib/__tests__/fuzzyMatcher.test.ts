@@ -1,5 +1,5 @@
 import { FuzzyMatcher } from '../fuzzyMatcher';
-import { ComponentInfo } from '../MementoScope';
+import { ComponentInfo } from '../ZccScope';
 
 describe('FuzzyMatcher', () => {
   const mockComponents: Array<{ component: ComponentInfo; source: 'builtin' | 'global' | 'project' }> = [

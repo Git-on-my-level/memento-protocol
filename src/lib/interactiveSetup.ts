@@ -36,7 +36,7 @@ export class InteractiveSetup {
    */
   async run(projectInfo: ProjectInfo): Promise<SetupOptions> {
     logger.space();
-    logger.info('🚀 Welcome to Memento Protocol Interactive Setup!');
+    logger.info('🚀 Welcome to zcc Interactive Setup!');
     logger.space();
 
     // Confirm project type
@@ -256,7 +256,7 @@ export class InteractiveSetup {
       {
         type: 'confirm',
         name: 'addToGitignore',
-        message: 'Add .memento/ to .gitignore?',
+        message: 'Add .zcc/ to .gitignore?',
         default: false
       }
     ]);

@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { ComponentInfo } from './MementoScope';
+import { ComponentInfo } from './ZccScope';
 import { logger } from './logger';
 import { SimpleCache } from './SimpleCache';
 
@@ -11,7 +11,7 @@ export interface BuiltinComponentInfo extends ComponentInfo {
 
 /**
  * Provides access to built-in components from the templates directory
- * Handles discovery and caching of templates bundled with Memento Protocol
+ * Handles discovery and caching of templates bundled with ZCC
  */
 export class BuiltinComponentProvider {
   private templatesPath: string;

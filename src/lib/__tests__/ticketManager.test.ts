@@ -1,5 +1,5 @@
 import { TicketManager } from '../ticketManager';
-import { createTestMementoProject } from '../testing/createTestFileSystem';
+import { createTestZccProject } from '../testing/createTestFileSystem';
 import { MemoryFileSystemAdapter } from '../adapters/MemoryFileSystemAdapter';
 
 describe('TicketManager', () => {
@@ -9,7 +9,7 @@ describe('TicketManager', () => {
 
   beforeEach(async () => {
     projectRoot = '/project';
-    fs = await createTestMementoProject(projectRoot);
+    fs = await createTestZccProject(projectRoot);
     ticketManager = new TicketManager(projectRoot, fs);
   });
 
@@ -17,7 +17,7 @@ describe('TicketManager', () => {
     it('should create a new ticket with markdown file', async () => {
       const ticketPath = await ticketManager.create('test-feature');
       
-      expect(ticketPath).toBe(fs.join(projectRoot, '.memento', 'tickets', 'next', 'test-feature.md'));
+      expect(ticketPath).toBe(fs.join(projectRoot, '.zcc', 'tickets', 'next', 'test-feature.md'));
       expect(await fs.exists(ticketPath)).toBe(true);
       
       const content = await fs.readFile(ticketPath, 'utf8') as string;
@@ -58,7 +58,7 @@ describe('TicketManager', () => {
 
     it('should handle empty ticket directories', async () => {
       // Create new manager with empty project
-      const emptyFs = await createTestMementoProject('/empty-project');
+      const emptyFs = await createTestZccProject('/empty-project');
       const emptyManager = new TicketManager('/empty-project', emptyFs);
       const tickets = await emptyManager.list();
       
@@ -68,7 +68,7 @@ describe('TicketManager', () => {
     it('should ignore non-markdown files', async () => {
       // Create a non-markdown file in tickets directory
       await fs.writeFile(
-        fs.join(projectRoot, '.memento', 'tickets', 'next', 'not-a-ticket.txt'),
+        fs.join(projectRoot, '.zcc', 'tickets', 'next', 'not-a-ticket.txt'),
         'This should be ignored'
       );
       
@@ -86,8 +86,8 @@ describe('TicketManager', () => {
       await ticketManager.move('test-feature', 'in-progress');
       
       // Check file was moved
-      const oldPath = fs.join(projectRoot, '.memento', 'tickets', 'next', 'test-feature.md');
-      const newPath = fs.join(projectRoot, '.memento', 'tickets', 'in-progress', 'test-feature.md');
+      const oldPath = fs.join(projectRoot, '.zcc', 'tickets', 'next', 'test-feature.md');
+      const newPath = fs.join(projectRoot, '.zcc', 'tickets', 'in-progress', 'test-feature.md');
       
       expect(await fs.exists(oldPath)).toBe(false);
       expect(await fs.exists(newPath)).toBe(true);
@@ -123,7 +123,7 @@ describe('TicketManager', () => {
       
       await ticketManager.delete('test-feature');
       
-      const donePath = fs.join(projectRoot, '.memento', 'tickets', 'done', 'test-feature.md');
+      const donePath = fs.join(projectRoot, '.zcc', 'tickets', 'done', 'test-feature.md');
       expect(await fs.exists(donePath)).toBe(false);
     });
   });
@@ -142,7 +142,7 @@ describe('TicketManager', () => {
 
     it('should find ticket without extension for backwards compatibility', async () => {
       // Create a ticket without .md extension
-      const oldStylePath = fs.join(projectRoot, '.memento', 'tickets', 'next', 'old-ticket');
+      const oldStylePath = fs.join(projectRoot, '.zcc', 'tickets', 'next', 'old-ticket');
       await fs.writeFile(oldStylePath, 'Old style ticket');
       
       const found = (ticketManager as any).findTicket('old-ticket');

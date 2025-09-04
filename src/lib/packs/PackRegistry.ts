@@ -7,7 +7,7 @@ import {
   PackDependencyResult,
 } from "../types/packs";
 import { logger } from "../logger";
-import { MementoError } from "../errors";
+import { ZccError } from "../errors";
 import { PackagePaths } from "../packagePaths";
 import { IPackSource, LocalPackSource } from "./PackSource";
 import { FileSystemAdapter } from "../adapters/FileSystemAdapter";
@@ -122,7 +122,7 @@ export class PackRegistry {
       }
     }
 
-    throw new MementoError(
+    throw new ZccError(
       `Pack '${packName}' not found in any registered source`,
       'PACK_NOT_FOUND',
       lastError ? `Last error: ${lastError.message}` : 'No sources available'

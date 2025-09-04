@@ -1,4 +1,4 @@
-import { MementoCore } from "../../lib/MementoCore";
+import { ZccCore } from "../../lib/ZccCore";
 import { logger } from "../../lib/logger";
 import * as os from "os";
 import inquirer from "inquirer";
@@ -6,7 +6,7 @@ import { createTestFileSystem } from "../../lib/testing";
 import { NodeFileSystemAdapter } from "../../lib/adapters/NodeFileSystemAdapter";
 
 jest.mock("inquirer");
-jest.mock("../../lib/MementoCore");
+jest.mock("../../lib/ZccCore");
 jest.mock("../../lib/logger", () => ({
   logger: {
     info: jest.fn(),
@@ -25,7 +25,7 @@ import { initGlobalCommand } from "../init-global";
 describe("Init Global Command", () => {
   let mockInquirer: jest.Mocked<typeof inquirer>;
   let mockOs: jest.Mocked<typeof os>;
-  let mockMementoCore: jest.Mocked<MementoCore>;
+  let mockZccCore: jest.Mocked<ZccCore>;
   let originalProcessExit: any;
   let testFs: any;
 
@@ -50,17 +50,17 @@ describe("Init Global Command", () => {
     // Mock os.homedir to return a consistent test path
     mockOs.homedir.mockReturnValue("/home/testuser");
 
-    // Mock MementoCore
+    // Mock ZccCore
     const mockScope = {
       initialize: jest.fn().mockResolvedValue(undefined),
     };
     
-    mockMementoCore = {
+    mockZccCore = {
       getScopes: jest.fn().mockReturnValue({ global: mockScope }),
     } as any;
     
-    (MementoCore as jest.MockedClass<typeof MementoCore>).mockImplementation(
-      () => mockMementoCore
+    (ZccCore as jest.MockedClass<typeof ZccCore>).mockImplementation(
+      () => mockZccCore
     );
 
     // Mock process.exit
@@ -81,23 +81,23 @@ describe("Init Global Command", () => {
       ]);
 
       // Verify filesystem operations happened in our test filesystem
-      const globalDirExists = await testFs.exists("/home/testuser/.memento");
-      const configExists = await testFs.exists("/home/testuser/.memento/config.yaml");
+      const globalDirExists = await testFs.exists("/home/testuser/.zcc");
+      const configExists = await testFs.exists("/home/testuser/.zcc/config.yaml");
       
       expect(globalDirExists).toBe(true);
       expect(configExists).toBe(true);
       
-      const configContent = await testFs.readFile("/home/testuser/.memento/config.yaml", "utf-8");
-      expect(configContent).toContain("# Memento Protocol Global Configuration");
+      const configContent = await testFs.readFile("/home/testuser/.zcc/config.yaml", "utf-8");
+      expect(configContent).toContain("# zcc Global Configuration");
       
       expect(logger.success).toHaveBeenCalledWith(
-        "Global Memento Protocol initialized successfully! 🎉"
+        "Global zcc initialized successfully! 🎉"
       );
     });
 
     it("should not initialize when already exists without force flag", async () => {
       // Pre-create the global directory in our test filesystem
-      await testFs.mkdir("/home/testuser/.memento", { recursive: true });
+      await testFs.mkdir("/home/testuser/.zcc", { recursive: true });
       
       await runInitGlobalCommand([
         "node", 
@@ -106,13 +106,13 @@ describe("Init Global Command", () => {
       ]);
 
       expect(logger.warn).toHaveBeenCalledWith(
-        "Global Memento Protocol is already initialized."
+        "Global zcc is already initialized."
       );
     });
 
     it("should reinitialize when force flag is provided", async () => {
       // Pre-create the global directory in our test filesystem
-      await testFs.mkdir("/home/testuser/.memento", { recursive: true });
+      await testFs.mkdir("/home/testuser/.zcc", { recursive: true });
       
       await runInitGlobalCommand([
         "node", 
@@ -121,11 +121,11 @@ describe("Init Global Command", () => {
         "--no-interactive"
       ]);
 
-      const configExists = await testFs.exists("/home/testuser/.memento/config.yaml");
+      const configExists = await testFs.exists("/home/testuser/.zcc/config.yaml");
       expect(configExists).toBe(true);
       
       expect(logger.success).toHaveBeenCalledWith(
-        "Global Memento Protocol initialized successfully! 🎉"
+        "Global zcc initialized successfully! 🎉"
       );
     });
   });
@@ -171,7 +171,7 @@ describe("Init Global Command", () => {
 
       expect(mockInquirer.prompt).not.toHaveBeenCalled();
       
-      const configContent = await testFs.readFile("/home/testuser/.memento/config.yaml", "utf-8");
+      const configContent = await testFs.readFile("/home/testuser/.zcc/config.yaml", "utf-8");
       expect(configContent).toContain('defaultMode: "architect"');
     });
 
@@ -188,13 +188,13 @@ describe("Init Global Command", () => {
 
       // Check that example directories are created
       const expectedDirs = [
-        "/home/testuser/.memento/modes",
-        "/home/testuser/.memento/workflows",
-        "/home/testuser/.memento/scripts",
-        "/home/testuser/.memento/hooks",
-        "/home/testuser/.memento/agents",
-        "/home/testuser/.memento/commands",
-        "/home/testuser/.memento/templates",
+        "/home/testuser/.zcc/modes",
+        "/home/testuser/.zcc/workflows",
+        "/home/testuser/.zcc/scripts",
+        "/home/testuser/.zcc/hooks",
+        "/home/testuser/.zcc/agents",
+        "/home/testuser/.zcc/commands",
+        "/home/testuser/.zcc/templates",
       ];
 
       for (const dir of expectedDirs) {
@@ -203,11 +203,11 @@ describe("Init Global Command", () => {
       }
 
       // Check that example script is created
-      const scriptExists = await testFs.exists("/home/testuser/.memento/scripts/hello.sh");
+      const scriptExists = await testFs.exists("/home/testuser/.zcc/scripts/hello.sh");
       expect(scriptExists).toBe(true);
       
-      const scriptContent = await testFs.readFile("/home/testuser/.memento/scripts/hello.sh", "utf-8");
-      expect(scriptContent).toContain("echo \"Hello from global Memento Protocol!\"");
+      const scriptContent = await testFs.readFile("/home/testuser/.zcc/scripts/hello.sh", "utf-8");
+      expect(scriptContent).toContain("echo \"Hello from global zcc!\"");
     });
 
     it("should skip example components when installExamples is false", async () => {
@@ -219,8 +219,8 @@ describe("Init Global Command", () => {
       ]);
 
       // Should only have the base directory, not the example subdirectories
-      const globalDirExists = await testFs.exists("/home/testuser/.memento");
-      const scriptDirExists = await testFs.exists("/home/testuser/.memento/scripts");
+      const globalDirExists = await testFs.exists("/home/testuser/.zcc");
+      const scriptDirExists = await testFs.exists("/home/testuser/.zcc/scripts");
       
       expect(globalDirExists).toBe(true);
       expect(scriptDirExists).toBe(false);
@@ -238,9 +238,9 @@ describe("Init Global Command", () => {
         "--no-verbose-logging"
       ]);
 
-      const configContent = await testFs.readFile("/home/testuser/.memento/config.yaml", "utf-8");
+      const configContent = await testFs.readFile("/home/testuser/.zcc/config.yaml", "utf-8");
 
-      expect(configContent).toContain("# Memento Protocol Global Configuration");
+      expect(configContent).toContain("# zcc Global Configuration");
       expect(configContent).toContain('defaultMode: "engineer"');
       expect(configContent).toContain("colorOutput: true");
       expect(configContent).toContain("verboseLogging: false");
@@ -257,10 +257,10 @@ describe("Init Global Command", () => {
         "--no-verbose-logging"
       ]);
 
-      const configContent = await testFs.readFile("/home/testuser/.memento/config.yaml", "utf-8");
+      const configContent = await testFs.readFile("/home/testuser/.zcc/config.yaml", "utf-8");
       
       // Just check that a config file is generated and contains basic structure
-      expect(configContent).toContain("# Memento Protocol Global Configuration");
+      expect(configContent).toContain("# zcc Global Configuration");
       expect(configContent).toContain("colorOutput: true");
       expect(configContent).toContain("verboseLogging: false");
       // Check that it doesn't have empty defaultMode values
@@ -284,18 +284,18 @@ describe("Init Global Command", () => {
       ]);
 
       expect(logger.error).toHaveBeenCalledWith(
-        "Failed to initialize global Memento Protocol:",
+        "Failed to initialize global zcc:",
         expect.any(Error)
       );
       expect(process.exit).toHaveBeenCalledWith(1);
     });
 
-    it("should handle MementoCore initialization errors", async () => {
+    it("should handle ZccCore initialization errors", async () => {
       const mockScope = {
         initialize: jest.fn().mockRejectedValue(new Error("Core initialization failed")),
       };
       
-      mockMementoCore.getScopes.mockReturnValue({ global: mockScope } as any);
+      mockZccCore.getScopes.mockReturnValue({ global: mockScope } as any);
 
       await runInitGlobalCommand([
         "node", 
@@ -304,7 +304,7 @@ describe("Init Global Command", () => {
       ]);
 
       expect(logger.error).toHaveBeenCalledWith(
-        "Failed to initialize global Memento Protocol:",
+        "Failed to initialize global zcc:",
         expect.any(Error)
       );
       expect(process.exit).toHaveBeenCalledWith(1);
@@ -321,10 +321,10 @@ describe("Init Global Command", () => {
 
       expect(logger.info).toHaveBeenCalledWith("What's next:");
       expect(logger.info).toHaveBeenCalledWith(
-        "  • Run 'memento init' in any project to apply global settings"
+        "  • Run 'zcc init' in any project to apply global settings"
       );
       expect(logger.info).toHaveBeenCalledWith(
-        "  • Edit ~/.memento/config.yaml to customize global preferences"
+        "  • Edit ~/.zcc/config.yaml to customize global preferences"
       );
       expect(logger.info).toHaveBeenCalledWith(
         "Global configuration takes effect in all new project setups."
@@ -339,7 +339,7 @@ describe("Init Global Command", () => {
       ]);
 
       expect(logger.info).toHaveBeenCalledWith("Configuration saved to:");
-      expect(logger.info).toHaveBeenCalledWith("  /home/testuser/.memento/config.yaml");
+      expect(logger.info).toHaveBeenCalledWith("  /home/testuser/.zcc/config.yaml");
     });
   });
 });

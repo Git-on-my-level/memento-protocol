@@ -1,4 +1,4 @@
-import { ComponentInfo } from './MementoScope';
+import { ComponentInfo } from './ZccScope';
 
 export interface FuzzyMatch {
   name: string;

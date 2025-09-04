@@ -37,7 +37,7 @@ describe('Ticket Command Basic Coverage', () => {
   });
 
   it('should create ticket with basic params', async () => {
-    const ticketPath = '/project/.memento/tickets/next/Test ticket.md';
+    const ticketPath = '/project/.zcc/tickets/next/Test ticket.md';
     mockTicketManager.create.mockResolvedValue(ticketPath);
     
     await ticketCommand.parseAsync(['node', 'test', 'create', 'Test ticket']);

@@ -9,14 +9,14 @@ export interface TicketInfo {
 }
 
 export class TicketManager {
-  private mementoDir: string;
+  private zccDir: string;
   private ticketsDir: string;
   private fs: FileSystemAdapter;
 
   constructor(projectRoot: string, fs?: FileSystemAdapter) {
     this.fs = fs || new NodeFileSystemAdapter();
-    this.mementoDir = this.fs.join(projectRoot, '.memento');
-    this.ticketsDir = this.fs.join(this.mementoDir, 'tickets');
+    this.zccDir = this.fs.join(projectRoot, '.zcc');
+    this.ticketsDir = this.fs.join(this.zccDir, 'tickets');
     this.ensureStatusDirectories();
   }
 

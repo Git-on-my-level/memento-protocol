@@ -1,5 +1,5 @@
-import { MementoCore } from './MementoCore';
-import { ComponentInfo } from './MementoScope';
+import { ZccCore } from './ZccCore';
+import { ComponentInfo } from './ZccScope';
 import { logger } from './logger';
 import chalk from 'chalk';
 
@@ -10,9 +10,9 @@ export interface ErrorSuggestion {
 }
 
 export class ErrorHandler {
-  private core: MementoCore;
+  private core: ZccCore;
 
-  constructor(core: MementoCore) {
+  constructor(core: ZccCore) {
     this.core = core;
   }
 
@@ -54,14 +54,14 @@ export class ErrorHandler {
     suggestions.push({
       type: 'command',
       message: `List all available ${type}s`,
-      action: `memento list --type ${type}`
+      action: `zcc list --type ${type}`
     });
     
     if (context === 'add') {
       suggestions.push({
         type: 'command',
         message: `Browse ${type}s interactively`,
-        action: `memento add ${type}`
+        action: `zcc add ${type}`
       });
     }
     
@@ -101,7 +101,7 @@ export class ErrorHandler {
         suggestions.push({
           type: 'command',
           message: match,
-          action: `memento list --type ${match}`
+          action: `zcc list --type ${match}`
         });
       }
     } else {
@@ -123,22 +123,22 @@ export class ErrorHandler {
     if (scope === 'project') {
       suggestions.push({
         type: 'hint',
-        message: 'Memento Protocol is not initialized in this project.'
+        message: 'zcc is not initialized in this project.'
       });
       suggestions.push({
         type: 'command',
         message: 'Initialize project scope',
-        action: 'memento init'
+        action: 'zcc init'
       });
     } else {
       suggestions.push({
         type: 'hint',
-        message: 'Global Memento Protocol scope is not initialized.'
+        message: 'Global zcc scope is not initialized.'
       });
       suggestions.push({
         type: 'command',
         message: 'Initialize global scope',
-        action: 'memento init --global'
+        action: 'zcc init --global'
       });
     }
     
@@ -180,7 +180,7 @@ export class ErrorHandler {
     suggestions.push({
       type: 'command',
       message: 'View all conflicts',
-      action: 'memento list --conflicts'
+      action: 'zcc list --conflicts'
     });
     
     return suggestions;
@@ -199,12 +199,12 @@ export class ErrorHandler {
       });
       suggestions.push({
         type: 'hint',
-        message: 'Check if Memento Protocol is properly initialized.'
+        message: 'Check if zcc is properly initialized.'
       });
       suggestions.push({
         type: 'command',
-        message: 'Reinitialize Memento Protocol',
-        action: 'memento init --force'
+        message: 'Reinitialize zcc',
+        action: 'zcc init --force'
       });
     } else if (error.code === 'EACCES') {
       suggestions.push({
@@ -277,15 +277,15 @@ export class ErrorHandler {
   ): string {
     switch (context) {
       case 'add':
-        return `memento add ${type} ${name}`;
+        return `zcc add ${type} ${name}`;
       case 'use':
         if (type === 'mode') {
           return `/mode ${name}`;
         }
-        return `memento list --type ${type}`;
+        return `zcc list --type ${type}`;
       case 'search':
       default:
-        return `memento list --type ${type}`;
+        return `zcc list --type ${type}`;
     }
   }
 

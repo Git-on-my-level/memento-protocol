@@ -54,10 +54,10 @@ Excluded via `.npmignore`:
 Test the published package:
 ```bash
 # Global installation
-npm install -g memento-protocol
+npm install -g zcc
 
 # NPX usage
-npx memento-protocol --help
+npx zcc --help
 
 # Local development
 git clone repo && npm install && npm link

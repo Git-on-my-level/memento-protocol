@@ -29,7 +29,7 @@ describe('ScriptExecutor', () => {
     // Set up test directories (mocked fs doesn't need actual directories)
     tempDir = '/tmp/memento-test-123';
     projectRoot = path.join(tempDir, 'project');
-    globalRoot = path.join(os.homedir(), '.memento');
+    globalRoot = path.join(os.homedir(), '.zcc');
     
     scriptExecutor = new ScriptExecutor(projectRoot);
 
@@ -96,11 +96,11 @@ describe('ScriptExecutor', () => {
 
       const env = scriptExecutor.prepareEnvironment(context);
 
-      expect(env.MEMENTO_SCRIPT_SOURCE).toBe('/test/script.sh');
-      expect(env.MEMENTO_SCRIPT_SCOPE).toBe('project');
-      expect(env.MEMENTO_PROJECT_ROOT).toBe(projectRoot);
-      expect(env.MEMENTO_GLOBAL_ROOT).toBe(globalRoot);
-      expect(env.MEMENTO_SCRIPT_NAME).toBe('script');
+      expect(env.ZCC_SCRIPT_SOURCE).toBe('/test/script.sh');
+      expect(env.ZCC_SCRIPT_SCOPE).toBe('project');
+      expect(env.ZCC_PROJECT_ROOT).toBe(projectRoot);
+      expect(env.ZCC_GLOBAL_ROOT).toBe(globalRoot);
+      expect(env.ZCC_SCRIPT_NAME).toBe('script');
       expect(env.CUSTOM_VAR).toBe('test');
     });
 
@@ -126,7 +126,7 @@ describe('ScriptExecutor', () => {
   describe('resolveScriptPath', () => {
     it('should resolve project script path', () => {
       const scriptPath = scriptExecutor.resolveScriptPath('test-script', 'project');
-      expect(scriptPath).toBe(path.join(projectRoot, '.memento', 'scripts', 'test-script.sh'));
+      expect(scriptPath).toBe(path.join(projectRoot, '.zcc', 'scripts', 'test-script.sh'));
     });
 
     it('should resolve global script path', () => {
@@ -291,7 +291,7 @@ describe('ScriptExecutor', () => {
       // Mock project script exists
       mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
         const pathStr = filePath.toString();
-        return pathStr.includes('.memento/scripts/test-script');
+        return pathStr.includes('.zcc/scripts/test-script');
       });
 
       const result = await scriptExecutor.findScript('test-script');
@@ -305,7 +305,7 @@ describe('ScriptExecutor', () => {
       // Mock only global script exists
       mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
         const pathStr = filePath.toString();
-        return pathStr.includes('.memento/scripts/test-script') && pathStr.includes(os.homedir());
+        return pathStr.includes('.zcc/scripts/test-script') && pathStr.includes(os.homedir());
       });
 
       const result = await scriptExecutor.findScript('test-script');
@@ -329,7 +329,7 @@ describe('ScriptExecutor', () => {
       // Mock script exists
       mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
         const pathStr = filePath.toString();
-        return pathStr.includes('.memento/scripts/test-script');
+        return pathStr.includes('.zcc/scripts/test-script');
       });
 
       // Setup successful execution
@@ -430,8 +430,8 @@ describe('ScriptExecutor', () => {
       };
 
       const env = executor.prepareEnvironment(context);
-      expect(env.MEMENTO_SCRIPT_SOURCE).toBe('C:\\test\\script.bat');
-      expect(env.MEMENTO_PROJECT_ROOT).toBe('C:\\test\\project');
+      expect(env.ZCC_SCRIPT_SOURCE).toBe('C:\\test\\script.bat');
+      expect(env.ZCC_PROJECT_ROOT).toBe('C:\\test\\project');
 
       // Reset platform
       Object.defineProperty(process, 'platform', { value: 'linux', writable: true });
@@ -478,19 +478,19 @@ describe('ScriptExecutor', () => {
     it('should inject all required environment variables', () => {
       const context: ScriptContext = {
         source: 'global',
-        scriptPath: '/global/.memento/scripts/test.sh',
+        scriptPath: '/global/.zcc/scripts/test.sh',
         workingDirectory: '/project',
         env: { EXTRA_VAR: 'value' }
       };
 
       const env = scriptExecutor.prepareEnvironment(context);
 
-      // Check required Memento variables
-      expect(env.MEMENTO_SCRIPT_SOURCE).toBe('/global/.memento/scripts/test.sh');
-      expect(env.MEMENTO_SCRIPT_SCOPE).toBe('global');
-      expect(env.MEMENTO_PROJECT_ROOT).toBe('/project');
-      expect(env.MEMENTO_GLOBAL_ROOT).toBeDefined();
-      expect(env.MEMENTO_SCRIPT_NAME).toBe('test');
+      // Check required ZCC variables
+      expect(env.ZCC_SCRIPT_SOURCE).toBe('/global/.zcc/scripts/test.sh');
+      expect(env.ZCC_SCRIPT_SCOPE).toBe('global');
+      expect(env.ZCC_PROJECT_ROOT).toBe('/project');
+      expect(env.ZCC_GLOBAL_ROOT).toBeDefined();
+      expect(env.ZCC_SCRIPT_NAME).toBe('test');
       expect(env.EXTRA_VAR).toBe('value');
 
       // Check that parent environment is inherited

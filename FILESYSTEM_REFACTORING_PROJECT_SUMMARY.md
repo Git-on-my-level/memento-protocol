@@ -119,7 +119,7 @@ beforeEach(async () => {
 // After: Simple memory filesystem
 beforeEach(async () => {
   fs = await createTestFileSystem({
-    '/project/.memento/config.yaml': 'theme: dark',
+    '/project/.zcc/config.yaml': 'theme: dark',
     '/project/src/index.ts': 'console.log("hello")'
   });
 });

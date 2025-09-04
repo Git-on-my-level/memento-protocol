@@ -7,7 +7,7 @@ describe('ConfigManager', () => {
   let configManager: ConfigManager;
   const originalEnv = process.env;
   const projectRoot = '/project';
-  const globalRoot = '/home/user/.memento';
+  const globalRoot = '/home/user/.zcc';
 
   beforeEach(async () => {
     // Reset environment first
@@ -18,7 +18,7 @@ describe('ConfigManager', () => {
     // Create test filesystem
     fs = await createTestFileSystem({
       // Create directory structure
-      [`${projectRoot}/.memento/.gitkeep`]: '',
+      [`${projectRoot}/.zcc/.gitkeep`]: '',
       [`${globalRoot}/.gitkeep`]: ''
     });
     
@@ -66,7 +66,7 @@ describe('ConfigManager', () => {
         }
       };
       fs.writeFileSync(
-        `${projectRoot}/.memento/config.yaml`,
+        `${projectRoot}/.zcc/config.yaml`,
         yaml.dump(projectConfig)
       );
 
@@ -79,9 +79,9 @@ describe('ConfigManager', () => {
     });
 
     it('should apply environment variable overrides', async () => {
-      process.env.MEMENTO_DEFAULT_MODE = 'engineer';
-      process.env.MEMENTO_COLOR_OUTPUT = 'false';
-      process.env.MEMENTO_VERBOSE = 'true';
+      process.env.ZCC_DEFAULT_MODE = 'engineer';
+      process.env.ZCC_COLOR_OUTPUT = 'false';
+      process.env.ZCC_VERBOSE = 'true';
 
       const config = await configManager.load();
       
@@ -101,7 +101,7 @@ describe('ConfigManager', () => {
       await configManager.save(config);
       
       // Config is now saved as YAML
-      const savedPath = `${projectRoot}/.memento/config.yaml`;
+      const savedPath = `${projectRoot}/.zcc/config.yaml`;
       expect(fs.existsSync(savedPath)).toBe(true);
       
       // Load and verify the config was saved correctly

@@ -1,6 +1,6 @@
 import { StarterPackManager } from "../StarterPackManager";
 import { PackStructure } from "../types/packs";
-import { createTestMementoProject } from "../testing";
+import { createTestZccProject } from "../testing";
 import { MemoryFileSystemAdapter } from "../adapters/MemoryFileSystemAdapter";
 import { PackagePaths } from "../packagePaths";
 
@@ -39,7 +39,7 @@ describe("StarterPackManager", () => {
     PackagePaths.reset();
     
     // Create test filesystem with project structure
-    fs = await createTestMementoProject(mockProjectRoot, {
+    fs = await createTestZccProject(mockProjectRoot, {
       // Add sample pack templates (PackagePaths.getTemplatesDir() returns '/test/templates' in test env)
       '/test/templates/starter-packs/test-pack/manifest.json': JSON.stringify(mockValidPack.manifest),
       '/test/templates/starter-packs/test-pack/components/modes/engineer.md': '# Engineer Mode\n\nYou are a software engineer.',
@@ -103,7 +103,7 @@ describe("StarterPackManager", () => {
 
     it("should return empty array when no packs available", async () => {
       // Create manager with filesystem that has no packs
-      const emptyFs = await createTestMementoProject(mockProjectRoot, {
+      const emptyFs = await createTestZccProject(mockProjectRoot, {
         '/test/templates/starter-packs/schema.json': JSON.stringify({ 
           type: 'object',
           properties: {
@@ -532,7 +532,7 @@ describe("StarterPackManager", () => {
           configuration: {
             defaultMode: "architect",
             projectSettings: {
-              gitignoreEntries: [".memento/cache", "*.tmp"]
+              gitignoreEntries: [".zcc/cache", "*.tmp"]
             }
           },
           postInstall: {

@@ -6,7 +6,7 @@ describe('DirectoryManager', () => {
   let dirManager: DirectoryManager;
   let fs: MemoryFileSystemAdapter;
   const mockProjectRoot = '/test/project';
-  const mockMementoDir = '/test/project/.memento';
+  const mockMementoDir = '/test/project/.zcc';
 
   beforeEach(async () => {
     fs = await createTestFileSystem({});
@@ -14,8 +14,8 @@ describe('DirectoryManager', () => {
   });
 
   describe('isInitialized', () => {
-    it('should return true when .memento directory exists', async () => {
-      // Create the .memento directory
+    it('should return true when .zcc directory exists', async () => {
+      // Create the .zcc directory
       await fs.mkdir(mockMementoDir, { recursive: true });
 
       const result = dirManager.isInitialized();
@@ -23,7 +23,7 @@ describe('DirectoryManager', () => {
       expect(result).toBe(true);
     });
 
-    it('should return false when .memento directory does not exist', () => {
+    it('should return false when .zcc directory does not exist', () => {
       const result = dirManager.isInitialized();
       
       expect(result).toBe(false);
@@ -121,20 +121,20 @@ describe('DirectoryManager', () => {
   });
 
   describe('ensureGitignore', () => {
-    it('should add .memento to gitignore if not present', async () => {
+    it('should add .zcc to gitignore if not present', async () => {
       const gitignorePath = fs.join(mockProjectRoot, '.gitignore');
       await fs.writeFile(gitignorePath, 'node_modules/\n');
 
       await dirManager.ensureGitignore();
 
       const content = await fs.readFile(gitignorePath, 'utf-8') as string;
-      expect(content).toContain('.memento/');
-      expect(content).toContain('# Memento Protocol');
+      expect(content).toContain('.zcc/');
+      expect(content).toContain('# ZCC');
     });
 
-    it('should not duplicate .memento entry', async () => {
+    it('should not duplicate .zcc entry', async () => {
       const gitignorePath = fs.join(mockProjectRoot, '.gitignore');
-      const originalContent = 'node_modules/\n.memento/\n';
+      const originalContent = 'node_modules/\n.zcc/\n';
       await fs.writeFile(gitignorePath, originalContent);
 
       await dirManager.ensureGitignore();
@@ -148,12 +148,12 @@ describe('DirectoryManager', () => {
 
       const gitignorePath = fs.join(mockProjectRoot, '.gitignore');
       const content = await fs.readFile(gitignorePath, 'utf-8') as string;
-      expect(content).toContain('# Memento Protocol');
-      expect(content).toContain('.memento/');
+      expect(content).toContain('# ZCC');
+      expect(content).toContain('.zcc/');
     });
 
-    it('should recognize various .memento patterns', async () => {
-      const patterns = ['.memento', '.memento/', '/.memento', '/.memento/'];
+    it('should recognize various .zcc patterns', async () => {
+      const patterns = ['.zcc', '.zcc/', '/.zcc', '/.zcc/'];
       
       for (const pattern of patterns) {
         // Reset filesystem for each test
@@ -174,12 +174,12 @@ describe('DirectoryManager', () => {
   describe('getComponentPath', () => {
     it('should return correct path for modes', () => {
       const path = dirManager.getComponentPath('modes', 'architect');
-      expect(path).toBe('/test/project/.memento/modes/architect.md');
+      expect(path).toBe('/test/project/.zcc/modes/architect.md');
     });
 
     it('should return correct path for workflows', () => {
       const path = dirManager.getComponentPath('workflows', 'review');
-      expect(path).toBe('/test/project/.memento/workflows/review.md');
+      expect(path).toBe('/test/project/.zcc/workflows/review.md');
     });
 
     it('should return correct path for agents', () => {
@@ -208,7 +208,7 @@ describe('DirectoryManager', () => {
     });
     
     it('should throw error when manifest does not exist', async () => {
-      await expect(dirManager.getManifest()).rejects.toThrow('Memento Protocol is not initialized');
+      await expect(dirManager.getManifest()).rejects.toThrow('zcc is not initialized');
     });
   });
 

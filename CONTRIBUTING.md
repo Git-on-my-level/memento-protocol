@@ -1,11 +1,11 @@
-# Contributing to Memento Protocol
+# Contributing to zcc
 
-Thank you for your interest in contributing to Memento Protocol!
+Thank you for your interest in contributing to zcc!
 
 ## Getting Started
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/your-username/memento-protocol.git`
+2. Clone your fork: `git clone https://github.com/your-username/zcc.git`
 3. Install dependencies: `npm install`
 4. Create a feature branch: `git checkout -b feature/your-feature`
 

@@ -2,7 +2,7 @@
   "name": "frontend-react",
   "version": "1.0.0",
   "description": "Complete React frontend development setup with TypeScript support and best practices",
-  "author": "memento-protocol",
+  "author": "zcc",
   "tags": ["react", "frontend", "typescript", "web"],
   "category": "frontend",
   "mementoProtocolVersion": "1.0.0",
@@ -87,7 +87,7 @@
   "postInstall": {
     "message": "React Frontend Starter Pack installed! 🎉\n\nAvailable modes:\n- `/mode component-engineer` - Component development focus\n- `/mode react-architect` - React architecture planning\n- `/mode ui-reviewer` - UI/UX code reviews\n\nQuick commands:\n- `/component ButtonComponent` - Create new React component\n- `/state global` - Set up state management\n- `/styles tailwind` - Configure styling system\n\nWorkflows available: component-creation, state-management, style-system",
     "commands": [
-      "memento config set defaultMode component-engineer"
+      "zcc config set defaultMode component-engineer"
     ]
   }
 }

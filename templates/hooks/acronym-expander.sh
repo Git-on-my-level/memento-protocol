@@ -15,7 +15,7 @@ fi
 PROJECT_ROOT="$(pwd)"
 
 # Get the acronyms config path
-acronyms_file="${PROJECT_ROOT}/.memento/acronyms.json"
+acronyms_file="${PROJECT_ROOT}/.zcc/acronyms.json"
 
 # Check if acronyms config exists
 if [ ! -f "$acronyms_file" ]; then

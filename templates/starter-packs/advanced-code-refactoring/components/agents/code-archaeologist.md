@@ -1,7 +1,7 @@
 ---
 name: code-archaeologist
 description: AST-aware code analysis and refactoring expert specializing in structural code search and semantic transformations
-author: Memento Protocol
+author: zcc
 version: 1.0.0
 tags: [ast-grep, refactoring, code-analysis, semantic-search]
 dependencies: []

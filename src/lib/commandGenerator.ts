@@ -39,8 +39,8 @@ export class CommandGenerator {
     // Generate mode commands
     await this.generateModeCommands();
 
-    // Generate memento commands
-    await this.generateMementoCommands();
+    // Generate zcc commands
+    await this.generateZccCommands();
 
     logger.success("Claude Code custom commands generated");
   }
@@ -60,12 +60,12 @@ export class CommandGenerator {
     // Main ticket command (list if no args, load context if args provided)
     const ticketMain: CommandTemplate = {
       name: "ticket",
-      description: "Manage tickets stored as .md files in .memento/tickets/ directories",
-      allowedTools: ["Bash(sh .memento/scripts/ticket-context.sh)"],
+      description: "Manage tickets stored as .md files in .zcc/tickets/ directories",
+      allowedTools: ["Bash(sh .zcc/scripts/ticket-context.sh)"],
       argumentHint: "[ticket-name]",
       body: `# Ticket Management
 
-!\`sh .memento/scripts/ticket-context.sh $ARGUMENTS\`
+!\`sh .zcc/scripts/ticket-context.sh $ARGUMENTS\`
 
 I now have ticket information loaded. Use Read tool to access actual ticket content.`,
     };
@@ -84,11 +84,11 @@ I now have ticket information loaded. Use Read tool to access actual ticket cont
     const modeMain: CommandTemplate = {
       name: "mode",
       description: "List available modes or switch to a specific mode",
-      allowedTools: ["Bash(sh .memento/scripts/mode-switch.sh)"],
+      allowedTools: ["Bash(sh .zcc/scripts/mode-switch.sh)"],
       argumentHint: "[mode-name]",
       body: `# Mode Management
 
-!\`sh .memento/scripts/mode-switch.sh $ARGUMENTS\`
+!\`sh .zcc/scripts/mode-switch.sh $ARGUMENTS\`
 
 ${"" /* No arguments: Shows available modes */}
 ${"" /* With arguments: Loads and activates the specified mode */}
@@ -102,38 +102,38 @@ I'll now operate according to the mode guidelines shown above.`,
   }
 
   /**
-   * Generate memento system commands
+   * Generate zcc system commands
    */
-  private async generateMementoCommands(): Promise<void> {
-    // Main memento command (shows status)
-    const mementoMain: CommandTemplate = {
-      name: "memento",
-      description: "Show current Memento Protocol project status",
+  private async generateZccCommands(): Promise<void> {
+    // Main zcc command (shows status)
+    const zccMain: CommandTemplate = {
+      name: "zcc",
+      description: "Show current zcc project status",
       allowedTools: [
-        "Bash(npx memento-protocol ticket list)",
-        "Bash(ls:.memento/modes/)",
-        "Bash(ls:.memento/workflows/)",
+        "Bash(npx zcc ticket list)",
+        "Bash(ls:.zcc/modes/)",
+        "Bash(ls:.zcc/workflows/)",
         "Bash(head:CLAUDE.md)",
       ],
-      body: `# Memento Protocol Status
+      body: `# zcc Status
 
 ## Active Tickets
-!\`npx memento-protocol ticket list 2>/dev/null || echo "No tickets found"\`
+!\`npx zcc ticket list 2>/dev/null || echo "No tickets found"\`
 
 ## Available Modes
-!\`ls -1 .memento/modes/ 2>/dev/null | head -10 || echo "No modes installed"\`
+!\`ls -1 .zcc/modes/ 2>/dev/null | head -10 || echo "No modes installed"\`
 
 ## Available Workflows  
-!\`ls -1 .memento/workflows/ 2>/dev/null | head -10 || echo "No workflows installed"\`
+!\`ls -1 .zcc/workflows/ 2>/dev/null | head -10 || echo "No workflows installed"\`
 
 ## Current Configuration
 !\`head -20 CLAUDE.md 2>/dev/null || echo "CLAUDE.md not found"\``,
     };
 
-    // Generate memento command file
-    await this.generateCommandFile("memento.md", mementoMain);
+    // Generate zcc command file
+    await this.generateCommandFile("zcc.md", zccMain);
 
-    logger.info("Generated memento system commands");
+    logger.info("Generated zcc system commands");
   }
 
   /**
@@ -170,8 +170,8 @@ I'll now operate according to the mode guidelines shown above.`,
     try {
       const ticketExists = await this.fs.exists(this.fs.join(this.commandsDir, "ticket.md"));
       const modeExists = await this.fs.exists(this.fs.join(this.commandsDir, "mode.md"));
-      const mementoExists = await this.fs.exists(this.fs.join(this.commandsDir, "memento.md"));
-      return ticketExists && modeExists && mementoExists;
+      const zccExists = await this.fs.exists(this.fs.join(this.commandsDir, "zcc.md"));
+      return ticketExists && modeExists && zccExists;
     } catch {
       return false;
     }
@@ -195,8 +195,8 @@ I'll now operate according to the mode guidelines shown above.`,
    */
   private async validateDependencies(): Promise<void> {
     const requiredScripts = [
-      ".memento/scripts/ticket-context.sh",
-      ".memento/scripts/mode-switch.sh"
+      ".zcc/scripts/ticket-context.sh",
+      ".zcc/scripts/mode-switch.sh"
     ];
 
     const missing: string[] = [];
@@ -213,8 +213,8 @@ I'll now operate according to the mode guidelines shown above.`,
         "Missing required scripts for custom commands:",
         ...missing.map(script => `  - ${script}`),
         "",
-        "This indicates that the .memento directory structure is incomplete.",
-        "Please run 'memento init --force' to regenerate the required files."
+        "This indicates that the .zcc directory structure is incomplete.",
+        "Please run 'zcc init --force' to regenerate the required files."
       ].join("\n");
       
       throw new Error(errorMessage);

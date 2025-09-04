@@ -127,12 +127,12 @@ describe('ComponentInstaller', () => {
       });
       
       mockDirManager.getManifest.mockResolvedValue(mockManifest);
-      mockDirManager.getComponentPath.mockReturnValue('/test/.memento/modes/architect.md');
+      mockDirManager.getComponentPath.mockReturnValue('/test/.zcc/modes/architect.md');
 
       await installer.installComponent('mode', 'architect');
 
       // Verify the file was written to the destination path
-      const writtenContent = await testFs.readFile('/test/.memento/modes/architect.md', 'utf-8');
+      const writtenContent = await testFs.readFile('/test/.zcc/modes/architect.md', 'utf-8');
       expect(writtenContent).toContain('System design');
       expect(logger.success).toHaveBeenCalledWith("Installed mode 'architect'");
     });
@@ -148,7 +148,7 @@ describe('ComponentInstaller', () => {
 
       expect(logger.warn).toHaveBeenCalledWith("mode 'architect' is already installed");
       // Verify file was NOT written
-      expect(await testFs.exists('/test/.memento/modes/architect.md')).toBe(false);
+      expect(await testFs.exists('/test/.zcc/modes/architect.md')).toBe(false);
     });
 
     it('should throw error for non-existent component', async () => {

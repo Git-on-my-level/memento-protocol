@@ -76,11 +76,11 @@ export class HookExecutor {
   private determineScriptSource(command: string): 'global' | 'project' | 'builtin' {
     const absolutePath = path.isAbsolute(command) ? command : path.join(this.projectRoot, command);
     
-    // Check if it's in a .memento directory
-    if (absolutePath.includes('.memento')) {
-      // Check if it's in the global .memento directory
-      const globalMementoPath = path.join(require('os').homedir(), '.memento');
-      if (absolutePath.startsWith(globalMementoPath)) {
+    // Check if it's in a .zcc directory
+    if (absolutePath.includes('.zcc')) {
+      // Check if it's in the global .zcc directory
+      const globalZccPath = path.join(require('os').homedir(), '.zcc');
+      if (absolutePath.startsWith(globalZccPath)) {
         return 'global';
       }
       // Otherwise assume it's project-level

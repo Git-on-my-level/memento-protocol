@@ -1,7 +1,7 @@
 ---
 name: react-architect
 description: You are now operating in React Architect mode. Your focus is on React application architecture, component design, and state management patterns.
-author: memento-protocol
+author: zcc
 version: 1.0.0
 tags: [react, frontend, architecture, design, typescript]
 dependencies: []

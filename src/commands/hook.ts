@@ -9,11 +9,11 @@ const hookCommand = new Command('hook')
   .description('Manage Claude Code hooks')
   .addHelpText('after', `
 Examples:
-  $ memento hook list                    # List all configured hooks
-  $ memento hook add code-formatter      # Add a hook from template
-  $ memento hook enable acronym-expander # Enable a hook
-  $ memento hook disable test-on-save    # Disable a hook
-  $ memento hook remove my-hook          # Remove a hook
+  $ zcc hook list                    # List all configured hooks
+  $ zcc hook add code-formatter      # Add a hook from template
+  $ zcc hook enable acronym-expander # Enable a hook
+  $ zcc hook disable test-on-save    # Disable a hook
+  $ zcc hook remove my-hook          # Remove a hook
 `);
 
 // List hooks subcommand
@@ -84,7 +84,7 @@ hookCommand
   .action(async (id) => {
     try {
       const projectRoot = process.cwd();
-      const definitionsDir = path.join(projectRoot, '.memento', 'hooks', 'definitions');
+      const definitionsDir = path.join(projectRoot, '.zcc', 'hooks', 'definitions');
       
       // Find and update the hook definition
       const files = await fs.readdir(definitionsDir).catch(() => []);
@@ -111,7 +111,7 @@ hookCommand
       
       if (found) {
         logger.success(`Enabled hook: ${id}`);
-        logger.info('Run "memento" to regenerate hook configuration');
+        logger.info('Run "zcc" to regenerate hook configuration');
       } else {
         logger.error(`Hook not found: ${id}`);
       }
@@ -127,7 +127,7 @@ hookCommand
   .action(async (id) => {
     try {
       const projectRoot = process.cwd();
-      const definitionsDir = path.join(projectRoot, '.memento', 'hooks', 'definitions');
+      const definitionsDir = path.join(projectRoot, '.zcc', 'hooks', 'definitions');
       
       // Find and update the hook definition
       const files = await fs.readdir(definitionsDir).catch(() => []);
@@ -154,7 +154,7 @@ hookCommand
       
       if (found) {
         logger.success(`Disabled hook: ${id}`);
-        logger.info('Run "memento" to regenerate hook configuration');
+        logger.info('Run "zcc" to regenerate hook configuration');
       } else {
         logger.error(`Hook not found: ${id}`);
       }
@@ -205,7 +205,7 @@ hookCommand
       for (const template of templates) {
         console.log(`  - ${template}`);
       }
-      console.log('\nUse "memento hook add <template>" to add a hook\n');
+      console.log('\nUse "zcc hook add <template>" to add a hook\n');
     } catch (error) {
       handleError(error);
     }

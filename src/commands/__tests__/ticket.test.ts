@@ -38,7 +38,7 @@ describe('Ticket Command', () => {
 
   describe('create ticket', () => {
     it('should create a new ticket', async () => {
-      const ticketPath = '/project/.memento/tickets/next/Add new feature.md';
+      const ticketPath = '/project/.zcc/tickets/next/Add new feature.md';
       mockTicketManager.create.mockResolvedValue(ticketPath);
 
       await ticketCommand.parseAsync(['node', 'test', 'create', 'Add new feature']);

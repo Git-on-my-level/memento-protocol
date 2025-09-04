@@ -18,8 +18,8 @@ jest.mock('../PermissionGenerator', () => ({
   }
 }));
 
-jest.mock('../builtin/MementoRoutingHook', () => ({
-  MementoRoutingHook: class {
+jest.mock('../builtin/ZccRoutingHook', () => ({
+  ZccRoutingHook: class {
     generate = jest.fn().mockResolvedValue(undefined);
   }
 }));
@@ -51,10 +51,10 @@ describe('HookManager', () => {
       await hookManager.initialize();
 
       expect(await fs.exists('/project/.claude')).toBe(true);
-      expect(await fs.exists('/project/.memento/hooks')).toBe(true);
-      expect(await fs.exists('/project/.memento/hooks/definitions')).toBe(true);
-      expect(await fs.exists('/project/.memento/hooks/scripts')).toBe(true);
-      expect(await fs.exists('/project/.memento/hooks/templates')).toBe(true);
+      expect(await fs.exists('/project/.zcc/hooks')).toBe(true);
+      expect(await fs.exists('/project/.zcc/hooks/definitions')).toBe(true);
+      expect(await fs.exists('/project/.zcc/hooks/scripts')).toBe(true);
+      expect(await fs.exists('/project/.zcc/hooks/templates')).toBe(true);
     });
 
     it('should generate builtin hooks', async () => {
@@ -64,10 +64,10 @@ describe('HookManager', () => {
       await hookManager.initialize();
 
       // Should create the routing hook definition
-      expect(await fs.exists('/project/.memento/hooks/definitions/memento-routing.json')).toBe(true);
+      expect(await fs.exists('/project/.zcc/hooks/definitions/zcc-routing.json')).toBe(true);
       
-      const routingDef = JSON.parse(await fs.readFile('/project/.memento/hooks/definitions/memento-routing.json', 'utf-8') as string);
-      expect(routingDef.hooks[0].id).toBe('memento-routing');
+      const routingDef = JSON.parse(await fs.readFile('/project/.zcc/hooks/definitions/zcc-routing.json', 'utf-8') as string);
+      expect(routingDef.hooks[0].id).toBe('zcc-routing');
       expect(routingDef.hooks[0].event).toBe('UserPromptSubmit');
     });
 
@@ -86,7 +86,7 @@ describe('HookManager', () => {
 
     it('should load existing hook definitions', async () => {
       const fs = await createTestFileSystem({
-        '/project/.memento/hooks/definitions/custom-hook.json': JSON.stringify({
+        '/project/.zcc/hooks/definitions/custom-hook.json': JSON.stringify({
           version: '1.0.0',
           hooks: [{
             id: 'custom-hook',
@@ -138,7 +138,7 @@ describe('HookManager', () => {
   describe('removeHook', () => {
     it('should remove hook from registry and update Claude settings', async () => {
       const fs = await createTestFileSystem({
-        '/project/.memento/hooks/definitions/remove-me.json': JSON.stringify({
+        '/project/.zcc/hooks/definitions/remove-me.json': JSON.stringify({
           version: '1.0.0',
           hooks: [{
             id: 'remove-me',
@@ -167,7 +167,7 @@ describe('HookManager', () => {
       expect(userPromptHooks?.hooks.some(h => h.id === 'remove-me')).toBe(false);
 
       // Definition file should be removed
-      expect(await fs.exists('/project/.memento/hooks/definitions/remove-me.json')).toBe(false);
+      expect(await fs.exists('/project/.zcc/hooks/definitions/remove-me.json')).toBe(false);
     });
 
     it('should return false for non-existent hook', async () => {
@@ -209,7 +209,7 @@ describe('HookManager', () => {
       expect(createdHook?.config.command).toBe('echo template');
 
       // Should save definition file
-      expect(await fs.exists('/project/.memento/hooks/definitions/from-template.json')).toBe(true);
+      expect(await fs.exists('/project/.zcc/hooks/definitions/from-template.json')).toBe(true);
     });
 
     it('should create hook with script from template', async () => {
@@ -236,12 +236,12 @@ describe('HookManager', () => {
       const createdHook = sessionStartHooks?.hooks.find(h => h.id === 'script-hook');
       
       expect(createdHook).toBeDefined();
-      expect(createdHook?.config.command).toBe('./.memento/hooks/scripts/script-template.sh');
+      expect(createdHook?.config.command).toBe('./.zcc/hooks/scripts/script-template.sh');
 
       // Should create script file
-      expect(await fs.exists('/project/.memento/hooks/scripts/script-template.sh')).toBe(true);
+      expect(await fs.exists('/project/.zcc/hooks/scripts/script-template.sh')).toBe(true);
       
-      const scriptContent = await fs.readFile('/project/.memento/hooks/scripts/script-template.sh', 'utf-8');
+      const scriptContent = await fs.readFile('/project/.zcc/hooks/scripts/script-template.sh', 'utf-8');
       expect(scriptContent).toBe('#!/bin/bash\necho "Hello from script template"');
     });
 
@@ -254,7 +254,7 @@ describe('HookManager', () => {
           command: 'echo updated',
           description: 'An updated template'
         }),
-        '/project/.memento/hooks/definitions/update-test.json': JSON.stringify({
+        '/project/.zcc/hooks/definitions/update-test.json': JSON.stringify({
           version: '1.0.0',
           hooks: [{
             id: 'update-test',
@@ -264,7 +264,7 @@ describe('HookManager', () => {
             command: 'echo old'
           }]
         }),
-        '/project/.memento/hooks/scripts/update-test.sh': '#!/bin/bash\necho "old script"'
+        '/project/.zcc/hooks/scripts/update-test.sh': '#!/bin/bash\necho "old script"'
       });
 
       const hookManager = new HookManager(projectRoot, fs);
@@ -344,7 +344,7 @@ describe('HookManager', () => {
   describe('getAllHooks', () => {
     it('should return all hooks grouped by event', async () => {
       const fs = await createTestFileSystem({
-        '/project/.memento/hooks/definitions/hook1.json': JSON.stringify({
+        '/project/.zcc/hooks/definitions/hook1.json': JSON.stringify({
           version: '1.0.0',
           hooks: [{
             id: 'hook1',
@@ -354,7 +354,7 @@ describe('HookManager', () => {
             command: 'echo hook1'
           }]
         }),
-        '/project/.memento/hooks/definitions/hook2.json': JSON.stringify({
+        '/project/.zcc/hooks/definitions/hook2.json': JSON.stringify({
           version: '1.0.0',
           hooks: [{
             id: 'hook2',
@@ -384,34 +384,34 @@ describe('HookManager', () => {
   describe('cleanupTimestampedHooks', () => {
     it('should cleanup timestamped hooks during initialization', async () => {
       const fs = await createTestFileSystem({
-        '/project/.memento/hooks/definitions/old-hook-1234567890123.json': JSON.stringify({
+        '/project/.zcc/hooks/definitions/old-hook-1234567890123.json': JSON.stringify({
           version: '1.0.0',
           hooks: [{
             id: 'old-hook-1234567890123',
             name: 'Old Timestamped Hook',
             event: 'UserPromptSubmit',
             enabled: true,
-            command: './.memento/hooks/scripts/old-hook-1234567890123.sh'
+            command: './.zcc/hooks/scripts/old-hook-1234567890123.sh'
           }]
         }),
-        '/project/.memento/hooks/scripts/old-hook-1234567890123.sh': '#!/bin/bash\necho "old timestamped"'
+        '/project/.zcc/hooks/scripts/old-hook-1234567890123.sh': '#!/bin/bash\necho "old timestamped"'
       });
 
       const hookManager = new HookManager(projectRoot, fs);
       await hookManager.initialize();
 
       // Old timestamped files should be cleaned up
-      expect(await fs.exists('/project/.memento/hooks/definitions/old-hook.json')).toBe(true);
-      expect(await fs.exists('/project/.memento/hooks/scripts/old-hook.sh')).toBe(true);
-      expect(await fs.exists('/project/.memento/hooks/definitions/old-hook-1234567890123.json')).toBe(false);
-      expect(await fs.exists('/project/.memento/hooks/scripts/old-hook-1234567890123.sh')).toBe(false);
+      expect(await fs.exists('/project/.zcc/hooks/definitions/old-hook.json')).toBe(true);
+      expect(await fs.exists('/project/.zcc/hooks/scripts/old-hook.sh')).toBe(true);
+      expect(await fs.exists('/project/.zcc/hooks/definitions/old-hook-1234567890123.json')).toBe(false);
+      expect(await fs.exists('/project/.zcc/hooks/scripts/old-hook-1234567890123.sh')).toBe(false);
 
       const allHooks = hookManager.getAllHooks();
       const userPromptHooks = allHooks.find(h => h.event === 'UserPromptSubmit');
       const cleanedHook = userPromptHooks?.hooks.find(h => h.id === 'old-hook');
       
       expect(cleanedHook).toBeDefined();
-      expect(cleanedHook?.config.command).toBe('./.memento/hooks/scripts/old-hook.sh');
+      expect(cleanedHook?.config.command).toBe('./.zcc/hooks/scripts/old-hook.sh');
     });
   });
 
@@ -427,7 +427,7 @@ describe('HookManager', () => {
             }]
           }
         }),
-        '/project/.memento/hooks/definitions/new-hook.json': JSON.stringify({
+        '/project/.zcc/hooks/definitions/new-hook.json': JSON.stringify({
           version: '1.0.0',
           hooks: [{
             id: 'new-hook',
@@ -451,7 +451,7 @@ describe('HookManager', () => {
 
     it('should handle PreToolUse and PostToolUse hooks with tool matchers', async () => {
       const fs = await createTestFileSystem({
-        '/project/.memento/hooks/definitions/tool-hook.json': JSON.stringify({
+        '/project/.zcc/hooks/definitions/tool-hook.json': JSON.stringify({
           version: '1.0.0',
           hooks: [{
             id: 'tool-hook',
@@ -476,7 +476,7 @@ describe('HookManager', () => {
 
     it('should skip disabled hooks', async () => {
       const fs = await createTestFileSystem({
-        '/project/.memento/hooks/definitions/disabled-hook.json': JSON.stringify({
+        '/project/.zcc/hooks/definitions/disabled-hook.json': JSON.stringify({
           version: '1.0.0',
           hooks: [{
             id: 'disabled-hook',

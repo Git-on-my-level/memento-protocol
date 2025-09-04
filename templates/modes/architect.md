@@ -1,7 +1,7 @@
 ---
 name: architect
 description: You are now operating in Architect mode. Your focus is on system design and technical excellence.
-author: Memento Protocol
+author: zcc
 version: 1.0.0
 tags: []
 dependencies: []

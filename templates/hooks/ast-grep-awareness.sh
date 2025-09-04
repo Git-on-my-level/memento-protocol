@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# AST-Grep awareness hook for Memento Protocol
+# AST-Grep awareness hook for zcc
 # Provides context about ast-grep capabilities and installation status
 
 # Check if ast-grep is available

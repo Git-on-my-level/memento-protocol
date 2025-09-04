@@ -11,7 +11,7 @@ import {
   PackValidationResult,
 } from "../types/packs";
 import { logger } from "../logger";
-import { MementoError } from "../errors";
+import { ZccError } from "../errors";
 import { PackagePaths } from "../packagePaths";
 import { IPackSource } from "./PackSource";
 
@@ -68,7 +68,7 @@ export class PackValidator {
     }
     
     if (!await this.fs.exists(schemaPath)) {
-      throw new MementoError(
+      throw new ZccError(
         `Pack validation schema not found at: ${schemaPath}`,
         "SCHEMA_MISSING",
         "Ensure Memento Protocol is properly installed"
@@ -82,7 +82,7 @@ export class PackValidator {
       
       logger.debug("Pack validator initialized with schema");
     } catch (error) {
-      throw new MementoError(
+      throw new ZccError(
         "Failed to load pack validation schema",
         "SCHEMA_LOAD_ERROR",
         `Schema error: ${error}`

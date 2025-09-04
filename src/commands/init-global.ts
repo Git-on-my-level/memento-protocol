@@ -1,8 +1,8 @@
 import { Command } from "commander";
 import * as os from "os";
 import inquirer from "inquirer";
-import { MementoCore } from "../lib/MementoCore";
-import { MementoConfig } from "../lib/configSchema";
+import { ZccCore } from "../lib/ZccCore";
+import { ZccConfig } from "../lib/configSchema";
 import { logger } from "../lib/logger";
 import { FileSystemError } from "../lib/errors";
 import { FileSystemAdapter } from "../lib/adapters/FileSystemAdapter";
@@ -28,12 +28,12 @@ interface GlobalInitContext {
 /**
  * Generate config.yaml content with comments
  */
-function generateConfigYaml(config: MementoConfig): string {
-  return `# Memento Protocol Global Configuration
-# This file configures Memento Protocol settings that apply across all your projects.
-# Project-specific .memento/config.yaml files can override these settings.
+function generateConfigYaml(config: ZccConfig): string {
+  return `# zcc Global Configuration
+# This file configures zcc settings that apply across all your projects.
+# Project-specific .zcc/config.yaml files can override these settings.
 #
-# Documentation: https://github.com/git-on-my-level/memento-protocol#configuration
+# Documentation: https://github.com/git-on-my-level/zcc#configuration
 
 # Default mode to activate when none is specified in a project
 # Uncomment and set to your preferred mode (e.g., "engineer", "architect", "reviewer")
@@ -76,7 +76,7 @@ components:
 # Advanced: Custom template sources for additional components
 # customTemplateSources: []
   # Examples:
-  # - "https://github.com/your-org/memento-templates"
+  # - "https://github.com/your-org/zcc-templates"
   # - "/path/to/local/custom/templates"
 
 # Preferred workflows for quick access
@@ -91,9 +91,9 @@ components:
 /**
  * Interactive setup for global configuration
  */
-async function runInteractiveSetup(): Promise<MementoConfig> {
-  logger.info("🌟 Welcome to Memento Protocol Global Setup!");
-  logger.info("This will create your ~/.memento global configuration.");
+async function runInteractiveSetup(): Promise<ZccConfig> {
+  logger.info("🌟 Welcome to zcc Global Setup!");
+  logger.info("This will create your ~/.zcc global configuration.");
   logger.space();
 
   const answers = await inquirer.prompt([
@@ -128,7 +128,7 @@ async function runInteractiveSetup(): Promise<MementoConfig> {
     }
   ]);
 
-  const config: MementoConfig = {
+  const config: ZccConfig = {
     ui: {
       colorOutput: answers.colorOutput,
       verboseLogging: answers.verboseLogging
@@ -143,7 +143,7 @@ async function runInteractiveSetup(): Promise<MementoConfig> {
 }
 
 /**
- * Install example components to global ~/.memento
+ * Install example components to global ~/.zcc
  */
 async function installExampleComponents(ctx: GlobalInitContext): Promise<void> {
   // This would use the component installer to add some basic global components
@@ -165,7 +165,7 @@ async function installExampleComponents(ctx: GlobalInitContext): Promise<void> {
   // Create a simple example script
   const exampleScript = `#!/bin/bash
 # Example global script - customize as needed
-echo "Hello from global Memento Protocol!"
+echo "Hello from global zcc!"
 `;
 
   await ctx.fs.writeFile(
@@ -178,8 +178,8 @@ echo "Hello from global Memento Protocol!"
 }
 
 export const initGlobalCommand = new Command("init-global")
-  .description("Initialize global Memento Protocol configuration (~/.memento)")
-  .option("-f, --force", "Force initialization even if ~/.memento already exists")  
+  .description("Initialize global zcc configuration (~/.zcc)")
+  .option("-f, --force", "Force initialization even if ~/.zcc already exists")  
   .option("-i, --interactive", "Run interactive setup (default: true)")
   .option("--no-interactive", "Skip interactive setup and use defaults")
   .option("-d, --default-mode <mode>", "Set default mode for all projects")
@@ -192,7 +192,7 @@ export const initGlobalCommand = new Command("init-global")
   .action(async (options: GlobalInitOptions, _cmd?: Command, fsAdapter?: FileSystemAdapter) => {
     try {
       const fs = fsAdapter || new NodeFileSystemAdapter();
-      const globalPath = fs.join(os.homedir(), ".memento");
+      const globalPath = fs.join(os.homedir(), ".zcc");
       const configPath = fs.join(globalPath, "config.yaml");
       
       const ctx: GlobalInitContext = {
@@ -204,20 +204,20 @@ export const initGlobalCommand = new Command("init-global")
       
       // Check if already initialized
       if (await fs.exists(globalPath) && !options.force) {
-        logger.warn("Global Memento Protocol is already initialized.");
+        logger.warn("Global zcc is already initialized.");
         logger.info(`Location: ${globalPath}`);
         logger.info("Use --force to reinitialize and overwrite existing configuration.");
         return;
       }
 
-      logger.info("Initializing global Memento Protocol configuration...");
+      logger.info("Initializing global zcc configuration...");
       logger.info(`Location: ${globalPath}`);
       logger.space();
 
       // Create global directory structure
       await fs.mkdir(globalPath, { recursive: true });
 
-      let config: MementoConfig;
+      let config: ZccConfig;
 
       // Run interactive setup or use provided options
       if (options.interactive !== false) {
@@ -249,21 +249,21 @@ export const initGlobalCommand = new Command("init-global")
         await installExampleComponents(ctx);
       }
 
-      // Initialize using MementoCore to create full structure
-      const mementoCore = new MementoCore(process.cwd(), ctx.fs);
-      const globalScope = mementoCore.getScopes().global;
+      // Initialize using ZccCore to create full structure
+      const zccCore = new ZccCore(process.cwd(), ctx.fs);
+      const globalScope = zccCore.getScopes().global;
       await globalScope.initialize();
 
       logger.space();
-      logger.success("Global Memento Protocol initialized successfully! 🎉");
+      logger.success("Global zcc initialized successfully! 🎉");
       logger.space();
       logger.info("Configuration saved to:");
       logger.info(`  ${ctx.configPath}`);
       logger.space();
       logger.info("What's next:");
-      logger.info("  • Run 'memento init' in any project to apply global settings");
-      logger.info("  • Edit ~/.memento/config.yaml to customize global preferences");
-      logger.info("  • Add global modes/workflows to ~/.memento/ for reuse across projects");
+      logger.info("  • Run 'zcc init' in any project to apply global settings");
+      logger.info("  • Edit ~/.zcc/config.yaml to customize global preferences");
+      logger.info("  • Add global modes/workflows to ~/.zcc/ for reuse across projects");
       logger.space();
       logger.info("Global configuration takes effect in all new project setups.");
       
@@ -272,7 +272,7 @@ export const initGlobalCommand = new Command("init-global")
         logger.error("File system error:", error.message);
         logger.info("Suggestion:", error.suggestion || "Check permissions and try again");
       } else {
-        logger.error("Failed to initialize global Memento Protocol:", error);
+        logger.error("Failed to initialize global zcc:", error);
       }
       process.exit(1);
     }

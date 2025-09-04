@@ -18,7 +18,7 @@ const version = process.env.VERSION || "0.1.0";
 const program = new Command();
 
 program
-  .name("memento")
+  .name("zcc")
   .description("A lightweight meta-framework for Claude Code")
   .version(version)
   .option("-v, --verbose", "enable verbose output")
@@ -28,23 +28,23 @@ program
     "after",
     `
 Examples:
-  $ memento                        # Initialize or update Memento Protocol
-  $ memento init                   # Explicitly initialize Memento Protocol
-  $ memento init --global          # Initialize global ~/.memento configuration
-  $ memento init-global            # Initialize global configuration (alternative)
-  $ memento update                 # Explicitly update components
-  $ memento add mode architect     # Add the architect mode
-  $ memento add workflow review    # Add the code review workflow
-  $ memento ticket create "auth"   # Create a ticket for authentication work
-  $ memento list --installed       # Show installed components
+  $ zcc                        # Initialize or update zcc
+  $ zcc init                   # Explicitly initialize zcc
+  $ zcc init --global          # Initialize global ~/.zcc configuration
+  $ zcc init-global            # Initialize global configuration (alternative)
+  $ zcc update                 # Explicitly update components
+  $ zcc add mode architect     # Add the architect mode
+  $ zcc add workflow review    # Add the code review workflow
+  $ zcc ticket create "auth"   # Create a ticket for authentication work
+  $ zcc list --installed       # Show installed components
 
 For Claude Code users:
   Say "act as architect" to switch to architect mode
   Say "execute review" to run the code review workflow
   Say "create ticket X" to start persistent work
 
-For more information, visit: https://github.com/git-on-my-level/memento-protocol
-Documentation: https://github.com/git-on-my-level/memento-protocol#readme`
+For more information, visit: https://github.com/git-on-my-level/zcc
+Documentation: https://github.com/git-on-my-level/zcc#readme`
   )
   .hook("preAction", (thisCommand) => {
     const options = thisCommand.opts();

@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to zcc will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -  update CLAUDE.md and README.md for v0.7.0 features (#10)
 
 ### Changed
-- Enhance Memento Protocol with new hooks and scripts for project context and git status
+- Enhance zcc with new hooks and scripts for project context and git status
 - Remove security-guard hook, automate metadata.json generation (#12)
 
 ## [0.7.1] - 2025-08-01
@@ -90,7 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.1] - 2025-07-20
 
 ### Fixed
-- Fixed upsert command failing on uninitialized projects - now automatically initializes .memento directory structure
+- Fixed upsert command failing on uninitialized projects - now automatically initializes .zcc directory structure
 - Fixed ComponentInstaller tests to properly mock DirectoryManager.isInitialized method
 
 ## [0.3.0] - 2025-07-20
@@ -99,7 +99,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenMemory MCP workflow for enhanced memory management
 
 ### Changed
-- Re-add upsert functionality and re-initialize .memento directory
+- Re-add upsert functionality and re-initialize .zcc directory
 - Improve router prompt reliability for better mode detection
 - Improve update mechanism performance
 - Remove backup feature for simplified architecture
@@ -137,7 +137,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2025-07-15
 
 ### Added
-- Initial release of Memento Protocol
+- Initial release of zcc (formerly Memento Protocol)
 - Core CLI commands: init, add, list, ticket, config, update, language
 - Mode system with built-in modes: architect, engineer, project-manager, reviewer
 - Workflow templates: review, summarize
@@ -159,18 +159,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-platform support (macOS, Linux)
 - npm and standalone distribution
 
-[0.9.0]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.9.0
-[0.8.0]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.8.0
-[0.7.1]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.7.1
-[0.7.0]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.7.0
-[0.6.0]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.6.0
-[0.5.3]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.5.3
-[0.5.2]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.5.2
-[0.5.1]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.5.1
-[0.5.0]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.5.0
-[0.4.0]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.4.0
-[0.3.1]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.3.1
-[0.3.0]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.3.0
-[0.2.1]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.2.1
-[0.2.0]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.2.0
-[0.1.0]: https://github.com/git-on-my-level/memento-protocol/releases/tag/v0.1.0
+[0.9.0]: https://github.com/git-on-my-level/zcc/releases/tag/v0.9.0
+[0.8.0]: https://github.com/git-on-my-level/zcc/releases/tag/v0.8.0
+[0.7.1]: https://github.com/git-on-my-level/zcc/releases/tag/v0.7.1
+[0.7.0]: https://github.com/git-on-my-level/zcc/releases/tag/v0.7.0
+[0.6.0]: https://github.com/git-on-my-level/zcc/releases/tag/v0.6.0
+[0.5.3]: https://github.com/git-on-my-level/zcc/releases/tag/v0.5.3
+[0.5.2]: https://github.com/git-on-my-level/zcc/releases/tag/v0.5.2
+[0.5.1]: https://github.com/git-on-my-level/zcc/releases/tag/v0.5.1
+[0.5.0]: https://github.com/git-on-my-level/zcc/releases/tag/v0.5.0
+[0.4.0]: https://github.com/git-on-my-level/zcc/releases/tag/v0.4.0
+[0.3.1]: https://github.com/git-on-my-level/zcc/releases/tag/v0.3.1
+[0.3.0]: https://github.com/git-on-my-level/zcc/releases/tag/v0.3.0
+[0.2.1]: https://github.com/git-on-my-level/zcc/releases/tag/v0.2.1
+[0.2.0]: https://github.com/git-on-my-level/zcc/releases/tag/v0.2.0
+[0.1.0]: https://github.com/git-on-my-level/zcc/releases/tag/v0.1.0

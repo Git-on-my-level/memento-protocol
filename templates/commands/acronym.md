@@ -25,7 +25,7 @@ Manage acronyms and their expansions for your project.
 
 ## Script Implementation
 
-This command is implemented by the Memento Protocol CLI and requires the `.memento` directory to be initialized in your project.
+This command is implemented by the zcc CLI and requires the `.zcc` directory to be initialized in your project.
 
 ```bash
 #!/bin/bash
@@ -35,20 +35,20 @@ CMD="$1"
 shift
 ARGS="$@"
 
-# Change to project root (where .memento directory should exist)
+# Change to project root (where .zcc directory should exist)
 PROJECT_ROOT=$(pwd)
-while [[ "$PROJECT_ROOT" != "/" && ! -d "$PROJECT_ROOT/.memento" ]]; do
+while [[ "$PROJECT_ROOT" != "/" && ! -d "$PROJECT_ROOT/.zcc" ]]; do
     PROJECT_ROOT=$(dirname "$PROJECT_ROOT")
 done
 
-if [[ ! -d "$PROJECT_ROOT/.memento" ]]; then
-    echo "Error: Not in a Memento Protocol project (no .memento directory found)"
+if [[ ! -d "$PROJECT_ROOT/.zcc" ]]; then
+    echo "Error: Not in a zcc project (no .zcc directory found)"
     exit 1
 fi
 
 cd "$PROJECT_ROOT"
 
-# Execute the memento acronym command
+# Execute the zcc acronym command
 case "$CMD" in
     "add")
         if [[ $# -lt 2 ]]; then
@@ -58,17 +58,17 @@ case "$CMD" in
         ACRONYM="$1"
         shift
         EXPANSION="$*"
-        memento acronym add "$ACRONYM" "$EXPANSION"
+        zcc acronym add "$ACRONYM" "$EXPANSION"
         ;;
     "list"|"ls")
-        memento acronym list
+        zcc acronym list
         ;;
     "remove"|"rm")
         if [[ $# -lt 1 ]]; then
             echo "Usage: /acronym remove <acronym>"
             exit 1
         fi
-        memento acronym remove "$1"
+        zcc acronym remove "$1"
         ;;
     *)
         echo "Acronym Management Commands:"

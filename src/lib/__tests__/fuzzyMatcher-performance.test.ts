@@ -1,5 +1,5 @@
 import { FuzzyMatcher } from '../fuzzyMatcher';
-import { ComponentInfo } from '../MementoScope';
+import { ComponentInfo } from '../ZccScope';
 
 describe('FuzzyMatcher Performance', () => {
   // Generate a large set of mock components to test performance

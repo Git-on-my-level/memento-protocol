@@ -1,5 +1,5 @@
 import { UpdateManager } from "../updateManager";
-import { createTestMementoProject } from "../testing";
+import { createTestZccProject } from "../testing";
 import { MemoryFileSystemAdapter } from "../adapters/MemoryFileSystemAdapter";
 import { logger } from "../logger";
 
@@ -22,11 +22,11 @@ describe("UpdateManager", () => {
     jest.clearAllMocks();
     
     // Create test project with filesystem
-    fs = await createTestMementoProject(projectRoot);
+    fs = await createTestZccProject(projectRoot);
     
     // Create a basic manifest
     await fs.writeFile(
-      fs.join(projectRoot, ".memento", "manifest.json"),
+      fs.join(projectRoot, ".zcc", "manifest.json"),
       JSON.stringify({
         components: { modes: [], workflows: [] },
         versions: {},
@@ -53,7 +53,7 @@ describe("UpdateManager", () => {
     it("should warn about local changes without force flag", async () => {
       // Set up manifest with architect mode
       await fs.writeFile(
-        fs.join(projectRoot, ".memento", "manifest.json"),
+        fs.join(projectRoot, ".zcc", "manifest.json"),
         JSON.stringify({
           components: {
             modes: ["architect"],
@@ -74,7 +74,7 @@ describe("UpdateManager", () => {
       
       // Create the component with different content (local changes)
       await fs.writeFile(
-        fs.join(projectRoot, ".memento", "modes", "architect.md"),
+        fs.join(projectRoot, ".zcc", "modes", "architect.md"),
         "modified content"
       );
       
@@ -114,7 +114,7 @@ describe("UpdateManager", () => {
     it("should show diff when component has changes", async () => {
       // Create component with current content
       await fs.writeFile(
-        fs.join(projectRoot, ".memento", "modes", "architect.md"),
+        fs.join(projectRoot, ".zcc", "modes", "architect.md"),
         "current content"
       );
       
@@ -138,7 +138,7 @@ describe("UpdateManager", () => {
       const content = "same content";
       
       await fs.writeFile(
-        fs.join(projectRoot, ".memento", "modes", "architect.md"),
+        fs.join(projectRoot, ".zcc", "modes", "architect.md"),
         content
       );
       

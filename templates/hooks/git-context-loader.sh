@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Git context loader hook for Memento Protocol
+# Git context loader hook for zcc
 # Provides succinct git status on each user prompt
 
 echo '## Git Status'

@@ -68,9 +68,9 @@ export interface AcronymConfig {
 }
 
 /**
- * Unified Memento configuration interface (replaces both MementoConfig and MementoScopeConfig)
+ * Unified ZCC configuration interface (replaces both ZccConfig and ZccScopeConfig)
  */
-export interface MementoConfig {
+export interface ZccConfig {
   // Project-level settings
   defaultMode?: string;
   preferredWorkflows?: string[];
@@ -415,9 +415,9 @@ export class AcronymConfigValidator implements Validator {
 }
 
 /**
- * Validator for Main Memento Configuration
+ * Validator for Main ZCC Configuration
  */
-export class MementoConfigValidator implements Validator {
+export class ZccConfigValidator implements Validator {
   validate(value: unknown): ValidationResult {
     const result: ValidationResult = { valid: true, errors: [], warnings: [] };
 
@@ -509,7 +509,7 @@ export class MementoConfigValidator implements Validator {
 export class ConfigSchemaRegistry {
   private static instance: ConfigSchemaRegistry;
   
-  private mementoConfigValidator = new MementoConfigValidator();
+  private zccConfigValidator = new ZccConfigValidator();
   private hookConfigValidator = new HookConfigValidator();
   private acronymConfigValidator = new AcronymConfigValidator();
 
@@ -520,8 +520,8 @@ export class ConfigSchemaRegistry {
     return ConfigSchemaRegistry.instance;
   }
 
-  getMementoConfigValidator(): MementoConfigValidator {
-    return this.mementoConfigValidator;
+  getZccConfigValidator(): ZccConfigValidator {
+    return this.zccConfigValidator;
   }
 
   getHookConfigValidator(): HookConfigValidator {

@@ -16,7 +16,7 @@ import { MemoryFileSystemAdapter } from '../adapters/MemoryFileSystemAdapter';
  * 
  * // Pre-populated filesystem
  * const fs = await createTestFileSystem({
- *   '/project/.memento/config.json': JSON.stringify({ theme: 'dark' }),
+ *   '/project/.zcc/config.json': JSON.stringify({ theme: 'dark' }),
  *   '/project/src/index.ts': 'console.log("Hello, World!");',
  *   '/project/README.md': '# My Project\n\nThis is a test project.'
  * });
@@ -34,10 +34,10 @@ export async function createTestFileSystem(
 }
 
 /**
- * Creates a test filesystem with a typical Memento Protocol project structure.
+ * Creates a test filesystem with a typical ZCC project structure.
  * 
  * This is a convenience function that creates a filesystem pre-populated with
- * a standard Memento project layout, making it easier to test project-specific
+ * a standard ZCC project layout, making it easier to test project-specific
  * functionality.
  * 
  * @param projectRoot The root directory path for the project (default: '/project')
@@ -46,21 +46,21 @@ export async function createTestFileSystem(
  * 
  * @example
  * ```typescript
- * const fs = await createTestMementoProject('/my-project', {
+ * const fs = await createTestZccProject('/my-project', {
  *   '/my-project/package.json': JSON.stringify({ name: 'test-project' })
  * });
  * 
  * // The filesystem now contains:
- * // /my-project/.memento/
- * // /my-project/.memento/config.json
- * // /my-project/.memento/modes/
- * // /my-project/.memento/workflows/
- * // /my-project/.memento/tickets/
+ * // /my-project/.zcc/
+ * // /my-project/.zcc/config.json
+ * // /my-project/.zcc/modes/
+ * // /my-project/.zcc/workflows/
+ * // /my-project/.zcc/tickets/
  * // /my-project/.claude/
  * // Plus any custom files you specified
  * ```
  */
-export async function createTestMementoProject(
+export async function createTestZccProject(
   projectRoot: string = '/project',
   customFiles: Record<string, string> = {}
 ): Promise<MemoryFileSystemAdapter> {
@@ -75,13 +75,13 @@ export async function createTestMementoProject(
   };
 
   const defaultFiles: Record<string, string> = {
-    // Memento directories and config
-    [`${projectRoot}/.memento/config.json`]: JSON.stringify(defaultConfig, null, 2),
-    [`${projectRoot}/.memento/modes/.gitkeep`]: '',
-    [`${projectRoot}/.memento/workflows/.gitkeep`]: '',
-    [`${projectRoot}/.memento/tickets/next/.gitkeep`]: '',
-    [`${projectRoot}/.memento/tickets/in-progress/.gitkeep`]: '',
-    [`${projectRoot}/.memento/tickets/done/.gitkeep`]: '',
+    // ZCC directories and config
+    [`${projectRoot}/.zcc/config.json`]: JSON.stringify(defaultConfig, null, 2),
+    [`${projectRoot}/.zcc/modes/.gitkeep`]: '',
+    [`${projectRoot}/.zcc/workflows/.gitkeep`]: '',
+    [`${projectRoot}/.zcc/tickets/next/.gitkeep`]: '',
+    [`${projectRoot}/.zcc/tickets/in-progress/.gitkeep`]: '',
+    [`${projectRoot}/.zcc/tickets/done/.gitkeep`]: '',
     
     // Claude Code directories
     [`${projectRoot}/.claude/agents/.gitkeep`]: '',
@@ -91,9 +91,9 @@ export async function createTestMementoProject(
     [`${projectRoot}/package.json`]: JSON.stringify({
       name: 'test-project',
       version: '1.0.0',
-      description: 'A test project for Memento Protocol testing'
+      description: 'A test project for zcc testing'
     }, null, 2),
-    [`${projectRoot}/README.md`]: '# Test Project\n\nThis is a test project created for testing Memento Protocol functionality.'
+    [`${projectRoot}/README.md`]: '# Test Project\n\nThis is a test project created for testing zcc functionality.'
   };
 
   // Merge default files with custom files (custom files override defaults)
@@ -116,11 +116,11 @@ export async function createTestMementoProject(
  * const fs = await createMultiProjectTestFileSystem({
  *   'frontend': {
  *     '/frontend/package.json': JSON.stringify({ name: 'frontend' }),
- *     '/frontend/.memento/config.json': JSON.stringify({ theme: 'react' })
+ *     '/frontend/.zcc/config.json': JSON.stringify({ theme: 'react' })
  *   },
  *   'backend': {
  *     '/backend/package.json': JSON.stringify({ name: 'backend' }),
- *     '/backend/.memento/config.json': JSON.stringify({ theme: 'node' })
+ *     '/backend/.zcc/config.json': JSON.stringify({ theme: 'node' })
  *   }
  * });
  * ```

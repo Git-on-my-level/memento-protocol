@@ -1,8 +1,8 @@
 import { listCommand } from '../list';
-import { MementoCore } from '../../lib/MementoCore';
+import { ZccCore } from '../../lib/ZccCore';
 import { logger } from '../../lib/logger';
 
-jest.mock('../../lib/MementoCore');
+jest.mock('../../lib/ZccCore');
 jest.mock('../../lib/logger', () => ({
   logger: {
     info: jest.fn(),
@@ -13,7 +13,7 @@ jest.mock('../../lib/logger', () => ({
 }));
 
 describe('List Command', () => {
-  let mockCore: jest.Mocked<MementoCore>;
+  let mockCore: jest.Mocked<ZccCore>;
   let originalExit: any;
 
   beforeEach(() => {
@@ -26,7 +26,7 @@ describe('List Command', () => {
       hasGlobalScope: jest.fn().mockReturnValue(true)
     } as any;
 
-    (MementoCore as jest.MockedClass<typeof MementoCore>).mockImplementation(() => mockCore);
+    (ZccCore as jest.MockedClass<typeof ZccCore>).mockImplementation(() => mockCore);
     
     originalExit = process.exit;
     process.exit = jest.fn() as any;
@@ -40,8 +40,8 @@ describe('List Command', () => {
     it('should show status summary and components by default', async () => {
       mockCore.getStatus.mockResolvedValue({
         builtin: { available: true, path: '/templates', components: 15 },
-        global: { exists: true, path: '/global/.memento', components: 2, hasConfig: true },
-        project: { exists: true, path: '/project/.memento', components: 3, hasConfig: true },
+        global: { exists: true, path: '/global/.zcc', components: 2, hasConfig: true },
+        project: { exists: true, path: '/project/.zcc', components: 3, hasConfig: true },
         totalComponents: 20,
         uniqueComponents: 18
       });
@@ -53,13 +53,13 @@ describe('List Command', () => {
             source: 'builtin'
           },
           { 
-            component: { name: 'engineer', type: 'mode', path: '/project/.memento/modes/engineer.md', metadata: { description: 'Implementation' } },
+            component: { name: 'engineer', type: 'mode', path: '/project/.zcc/modes/engineer.md', metadata: { description: 'Implementation' } },
             source: 'project'
           }
         ],
         workflows: [
           { 
-            component: { name: 'review', type: 'workflow', path: '/global/.memento/workflows/review.md', metadata: { description: 'Code review' } },
+            component: { name: 'review', type: 'workflow', path: '/global/.zcc/workflows/review.md', metadata: { description: 'Code review' } },
             source: 'global'
           }
         ],
@@ -72,7 +72,7 @@ describe('List Command', () => {
 
       await listCommand.parseAsync(['node', 'test']);
 
-      expect(logger.info).toHaveBeenCalledWith('Memento Protocol Status:');
+      expect(logger.info).toHaveBeenCalledWith('zcc Status:');
       expect(logger.info).toHaveBeenCalledWith('Built-in:  ✓ 15 components');
       expect(logger.info).toHaveBeenCalledWith('Modes:');
       expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('architect'));
@@ -86,8 +86,8 @@ describe('List Command', () => {
     it('should show all components with --installed flag (legacy behavior)', async () => {
       mockCore.getStatus.mockResolvedValue({
         builtin: { available: true, path: '/templates', components: 15 },
-        global: { exists: true, path: '/global/.memento', components: 2, hasConfig: true },
-        project: { exists: true, path: '/project/.memento', components: 3, hasConfig: true },
+        global: { exists: true, path: '/global/.zcc', components: 2, hasConfig: true },
+        project: { exists: true, path: '/project/.zcc', components: 3, hasConfig: true },
         totalComponents: 20,
         uniqueComponents: 18
       });
@@ -95,17 +95,17 @@ describe('List Command', () => {
       mockCore.listComponentsWithSource.mockResolvedValue({
         modes: [
           { 
-            component: { name: 'architect', type: 'mode', path: '/project/.memento/modes/architect.md', metadata: { description: 'System design' } },
+            component: { name: 'architect', type: 'mode', path: '/project/.zcc/modes/architect.md', metadata: { description: 'System design' } },
             source: 'project'
           },
           { 
-            component: { name: 'engineer', type: 'mode', path: '/global/.memento/modes/engineer.md', metadata: { description: 'Implementation' } },
+            component: { name: 'engineer', type: 'mode', path: '/global/.zcc/modes/engineer.md', metadata: { description: 'Implementation' } },
             source: 'global'
           }
         ],
         workflows: [
           { 
-            component: { name: 'review', type: 'workflow', path: '/project/.memento/workflows/review.md', metadata: { description: 'Code review' } },
+            component: { name: 'review', type: 'workflow', path: '/project/.zcc/workflows/review.md', metadata: { description: 'Code review' } },
             source: 'project'
           },
           { 
@@ -122,7 +122,7 @@ describe('List Command', () => {
 
       await listCommand.parseAsync(['node', 'test', '--installed']);
 
-      expect(logger.info).toHaveBeenCalledWith('Memento Protocol Status:');
+      expect(logger.info).toHaveBeenCalledWith('zcc Status:');
       expect(logger.info).toHaveBeenCalledWith('Modes:');
       expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('architect'));
       expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('engineer'));
@@ -134,8 +134,8 @@ describe('List Command', () => {
     it('should handle no components found', async () => {
       mockCore.getStatus.mockResolvedValue({
         builtin: { available: true, path: '/templates', components: 15 },
-        global: { exists: false, path: '/global/.memento', components: 0, hasConfig: false },
-        project: { exists: false, path: '/project/.memento', components: 0, hasConfig: false },
+        global: { exists: false, path: '/global/.zcc', components: 0, hasConfig: false },
+        project: { exists: false, path: '/project/.zcc', components: 0, hasConfig: false },
         totalComponents: 15,
         uniqueComponents: 15
       });
@@ -161,8 +161,8 @@ describe('List Command', () => {
       
       // Check for the existence of add commands in multiple calls
       const allCalls = calls.map(call => call[0]).join('\n');
-      expect(allCalls).toMatch(/memento add mode/);
-      expect(allCalls).toMatch(/memento add workflow/);
+      expect(allCalls).toMatch(/zcc add mode/);
+      expect(allCalls).toMatch(/zcc add workflow/);
     });
 
     it('should work even without initialized scopes', async () => {
@@ -170,8 +170,8 @@ describe('List Command', () => {
       
       mockCore.getStatus.mockResolvedValue({
         builtin: { available: true, path: '/templates', components: 15 },
-        global: { exists: false, path: '/global/.memento', components: 0, hasConfig: false },
-        project: { exists: false, path: '/project/.memento', components: 0, hasConfig: false },
+        global: { exists: false, path: '/global/.zcc', components: 0, hasConfig: false },
+        project: { exists: false, path: '/project/.zcc', components: 0, hasConfig: false },
         totalComponents: 15,
         uniqueComponents: 15
       });
@@ -189,7 +189,7 @@ describe('List Command', () => {
       await listCommand.parseAsync(['node', 'test', '--installed']);
 
       // Should not error, just show available builtin components
-      expect(logger.info).toHaveBeenCalledWith('Memento Protocol Status:');
+      expect(logger.info).toHaveBeenCalledWith('zcc Status:');
       expect(logger.info).toHaveBeenCalledWith('Built-in:  ✓ 15 components');
     });
   });

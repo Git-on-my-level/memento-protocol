@@ -1,0 +1,25 @@
+{
+  "version": "1.0.0",
+  "hooks": [
+    {
+      "id": "zcc-routing",
+      "name": "ZCC Routing Hook",
+      "description": "Routes modes, workflows, and tickets based on user prompts",
+      "event": "UserPromptSubmit",
+      "enabled": true,
+      "command": "./.zcc/hooks/scripts/zcc-routing.sh",
+      "priority": 100,
+      "requirements": {
+        "commands": [
+          "jq",
+          "grep",
+          "sed",
+          "cat",
+          "echo",
+          "ls",
+          "basename"
+        ]
+      }
+    }
+  ]
+}

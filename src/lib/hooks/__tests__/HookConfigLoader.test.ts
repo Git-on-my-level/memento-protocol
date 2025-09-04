@@ -6,7 +6,7 @@ describe('HookConfigLoader', () => {
   describe('loadAll', () => {
     it('should load JSON hook definitions from directory', async () => {
       const fs = await createTestFileSystem({
-        '/project/.memento/hooks/definitions/hook1.json': JSON.stringify({
+        '/project/.zcc/hooks/definitions/hook1.json': JSON.stringify({
           version: '1.0.0',
           hooks: [
             {
@@ -18,7 +18,7 @@ describe('HookConfigLoader', () => {
             }
           ]
         }),
-        '/project/.memento/hooks/definitions/hook2.json': JSON.stringify({
+        '/project/.zcc/hooks/definitions/hook2.json': JSON.stringify({
           version: '1.0.0',
           hooks: [
             {
@@ -32,7 +32,7 @@ describe('HookConfigLoader', () => {
         })
       });
 
-      const loader = new HookConfigLoader('/project/.memento/hooks/definitions', fs);
+      const loader = new HookConfigLoader('/project/.zcc/hooks/definitions', fs);
       const definitions = await loader.loadAll();
 
       expect(definitions).toHaveLength(2);
@@ -42,15 +42,15 @@ describe('HookConfigLoader', () => {
 
     it('should skip non-JSON files', async () => {
       const fs = await createTestFileSystem({
-        '/project/.memento/hooks/definitions/hook1.json': JSON.stringify({
+        '/project/.zcc/hooks/definitions/hook1.json': JSON.stringify({
           version: '1.0.0',
           hooks: []
         }),
-        '/project/.memento/hooks/definitions/README.md': '# Hooks',
-        '/project/.memento/hooks/definitions/script.sh': '#!/bin/bash\necho test'
+        '/project/.zcc/hooks/definitions/README.md': '# Hooks',
+        '/project/.zcc/hooks/definitions/script.sh': '#!/bin/bash\necho test'
       });
 
-      const loader = new HookConfigLoader('/project/.memento/hooks/definitions', fs);
+      const loader = new HookConfigLoader('/project/.zcc/hooks/definitions', fs);
       const definitions = await loader.loadAll();
 
       expect(definitions).toHaveLength(1);
@@ -58,10 +58,10 @@ describe('HookConfigLoader', () => {
 
     it('should handle empty directory gracefully', async () => {
       const fs = await createTestFileSystem({
-        '/project/.memento/hooks/definitions/': ''
+        '/project/.zcc/hooks/definitions/': ''
       });
 
-      const loader = new HookConfigLoader('/project/.memento/hooks/definitions', fs);
+      const loader = new HookConfigLoader('/project/.zcc/hooks/definitions', fs);
       const definitions = await loader.loadAll();
 
       expect(definitions).toHaveLength(0);
@@ -70,7 +70,7 @@ describe('HookConfigLoader', () => {
     it('should handle non-existent directory gracefully', async () => {
       const fs = await createTestFileSystem({});
 
-      const loader = new HookConfigLoader('/project/.memento/hooks/definitions', fs);
+      const loader = new HookConfigLoader('/project/.zcc/hooks/definitions', fs);
       const definitions = await loader.loadAll();
 
       expect(definitions).toHaveLength(0);
@@ -78,18 +78,18 @@ describe('HookConfigLoader', () => {
 
     it('should skip invalid JSON files and continue loading', async () => {
       const fs = await createTestFileSystem({
-        '/project/.memento/hooks/definitions/valid.json': JSON.stringify({
+        '/project/.zcc/hooks/definitions/valid.json': JSON.stringify({
           version: '1.0.0',
           hooks: [{ id: 'valid', name: 'Valid Hook', event: 'UserPromptSubmit', enabled: true, command: 'echo valid' }]
         }),
-        '/project/.memento/hooks/definitions/invalid.json': '{ invalid json',
-        '/project/.memento/hooks/definitions/another.json': JSON.stringify({
+        '/project/.zcc/hooks/definitions/invalid.json': '{ invalid json',
+        '/project/.zcc/hooks/definitions/another.json': JSON.stringify({
           version: '1.0.0',
           hooks: [{ id: 'another', name: 'Another Hook', event: 'SessionStart', enabled: true, command: 'echo another' }]
         })
       });
 
-      const loader = new HookConfigLoader('/project/.memento/hooks/definitions', fs);
+      const loader = new HookConfigLoader('/project/.zcc/hooks/definitions', fs);
       const definitions = await loader.loadAll();
 
       expect(definitions).toHaveLength(2);
@@ -171,10 +171,10 @@ describe('HookConfigLoader', () => {
         ]
       };
 
-      const loader = new HookConfigLoader('/project/.memento/hooks/definitions', fs);
+      const loader = new HookConfigLoader('/project/.zcc/hooks/definitions', fs);
       await loader.saveDefinition(definition, 'save-test.json');
 
-      const savedContent = await fs.readFile('/project/.memento/hooks/definitions/save-test.json', 'utf-8') as string;
+      const savedContent = await fs.readFile('/project/.zcc/hooks/definitions/save-test.json', 'utf-8') as string;
       const parsed = JSON.parse(savedContent);
       
       expect(parsed.version).toBe('1.0.0');
@@ -194,25 +194,25 @@ describe('HookConfigLoader', () => {
   describe('deleteDefinition', () => {
     it('should delete definition file', async () => {
       const fs = await createTestFileSystem({
-        '/project/.memento/hooks/definitions/delete-me.json': JSON.stringify({
+        '/project/.zcc/hooks/definitions/delete-me.json': JSON.stringify({
           version: '1.0.0',
           hooks: []
         })
       });
 
-      const loader = new HookConfigLoader('/project/.memento/hooks/definitions', fs);
+      const loader = new HookConfigLoader('/project/.zcc/hooks/definitions', fs);
       
-      expect(await fs.exists('/project/.memento/hooks/definitions/delete-me.json')).toBe(true);
+      expect(await fs.exists('/project/.zcc/hooks/definitions/delete-me.json')).toBe(true);
       
       await loader.deleteDefinition('delete-me.json');
       
-      expect(await fs.exists('/project/.memento/hooks/definitions/delete-me.json')).toBe(false);
+      expect(await fs.exists('/project/.zcc/hooks/definitions/delete-me.json')).toBe(false);
     });
 
     it('should throw error when file does not exist', async () => {
       const fs = await createTestFileSystem({});
 
-      const loader = new HookConfigLoader('/project/.memento/hooks/definitions', fs);
+      const loader = new HookConfigLoader('/project/.zcc/hooks/definitions', fs);
       
       await expect(loader.deleteDefinition('non-existent.json')).rejects.toThrow();
     });

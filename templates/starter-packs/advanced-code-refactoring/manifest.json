@@ -2,7 +2,7 @@
   "name": "advanced-code-refactoring",
   "version": "1.0.0",
   "description": "Advanced code refactoring toolkit with AST-based analysis and semantic transformations",
-  "author": "memento-protocol",
+  "author": "zcc",
   "tags": ["refactoring", "ast-grep", "code-analysis", "semantic-search"],
   "category": "general",
   "mementoProtocolVersion": "1.0.0",
@@ -81,8 +81,8 @@
   "postInstall": {
     "message": "Advanced Code Refactoring Pack installed! 🔍✨\n\nNew capabilities:\n- AST-based structural code search\n- Semantic-aware refactoring\n- Multi-language pattern matching\n\nAvailable modes:\n- `/mode refactoring-specialist` - Advanced refactoring focus\n\nQuick commands:\n- `/ast 'function $NAME($ARGS) { $$$ }'` - Find functions with AST patterns\n- `/refactor variable-rename` - Safe variable renaming workflow\n- `/semantic find-unused-imports` - Semantic code analysis\n\nAgent available: code-archaeologist for complex AST operations\nWorkflows: semantic-search, safe-refactoring",
     "commands": [
-      "memento config set defaultMode refactoring-specialist",
-      "memento config set preferredTools ast-grep,ripgrep"
+      "zcc config set defaultMode refactoring-specialist",
+      "zcc config set preferredTools ast-grep,ripgrep"
     ]
   }
 }

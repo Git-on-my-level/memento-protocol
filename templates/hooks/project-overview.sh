@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Project overview hook for Memento Protocol
+# Project overview hook for zcc
 # Provides a summary of project tickets at session start
 
 echo '## Project Overview'
@@ -11,8 +11,8 @@ echo
 
 # In Progress Tickets
 echo '#### In Progress'
-if [ -d ".memento/tickets/in-progress" ]; then
-    tickets=$(find .memento/tickets/in-progress -name '*.md' 2>/dev/null)
+if [ -d ".zcc/tickets/in-progress" ]; then
+    tickets=$(find .zcc/tickets/in-progress -name '*.md' 2>/dev/null)
     if [ -n "$tickets" ]; then
         echo "$tickets" | while read -r ticket; do
             echo "- $(basename "$ticket" .md)"
@@ -27,8 +27,8 @@ echo
 
 # Next Tickets
 echo '#### Next'
-if [ -d ".memento/tickets/next" ]; then
-    count=$(find .memento/tickets/next -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
+if [ -d ".zcc/tickets/next" ]; then
+    count=$(find .zcc/tickets/next -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
     echo "$count tickets"
 else
     echo "0 tickets"
@@ -37,8 +37,8 @@ echo
 
 # Done Tickets  
 echo '#### Done'
-if [ -d ".memento/tickets/done" ]; then
-    count=$(find .memento/tickets/done -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
+if [ -d ".zcc/tickets/done" ]; then
+    count=$(find .zcc/tickets/done -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
     echo "$count tickets"
 else
     echo "0 tickets"

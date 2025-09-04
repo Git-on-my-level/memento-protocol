@@ -1,5 +1,5 @@
 import { logger } from '../logger';
-import { MementoError } from '../errors';
+import { ZccError } from '../errors';
 
 describe('logger', () => {
   let consoleLogSpy: jest.SpyInstance;
@@ -82,23 +82,23 @@ describe('logger', () => {
       expect(consoleErrorSpy.mock.calls[1][0]).toContain('Test error');
     });
 
-    it('should handle MementoError with suggestions', () => {
-      const error = new MementoError('Test error', 'TEST_ERROR', 'Try this instead');
-      logger.error('Memento error occurred', error);
+    it('should handle ZccError with suggestions', () => {
+      const error = new ZccError('Test error', 'TEST_ERROR', 'Try this instead');
+      logger.error('Error with suggestions occurred', error);
       
       expect(consoleErrorSpy).toHaveBeenCalledTimes(3);
-      expect(consoleErrorSpy.mock.calls[0][0]).toContain('Memento error occurred');
+      expect(consoleErrorSpy.mock.calls[0][0]).toContain('Error with suggestions occurred');
       expect(consoleErrorSpy.mock.calls[1][0]).toContain('Test error');
       expect(consoleErrorSpy.mock.calls[2][0]).toContain('💡');
       expect(consoleErrorSpy.mock.calls[2][0]).toContain('Try this instead');
     });
 
-    it('should handle MementoError without suggestions', () => {
-      const error = new MementoError('Test error', 'TEST_ERROR');
-      logger.error('Memento error occurred', error);
+    it('should handle ZccError without suggestions', () => {
+      const error = new ZccError('Test error', 'TEST_ERROR');
+      logger.error('Error without suggestions occurred', error);
       
       expect(consoleErrorSpy).toHaveBeenCalledTimes(2);
-      expect(consoleErrorSpy.mock.calls[0][0]).toContain('Memento error occurred');
+      expect(consoleErrorSpy.mock.calls[0][0]).toContain('Error without suggestions occurred');
       expect(consoleErrorSpy.mock.calls[1][0]).toContain('Test error');
     });
   });

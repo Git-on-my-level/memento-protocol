@@ -1,7 +1,7 @@
 ---
 name: state-management
 description: A systematic approach to implementing state management in React applications, covering local state, context, and external state solutions.
-author: memento-protocol
+author: zcc
 version: 1.0.0
 tags: [react, state-management, context, redux, zustand, hooks]
 dependencies: []

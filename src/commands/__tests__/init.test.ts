@@ -152,7 +152,7 @@ describe("Init Command", () => {
 
     // Create fresh test filesystem for each test
     testFs = await createTestFileSystem({
-      '/project/.memento/config.json': JSON.stringify({ version: '1.0.0' }, null, 2),
+      '/project/.zcc/config.json': JSON.stringify({ version: '1.0.0' }, null, 2),
       '/project/package.json': JSON.stringify({ name: 'test-project' }, null, 2)
     });
 
@@ -180,9 +180,9 @@ describe("Init Command", () => {
 
   afterEach(() => {
     // Clean up any environment variables that tests might set
-    delete process.env.MEMENTO_MODES;
-    delete process.env.MEMENTO_WORKFLOWS;
-    delete process.env.MEMENTO_DEFAULT_MODE;
+    delete process.env.ZCC_MODES;
+    delete process.env.ZCC_WORKFLOWS;
+    delete process.env.ZCC_DEFAULT_MODE;
     
     jest.restoreAllMocks();
   });
@@ -207,7 +207,7 @@ describe("Init Command", () => {
       expect(mockInteractiveSetup.applySetup).not.toHaveBeenCalled();
       expect(mockHookManager.initialize).toHaveBeenCalled();
       expect(logger.success).toHaveBeenCalledWith(
-        expect.stringContaining("Memento Protocol initialized successfully")
+        expect.stringContaining("zcc initialized successfully")
       );
     });
 
@@ -322,7 +322,7 @@ describe("Init Command", () => {
       
       // Verify that the init completed successfully
       expect(logger.success).toHaveBeenCalledWith(
-        expect.stringContaining("Memento Protocol initialized successfully")
+        expect.stringContaining("zcc initialized successfully")
       );
       
       // Verify gitignore was updated based on config
@@ -351,9 +351,9 @@ describe("Init Command", () => {
       });
 
       // Set environment variables
-      process.env.MEMENTO_MODES = "engineer,reviewer";
-      process.env.MEMENTO_WORKFLOWS = "summarize,review";
-      process.env.MEMENTO_DEFAULT_MODE = "reviewer";
+      process.env.ZCC_MODES = "engineer,reviewer";
+      process.env.ZCC_WORKFLOWS = "summarize,review";
+      process.env.ZCC_DEFAULT_MODE = "reviewer";
 
       await initCommand.parseAsync([
         "node", 
@@ -363,7 +363,7 @@ describe("Init Command", () => {
 
       // Verify that the init completed successfully
       expect(logger.success).toHaveBeenCalledWith(
-        expect.stringContaining("Memento Protocol initialized successfully")
+        expect.stringContaining("zcc initialized successfully")
       );
       
       // If components were selected, verify they were installed
@@ -378,9 +378,9 @@ describe("Init Command", () => {
       }
 
       // Clean up environment variables
-      delete process.env.MEMENTO_MODES;
-      delete process.env.MEMENTO_WORKFLOWS;
-      delete process.env.MEMENTO_DEFAULT_MODE;
+      delete process.env.ZCC_MODES;
+      delete process.env.ZCC_WORKFLOWS;
+      delete process.env.ZCC_DEFAULT_MODE;
     });
   });
 
@@ -391,7 +391,7 @@ describe("Init Command", () => {
       await initCommand.parseAsync(["node", "test"]);
 
       expect(logger.warn).toHaveBeenCalledWith(
-        "Memento Protocol is already initialized in this project."
+        "zcc is already initialized in this project."
       );
       expect(logger.info).toHaveBeenCalledWith("Use --force to reinitialize.");
       // Note: init command returns instead of calling process.exit
@@ -411,7 +411,7 @@ describe("Init Command", () => {
       await initCommand.parseAsync(["node", "test", "--force", "--non-interactive"]);
 
       expect(logger.info).toHaveBeenCalledWith(
-        "Initializing Memento Protocol..."
+        "Initializing zcc..."
       );
       expect(mockDirManager.initializeStructure).toHaveBeenCalled();
     });
@@ -426,7 +426,7 @@ describe("Init Command", () => {
       await initCommand.parseAsync(["node", "test"]);
 
       expect(logger.error).toHaveBeenCalledWith(
-        "Failed to initialize Memento Protocol:",
+        "Failed to initialize zcc:",
         expect.any(Error)
       );
       expect(process.exit).toHaveBeenCalledWith(1);
@@ -457,7 +457,7 @@ describe("Init Command", () => {
 
       expect(mockInitGlobalParseAsync).toHaveBeenCalledWith([
         "node",
-        "memento", 
+        "zcc", 
         "--force",
         "--default-mode", "architect",
         "--install-examples"
@@ -702,7 +702,7 @@ describe("Init Command", () => {
       // Should still proceed with initialization even if pack fails
       expect(mockDirManager.initializeStructure).toHaveBeenCalled();
       expect(logger.success).toHaveBeenCalledWith(
-        expect.stringContaining("Memento Protocol initialized successfully")
+        expect.stringContaining("zcc initialized successfully")
       );
     });
 

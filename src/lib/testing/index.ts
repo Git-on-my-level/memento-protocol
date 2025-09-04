@@ -1,5 +1,5 @@
 /**
- * Testing utilities for Memento Protocol
+ * Testing utilities for ZCC
  * 
  * This module provides comprehensive testing utilities for working with filesystems
  * in tests, including in-memory filesystem adapters and assertion helpers.
@@ -33,7 +33,7 @@ export { MemoryFileSystemAdapter } from '../adapters/MemoryFileSystemAdapter';
 // Test filesystem creation utilities
 export { 
   createTestFileSystem, 
-  createTestMementoProject, 
+  createTestZccProject, 
   createMultiProjectTestFileSystem 
 } from './createTestFileSystem';
 
@@ -60,7 +60,7 @@ export {
   debugMemoryFileSystem,
   
   // Common test scenarios
-  setupMementoProjectStructure,
+  setupZccProjectStructure,
   createSampleTicket,
   createSampleMode
 } from './fileSystemTestUtils';

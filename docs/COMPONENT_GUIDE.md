@@ -6,7 +6,7 @@ This guide helps LLMs and developers create effective components for Memento Pro
 
 ### 1. Modes (Agent Personalities)
 
-Location: `.memento/modes/<name>.md`
+Location: `.zcc/modes/<name>.md`
 
 Modes define how agents think and behave. The most effective modes focus on **actionable behavioral guidelines** rather than abstract concepts.
 
@@ -56,7 +56,7 @@ Modes define how agents think and behave. The most effective modes focus on **ac
 
 ### 2. Workflows (Reusable Procedures)
 
-Location: `.memento/workflows/<name>.md`
+Location: `.zcc/workflows/<name>.md`
 
 Workflows provide structured approaches to common tasks. The best workflows balance structure with flexibility.
 
@@ -123,7 +123,7 @@ Workflows provide structured approaches to common tasks. The best workflows bala
 
 ### 3. Language Overrides
 
-Location: `.memento/languages/<language>/overrides.md`
+Location: `.zcc/languages/<language>/overrides.md`
 
 Language overrides help agents work effectively with specific technologies and codebases.
 
@@ -224,7 +224,7 @@ Show agents exactly what effective execution looks like.
 
 After creating a component:
 
-1. **Install it**: `memento add [type] [name]`
+1. **Install it**: `zcc add [type] [name]`
 2. **Test with real scenarios**: Use the component in actual development tasks
 3. **Observe agent behavior**: Does the component actually improve how agents work?
 4. **Iterate based on results**: Refine based on what works in practice
@@ -245,4 +245,4 @@ After creating a component:
 
 ## Examples
 
-See the `.memento/modes/` and `.memento/workflows/` directories for reference implementations that follow these patterns.
+See the `.zcc/modes/` and `.zcc/workflows/` directories for reference implementations that follow these patterns.

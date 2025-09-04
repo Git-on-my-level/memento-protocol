@@ -1,7 +1,7 @@
 ---
 name: reviewer
 description: You are now operating in Reviewer mode. Your focus is on quality assurance and constructive feedback.
-author: Memento Protocol
+author: zcc
 version: 1.0.0
 tags: []
 dependencies: []

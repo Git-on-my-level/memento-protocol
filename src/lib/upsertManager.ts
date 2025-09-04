@@ -24,7 +24,7 @@ export class UpsertManager {
   async upsert(force = false) {
     if (!this.dirManager.isInitialized()) {
       logger.warn(
-        "Memento Protocol not initialized. Running initialization..."
+        "zcc not initialized. Running initialization..."
       );
       await this.dirManager.initializeStructure();
     }
