@@ -36,7 +36,7 @@ export class DirectoryManager {
    * User's custom components are sacred - they represent hours of work and customization.
    * Deleting them would be catastrophic and violate user trust.
    */
-  async initializeStructure(): Promise<void> {
+  async initializeStructure(force: boolean = false): Promise<void> {
     const directories = [
       this.zccDir,
       this.fs.join(this.zccDir, "modes"),
@@ -79,7 +79,7 @@ export class DirectoryManager {
     }
 
     // Copy essential scripts for custom commands
-    await this.copyEssentialScripts();
+    await this.copyEssentialScripts(force);
   }
 
   /**
@@ -210,7 +210,7 @@ export class DirectoryManager {
    * Copy essential scripts from templates to .zcc/scripts/
    * These scripts are required for custom commands to work properly
    */
-  private async copyEssentialScripts(): Promise<void> {
+  private async copyEssentialScripts(force: boolean = false): Promise<void> {
     const templatesDir = PackagePaths.getTemplatesDir();
     const templateScriptsDir = this.fs.join(templatesDir, "scripts");
     const zccScriptsDir = this.fs.join(this.zccDir, "scripts");
@@ -231,8 +231,8 @@ export class DirectoryManager {
         const sourcePath = this.fs.join(templateScriptsDir, scriptFile);
         const destPath = this.fs.join(zccScriptsDir, scriptFile);
 
-        // Only copy if the destination doesn't exist (don't overwrite user modifications)
-        if (!this.fs.existsSync(destPath)) {
+        // Copy if force is true or destination doesn't exist
+        if (force || !this.fs.existsSync(destPath)) {
           logger.debug(`Copying script: ${scriptFile}`);
           await this.fs.copyFile(sourcePath, destPath);
 

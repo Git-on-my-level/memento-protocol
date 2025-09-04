@@ -4,6 +4,7 @@ import { logger } from "./logger";
 import { PackagePaths } from "./packagePaths";
 import { FileSystemAdapter } from "./adapters/FileSystemAdapter";
 import { NodeFileSystemAdapter } from "./adapters/NodeFileSystemAdapter";
+import { ComponentTypeRegistry } from "./ComponentTypeRegistry";
 
 interface ComponentMetadata {
   name: string;
@@ -23,10 +24,12 @@ export class ComponentInstaller {
   private dirManager: DirectoryManager;
   private templatesDir: string;
   private fs: FileSystemAdapter;
+  private typeRegistry: ComponentTypeRegistry;
 
   constructor(projectRoot: string, fs?: FileSystemAdapter, templatesDir?: string) {
     this.fs = fs || new NodeFileSystemAdapter();
     this.dirManager = new DirectoryManager(projectRoot, this.fs);
+    this.typeRegistry = ComponentTypeRegistry.getInstance(this.fs);
 
     // Use provided templatesDir or fall back to centralized package path resolution
     this.templatesDir = templatesDir || PackagePaths.getTemplatesDir();
@@ -103,17 +106,24 @@ export class ComponentInstaller {
     workflows: ComponentMetadata[];
     agents: ComponentMetadata[];
   }> {
-    const modesPath = this.fs.join(this.templatesDir, "modes");
-    const workflowsPath = this.fs.join(this.templatesDir, "workflows");
-    const agentsPath = this.fs.join(this.templatesDir, "agents");
+    const result: any = {};
+    
+    // Use registry to get component types that support listing
+    const typesToList = ['mode', 'workflow', 'agent'];
+    
+    for (const type of typesToList) {
+      const pluralKey = type + 's';
+      const directory = this.typeRegistry.getDirectory(type);
+      if (directory) {
+        const dirPath = this.fs.join(this.templatesDir, directory);
+        const extension = this.typeRegistry.getFileExtension(type) || '.md';
+        result[pluralKey] = await this.scanComponentDirectory(dirPath, extension);
+      } else {
+        result[pluralKey] = [];
+      }
+    }
 
-    const [modes, workflows, agents] = await Promise.all([
-      this.scanComponentDirectory(modesPath),
-      this.scanComponentDirectory(workflowsPath),
-      this.scanComponentDirectory(agentsPath),
-    ]);
-
-    return { modes, workflows, agents };
+    return result;
   }
 
   /**
@@ -160,22 +170,22 @@ export class ComponentInstaller {
     name: string,
     force = false
   ): Promise<void> {
-    // Check if component exists in templates
-    let templateSubdir: string;
-    if (type === "mode") {
-      templateSubdir = "modes";
-    } else if (type === "workflow") {
-      templateSubdir = "workflows";
-    } else if (type === "agent") {
-      templateSubdir = "agents";
-    } else {
-      throw new Error(`Invalid component type: ${type}`);
+    // Validate component type using registry
+    if (!this.typeRegistry.validateType(type)) {
+      throw new Error(`Invalid component type: ${type}. Valid types: ${this.typeRegistry.getValidTypes().join(', ')}`);
+    }
+
+    // Get component path using registry
+    const templateSubdir = this.typeRegistry.getTemplateSubdir(type);
+    if (!templateSubdir) {
+      throw new Error(`No template directory configured for type: ${type}`);
     }
     
+    const fileExtension = this.typeRegistry.getFileExtension(type) || '.md';
     const componentPath = this.fs.join(
       this.templatesDir,
       templateSubdir,
-      `${name}.md`
+      `${name}${fileExtension}`
     );
 
     if (!(await this.fs.exists(componentPath))) {
@@ -184,16 +194,7 @@ export class ComponentInstaller {
 
     // Check if already installed
     let manifest = await this.dirManager.getManifest();
-    let componentList: string[];
-    if (type === "mode") {
-      componentList = manifest.components.modes;
-    } else if (type === "workflow") {
-      componentList = manifest.components.workflows;
-    } else if (type === "agent") {
-      componentList = manifest.components.agents || [];
-    } else {
-      throw new Error(`Invalid component type: ${type}`);
-    }
+    let componentList: string[] = this.getManifestComponentList(manifest, type);
 
     if (componentList.includes(name) && !force) {
       // SAFE: Preserving existing user customization
@@ -205,7 +206,7 @@ export class ComponentInstaller {
     const componentMetadata = await this.parseTemplateFrontmatter(componentPath);
     const component = componentMetadata;
 
-    if (component?.dependencies && component.dependencies.length > 0) {
+    if (this.typeRegistry.supportsDependencies(type) && component?.dependencies && component.dependencies.length > 0) {
       for (const dep of component.dependencies) {
         if (!manifest.components.modes.includes(dep) || force) {
           logger.info(`Installing required dependency: mode '${dep}'`);
@@ -216,17 +217,7 @@ export class ComponentInstaller {
 
     // Copy component file
     const content = await this.fs.readFile(componentPath, "utf-8") as string;
-    let destType: "modes" | "workflows" | "integrations" | "agents";
-    if (type === "mode") {
-      destType = "modes";
-    } else if (type === "workflow") {
-      destType = "workflows";
-    } else if (type === "agent") {
-      destType = "agents";
-    } else {
-      throw new Error(`Invalid component type: ${type}`);
-    }
-    
+    const destType = this.mapTypeToDestination(type);
     const destPath = this.dirManager.getComponentPath(destType, name);
 
     // WARNING: This writeFile will OVERWRITE any existing custom component if force=true
@@ -234,19 +225,12 @@ export class ComponentInstaller {
 
     // Reload manifest to get any updates from dependency installation
     manifest = await this.dirManager.getManifest();
-    if (type === "mode") {
-      componentList = manifest.components.modes;
-    } else if (type === "workflow") {
-      componentList = manifest.components.workflows;
-    } else if (type === "agent") {
-      componentList = manifest.components.agents || [];
-      // Ensure agents array exists in manifest
-      if (!manifest.components.agents) {
-        manifest.components.agents = [];
-        componentList = manifest.components.agents;
-      }
-    } else {
-      throw new Error(`Invalid component type: ${type}`);
+    componentList = this.getManifestComponentList(manifest, type);
+    
+    // Ensure agents array exists in manifest if needed
+    if (type === "agent" && !manifest.components.agents) {
+      manifest.components.agents = [];
+      componentList = manifest.components.agents;
     }
 
     // Update manifest
@@ -267,17 +251,14 @@ export class ComponentInstaller {
    * Interactive component installation
    */
   async interactiveInstall(type: "mode" | "workflow" | "agent"): Promise<void> {
-    const available = await this.listAvailableComponents();
-    let components: ComponentMetadata[];
-    if (type === "mode") {
-      components = available.modes;
-    } else if (type === "workflow") {
-      components = available.workflows;
-    } else if (type === "agent") {
-      components = available.agents;
-    } else {
-      throw new Error(`Invalid component type: ${type}`);
+    // Validate type using registry
+    if (!this.typeRegistry.validateType(type)) {
+      throw new Error(`Invalid component type: ${type}. Valid types: ${this.typeRegistry.getValidTypes().join(', ')}`);
     }
+
+    const available = await this.listAvailableComponents();
+    const pluralKey = type + 's' as keyof typeof available;
+    const components = available[pluralKey] || [];
 
     if (components.length === 0) {
       logger.error(`No ${type}s available for installation`);
@@ -296,6 +277,35 @@ export class ComponentInstaller {
     );
   }
 
+
+  /**
+   * Get manifest component list for a given type
+   */
+  private getManifestComponentList(manifest: any, type: string): string[] {
+    const pluralKey = type + 's';
+    if (!manifest.components[pluralKey]) {
+      manifest.components[pluralKey] = [];
+    }
+    return manifest.components[pluralKey];
+  }
+
+  /**
+   * Map component type to destination directory type
+   * This maintains backward compatibility with existing directory structure
+   */
+  private mapTypeToDestination(type: string): "modes" | "workflows" | "integrations" | "agents" {
+    const mapping: Record<string, "modes" | "workflows" | "integrations" | "agents"> = {
+      mode: "modes",
+      workflow: "workflows",
+      agent: "agents",
+    };
+    
+    const dest = mapping[type];
+    if (!dest) {
+      throw new Error(`No destination mapping for component type: ${type}`);
+    }
+    return dest;
+  }
 
   /**
    * Validate component dependencies are satisfied

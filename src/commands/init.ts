@@ -165,7 +165,7 @@ export const initCommand = new Command("init")
       
       // Initialize directory structure
       logger.info("Initializing zcc...");
-      await dirManager.initializeStructure();
+      await dirManager.initializeStructure(options.force);
 
 
       // Detect project type
