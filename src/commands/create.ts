@@ -13,6 +13,7 @@ interface CreateCommandOptions {
   from?: string;
   global?: boolean;
   nonInteractive?: boolean;
+  templateData?: any;
 }
 
 export const createCommand = new Command('create')

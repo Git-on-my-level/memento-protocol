@@ -62,7 +62,15 @@ describe('Edit Command', () => {
     });
 
     // Setup mocks
-    mockCore = new ZccCore('') as jest.Mocked<ZccCore>;
+    mockCore = {
+      findComponents: jest.fn().mockResolvedValue([]),
+      getComponentsByTypeWithSource: jest.fn().mockResolvedValue([]),
+      generateSuggestions: jest.fn().mockResolvedValue([]),
+    } as unknown as jest.Mocked<ZccCore>;
+    
+    // Mock ZccCore constructor to return our mock
+    (ZccCore as jest.MockedClass<typeof ZccCore>).mockImplementation(() => mockCore);
+    
     mockInquirer = inquirer as jest.Mocked<typeof inquirer>;
     mockValidator = componentValidator as jest.Mocked<typeof componentValidator>;
     
@@ -72,11 +80,6 @@ describe('Edit Command', () => {
       issues: []
     });
     mockValidator.formatValidationIssues.mockReturnValue([]);
-    
-    // Mock ZccCore methods
-    mockCore.findComponents.mockResolvedValue([]);
-    mockCore.getComponentsByTypeWithSource.mockResolvedValue([]);
-    mockCore.generateSuggestions.mockResolvedValue([]);
 
     // Mock environment
     originalEnv = process.env;

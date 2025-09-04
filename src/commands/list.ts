@@ -138,7 +138,7 @@ async function showComponents(
   let hasAnyComponents = false;
   
   for (const typeKey of typesToShow) {
-    const components = componentsByType[typeKey] || [];
+    const components = componentsByType[typeKey as keyof ComponentsByType] || [];
     
     // Apply scope filter
     const filteredComponents = scopeFilter
@@ -210,13 +210,13 @@ async function showConflictingComponents(
   // Group all components by name and type to find conflicts
   const componentGroups = new Map<string, ComponentResolutionResult[]>();
   
-  for (const [typeKey, components] of Object.entries(componentsByType)) {
+  for (const [, components] of Object.entries(componentsByType)) {
     for (const comp of components as ComponentResolutionResult[]) {
       const key = `${comp.component.type}:${comp.component.name}`;
       if (!componentGroups.has(key)) {
         componentGroups.set(key, []);
       }
-      componentGroups.get(key)!.push({ ...comp, typeKey });
+      componentGroups.get(key)!.push(comp);
     }
   }
   
