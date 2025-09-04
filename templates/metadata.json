@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2025-08-27T17:39:01.547Z",
+  "generated": "2025-09-04T04:51:54.777Z",
   "templates": {
     "modes": [
       {
@@ -140,6 +140,14 @@
         "dependencies": [],
         "event": "UserPromptSubmit",
         "priority": 150
+      },
+      {
+        "name": "ast-grep-awareness",
+        "description": "Provides context about ast-grep capabilities and suggests when to use it over regular grep",
+        "tags": [],
+        "dependencies": [],
+        "event": "UserPromptSubmit",
+        "priority": 90
       },
       {
         "name": "git-context-loader",

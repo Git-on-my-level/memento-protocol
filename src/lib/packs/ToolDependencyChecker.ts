@@ -120,7 +120,7 @@ export class ToolDependencyChecker {
     const installationSteps: string[] = [];
     
     // Required tools
-    for (const { tool, result } of required) {
+    for (const { tool } of required) {
       if (tool.installCommand) {
         installationSteps.push(`# Install required tool: ${tool.name}`);
         installationSteps.push(tool.installCommand);
@@ -132,7 +132,7 @@ export class ToolDependencyChecker {
     }
 
     // Optional tools  
-    for (const { tool, result } of optional) {
+    for (const { tool } of optional) {
       if (tool.installCommand) {
         installationSteps.push(`# Install optional tool: ${tool.name} (recommended)`);
         installationSteps.push(tool.installCommand);
@@ -174,7 +174,7 @@ export class ToolDependencyChecker {
   /**
    * Check ast-grep availability
    */
-  private async checkAstGrep(tool: ToolDependency): Promise<ToolCheckResult> {
+  private async checkAstGrep(_tool: ToolDependency): Promise<ToolCheckResult> {
     const checks = [
       () => this.checkCommand('ast-grep --version'),
       () => this.checkCommand('npx --no-install @ast-grep/cli --version'),
@@ -205,7 +205,7 @@ export class ToolDependencyChecker {
   /**
    * Check ripgrep availability
    */
-  private async checkRipgrep(tool: ToolDependency): Promise<ToolCheckResult> {
+  private async checkRipgrep(_tool: ToolDependency): Promise<ToolCheckResult> {
     try {
       const version = await this.checkCommand('rg --version');
       return {
@@ -240,7 +240,7 @@ export class ToolDependencyChecker {
       throw new MementoError(
         `Command '${command}' not available`,
         'TOOL_CHECK_ERROR',
-        error
+        error instanceof Error ? error.message : String(error)
       );
     }
   }

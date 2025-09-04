@@ -3,17 +3,17 @@
  */
 
 import { StarterPackManager } from '../StarterPackManager';
-import { MockFileSystemAdapter } from '../adapters/MockFileSystemAdapter';
+import { MemoryFileSystemAdapter } from '../adapters/MemoryFileSystemAdapter';
 import * as path from 'path';
 
 describe('StarterPackManager - Advanced Code Refactoring Pack', () => {
   let manager: StarterPackManager;
-  let mockFs: MockFileSystemAdapter;
+  let mockFs: MemoryFileSystemAdapter;
   let projectRoot: string;
 
   beforeEach(() => {
     projectRoot = '/test/project';
-    mockFs = new MockFileSystemAdapter();
+    mockFs = new MemoryFileSystemAdapter();
     manager = new StarterPackManager(projectRoot, mockFs);
     
     // Setup mock filesystem with advanced-code-refactoring pack
@@ -21,8 +21,23 @@ describe('StarterPackManager - Advanced Code Refactoring Pack', () => {
   });
 
   const setupAdvancedCodeRefactoringPack = () => {
+    // Create schema first (needed for validation)
+    const schemaPath = path.join(projectRoot, 'templates', 'starter-packs');
+    mockFs.mkdirSync(schemaPath, { recursive: true });
+    mockFs.writeFileSync(
+      path.join(schemaPath, 'schema.json'),
+      JSON.stringify({ "$schema": "http://json-schema.org/draft-07/schema#" })
+    );
+    
     // Create pack structure
     const packPath = path.join(projectRoot, 'node_modules', 'memento-protocol', 'dist', 'templates', 'starter-packs', 'advanced-code-refactoring');
+    
+    // Create directories
+    mockFs.mkdirSync(packPath, { recursive: true });
+    mockFs.mkdirSync(path.join(packPath, 'components', 'agents'), { recursive: true });
+    mockFs.mkdirSync(path.join(packPath, 'components', 'workflows'), { recursive: true });
+    mockFs.mkdirSync(path.join(packPath, 'components', 'modes'), { recursive: true });
+    mockFs.mkdirSync(path.join(packPath, 'commands'), { recursive: true });
     
     // Manifest
     const manifest = {
@@ -83,8 +98,23 @@ describe('StarterPackManager - Advanced Code Refactoring Pack', () => {
       '---\nname: refactoring-specialist\n---\n# Refactoring Specialist Mode'
     );
 
+    // Commands
+    mockFs.writeFileSync(
+      path.join(packPath, 'commands', 'ast.md'),
+      '# /ast Command'
+    );
+    mockFs.writeFileSync(
+      path.join(packPath, 'commands', 'refactor.md'),
+      '# /refactor Command'
+    );
+    mockFs.writeFileSync(
+      path.join(packPath, 'commands', 'semantic.md'),
+      '# /semantic Command'
+    );
+
     // Templates directory hooks
     const hooksPath = path.join(projectRoot, 'node_modules', 'memento-protocol', 'dist', 'templates', 'hooks');
+    mockFs.mkdirSync(hooksPath, { recursive: true });
     mockFs.writeFileSync(
       path.join(hooksPath, 'ast-grep-awareness.json'),
       JSON.stringify({
@@ -129,11 +159,14 @@ describe('StarterPackManager - Advanced Code Refactoring Pack', () => {
       
       // Mock pack source for validation
       const mockSource = {
-        getSourceInfo: () => ({ name: 'local', type: 'local' as const }),
-        getComponentPath: async (packName: string, componentType: string, componentName: string) => 
+        getSourceInfo: () => ({ name: 'local', type: 'local' as const, path: pack.path }),
+        getComponentPath: async (_packName: string, componentType: string, componentName: string) => 
           path.join(pack.path, 'components', componentType, `${componentName}.md`),
-        hasComponent: async (packName: string, componentType: string, componentName: string) => true,
-        validateStructure: async () => ({ valid: true, errors: [], warnings: [] })
+        hasComponent: async (_packName: string, _componentType: string, _componentName: string) => true,
+        validateStructure: async () => ({ valid: true, errors: [], warnings: [] }),
+        loadPack: async (_name: string) => pack,
+        listPacks: async () => ['advanced-code-refactoring'],
+        hasPack: async (name: string) => name === 'advanced-code-refactoring'
       };
 
       const validation = await manager.validatePack(pack, mockSource);
