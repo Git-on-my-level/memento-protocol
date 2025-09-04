@@ -1,5 +1,5 @@
 import { UpdateManager } from "../updateManager";
-import { createTestMementoProject } from "../testing";
+import { createTestZccProject } from "../testing";
 import { MemoryFileSystemAdapter } from "../adapters/MemoryFileSystemAdapter";
 import { logger } from "../logger";
 
@@ -22,7 +22,7 @@ describe("UpdateManager", () => {
     jest.clearAllMocks();
     
     // Create test project with filesystem
-    fs = await createTestMementoProject(projectRoot);
+    fs = await createTestZccProject(projectRoot);
     
     // Create a basic manifest
     await fs.writeFile(

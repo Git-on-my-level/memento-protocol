@@ -1,4 +1,4 @@
-import { MementoError } from './errors';
+import { ZccError } from './errors';
 
 // Logger configuration
 let verboseMode = false;
@@ -43,7 +43,7 @@ export const logger = {
   error: (message: string, error?: any) => {
     console.error(`${colors.red}✖${colors.reset} ${message}`);
     if (error) {
-      if (error instanceof MementoError) {
+      if (error instanceof ZccError) {
         console.error(`  ${error.message}`);
         if (error.suggestion) {
           console.error(`  ${colors.cyan}💡 ${error.suggestion}${colors.reset}`);

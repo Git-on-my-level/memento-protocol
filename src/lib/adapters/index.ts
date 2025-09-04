@@ -1,5 +1,5 @@
 /**
- * File system adapters for memento-protocol
+ * File system adapters for zcc
  * 
  * This module provides a unified file system abstraction layer that enables:
  * - Testing with in-memory file systems (memfs)

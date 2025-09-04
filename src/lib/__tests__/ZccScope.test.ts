@@ -1,6 +1,6 @@
 import * as yaml from 'js-yaml';
 import { ZccScope } from '../ZccScope';
-import { MementoConfig } from '../configSchema';
+import { ZccConfig } from '../configSchema';
 import { createTestFileSystem, MemoryFileSystemAdapter } from '../testing';
 
 describe('ZccScope', () => {
@@ -47,7 +47,7 @@ describe('ZccScope', () => {
     });
 
     it('should save and load configuration correctly', async () => {
-      const testConfig: MementoConfig = {
+      const testConfig: ZccConfig = {
         defaultMode: 'architect',
         preferredWorkflows: ['review', 'refactor'],
         ui: {
@@ -68,7 +68,7 @@ describe('ZccScope', () => {
     });
 
     it('should cache configuration after first load', async () => {
-      const testConfig: MementoConfig = {
+      const testConfig: ZccConfig = {
         defaultMode: 'engineer'
       };
 
@@ -88,8 +88,8 @@ describe('ZccScope', () => {
     });
 
     it('should invalidate cache after saving', async () => {
-      const config1: MementoConfig = { defaultMode: 'architect' };
-      const config2: MementoConfig = { defaultMode: 'engineer' };
+      const config1: ZccConfig = { defaultMode: 'architect' };
+      const config2: ZccConfig = { defaultMode: 'engineer' };
 
       await mementoScope.saveConfig(config1);
       const loaded1 = await mementoScope.getConfig();
@@ -111,7 +111,7 @@ describe('ZccScope', () => {
       const newDir = fs.join(testDir, 'nested', 'deep');
       const nestedScope = new ZccScope(newDir, false, fs);
       
-      const testConfig: MementoConfig = { defaultMode: 'test' };
+      const testConfig: ZccConfig = { defaultMode: 'test' };
       await nestedScope.saveConfig(testConfig);
 
       expect(fs.existsSync(newDir)).toBe(true);
@@ -293,7 +293,7 @@ describe('ZccScope', () => {
   describe('clearCache()', () => {
     it('should clear both config and component caches', async () => {
       // Set up config and components
-      const testConfig: MementoConfig = { defaultMode: 'architect' };
+      const testConfig: ZccConfig = { defaultMode: 'architect' };
       await mementoScope.saveConfig(testConfig);
       
       await fs.mkdir(fs.join(testDir, 'modes'), { recursive: true });
@@ -361,7 +361,7 @@ describe('ZccScope', () => {
     it('should not overwrite existing config', async () => {
       // Create scope manually with custom config
       await fs.mkdir(testDir, { recursive: true });
-      const existingConfig: MementoConfig = {
+      const existingConfig: ZccConfig = {
         defaultMode: 'existing'
       };
       await mementoScope.saveConfig(existingConfig);

@@ -4,7 +4,7 @@
  */
 
 import { logger } from "../logger";
-import { MementoError } from "../errors";
+import { ZccError } from "../errors";
 import { execSync } from "child_process";
 
 export interface ToolDependency {
@@ -237,7 +237,7 @@ export class ToolDependencyChecker {
       const match = output.match(/(\d+\.\d+\.\d+[^\s]*)/);
       return match ? match[1] : output.trim().split('\n')[0];
     } catch (error) {
-      throw new MementoError(
+      throw new ZccError(
         `Command '${command}' not available`,
         'TOOL_CHECK_ERROR',
         error instanceof Error ? error.message : String(error)
@@ -254,7 +254,7 @@ export class ToolDependencyChecker {
       const packageJson = require(packagePath);
       return packageJson.version || 'unknown';
     } catch {
-      throw new MementoError(
+      throw new ZccError(
         `Node module '${moduleName}' not available`,
         'MODULE_CHECK_ERROR'
       );

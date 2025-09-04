@@ -2,18 +2,18 @@
  * Custom error classes for better error handling and user experience
  */
 
-export class MementoError extends Error {
+export class ZccError extends Error {
   constructor(
     message: string,
     public code: string,
     public suggestion?: string
   ) {
     super(message);
-    this.name = "MementoError";
+    this.name = "ZccError";
   }
 }
 
-export class FileSystemError extends MementoError {
+export class FileSystemError extends ZccError {
   constructor(message: string, path: string, suggestion?: string) {
     super(
       message,
@@ -24,18 +24,18 @@ export class FileSystemError extends MementoError {
   }
 }
 
-export class ConfigurationError extends MementoError {
+export class ConfigurationError extends ZccError {
   constructor(message: string, suggestion?: string) {
     super(
       message,
       "CONFIG_ERROR",
-      suggestion || 'Run "memento config list" to view current configuration'
+      suggestion || 'Run "zcc config list" to view current configuration'
     );
     this.name = "ConfigurationError";
   }
 }
 
-export class ValidationError extends MementoError {
+export class ValidationError extends ZccError {
   constructor(message: string, field: string, suggestion?: string) {
     super(
       message,
@@ -46,15 +46,15 @@ export class ValidationError extends MementoError {
   }
 }
 
-export class ComponentNotFoundError extends MementoError {
+export class ComponentNotFoundError extends ZccError {
   constructor(componentType: string, componentName: string, availableComponents?: string[]) {
     const validTypesMsg = ['mode', 'workflow', 'agent', 'script', 'hook', 'command', 'template'].includes(componentType)
       ? ''
       : ` Valid component types are: mode, workflow, agent, script, hook, command, template.`;
     
     const suggestion = availableComponents && availableComponents.length > 0
-      ? `Available ${componentType}s: ${availableComponents.slice(0, 5).join(', ')}${availableComponents.length > 5 ? '...' : ''}.\nTry: memento list --type ${componentType}`
-      : `Try: memento list --type ${componentType} to see available components`;
+      ? `Available ${componentType}s: ${availableComponents.slice(0, 5).join(', ')}${availableComponents.length > 5 ? '...' : ''}.\nTry: zcc list --type ${componentType}`
+      : `Try: zcc list --type ${componentType} to see available components`;
 
     super(
       `${componentType.charAt(0).toUpperCase() + componentType.slice(1)} '${componentName}' not found.${validTypesMsg}`,
@@ -65,37 +65,37 @@ export class ComponentNotFoundError extends MementoError {
   }
 }
 
-export class InvalidComponentTypeError extends MementoError {
+export class InvalidComponentTypeError extends ZccError {
   constructor(providedType: string, validTypes: string[] = ['mode', 'workflow', 'agent', 'script', 'hook', 'command', 'template']) {
     super(
       `Invalid component type: '${providedType}'`,
       "INVALID_COMPONENT_TYPE",
-      `Valid types are: ${validTypes.join(', ')}. Example: memento add mode <name>`
+      `Valid types are: ${validTypes.join(', ')}. Example: zcc add mode <name>`
     );
     this.name = "InvalidComponentTypeError";
   }
 }
 
-export class InvalidScopeError extends MementoError {
+export class InvalidScopeError extends ZccError {
   constructor(providedScope: string, validScopes: string[] = ['builtin', 'global', 'project']) {
     super(
       `Invalid scope: '${providedScope}'`,
       "INVALID_SCOPE",
-      `Valid scopes are: ${validScopes.join(', ')}. Example: memento add mode <name> --source builtin`
+      `Valid scopes are: ${validScopes.join(', ')}. Example: zcc add mode <name> --source builtin`
     );
     this.name = "InvalidScopeError";
   }
 }
 
-export class TicketError extends MementoError {
+export class TicketError extends ZccError {
   constructor(operation: string, ticketName: string, reason: string, suggestion?: string) {
     const defaultSuggestion = operation === 'create' && reason.includes('exists')
-      ? `Ticket already exists. Try: memento ticket list to see all tickets`
+      ? `Ticket already exists. Try: zcc ticket list to see all tickets`
       : operation === 'move' && reason.includes('not found')
-      ? `Try: memento ticket list to see available tickets`
+      ? `Try: zcc ticket list to see available tickets`
       : operation === 'move' && reason.includes('status')
       ? `Valid statuses are: next, in-progress, done`
-      : `Try: memento ticket list to see current tickets`;
+      : `Try: zcc ticket list to see current tickets`;
 
     super(
       `Failed to ${operation} ticket '${ticketName}': ${reason}`,
@@ -106,13 +106,13 @@ export class TicketError extends MementoError {
   }
 }
 
-export class ComponentInstallError extends MementoError {
+export class ComponentInstallError extends ZccError {
   constructor(componentType: string, componentName: string, reason: string, suggestion?: string) {
     const defaultSuggestion = reason.includes('already exists')
-      ? `Use --force to overwrite: memento add ${componentType} ${componentName} --force`
+      ? `Use --force to overwrite: zcc add ${componentType} ${componentName} --force`
       : reason.includes('permission')
       ? `Check file permissions or run with appropriate privileges`
-      : `Try: memento list --type ${componentType} to verify the component exists`;
+      : `Try: zcc list --type ${componentType} to verify the component exists`;
 
     super(
       `Failed to install ${componentType} '${componentName}': ${reason}`,
@@ -123,15 +123,15 @@ export class ComponentInstallError extends MementoError {
   }
 }
 
-export class PackError extends MementoError {
+export class PackError extends ZccError {
   constructor(packName: string, operation: string, reason: string, suggestion?: string) {
     const defaultSuggestion = operation === 'install' && reason.includes('not found')
-      ? `Check available packs with: memento list --type pack`
+      ? `Check available packs with: zcc list --type pack`
       : operation === 'install' && reason.includes('conflict')
       ? `Use --force to overwrite existing components`
       : operation === 'validate' && reason.includes('schema')
       ? `Check pack definition format and required fields`
-      : `Try: memento help for more information`;
+      : `Try: zcc help for more information`;
 
     super(
       `Pack '${packName}' ${operation} failed: ${reason}`,
@@ -142,12 +142,12 @@ export class PackError extends MementoError {
   }
 }
 
-export class DependencyError extends MementoError {
+export class DependencyError extends ZccError {
   constructor(component: string, missingDependencies: string[]) {
     super(
       `Component '${component}' has missing dependencies: ${missingDependencies.join(', ')}`,
       "DEPENDENCY_ERROR",
-      `Install missing dependencies first: ${missingDependencies.map(dep => `memento add mode ${dep}`).join(', ')}`
+      `Install missing dependencies first: ${missingDependencies.map(dep => `zcc add mode ${dep}`).join(', ')}`
     );
     this.name = "DependencyError";
   }
@@ -157,7 +157,7 @@ export class DependencyError extends MementoError {
  * User-friendly error handler that provides helpful messages
  */
 export function handleError(error: unknown, verbose = false): void {
-  if (error instanceof MementoError) {
+  if (error instanceof ZccError) {
     console.error(`\n✖ ${error.message}`);
     if (error.suggestion) {
       console.error(`\n💡 Suggestion: ${error.suggestion}`);
@@ -181,7 +181,7 @@ export function handleError(error: unknown, verbose = false): void {
   }
 
   console.error(
-    "\nFor help, visit: https://github.com/git-on-my-level/memento-protocol/issues"
+    "\nFor help, visit: https://github.com/git-on-my-level/zcc/issues"
   );
   process.exit(1);
 }

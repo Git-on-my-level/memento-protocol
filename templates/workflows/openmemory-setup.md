@@ -1,7 +1,7 @@
 ---
 name: openmemory-setup
 description: This workflow guides an LLM agent in setting up OpenMemory MCP for the user's local environment to enable persistent memory across sessions.
-author: Memento Protocol
+author: zcc
 version: 1.0.0
 tags: []
 dependencies: []

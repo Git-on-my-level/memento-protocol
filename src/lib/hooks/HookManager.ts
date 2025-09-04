@@ -101,14 +101,14 @@ export class HookManager {
 
     // Add it to the registry
     const routingConfig: HookConfig = {
-      id: "memento-routing",
-      name: "Memento Routing Hook",
+      id: "zcc-routing",
+      name: "ZCC Routing Hook",
       description: "Routes modes, workflows, and tickets based on user prompts",
       event: "UserPromptSubmit",
       enabled: true,
       // Store command as relative to project root for portability
       command: (() => {
-        const scriptPath = this.fs.join(this.hooksDir, "scripts", "memento-routing.sh");
+        const scriptPath = this.fs.join(this.hooksDir, "scripts", "zcc-routing.sh");
         let relativePath = scriptPath;
         if (scriptPath.startsWith(this.projectRoot)) {
           relativePath = scriptPath.slice(this.projectRoot.length);
@@ -129,7 +129,7 @@ export class HookManager {
     // Save routing hook definition
     const definitionPath = this.fs.join(
       this.definitionsDir,
-      "memento-routing.json"
+      "zcc-routing.json"
     );
     const definition: HookDefinition = {
       version: "1.0.0",

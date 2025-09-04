@@ -2,7 +2,7 @@ import * as path from "path";
 import { existsSync } from "fs";
 
 /**
- * Utility for resolving paths within the memento-protocol package.
+ * Utility for resolving paths within the zcc package.
  * Handles both development (source) and production (npm installed) scenarios.
  */
 export class PackagePaths {
@@ -10,7 +10,7 @@ export class PackagePaths {
   private static _templatesDir: string | null = null;
 
   /**
-   * Get the root directory of the memento-protocol package.
+   * Get the root directory of the zcc package.
    * Works correctly whether running from source or npm installation.
    */
   static getPackageRoot(): string {
@@ -19,7 +19,7 @@ export class PackagePaths {
     }
 
     // When bundled with esbuild, __dirname is the directory of the bundled file
-    // For npx/npm execution, this will be /path/to/node_modules/memento-protocol/dist
+    // For npx/npm execution, this will be /path/to/node_modules/zcc/dist
     // and the package root is one level up
     if (__dirname.endsWith(path.sep + "dist")) {
       this._packageRoot = path.resolve(__dirname, "..");

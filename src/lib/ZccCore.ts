@@ -1,5 +1,5 @@
 import { ZccScope, ComponentInfo } from './ZccScope';
-import { MementoConfig } from './configSchema';
+import { ZccConfig } from './configSchema';
 import { BuiltinComponentProvider } from './BuiltinComponentProvider';
 import { FuzzyMatcher, FuzzyMatch, FuzzyMatchOptions } from './fuzzyMatcher';
 import { logger } from './logger';
@@ -8,7 +8,7 @@ import { FileSystemAdapter } from './adapters/FileSystemAdapter';
 import { NodeFileSystemAdapter } from './adapters/NodeFileSystemAdapter';
 
 /**
- * Central manager for all Memento configuration and components
+ * Central manager for all ZCC configuration and components
  * Manages both global (~/.zcc) and project (.zcc) scopes
  * Implements clean precedence: project → global → built-in
  */
@@ -23,7 +23,7 @@ export interface ComponentSearchResult extends FuzzyMatch {
 }
 
 /**
- * Central manager for all Memento configuration and components
+ * Central manager for all ZCC configuration and components
  * Manages built-in templates, global (~/.zcc), and project (.zcc) scopes
  * Implements clean precedence: project → global → built-in
  */
@@ -51,15 +51,15 @@ export class ZccCore {
   /**
    * Get merged configuration with precedence: project → global → defaults
    */
-  async getConfig(): Promise<MementoConfig> {
+  async getConfig(): Promise<ZccConfig> {
     const cacheKey = 'config:merged';
-    const cached = this.cache.get<MementoConfig>(cacheKey);
+    const cached = this.cache.get<ZccConfig>(cacheKey);
     if (cached !== null) {
       return cached;
     }
 
     // Start with default configuration
-    const defaults: MementoConfig = {
+    const defaults: ZccConfig = {
       ui: {
         colorOutput: true,
         verboseLogging: false
@@ -283,7 +283,7 @@ export class ZccCore {
   /**
    * Save configuration to project or global scope
    */
-  async saveConfig(config: MementoConfig, global: boolean = false): Promise<void> {
+  async saveConfig(config: ZccConfig, global: boolean = false): Promise<void> {
     const scope = global ? this.globalScope : this.projectScope;
     await scope.saveConfig(config);
     
@@ -499,7 +499,7 @@ export class ZccCore {
   /**
    * Merge two configurations, with right taking precedence over left
    */
-  private mergeConfigs(left: MementoConfig, right: MementoConfig | null): MementoConfig {
+  private mergeConfigs(left: ZccConfig, right: ZccConfig | null): ZccConfig {
     if (!right) return left;
 
     return {
@@ -523,7 +523,7 @@ export class ZccCore {
   /**
    * Apply environment variable overrides
    */
-  private applyEnvironmentOverrides(config: MementoConfig): MementoConfig {
+  private applyEnvironmentOverrides(config: ZccConfig): ZccConfig {
     const result = { ...config };
 
     // ZCC_DEFAULT_MODE

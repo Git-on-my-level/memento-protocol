@@ -11,7 +11,7 @@ import { ScriptExecutor, Script, ScriptContext } from '../ScriptExecutor';
 import { FuzzyMatcher } from '../fuzzyMatcher';
 import { ConfigManager } from '../configManager';
 import { SimpleCache } from '../SimpleCache';
-import { createTestMementoProject } from '../testing';
+import { createTestZccProject } from '../testing';
 
 
 // Contract test helper for component providers
@@ -92,7 +92,7 @@ describe('Contract Tests', () => {
     
     // Test ZccScope against the contract
     testComponentProviderContract('ZccScope', async () => {
-      const fs = await createTestMementoProject('/test', {
+      const fs = await createTestZccProject('/test', {
         '/test/modes/test-scope-mode.md': '# Test Scope Mode\nA test mode for contract testing.'
       });
       return new ZccScope('/test', false, fs);
@@ -241,7 +241,7 @@ describe('Contract Tests', () => {
     
     beforeEach(async () => {
       tempProjectRoot = '/test/project';
-      const fs = await createTestMementoProject(tempProjectRoot);
+      const fs = await createTestZccProject(tempProjectRoot);
       configManager = new ConfigManager(tempProjectRoot, fs);
     });
     
@@ -272,7 +272,7 @@ describe('Contract Tests', () => {
     
     it('invalid configs do not crash (graceful degradation)', async () => {
       // Since configManager.fs is private, we'll test with a fresh config manager that has the invalid file
-      const fs = await createTestMementoProject(tempProjectRoot, {
+      const fs = await createTestZccProject(tempProjectRoot, {
         [`${tempProjectRoot}/.zcc/config.yaml`]: 'invalid: yaml: content: [}'
       });
       const testConfigManager = new ConfigManager(tempProjectRoot, fs);

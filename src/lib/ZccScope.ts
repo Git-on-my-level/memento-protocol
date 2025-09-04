@@ -1,7 +1,7 @@
 import * as yaml from 'js-yaml';
 import { logger } from './logger';
 import { ConfigurationError } from './errors';
-import { MementoConfig } from './configSchema';
+import { ZccConfig } from './configSchema';
 import { SimpleCache } from './SimpleCache';
 import { FileSystemAdapter } from './adapters/FileSystemAdapter';
 import { NodeFileSystemAdapter } from './adapters/NodeFileSystemAdapter';
@@ -14,7 +14,7 @@ export interface ComponentInfo {
 }
 
 /**
- * Handles a single Memento scope (global or project)
+ * Handles a single ZCC scope (global or project)
  * Manages config.yaml loading and component discovery
  */
 export class ZccScope {
@@ -64,9 +64,9 @@ export class ZccScope {
    * Load configuration from config.yaml
    * Returns null if config doesn't exist, throws on parse errors
    */
-  async getConfig(): Promise<MementoConfig | null> {
+  async getConfig(): Promise<ZccConfig | null> {
     const cacheKey = 'config';
-    const cached = this.cache.get<MementoConfig | null>(cacheKey);
+    const cached = this.cache.get<ZccConfig | null>(cacheKey);
     if (cached !== null) {
       return cached;
     }
@@ -78,7 +78,7 @@ export class ZccScope {
 
     try {
       const content = this.fs.readFileSync(this.configPath, 'utf-8') as string;
-      const config = yaml.load(content) as MementoConfig;
+      const config = yaml.load(content) as ZccConfig;
       
       // Validate basic structure
       if (config && typeof config === 'object') {
@@ -99,7 +99,7 @@ export class ZccScope {
   /**
    * Save configuration to config.yaml
    */
-  async saveConfig(config: MementoConfig): Promise<void> {
+  async saveConfig(config: ZccConfig): Promise<void> {
     // Ensure directory exists
     if (!this.fs.existsSync(this.scopePath)) {
       this.fs.mkdirSync(this.scopePath, { recursive: true });
@@ -283,7 +283,7 @@ export class ZccScope {
 
     // Create default config if it doesn't exist
     if (!this.fs.existsSync(this.configPath)) {
-      const defaultConfig: MementoConfig = {
+      const defaultConfig: ZccConfig = {
         ui: {
           colorOutput: true,
           verboseLogging: false
@@ -294,6 +294,6 @@ export class ZccScope {
     }
 
     const scopeType = this.isGlobal ? 'global' : 'project';
-    logger.success(`Initialized ${scopeType} Memento scope: ${this.scopePath}`);
+    logger.success(`Initialized ${scopeType} ZCC scope: ${this.scopePath}`);
   }
 }

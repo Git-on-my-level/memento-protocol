@@ -43,8 +43,8 @@ For Claude Code users:
   Say "execute review" to run the code review workflow
   Say "create ticket X" to start persistent work
 
-For more information, visit: https://github.com/git-on-my-level/memento-protocol
-Documentation: https://github.com/git-on-my-level/memento-protocol#readme`
+For more information, visit: https://github.com/git-on-my-level/zcc
+Documentation: https://github.com/git-on-my-level/zcc#readme`
   )
   .hook("preAction", (thisCommand) => {
     const options = thisCommand.opts();

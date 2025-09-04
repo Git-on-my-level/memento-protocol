@@ -11,7 +11,7 @@ This document describes the programmatic API for extending and integrating with 
 Manages the `.zcc` directory structure.
 
 ```typescript
-import { DirectoryManager } from 'memento-protocol';
+import { DirectoryManager } from 'zcc';
 
 const manager = new DirectoryManager('/path/to/project');
 
@@ -31,7 +31,7 @@ const workflowsPath = manager.getWorkflowsPath();
 Handles component installation from templates.
 
 ```typescript
-import { ComponentInstaller } from 'memento-protocol';
+import { ComponentInstaller } from 'zcc';
 
 const installer = new ComponentInstaller('/path/to/project');
 
@@ -47,7 +47,7 @@ const installed = await installer.listInstalled();
 Manages the ticket-based state system.
 
 ```typescript
-import { TicketManager } from 'memento-protocol';
+import { TicketManager } from 'zcc';
 
 const tickets = new TicketManager('/path/to/project');
 
@@ -70,7 +70,7 @@ const allTickets = await tickets.listTickets();
 Handles configuration management.
 
 ```typescript
-import { ConfigManager } from 'memento-protocol';
+import { ConfigManager } from 'zcc';
 
 const config = new ConfigManager('/path/to/project');
 
@@ -89,7 +89,7 @@ const allConfig = await config.getAll();
 Generates Claude Code hook infrastructure.
 
 ```typescript
-import { HookGenerator } from 'memento-protocol';
+import { HookGenerator } from 'zcc';
 
 const generator = new HookGenerator('/path/to/project');
 
@@ -110,7 +110,7 @@ import {
   NetworkError,
   ValidationError,
   handleError 
-} from 'memento-protocol';
+} from 'zcc';
 
 try {
   // Your code here
@@ -130,7 +130,7 @@ try {
 Enhanced logger with color support and verbosity levels:
 
 ```typescript
-import { logger } from 'memento-protocol';
+import { logger } from 'zcc';
 
 // Set verbosity
 logger.setVerbose(true);
@@ -167,7 +167,7 @@ import {
   DirectoryManager,
   ComponentInstaller,
   logger 
-} from 'memento-protocol';
+} from 'zcc';
 
 export class MyPlugin {
   private dirManager: DirectoryManager;
@@ -200,7 +200,7 @@ export class MyPlugin {
 Manages Claude Code hooks for automation and customization.
 
 ```typescript
-import { HookManager } from 'memento-protocol';
+import { HookManager } from 'zcc';
 
 const hooks = new HookManager('/path/to/project');
 
@@ -242,7 +242,7 @@ const removed = await hooks.removeHook('my-hook');
 Manages project-specific acronym expansions.
 
 ```typescript
-import { AcronymManager } from 'memento-protocol';
+import { AcronymManager } from 'zcc';
 
 const acronyms = new AcronymManager('/path/to/project');
 

@@ -256,7 +256,7 @@ export class InteractiveSetup {
       {
         type: 'confirm',
         name: 'addToGitignore',
-        message: 'Add .memento/ to .gitignore?',
+        message: 'Add .zcc/ to .gitignore?',
         default: false
       }
     ]);

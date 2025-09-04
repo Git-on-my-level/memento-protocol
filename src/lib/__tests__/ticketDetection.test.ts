@@ -3,7 +3,7 @@ import * as path from "path";
 import * as fs from "fs";
 
 describe("Ticket Detection in Routing Hook", () => {
-  const hookPath = path.join(__dirname, "../../../.zcc/hooks/scripts/memento-routing.sh");
+  const hookPath = path.join(__dirname, "../../../.zcc/hooks/scripts/zcc-routing.sh");
   
   // Helper to test a prompt through the routing hook
   const testPrompt = (prompt: string): string => {

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Project overview hook for Memento Protocol
+# Project overview hook for zcc
 # Provides a summary of project tickets at session start
 
 echo '## Project Overview'

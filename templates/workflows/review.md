@@ -1,7 +1,7 @@
 ---
 name: review
 description: A structured approach to code review that ensures quality, security, and maintainability through systematic evaluation.
-author: Memento Protocol
+author: zcc
 version: 1.0.0
 tags: []
 dependencies: []

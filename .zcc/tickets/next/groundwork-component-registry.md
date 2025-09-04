@@ -10,7 +10,7 @@ Create infrastructure for discovering and installing components from multiple so
 - [ ] Extend componentInstaller to support multiple sources
 - [ ] Add component manifest validation (version, dependencies)
 - [ ] Create simple HTTP/Git fetcher for remote components
-- [ ] Add registry configuration to memento config
+- [ ] Add registry configuration to zcc config
 - [ ] Update init command to use registry system
 
 ## Technical Design

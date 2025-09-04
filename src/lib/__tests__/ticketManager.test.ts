@@ -1,5 +1,5 @@
 import { TicketManager } from '../ticketManager';
-import { createTestMementoProject } from '../testing/createTestFileSystem';
+import { createTestZccProject } from '../testing/createTestFileSystem';
 import { MemoryFileSystemAdapter } from '../adapters/MemoryFileSystemAdapter';
 
 describe('TicketManager', () => {
@@ -9,7 +9,7 @@ describe('TicketManager', () => {
 
   beforeEach(async () => {
     projectRoot = '/project';
-    fs = await createTestMementoProject(projectRoot);
+    fs = await createTestZccProject(projectRoot);
     ticketManager = new TicketManager(projectRoot, fs);
   });
 
@@ -58,7 +58,7 @@ describe('TicketManager', () => {
 
     it('should handle empty ticket directories', async () => {
       // Create new manager with empty project
-      const emptyFs = await createTestMementoProject('/empty-project');
+      const emptyFs = await createTestZccProject('/empty-project');
       const emptyManager = new TicketManager('/empty-project', emptyFs);
       const tickets = await emptyManager.list();
       

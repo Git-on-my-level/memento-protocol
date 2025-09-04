@@ -10,7 +10,7 @@ import {
   LocalPackSource as LocalPackSourceInterface,
 } from "../types/packs";
 import { logger } from "../logger";
-import { MementoError } from "../errors";
+import { ZccError } from "../errors";
 
 /**
  * Abstract interface for pack sources
@@ -74,7 +74,7 @@ export class LocalPackSource implements IPackSource {
 
     // Check if pack directory exists
     if (!await this.fs.exists(packPath)) {
-      throw new MementoError(
+      throw new ZccError(
         `Pack '${name}' not found in local source`,
         'PACK_NOT_FOUND',
         `Expected path: ${packPath}`
@@ -83,7 +83,7 @@ export class LocalPackSource implements IPackSource {
 
     // Check if manifest exists
     if (!await this.fs.exists(manifestPath)) {
-      throw new MementoError(
+      throw new ZccError(
         `Pack manifest not found for '${name}'`,
         'MANIFEST_NOT_FOUND',
         `Expected manifest at: ${manifestPath}`
@@ -92,7 +92,7 @@ export class LocalPackSource implements IPackSource {
 
     // Check if components directory exists
     if (!await this.fs.exists(componentsPath)) {
-      throw new MementoError(
+      throw new ZccError(
         `Components directory not found for pack '${name}'`,
         'COMPONENTS_NOT_FOUND',
         `Expected components at: ${componentsPath}`
@@ -106,7 +106,7 @@ export class LocalPackSource implements IPackSource {
 
       // Validate basic manifest structure
       if (!manifest.name || !manifest.version || !manifest.description) {
-        throw new MementoError(
+        throw new ZccError(
           `Invalid manifest for pack '${name}': missing required fields`,
           'INVALID_MANIFEST',
           'Manifest must contain name, version, and description'
@@ -121,19 +121,19 @@ export class LocalPackSource implements IPackSource {
         componentsPath,
       };
     } catch (error) {
-      if (error instanceof MementoError) {
+      if (error instanceof ZccError) {
         throw error;
       }
 
       if (error instanceof SyntaxError) {
-        throw new MementoError(
+        throw new ZccError(
           `Invalid JSON in manifest for pack '${name}'`,
           'INVALID_JSON',
           `Manifest file contains invalid JSON: ${error.message}`
         );
       }
 
-      throw new MementoError(
+      throw new ZccError(
         `Failed to load pack '${name}': ${error}`,
         'PACK_LOAD_ERROR',
         'Check pack structure and permissions'

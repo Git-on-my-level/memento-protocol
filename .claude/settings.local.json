@@ -29,10 +29,10 @@
       "Bash(npm run dev:*)",
       "Bash(npm run:*)",
       "Bash(npm test:*)",
-      "Bash(npx memento-protocol ticket list):*",
-      "Bash(npx memento-protocol ticket:*)",
-      "Bash(npx memento-protocol)",
       "Bash(npx tsx:*)",
+      "Bash(npx zcc ticket list):*",
+      "Bash(npx zcc ticket:*)",
+      "Bash(npx zcc)",
       "Bash(rm:*)",
       "Bash(scripts/npm/commit-tag-and-publish.sh:*)",
       "Bash(sh .zcc/scripts/mode-switch.sh)",
@@ -81,7 +81,47 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/dazheng/workspace/personal/memento-protocol/.zcc/hooks/scripts/acronym-expander.sh",
+            "command": "./.zcc/hooks/scripts/acronym-expander.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.memento/hooks/scripts/acronym-expander.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.memento/hooks/scripts/memento-routing.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.zcc/hooks/scripts/zcc-routing.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.memento/hooks/scripts/git-context-loader.sh",
             "timeout": 30
           }
         ]
@@ -94,6 +134,16 @@
           {
             "type": "command",
             "command": "./.zcc/hooks/scripts/project-overview.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.memento/hooks/scripts/project-overview.sh",
             "timeout": 30
           }
         ]

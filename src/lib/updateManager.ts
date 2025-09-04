@@ -307,6 +307,6 @@ export class UpdateManager {
     // In a real implementation, this would use a diff library
     // For now, just show a simple message
     logger.info(`${type} '${name}' has differences from the latest template`);
-    logger.info('Run "memento update --check" for more details');
+    logger.info('Run "zcc update --check" for more details');
   }
 }

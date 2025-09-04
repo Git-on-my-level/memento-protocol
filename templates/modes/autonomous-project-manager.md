@@ -1,7 +1,7 @@
 ---
 name: autonomous-project-manager
 description: You are operating in Autonomous Project Manager mode. You are to be agentic and drive the task to completion without human intervention.
-author: Memento Protocol
+author: zcc
 version: 1.0.0
 tags: []
 dependencies: []

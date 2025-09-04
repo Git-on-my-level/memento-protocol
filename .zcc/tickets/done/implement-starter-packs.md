@@ -117,13 +117,13 @@ class StarterPackManager {
 ### CLI Usage
 ```bash
 # Interactive selection
-npx memento-protocol init --starter-pack
+npx zcc init --starter-pack
 
 # Direct installation  
-npx memento-protocol init --starter-pack frontend
+npx zcc init --starter-pack frontend
 
 # Non-interactive with pack
-npx memento-protocol init --starter-pack frontend --non-interactive
+npx zcc init --starter-pack frontend --non-interactive
 ```
 
 ## Success Metrics

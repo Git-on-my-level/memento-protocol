@@ -4,7 +4,7 @@ import * as os from 'os';
 import * as yaml from 'js-yaml';
 import { ZccCore } from '../ZccCore';
 import { ZccScope } from '../ZccScope';
-import { MementoConfig } from '../configSchema';
+import { ZccConfig } from '../configSchema';
 
 describe('ZccCore', () => {
   let tempDir: string;
@@ -66,7 +66,7 @@ describe('ZccCore', () => {
 
     it('should merge global and project configurations with project taking precedence', async () => {
       // Create global config
-      const globalConfig: MementoConfig = {
+      const globalConfig: ZccConfig = {
         defaultMode: 'architect',
         ui: {
           colorOutput: false,
@@ -82,7 +82,7 @@ describe('ZccCore', () => {
       );
 
       // Create project config
-      const projectConfig: MementoConfig = {
+      const projectConfig: ZccConfig = {
         preferredWorkflows: ['review'],
         ui: {
           verboseLogging: true
@@ -128,7 +128,7 @@ describe('ZccCore', () => {
       const config1 = await mementoCore.getConfig();
       
       // Modify project config
-      const newConfig: MementoConfig = { defaultMode: 'different' };
+      const newConfig: ZccConfig = { defaultMode: 'different' };
       fs.writeFileSync(
         path.join(projectDir, 'config.yaml'),
         yaml.dump(newConfig)
@@ -261,7 +261,7 @@ describe('ZccCore', () => {
   describe('configuration management', () => {
     describe('saveConfig()', () => {
       it('should save to project scope by default', async () => {
-        const testConfig: MementoConfig = {
+        const testConfig: ZccConfig = {
           defaultMode: 'test',
           ui: { colorOutput: false }
         };
@@ -272,12 +272,12 @@ describe('ZccCore', () => {
         expect(fs.existsSync(projectConfigPath)).toBe(true);
         
         const savedContent = fs.readFileSync(projectConfigPath, 'utf-8');
-        const savedConfig = yaml.load(savedContent) as MementoConfig;
+        const savedConfig = yaml.load(savedContent) as ZccConfig;
         expect(savedConfig).toEqual(testConfig);
       });
 
       it('should save to global scope when requested', async () => {
-        const testConfig: MementoConfig = {
+        const testConfig: ZccConfig = {
           defaultMode: 'global-test'
         };
 
@@ -287,7 +287,7 @@ describe('ZccCore', () => {
         expect(fs.existsSync(globalConfigPath)).toBe(true);
         
         const savedContent = fs.readFileSync(globalConfigPath, 'utf-8');
-        const savedConfig = yaml.load(savedContent) as MementoConfig;
+        const savedConfig = yaml.load(savedContent) as ZccConfig;
         expect(savedConfig).toEqual(testConfig);
       });
     });
@@ -311,7 +311,7 @@ describe('ZccCore', () => {
         
         const globalConfigPath = path.join(globalDir, 'config.yaml');
         const content = fs.readFileSync(globalConfigPath, 'utf-8');
-        const config = yaml.load(content) as MementoConfig;
+        const config = yaml.load(content) as ZccConfig;
         
         expect(config.defaultMode).toBe('global');
       });
@@ -362,7 +362,7 @@ describe('ZccCore', () => {
       fs.mkdirSync(path.join(globalDir, 'modes'), { recursive: true });
       fs.writeFileSync(path.join(globalDir, 'modes', 'test.md'), '# Test');
       
-      const globalConfig: MementoConfig = { defaultMode: 'test' };
+      const globalConfig: ZccConfig = { defaultMode: 'test' };
       fs.writeFileSync(
         path.join(globalDir, 'config.yaml'),
         yaml.dump(globalConfig)
@@ -391,7 +391,7 @@ describe('ZccCore', () => {
       await mementoCore.getAllComponents();
 
       // Create a config file
-      const config: MementoConfig = { defaultMode: 'original' };
+      const config: ZccConfig = { defaultMode: 'original' };
       fs.writeFileSync(
         path.join(projectDir, 'config.yaml'),
         yaml.dump(config)
@@ -401,7 +401,7 @@ describe('ZccCore', () => {
       mementoCore.clearCache();
 
       // Modify config file directly
-      const newConfig: MementoConfig = { defaultMode: 'modified' };
+      const newConfig: ZccConfig = { defaultMode: 'modified' };
       fs.writeFileSync(
         path.join(projectDir, 'config.yaml'),
         yaml.dump(newConfig)
@@ -420,7 +420,7 @@ describe('ZccCore', () => {
       process.env.ZCC_VERBOSE = 'true';
 
       // Create base config
-      const baseConfig: MementoConfig = {
+      const baseConfig: ZccConfig = {
         defaultMode: 'base',
         ui: {
           colorOutput: true,

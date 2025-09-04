@@ -1,6 +1,6 @@
 import { PackInstaller } from "../PackInstaller";
 import { PackStructure } from "../../types/packs";
-import { createTestMementoProject } from "../../testing";
+import { createTestZccProject } from "../../testing";
 import { MemoryFileSystemAdapter } from "../../adapters/MemoryFileSystemAdapter";
 import { LocalPackSource } from "../PackSource";
 
@@ -36,7 +36,7 @@ describe("PackInstaller", () => {
     jest.clearAllMocks();
     
     // Create test filesystem with pack structure
-    fs = await createTestMementoProject(mockProjectRoot, {
+    fs = await createTestZccProject(mockProjectRoot, {
       // Pack templates
       '/test/templates/starter-packs/test-pack/manifest.json': JSON.stringify(mockValidPack.manifest),
       '/test/templates/starter-packs/test-pack/components/modes/engineer.md': '# Engineer Mode\n\nYou are a software engineer.',

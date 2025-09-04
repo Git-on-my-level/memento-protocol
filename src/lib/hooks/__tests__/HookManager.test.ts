@@ -64,10 +64,10 @@ describe('HookManager', () => {
       await hookManager.initialize();
 
       // Should create the routing hook definition
-      expect(await fs.exists('/project/.zcc/hooks/definitions/memento-routing.json')).toBe(true);
+      expect(await fs.exists('/project/.zcc/hooks/definitions/zcc-routing.json')).toBe(true);
       
-      const routingDef = JSON.parse(await fs.readFile('/project/.zcc/hooks/definitions/memento-routing.json', 'utf-8') as string);
-      expect(routingDef.hooks[0].id).toBe('memento-routing');
+      const routingDef = JSON.parse(await fs.readFile('/project/.zcc/hooks/definitions/zcc-routing.json', 'utf-8') as string);
+      expect(routingDef.hooks[0].id).toBe('zcc-routing');
       expect(routingDef.hooks[0].event).toBe('UserPromptSubmit');
     });
 

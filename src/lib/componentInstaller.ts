@@ -292,7 +292,7 @@ export class ComponentInstaller {
     });
     logger.info("");
     logger.info(
-      `Run "memento add ${type} <name>" to install a specific ${type}`
+      `Run "zcc add ${type} <name>" to install a specific ${type}`
     );
   }
 

@@ -1,28 +1,4 @@
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { logger } from '../../logger';
-
-export class ZccRoutingHook {
-  private scriptPath: string;
-
-  constructor(projectRoot: string) {
-    this.scriptPath = path.join(projectRoot, '.zcc', 'hooks', 'scripts', 'zcc-routing.sh');
-  }
-
-  async generate(): Promise<void> {
-    const scriptContent = this.getScriptContent();
-    
-    // Ensure directory exists
-    await fs.mkdir(path.dirname(this.scriptPath), { recursive: true });
-    
-    // Write the script
-    await fs.writeFile(this.scriptPath, scriptContent, { mode: 0o755 });
-    
-    logger.info('Generated ZCC routing hook');
-  }
-
-  private getScriptContent(): string {
-    return `#!/bin/bash
+#!/bin/bash
 
 # ZCC Protocol Routing Hook
 # This hook processes user prompts to inject mode, workflow, and ticket context
@@ -44,9 +20,9 @@ WORKFLOW_REQUEST=$(echo "$PROMPT" | grep -o '[Ww]orkflow:[[:space:]]*[A-Za-z0-9_
 TICKET_REQUEST=$(echo "$PROMPT" | grep -o '[Tt]icket:[[:space:]]*[A-Za-z0-9_/-]*' | sed 's/[Tt]icket:[[:space:]]*//' || true)
 
 # Extract .zcc paths from prompt
-ZCC_MODE_PATH=$(echo "$PROMPT" | grep -o '\\.zcc/modes/[A-Za-z0-9_-]*\\.md' | sed 's|\\.zcc/modes/||; s|\\.md||' | head -1 || true)
-ZCC_WORKFLOW_PATH=$(echo "$PROMPT" | grep -o '\\.zcc/workflows/[A-Za-z0-9_-]*\\.md' | sed 's|\\.zcc/workflows/||; s|\\.md||' | head -1 || true)
-ZCC_TICKET_PATH=$(echo "$PROMPT" | grep -o '\\.zcc/tickets/[A-Za-z0-9_/-]*' | sed 's|\\.zcc/tickets/||' | head -1 || true)
+ZCC_MODE_PATH=$(echo "$PROMPT" | grep -o '\.zcc/modes/[A-Za-z0-9_-]*\.md' | sed 's|\.zcc/modes/||; s|\.md||' | head -1 || true)
+ZCC_WORKFLOW_PATH=$(echo "$PROMPT" | grep -o '\.zcc/workflows/[A-Za-z0-9_-]*\.md' | sed 's|\.zcc/workflows/||; s|\.md||' | head -1 || true)
+ZCC_TICKET_PATH=$(echo "$PROMPT" | grep -o '\.zcc/tickets/[A-Za-z0-9_/-]*' | sed 's|\.zcc/tickets/||' | head -1 || true)
 
 # Use path-based detection if no explicit request
 if [ -z "$MODE_REQUEST" ] && [ -n "$ZCC_MODE_PATH" ]; then
@@ -62,7 +38,7 @@ fi
 # Read default mode from config if no mode specified
 DEFAULT_MODE=""
 if [ -z "$MODE_REQUEST" ] && [ -f ".zcc/config.json" ]; then
-    DEFAULT_MODE=$(grep '"defaultMode"' .zcc/config.json | sed 's/.*"defaultMode"[[:space:]]*:[[:space:]]*"\\([^"]*\\)".*/\\1/' || true)
+    DEFAULT_MODE=$(grep '"defaultMode"' .zcc/config.json | sed 's/.*"defaultMode"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/' || true)
 fi
 
 # Function to find fuzzy matches
@@ -87,7 +63,7 @@ find_matches() {
     fi
     
     # Return early if no items
-    if [ \${#items[@]} -eq 0 ]; then
+    if [ ${#items[@]} -eq 0 ]; then
         echo ""
         return
     fi
@@ -96,17 +72,17 @@ find_matches() {
     query_lower=$(echo "$query" | tr '[:upper:]' '[:lower:]')
     
     # Stage 1: Exact match (case-insensitive)
-    for item in "\${items[@]}"; do
+    for item in "${items[@]}"; do
         item_lower=$(echo "$item" | tr '[:upper:]' '[:lower:]')
         if [ "$item_lower" = "$query_lower" ]; then
             matches+=("$item")
-            echo "\${matches[@]}"
+            echo "${matches[@]}"
             return
         fi
     done
     
     # Stage 2: Prefix match
-    for item in "\${items[@]}"; do
+    for item in "${items[@]}"; do
         item_lower=$(echo "$item" | tr '[:upper:]' '[:lower:]')
         case "$item_lower" in
             "$query_lower"*)
@@ -116,8 +92,8 @@ find_matches() {
     done
     
     # Stage 3: Substring match
-    if [ \${#matches[@]} -eq 0 ]; then
-        for item in "\${items[@]}"; do
+    if [ ${#matches[@]} -eq 0 ]; then
+        for item in "${items[@]}"; do
             item_lower=$(echo "$item" | tr '[:upper:]' '[:lower:]')
             case "$item_lower" in
                 *"$query_lower"*)
@@ -128,20 +104,20 @@ find_matches() {
     fi
     
     # Stage 4: Common abbreviations
-    if [ \${#matches[@]} -eq 0 ]; then
-        for item in "\${items[@]}"; do
+    if [ ${#matches[@]} -eq 0 ]; then
+        for item in "${items[@]}"; do
             item_lower=$(echo "$item" | tr '[:upper:]' '[:lower:]')
             
             # Extract abbreviation from hyphenated names
             if echo "$item_lower" | grep -q '-'; then
-                abbrev=$(echo "$item_lower" | sed 's/\\([a-z]\\)[a-z]*-*/\\1/g')
+                abbrev=$(echo "$item_lower" | sed 's/\([a-z]\)[a-z]*-*/\1/g')
                 if [ "$abbrev" = "$query_lower" ]; then
                     matches+=("$item")
                 fi
             fi
             
             # First 3-4 letters abbreviation
-            if [ \${#query_lower} -ge 3 ] && [ \${#query_lower} -le 4 ]; then
+            if [ ${#query_lower} -ge 3 ] && [ ${#query_lower} -le 4 ]; then
                 if echo "$item_lower" | grep -q "^$query_lower"; then
                     matches+=("$item")
                 fi
@@ -149,7 +125,7 @@ find_matches() {
         done
     fi
     
-    echo "\${matches[@]}"
+    echo "${matches[@]}"
 }
 
 # Process mode request or use default
@@ -157,7 +133,7 @@ if [ -n "$MODE_REQUEST" ]; then
     # Explicit mode requested
     MATCHES=($(find_matches "$MODE_REQUEST" "mode"))
     
-    if [ \${#MATCHES[@]} -eq 0 ]; then
+    if [ ${#MATCHES[@]} -eq 0 ]; then
         echo "## No Mode Match Found"
         echo "Could not find a mode matching: $MODE_REQUEST"
         echo "Available modes in .zcc/modes/:"
@@ -166,12 +142,12 @@ if [ -n "$MODE_REQUEST" ]; then
         else
             echo "  (none - .zcc/modes directory not found)"
         fi
-    elif [ \${#MATCHES[@]} -eq 1 ]; then
-        echo "## Mode: \${MATCHES[0]}"
-        cat ".zcc/modes/\${MATCHES[0]}.md"
+    elif [ ${#MATCHES[@]} -eq 1 ]; then
+        echo "## Mode: ${MATCHES[0]}"
+        cat ".zcc/modes/${MATCHES[0]}.md"
     else
         echo "## Multiple Mode Matches Found for: $MODE_REQUEST"
-        for match in "\${MATCHES[@]}"; do
+        for match in "${MATCHES[@]}"; do
             echo ""
             echo "### Mode: $match"
             cat ".zcc/modes/$match.md"
@@ -195,7 +171,7 @@ fi
 if [ -n "$WORKFLOW_REQUEST" ]; then
     MATCHES=($(find_matches "$WORKFLOW_REQUEST" "workflow"))
     
-    if [ \${#MATCHES[@]} -eq 0 ]; then
+    if [ ${#MATCHES[@]} -eq 0 ]; then
         echo "## No Workflow Match Found"
         echo "Could not find a workflow matching: $WORKFLOW_REQUEST"
         echo "Available workflows in .zcc/workflows/:"
@@ -204,12 +180,12 @@ if [ -n "$WORKFLOW_REQUEST" ]; then
         else
             echo "  (none - .zcc/workflows directory not found)"
         fi
-    elif [ \${#MATCHES[@]} -eq 1 ]; then
-        echo "## Workflow: \${MATCHES[0]}"
-        cat ".zcc/workflows/\${MATCHES[0]}.md"
+    elif [ ${#MATCHES[@]} -eq 1 ]; then
+        echo "## Workflow: ${MATCHES[0]}"
+        cat ".zcc/workflows/${MATCHES[0]}.md"
     else
         echo "## Multiple Workflow Matches Found for: $WORKFLOW_REQUEST"
-        for match in "\${MATCHES[@]}"; do
+        for match in "${MATCHES[@]}"; do
             echo ""
             echo "### Workflow: $match"
             cat ".zcc/workflows/$match.md"
@@ -229,7 +205,7 @@ if [ -n "$TICKET_REQUEST" ]; then
         local ticket="$1"
         local statuses=("next" "in-progress" "done")
         
-        for status in "\${statuses[@]}"; do
+        for status in "${statuses[@]}"; do
             # Check if ticket is already a path with status
             if echo "$ticket" | grep -q "^$status/"; then
                 if [ -f ".zcc/tickets/$ticket.md" ] || [ -f ".zcc/tickets/$ticket" ]; then
@@ -267,9 +243,9 @@ if [ -n "$TICKET_REQUEST" ]; then
         echo "## Ticket: $TICKET_PATH"
         echo ""
         echo "### Ticket Commands"
-        printf '%s\\n' '\`\`\`bash'
+        printf '%s\n' '```bash'
         echo "# Create a new ticket"
-        echo "npx zcc ticket create \\"ticket-name\\""
+        echo "npx zcc ticket create \"ticket-name\""
         echo ""
         echo "# Move ticket to different status"
         echo "npx zcc ticket move $TICKET_REQUEST --to in-progress  # or: next, done"
@@ -279,7 +255,7 @@ if [ -n "$TICKET_REQUEST" ]; then
         echo ""
         echo "# List all tickets"
         echo "npx zcc ticket list"
-        printf '%s\\n' '\`\`\`'
+        printf '%s\n' '```'
         echo ""
         echo "### Working with Tickets"
         echo ""
@@ -314,13 +290,13 @@ fi
 # If no explicit ticket request, check for ticket-related keywords
 if [ -z "$TICKET_REQUEST" ]; then
     # High-confidence patterns (case-insensitive)
-    if echo "$PROMPT" | grep -qi '\\(create.*ticket\\|new.*ticket\\|list.*tickets\\|work.*with.*tickets\\|move.*ticket\\|use.*ticket.*create\\|ticket.*command\\)'; then
+    if echo "$PROMPT" | grep -qi '\(create.*ticket\|new.*ticket\|list.*tickets\|work.*with.*tickets\|move.*ticket\|use.*ticket.*create\|ticket.*command\)'; then
         echo "## Ticket System - Quick Reference"
         echo ""
         echo "### Available Commands"
-        printf '%s\\n' '\`\`\`bash'
+        printf '%s\n' '```bash'
         echo "# Create a new ticket"
-        echo "npx zcc ticket create \\"ticket-name\\""
+        echo "npx zcc ticket create \"ticket-name\""
         echo ""
         echo "# List all tickets"
         echo "npx zcc ticket list"
@@ -330,7 +306,7 @@ if [ -z "$TICKET_REQUEST" ]; then
         echo ""
         echo "# Delete a ticket"
         echo "npx zcc ticket delete ticket-name"
-        printf '%s\\n' '\`\`\`'
+        printf '%s\n' '```'
         echo ""
         echo "### Working with Tickets"
         echo ""
@@ -350,12 +326,9 @@ if [ -z "$TICKET_REQUEST" ]; then
         echo "## Ticket System Available"
         echo ""
         echo "ZCC includes a ticket system for task management."
-        echo "Use \\\`npx zcc ticket --help\\\` for more information."
+        echo "Use \`npx zcc ticket --help\` for more information."
         echo ""
     fi
 fi
 
 # Don't output the prompt - Claude Code will append it automatically
-`;
-  }
-}

@@ -223,7 +223,7 @@ The build uses esbuild (scripts/build.js) to:
 #### Hooks (Event Functions)
 - Claude Code integration points for automated behavior (like zsh hook functions)
 - Built-in hooks:
-  - memento-routing (like preexec - runs before commands)
+  - zcc-routing (like preexec - runs before commands)
   - project-overview (like chpwd - runs on directory change)
   - git-context-loader (like precmd - runs before prompts)
   - acronym-expander (like alias expansion)

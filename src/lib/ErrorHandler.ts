@@ -54,14 +54,14 @@ export class ErrorHandler {
     suggestions.push({
       type: 'command',
       message: `List all available ${type}s`,
-      action: `memento list --type ${type}`
+      action: `zcc list --type ${type}`
     });
     
     if (context === 'add') {
       suggestions.push({
         type: 'command',
         message: `Browse ${type}s interactively`,
-        action: `memento add ${type}`
+        action: `zcc add ${type}`
       });
     }
     
@@ -101,7 +101,7 @@ export class ErrorHandler {
         suggestions.push({
           type: 'command',
           message: match,
-          action: `memento list --type ${match}`
+          action: `zcc list --type ${match}`
         });
       }
     } else {
@@ -128,7 +128,7 @@ export class ErrorHandler {
       suggestions.push({
         type: 'command',
         message: 'Initialize project scope',
-        action: 'memento init'
+        action: 'zcc init'
       });
     } else {
       suggestions.push({
@@ -138,7 +138,7 @@ export class ErrorHandler {
       suggestions.push({
         type: 'command',
         message: 'Initialize global scope',
-        action: 'memento init --global'
+        action: 'zcc init --global'
       });
     }
     
@@ -180,7 +180,7 @@ export class ErrorHandler {
     suggestions.push({
       type: 'command',
       message: 'View all conflicts',
-      action: 'memento list --conflicts'
+      action: 'zcc list --conflicts'
     });
     
     return suggestions;
@@ -204,7 +204,7 @@ export class ErrorHandler {
       suggestions.push({
         type: 'command',
         message: 'Reinitialize zcc',
-        action: 'memento init --force'
+        action: 'zcc init --force'
       });
     } else if (error.code === 'EACCES') {
       suggestions.push({
@@ -277,15 +277,15 @@ export class ErrorHandler {
   ): string {
     switch (context) {
       case 'add':
-        return `memento add ${type} ${name}`;
+        return `zcc add ${type} ${name}`;
       case 'use':
         if (type === 'mode') {
           return `/mode ${name}`;
         }
-        return `memento list --type ${type}`;
+        return `zcc list --type ${type}`;
       case 'search':
       default:
-        return `memento list --type ${type}`;
+        return `zcc list --type ${type}`;
     }
   }
 

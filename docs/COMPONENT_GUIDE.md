@@ -224,7 +224,7 @@ Show agents exactly what effective execution looks like.
 
 After creating a component:
 
-1. **Install it**: `memento add [type] [name]`
+1. **Install it**: `zcc add [type] [name]`
 2. **Test with real scenarios**: Use the component in actual development tasks
 3. **Observe agent behavior**: Does the component actually improve how agents work?
 4. **Iterate based on results**: Refine based on what works in practice

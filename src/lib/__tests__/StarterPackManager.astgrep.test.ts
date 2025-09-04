@@ -3,7 +3,7 @@
  */
 
 import { StarterPackManager } from '../StarterPackManager';
-import { createTestMementoProject } from '../testing';
+import { createTestZccProject } from '../testing';
 import { MemoryFileSystemAdapter } from '../adapters/MemoryFileSystemAdapter';
 import { PackagePaths } from '../packagePaths';
 import * as path from 'path';
@@ -55,7 +55,7 @@ describe('StarterPackManager - Advanced Code Refactoring Pack', () => {
     PackagePaths.reset();
     
     // Create test filesystem with Advanced Code Refactoring pack structure
-    fs = await createTestMementoProject(projectRoot, {
+    fs = await createTestZccProject(projectRoot, {
       // Pack manifest
       '/test/templates/starter-packs/advanced-code-refactoring/manifest.json': JSON.stringify(advancedCodeRefactoringManifest),
       

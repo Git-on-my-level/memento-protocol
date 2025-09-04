@@ -1,5 +1,5 @@
 import { logger } from '../logger';
-import { MementoError } from '../errors';
+import { ZccError } from '../errors';
 
 describe('logger', () => {
   let consoleLogSpy: jest.SpyInstance;
@@ -82,8 +82,8 @@ describe('logger', () => {
       expect(consoleErrorSpy.mock.calls[1][0]).toContain('Test error');
     });
 
-    it('should handle MementoError with suggestions', () => {
-      const error = new MementoError('Test error', 'TEST_ERROR', 'Try this instead');
+    it('should handle ZccError with suggestions', () => {
+      const error = new ZccError('Test error', 'TEST_ERROR', 'Try this instead');
       logger.error('Error with suggestions occurred', error);
       
       expect(consoleErrorSpy).toHaveBeenCalledTimes(3);
@@ -93,8 +93,8 @@ describe('logger', () => {
       expect(consoleErrorSpy.mock.calls[2][0]).toContain('Try this instead');
     });
 
-    it('should handle MementoError without suggestions', () => {
-      const error = new MementoError('Test error', 'TEST_ERROR');
+    it('should handle ZccError without suggestions', () => {
+      const error = new ZccError('Test error', 'TEST_ERROR');
       logger.error('Error without suggestions occurred', error);
       
       expect(consoleErrorSpy).toHaveBeenCalledTimes(2);

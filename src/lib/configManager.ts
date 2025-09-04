@@ -1,4 +1,4 @@
-import { ConfigSchemaRegistry, MementoConfig } from './configSchema';
+import { ConfigSchemaRegistry, ZccConfig } from './configSchema';
 import { ValidationError } from './errors';
 import { ZccCore } from './ZccCore';
 import { FileSystemAdapter } from './adapters/FileSystemAdapter';
@@ -9,63 +9,63 @@ import { NodeFileSystemAdapter } from './adapters/NodeFileSystemAdapter';
  * No JSON support, no migrations, clean and simple
  */
 export class ConfigManager {
-  private mementoCore: ZccCore;
+  private zccCore: ZccCore;
   private schemaRegistry: ConfigSchemaRegistry;
   private fs: FileSystemAdapter;
 
   constructor(projectRoot: string, fsAdapter?: FileSystemAdapter) {
     this.fs = fsAdapter || new NodeFileSystemAdapter();
-    this.mementoCore = new ZccCore(projectRoot, this.fs);
+    this.zccCore = new ZccCore(projectRoot, this.fs);
     this.schemaRegistry = ConfigSchemaRegistry.getInstance();
   }
 
   /**
    * Load configuration with hierarchy: defaults -> global -> project -> env
    */
-  async load(): Promise<MementoConfig> {
-    return await this.mementoCore.getConfig();
+  async load(): Promise<ZccConfig> {
+    return await this.zccCore.getConfig();
   }
 
   /**
    * Save configuration to project or global level
    */
-  async save(config: MementoConfig, global: boolean = false): Promise<void> {
+  async save(config: ZccConfig, global: boolean = false): Promise<void> {
     // Validate config before saving
     this.validateConfig(config);
     
     // Save using ZccCore (as YAML)
-    await this.mementoCore.saveConfig(config, global);
+    await this.zccCore.saveConfig(config, global);
   }
 
   /**
    * Get a specific configuration value
    */
   async get(key: string): Promise<any> {
-    return await this.mementoCore.getConfigValue(key);
+    return await this.zccCore.getConfigValue(key);
   }
 
   /**
    * Set a specific configuration value
    */
   async set(key: string, value: any, global: boolean = false): Promise<void> {
-    await this.mementoCore.setConfigValue(key, value, global);
+    await this.zccCore.setConfigValue(key, value, global);
   }
 
   /**
    * Remove a configuration key
    */
   async unset(key: string, global: boolean = false): Promise<void> {
-    await this.mementoCore.unsetConfigValue(key, global);
+    await this.zccCore.unsetConfigValue(key, global);
   }
 
   /**
    * List all configuration values
    */
-  async list(global: boolean = false): Promise<MementoConfig> {
+  async list(global: boolean = false): Promise<ZccConfig> {
     if (global) {
-      const scopes = this.mementoCore.getScopes();
+      const scopes = this.zccCore.getScopes();
       const globalConfig = await scopes.global.getConfig();
-      return (globalConfig || {}) as MementoConfig;
+      return (globalConfig || {}) as ZccConfig;
     }
     return await this.load();
   }
@@ -90,7 +90,7 @@ export class ConfigManager {
     }
 
     try {
-      const scope = global ? this.mementoCore.getScopes().global : this.mementoCore.getScopes().project;
+      const scope = global ? this.zccCore.getScopes().global : this.zccCore.getScopes().project;
       const config = await scope.getConfig();
       
       if (!config) {
@@ -101,7 +101,7 @@ export class ConfigManager {
         };
       }
 
-      const result = this.schemaRegistry.getMementoConfigValidator().validate(config);
+      const result = this.schemaRegistry.getZccConfigValidator().validate(config);
       return result;
     } catch (error: any) {
       return {
@@ -116,7 +116,7 @@ export class ConfigManager {
    * Get configuration file paths
    */
   getConfigPaths(): { global: string; project: string } {
-    const scopePaths = this.mementoCore.getScopePaths();
+    const scopePaths = this.zccCore.getScopePaths();
     return {
       global: this.fs.join(scopePaths.global, 'config.yaml'),
       project: this.fs.join(scopePaths.project, 'config.yaml')
@@ -126,10 +126,10 @@ export class ConfigManager {
   /**
    * Validate configuration schema
    */
-  private validateConfig(config: MementoConfig): void {
+  private validateConfig(config: ZccConfig): void {
     try {
       this.schemaRegistry.validateAndThrow(
-        this.schemaRegistry.getMementoConfigValidator(),
+        this.schemaRegistry.getZccConfigValidator(),
         config,
         'Configuration'
       );
@@ -147,4 +147,4 @@ export class ConfigManager {
 }
 
 // Export the unified config interface
-export { MementoConfig };
+export { ZccConfig };

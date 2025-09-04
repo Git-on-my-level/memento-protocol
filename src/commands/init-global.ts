@@ -2,7 +2,7 @@ import { Command } from "commander";
 import * as os from "os";
 import inquirer from "inquirer";
 import { ZccCore } from "../lib/ZccCore";
-import { MementoConfig } from "../lib/configSchema";
+import { ZccConfig } from "../lib/configSchema";
 import { logger } from "../lib/logger";
 import { FileSystemError } from "../lib/errors";
 import { FileSystemAdapter } from "../lib/adapters/FileSystemAdapter";
@@ -28,12 +28,12 @@ interface GlobalInitContext {
 /**
  * Generate config.yaml content with comments
  */
-function generateConfigYaml(config: MementoConfig): string {
+function generateConfigYaml(config: ZccConfig): string {
   return `# zcc Global Configuration
 # This file configures zcc settings that apply across all your projects.
 # Project-specific .zcc/config.yaml files can override these settings.
 #
-# Documentation: https://github.com/git-on-my-level/memento-protocol#configuration
+# Documentation: https://github.com/git-on-my-level/zcc#configuration
 
 # Default mode to activate when none is specified in a project
 # Uncomment and set to your preferred mode (e.g., "engineer", "architect", "reviewer")
@@ -76,7 +76,7 @@ components:
 # Advanced: Custom template sources for additional components
 # customTemplateSources: []
   # Examples:
-  # - "https://github.com/your-org/memento-templates"
+  # - "https://github.com/your-org/zcc-templates"
   # - "/path/to/local/custom/templates"
 
 # Preferred workflows for quick access
@@ -91,7 +91,7 @@ components:
 /**
  * Interactive setup for global configuration
  */
-async function runInteractiveSetup(): Promise<MementoConfig> {
+async function runInteractiveSetup(): Promise<ZccConfig> {
   logger.info("🌟 Welcome to zcc Global Setup!");
   logger.info("This will create your ~/.zcc global configuration.");
   logger.space();
@@ -128,7 +128,7 @@ async function runInteractiveSetup(): Promise<MementoConfig> {
     }
   ]);
 
-  const config: MementoConfig = {
+  const config: ZccConfig = {
     ui: {
       colorOutput: answers.colorOutput,
       verboseLogging: answers.verboseLogging
@@ -217,7 +217,7 @@ export const initGlobalCommand = new Command("init-global")
       // Create global directory structure
       await fs.mkdir(globalPath, { recursive: true });
 
-      let config: MementoConfig;
+      let config: ZccConfig;
 
       // Run interactive setup or use provided options
       if (options.interactive !== false) {
@@ -250,8 +250,8 @@ export const initGlobalCommand = new Command("init-global")
       }
 
       // Initialize using ZccCore to create full structure
-      const mementoCore = new ZccCore(process.cwd(), ctx.fs);
-      const globalScope = mementoCore.getScopes().global;
+      const zccCore = new ZccCore(process.cwd(), ctx.fs);
+      const globalScope = zccCore.getScopes().global;
       await globalScope.initialize();
 
       logger.space();

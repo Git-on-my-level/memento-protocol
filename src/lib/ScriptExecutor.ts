@@ -214,7 +214,7 @@ export class ScriptExecutor {
       }
     }
 
-    // Add Memento-specific environment variables
+    // Add ZCC-specific environment variables
     env.ZCC_SCRIPT_SOURCE = context.scriptPath;
     env.ZCC_SCRIPT_SCOPE = context.source;
     env.ZCC_PROJECT_ROOT = context.workingDirectory; // Always project root

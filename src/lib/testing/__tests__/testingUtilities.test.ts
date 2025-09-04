@@ -1,6 +1,6 @@
 import {
   createTestFileSystem,
-  createTestMementoProject,
+  createTestZccProject,
   createMultiProjectTestFileSystem,
   assertFileExists,
   assertFileNotExists,
@@ -12,7 +12,7 @@ import {
   createFiles,
   createJsonFile,
   readDirectoryStructure,
-  setupMementoProjectStructure,
+  setupZccProjectStructure,
   createSampleTicket,
   createSampleMode,
   populateMemoryFileSystem,
@@ -53,9 +53,9 @@ describe('Testing Utilities', () => {
     });
   });
 
-  describe('createTestMementoProject', () => {
+  describe('createTestZccProject', () => {
     it('should create default project structure', async () => {
-      const fs = await createTestMementoProject();
+      const fs = await createTestZccProject();
       
       // Check ZCC directories
       expect(fs.existsSync('/project/.zcc')).toBe(true);
@@ -78,7 +78,7 @@ describe('Testing Utilities', () => {
     });
 
     it('should accept custom project root', async () => {
-      const fs = await createTestMementoProject('/custom-project');
+      const fs = await createTestZccProject('/custom-project');
       
       expect(fs.existsSync('/custom-project/.zcc')).toBe(true);
       expect(fs.existsSync('/custom-project/.zcc/config.json')).toBe(true);
@@ -86,7 +86,7 @@ describe('Testing Utilities', () => {
     });
 
     it('should merge custom files', async () => {
-      const fs = await createTestMementoProject('/project', {
+      const fs = await createTestZccProject('/project', {
         '/project/custom.txt': 'custom content',
         '/project/package.json': '{"name": "overridden"}' // Should override default
       });
@@ -338,9 +338,9 @@ describe('Testing Utilities', () => {
       fs = await createTestFileSystem();
     });
 
-    describe('setupMementoProjectStructure', () => {
+    describe('setupZccProjectStructure', () => {
       it('should create complete ZCC project structure', async () => {
-        await setupMementoProjectStructure(fs, '/test-project');
+        await setupZccProjectStructure(fs, '/test-project');
         
         // Check all expected directories exist
         const expectedDirs = [
@@ -374,7 +374,7 @@ describe('Testing Utilities', () => {
 
     describe('createSampleTicket', () => {
       it('should create ticket in next status by default', async () => {
-        await setupMementoProjectStructure(fs, '/project');
+        await setupZccProjectStructure(fs, '/project');
         
         const ticketPath = await createSampleTicket(fs, '/project', 'test-ticket');
         
@@ -388,7 +388,7 @@ describe('Testing Utilities', () => {
       });
 
       it('should create ticket in specified status', async () => {
-        await setupMementoProjectStructure(fs, '/project');
+        await setupZccProjectStructure(fs, '/project');
         
         const ticketPath = await createSampleTicket(fs, '/project', 'in-progress-ticket', 'in-progress');
         
@@ -399,7 +399,7 @@ describe('Testing Utilities', () => {
 
     describe('createSampleMode', () => {
       it('should create mode with proper frontmatter and content', async () => {
-        await setupMementoProjectStructure(fs, '/project');
+        await setupZccProjectStructure(fs, '/project');
         
         const modePath = await createSampleMode(fs, '/project', 'test-mode');
         

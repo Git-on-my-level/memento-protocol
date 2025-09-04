@@ -258,7 +258,7 @@ export function debugMemoryFileSystem(fs: FileSystemAdapter, label: string = 'Fi
 /**
  * Setup a typical ZCC project structure for testing
  */
-export async function setupMementoProjectStructure(fs: FileSystemAdapter, projectRoot: string = '/project'): Promise<void> {
+export async function setupZccProjectStructure(fs: FileSystemAdapter, projectRoot: string = '/project'): Promise<void> {
   const directories = [
     fs.join(projectRoot, '.zcc'),
     fs.join(projectRoot, '.zcc', 'modes'),

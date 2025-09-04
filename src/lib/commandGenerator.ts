@@ -40,7 +40,7 @@ export class CommandGenerator {
     await this.generateModeCommands();
 
     // Generate zcc commands
-    await this.generateMementoCommands();
+    await this.generateZccCommands();
 
     logger.success("Claude Code custom commands generated");
   }
@@ -104,7 +104,7 @@ I'll now operate according to the mode guidelines shown above.`,
   /**
    * Generate zcc system commands
    */
-  private async generateMementoCommands(): Promise<void> {
+  private async generateZccCommands(): Promise<void> {
     // Main zcc command (shows status)
     const zccMain: CommandTemplate = {
       name: "zcc",

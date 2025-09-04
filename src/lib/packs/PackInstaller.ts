@@ -13,7 +13,7 @@ import {
   ProjectPackManifest,
 } from "../types/packs";
 import { logger } from "../logger";
-import { MementoError } from "../errors";
+import { ZccError } from "../errors";
 import { DirectoryManager } from "../directoryManager";
 import { IPackSource } from "./PackSource";
 import { ToolDependencyChecker, ToolDependency } from "./ToolDependencyChecker";
@@ -243,7 +243,7 @@ export class PackInstaller {
 
       return true;
     } catch (error) {
-      throw new MementoError(
+      throw new ZccError(
         `Failed to install ${componentType.slice(0, -1)} '${componentName}'`,
         'COMPONENT_INSTALL_ERROR',
         `Error: ${error}`

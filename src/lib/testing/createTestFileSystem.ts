@@ -34,10 +34,10 @@ export async function createTestFileSystem(
 }
 
 /**
- * Creates a test filesystem with a typical Memento Protocol project structure.
+ * Creates a test filesystem with a typical ZCC project structure.
  * 
  * This is a convenience function that creates a filesystem pre-populated with
- * a standard Memento project layout, making it easier to test project-specific
+ * a standard ZCC project layout, making it easier to test project-specific
  * functionality.
  * 
  * @param projectRoot The root directory path for the project (default: '/project')
@@ -46,7 +46,7 @@ export async function createTestFileSystem(
  * 
  * @example
  * ```typescript
- * const fs = await createTestMementoProject('/my-project', {
+ * const fs = await createTestZccProject('/my-project', {
  *   '/my-project/package.json': JSON.stringify({ name: 'test-project' })
  * });
  * 
@@ -60,7 +60,7 @@ export async function createTestFileSystem(
  * // Plus any custom files you specified
  * ```
  */
-export async function createTestMementoProject(
+export async function createTestZccProject(
   projectRoot: string = '/project',
   customFiles: Record<string, string> = {}
 ): Promise<MemoryFileSystemAdapter> {
