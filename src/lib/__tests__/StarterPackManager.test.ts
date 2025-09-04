@@ -373,7 +373,7 @@ describe("StarterPackManager", () => {
       );
     });
 
-    it("should install dependencies in correct order", async () => {
+    it("should install dependencies in correct order with queue-based approach", async () => {
       const dependentPack: PackStructure = {
         ...mockValidPack,
         manifest: {
@@ -383,28 +383,35 @@ describe("StarterPackManager", () => {
         }
       };
 
-      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(dependentPack);
-      jest.spyOn(manager['registry'], 'resolveDependencies').mockResolvedValue({
-        resolved: ["base-pack"],
-        missing: [],
-        circular: []
+      const basePack: PackStructure = {
+        ...mockValidPack,
+        manifest: {
+          ...mockValidPack.manifest,
+          name: "base-pack"
+        }
+      };
+
+      // Mock registry methods
+      jest.spyOn(manager['registry'], 'loadPack').mockImplementation(async (name: string) => {
+        if (name === 'dependent-pack') return dependentPack;
+        if (name === 'base-pack') return basePack;
+        return mockValidPack;
       });
 
-      // Mock recursive installPack call for dependency
-      const installSpy = jest.spyOn(manager, 'installPack');
-      installSpy.mockImplementation(async (packName: string, _options: any = {}) => {
-        if (packName === 'base-pack') {
-          return {
-            success: true,
-            installed: { modes: ["base-mode"], workflows: [], agents: [], hooks: [] },
-            skipped: { modes: [], workflows: [], agents: [], hooks: [] },
-            errors: []
-          };
+      jest.spyOn(manager['registry'], 'resolveDependencies').mockImplementation(async (name: string) => {
+        if (name === 'dependent-pack') {
+          return { resolved: ["base-pack"], missing: [], circular: [] };
         }
-        // Return the main pack installation result
+        return { resolved: [], missing: [], circular: [] };
+      });
+
+      // Mock installer to track installation order
+      const installationOrder: string[] = [];
+      jest.spyOn(manager['installer'], 'installPack').mockImplementation(async (packStructure: PackStructure) => {
+        installationOrder.push(packStructure.manifest.name);
         return {
           success: true,
-          installed: { modes: ["engineer"], workflows: ["review"], agents: ["claude-code-research"], hooks: [] },
+          installed: { modes: [packStructure.manifest.name + '-mode'], workflows: [], agents: [], hooks: [] },
           skipped: { modes: [], workflows: [], agents: [], hooks: [] },
           errors: []
         };
@@ -413,6 +420,206 @@ describe("StarterPackManager", () => {
       const result = await manager.installPack("dependent-pack");
 
       expect(result.success).toBe(true);
+      // Dependencies should be installed before the main pack
+      expect(installationOrder).toEqual(["base-pack", "dependent-pack"]);
+    });
+
+    it("should handle deep dependency chains without stack overflow", async () => {
+      // Create a chain: pack-a -> pack-b -> pack-c -> pack-d -> pack-e
+      const createChainPack = (name: string, dependency?: string): PackStructure => ({
+        ...mockValidPack,
+        manifest: {
+          ...mockValidPack.manifest,
+          name,
+          dependencies: dependency ? [dependency] : []
+        }
+      });
+
+      const packA = createChainPack("pack-a", "pack-b");
+      const packB = createChainPack("pack-b", "pack-c");
+      const packC = createChainPack("pack-c", "pack-d");
+      const packD = createChainPack("pack-d", "pack-e");
+      const packE = createChainPack("pack-e");
+
+      // Mock registry methods
+      jest.spyOn(manager['registry'], 'loadPack').mockImplementation(async (name: string) => {
+        switch (name) {
+          case 'pack-a': return packA;
+          case 'pack-b': return packB;
+          case 'pack-c': return packC;
+          case 'pack-d': return packD;
+          case 'pack-e': return packE;
+          default: return mockValidPack;
+        }
+      });
+
+      jest.spyOn(manager['registry'], 'resolveDependencies').mockImplementation(async (name: string) => {
+        switch (name) {
+          case 'pack-a': return { resolved: ["pack-b"], missing: [], circular: [] };
+          case 'pack-b': return { resolved: ["pack-c"], missing: [], circular: [] };
+          case 'pack-c': return { resolved: ["pack-d"], missing: [], circular: [] };
+          case 'pack-d': return { resolved: ["pack-e"], missing: [], circular: [] };
+          case 'pack-e': return { resolved: [], missing: [], circular: [] };
+          default: return { resolved: [], missing: [], circular: [] };
+        }
+      });
+
+      // Mock installer to track installation order
+      const installationOrder: string[] = [];
+      jest.spyOn(manager['installer'], 'installPack').mockImplementation(async (packStructure: PackStructure) => {
+        installationOrder.push(packStructure.manifest.name);
+        return {
+          success: true,
+          installed: { modes: [packStructure.manifest.name + '-mode'], workflows: [], agents: [], hooks: [] },
+          skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+          errors: []
+        };
+      });
+
+      const result = await manager.installPack("pack-a");
+
+      expect(result.success).toBe(true);
+      // Should install in reverse dependency order
+      expect(installationOrder).toEqual(["pack-e", "pack-d", "pack-c", "pack-b", "pack-a"]);
+    });
+
+    it("should handle retry logic when installation fails", async () => {
+      const unstablePack: PackStructure = {
+        ...mockValidPack,
+        manifest: {
+          ...mockValidPack.manifest,
+          name: "unstable-pack"
+        }
+      };
+
+      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(unstablePack);
+      jest.spyOn(manager['registry'], 'resolveDependencies').mockResolvedValue({
+        resolved: [],
+        missing: [],
+        circular: []
+      });
+
+      // Mock installer to fail first 2 attempts, succeed on 3rd
+      let attemptCount = 0;
+      jest.spyOn(manager['installer'], 'installPack').mockImplementation(async () => {
+        attemptCount++;
+        if (attemptCount < 3) {
+          return {
+            success: false,
+            installed: { modes: [], workflows: [], agents: [], hooks: [] },
+            skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+            errors: [`Installation attempt ${attemptCount} failed`]
+          };
+        }
+        return {
+          success: true,
+          installed: { modes: ["unstable-mode"], workflows: [], agents: [], hooks: [] },
+          skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+          errors: []
+        };
+      });
+
+      const result = await manager.installPack("unstable-pack");
+
+      expect(result.success).toBe(true);
+      expect(attemptCount).toBe(3); // Should retry twice and succeed on third attempt
+      expect(result.installed.modes).toContain("unstable-mode");
+    });
+
+    it("should fail after maximum retry attempts", async () => {
+      const alwaysFailPack: PackStructure = {
+        ...mockValidPack,
+        manifest: {
+          ...mockValidPack.manifest,
+          name: "always-fail-pack"
+        }
+      };
+
+      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(alwaysFailPack);
+      jest.spyOn(manager['registry'], 'resolveDependencies').mockResolvedValue({
+        resolved: [],
+        missing: [],
+        circular: []
+      });
+
+      // Mock installer to always fail
+      let attemptCount = 0;
+      jest.spyOn(manager['installer'], 'installPack').mockImplementation(async () => {
+        attemptCount++;
+        return {
+          success: false,
+          installed: { modes: [], workflows: [], agents: [], hooks: [] },
+          skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+          errors: [`Installation attempt ${attemptCount} failed`]
+        };
+      });
+
+      const result = await manager.installPack("always-fail-pack");
+
+      expect(result.success).toBe(false);
+      expect(attemptCount).toBe(4); // Should attempt 4 times (1 initial + 3 retries)
+      expect(result.errors.some(error => error.includes("after 3 attempts"))).toBe(true);
+    });
+
+    it("should handle exception-based retry logic", async () => {
+      const exceptionPack: PackStructure = {
+        ...mockValidPack,
+        manifest: {
+          ...mockValidPack.manifest,
+          name: "exception-pack"
+        }
+      };
+
+      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(exceptionPack);
+      jest.spyOn(manager['registry'], 'resolveDependencies').mockResolvedValue({
+        resolved: [],
+        missing: [],
+        circular: []
+      });
+
+      // Mock installer to throw exceptions first 2 times, succeed on 3rd
+      let attemptCount = 0;
+      jest.spyOn(manager['installer'], 'installPack').mockImplementation(async () => {
+        attemptCount++;
+        if (attemptCount < 3) {
+          throw new Error(`Installation exception on attempt ${attemptCount}`);
+        }
+        return {
+          success: true,
+          installed: { modes: ["exception-mode"], workflows: [], agents: [], hooks: [] },
+          skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+          errors: []
+        };
+      });
+
+      const result = await manager.installPack("exception-pack");
+
+      expect(result.success).toBe(true);
+      expect(attemptCount).toBe(3);
+      expect(result.installed.modes).toContain("exception-mode");
+    });
+
+    it("should detect and handle circular dependencies properly", async () => {
+      const packA: PackStructure = {
+        ...mockValidPack,
+        manifest: {
+          ...mockValidPack.manifest,
+          name: "circular-pack-a",
+          dependencies: ["circular-pack-b"]
+        }
+      };
+
+      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(packA);
+      jest.spyOn(manager['registry'], 'resolveDependencies').mockResolvedValue({
+        resolved: [],
+        missing: [],
+        circular: ["circular-pack-a", "circular-pack-b"]
+      });
+
+      const result = await manager.installPack("circular-pack-a");
+
+      expect(result.success).toBe(false);
+      expect(result.errors.some(error => error.includes("Circular dependency"))).toBe(true);
     });
 
     it("should handle pack with configuration", async () => {
@@ -482,6 +689,236 @@ describe("StarterPackManager", () => {
       expect(result.installed.modes).toContain("engineer");
       expect(result.installed.workflows).toContain("review");
       expect(result.installed.agents).toContain("claude-code-research");
+    });
+  });
+
+  describe("installPackDirect", () => {
+    beforeEach(() => {
+      // Mock the registry and validator for direct installation tests
+      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(mockValidPack);
+      jest.spyOn(manager['registry'], 'resolveDependencies').mockResolvedValue({
+        resolved: [],
+        missing: [],
+        circular: []
+      });
+      jest.spyOn(manager['validator'], 'validatePackStructure').mockResolvedValue({
+        valid: true,
+        errors: [],
+        warnings: []
+      });
+      jest.spyOn(manager['installer'], 'installPack').mockResolvedValue({
+        success: true,
+        installed: {
+          modes: ["engineer"],
+          workflows: ["review"],
+          agents: ["claude-code-research"],
+          hooks: []
+        },
+        skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+        errors: []
+      });
+    });
+
+    it("should install pack directly without processing dependencies", async () => {
+      const result = await manager.installPackDirect("test-pack");
+
+      expect(result.success).toBe(true);
+      expect(result.installed.modes).toContain("engineer");
+      
+      // Verify that resolveDependencies was NOT called for direct installation
+      expect(manager['registry'].resolveDependencies).not.toHaveBeenCalled();
+      
+      // Verify that the installer was called correctly
+      expect(manager['installer'].installPack).toHaveBeenCalledWith(
+        mockValidPack,
+        expect.anything(), // source
+        {}
+      );
+    });
+
+    it("should handle validation errors in direct installation", async () => {
+      jest.spyOn(manager['validator'], 'validatePackStructure').mockResolvedValue({
+        valid: false,
+        errors: ["Invalid pack structure"],
+        warnings: []
+      });
+
+      const result = await manager.installPackDirect("invalid-pack");
+
+      expect(result.success).toBe(false);
+      expect(result.errors).toContain("Invalid pack structure");
+    });
+
+    it("should handle installer errors in direct installation", async () => {
+      jest.spyOn(manager['installer'], 'installPack').mockResolvedValue({
+        success: false,
+        installed: { modes: [], workflows: [], agents: [], hooks: [] },
+        skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+        errors: ["Installer error"]
+      });
+
+      const result = await manager.installPackDirect("failing-pack");
+
+      expect(result.success).toBe(false);
+      expect(result.errors).toContain("Installer error");
+    });
+
+    it("should handle exceptions in direct installation", async () => {
+      jest.spyOn(manager['registry'], 'loadPack').mockRejectedValue(new Error("Load failed"));
+
+      const result = await manager.installPackDirect("exception-pack");
+
+      expect(result.success).toBe(false);
+      expect(result.errors.some(error => error.includes("Direct installation failed"))).toBe(true);
+    });
+  });
+
+  describe("edge cases and stress testing", () => {
+    beforeEach(() => {
+      // Mock validator initialization
+      jest.spyOn(manager['validator'], 'initialize').mockResolvedValue();
+      jest.spyOn(manager['validator'], 'validatePackStructure').mockResolvedValue({
+        valid: true,
+        errors: [],
+        warnings: []
+      });
+    });
+
+    it("should handle very large dependency graphs efficiently", async () => {
+      // Create a graph with 50 packs to test performance
+      const packNames = Array.from({ length: 50 }, (_, i) => `pack-${i}`);
+      
+      // Each pack depends on the next 3 packs in the list (if they exist)
+      const createLargePack = (index: number): PackStructure => {
+        const dependencies = [];
+        for (let i = index + 1; i < Math.min(index + 4, packNames.length); i++) {
+          dependencies.push(packNames[i]);
+        }
+        
+        return {
+          ...mockValidPack,
+          manifest: {
+            ...mockValidPack.manifest,
+            name: packNames[index],
+            dependencies
+          }
+        };
+      };
+
+      // Mock registry methods for all packs
+      jest.spyOn(manager['registry'], 'loadPack').mockImplementation(async (name: string) => {
+        const index = packNames.indexOf(name);
+        return index >= 0 ? createLargePack(index) : mockValidPack;
+      });
+
+      jest.spyOn(manager['registry'], 'resolveDependencies').mockImplementation(async (name: string) => {
+        const index = packNames.indexOf(name);
+        if (index >= 0) {
+          const dependencies = [];
+          for (let i = index + 1; i < Math.min(index + 4, packNames.length); i++) {
+            dependencies.push(packNames[i]);
+          }
+          return { resolved: dependencies, missing: [], circular: [] };
+        }
+        return { resolved: [], missing: [], circular: [] };
+      });
+
+      // Track installation order
+      const installationOrder: string[] = [];
+      jest.spyOn(manager['installer'], 'installPack').mockImplementation(async (packStructure: PackStructure) => {
+        installationOrder.push(packStructure.manifest.name);
+        return {
+          success: true,
+          installed: { modes: [packStructure.manifest.name + '-mode'], workflows: [], agents: [], hooks: [] },
+          skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+          errors: []
+        };
+      });
+
+      const startTime = Date.now();
+      const result = await manager.installPack("pack-0");
+      const endTime = Date.now();
+
+      expect(result.success).toBe(true);
+      expect(installationOrder.length).toBe(packNames.length);
+      expect(installationOrder).toContain("pack-0");
+      
+      // Should complete in reasonable time (less than 1 second for 50 packs)
+      expect(endTime - startTime).toBeLessThan(1000);
+    });
+
+    it("should handle mixed success and failure scenarios", async () => {
+      // Create packs where some succeed and some fail, but main pack can still install
+      const successPack: PackStructure = {
+        ...mockValidPack,
+        manifest: {
+          ...mockValidPack.manifest,
+          name: "success-pack"
+        }
+      };
+
+      const dependentPack: PackStructure = {
+        ...mockValidPack,
+        manifest: {
+          ...mockValidPack.manifest,
+          name: "dependent-pack",
+          dependencies: ["success-pack"] // Only has successful dependencies
+        }
+      };
+
+      jest.spyOn(manager['registry'], 'loadPack').mockImplementation(async (name: string) => {
+        if (name === 'success-pack') return successPack;
+        if (name === 'dependent-pack') return dependentPack;
+        return mockValidPack;
+      });
+
+      jest.spyOn(manager['registry'], 'resolveDependencies').mockImplementation(async (name: string) => {
+        if (name === 'dependent-pack') {
+          return { resolved: ["success-pack"], missing: [], circular: [] };
+        }
+        return { resolved: [], missing: [], circular: [] };
+      });
+
+      // Mock installer to succeed for all packs
+      const installationOrder: string[] = [];
+      jest.spyOn(manager['installer'], 'installPack').mockImplementation(async (packStructure: PackStructure) => {
+        installationOrder.push(packStructure.manifest.name);
+        return {
+          success: true,
+          installed: { modes: [packStructure.manifest.name + "-mode"], workflows: [], agents: [], hooks: [] },
+          skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+          errors: []
+        };
+      });
+
+      const result = await manager.installPack("dependent-pack");
+
+      expect(result.success).toBe(true);
+      expect(installationOrder).toEqual(["success-pack", "dependent-pack"]);
+      expect(result.installed.modes).toContain("dependent-pack-mode");
+    });
+
+    it("should prevent infinite loops in dependency resolution", async () => {
+      const loopPack: PackStructure = {
+        ...mockValidPack,
+        manifest: {
+          ...mockValidPack.manifest,
+          name: "loop-pack",
+          dependencies: ["loop-pack"] // Self-dependency
+        }
+      };
+
+      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(loopPack);
+      jest.spyOn(manager['registry'], 'resolveDependencies').mockResolvedValue({
+        resolved: [],
+        missing: [],
+        circular: ["loop-pack"] // Should detect self-circular dependency
+      });
+
+      const result = await manager.installPack("loop-pack");
+
+      expect(result.success).toBe(false);
+      expect(result.errors.some(error => error.includes("Circular dependency"))).toBe(true);
     });
   });
 

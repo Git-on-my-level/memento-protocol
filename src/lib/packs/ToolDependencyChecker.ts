@@ -223,9 +223,29 @@ export class ToolDependencyChecker {
   }
 
   /**
+   * Whitelist of allowed commands for security
+   * SECURITY: Only these exact commands are allowed to prevent command injection
+   */
+  private readonly ALLOWED_COMMANDS = new Set([
+    'ast-grep --version',
+    'npx --no-install @ast-grep/cli --version',
+    'rg --version'
+  ]);
+
+  /**
    * Check if a command is available and get its version
+   * SECURITY: Uses strict whitelist to prevent command injection attacks
    */
   private async checkCommand(command: string): Promise<string> {
+    // SECURITY CRITICAL: Strict whitelist validation
+    if (!this.ALLOWED_COMMANDS.has(command)) {
+      throw new ZccError(
+        `Command '${command}' not allowed for security reasons`,
+        'TOOL_CHECK_SECURITY_ERROR',
+        `Only whitelisted commands are allowed. Blocked: ${command}`
+      );
+    }
+
     try {
       const output = execSync(command, { 
         encoding: 'utf-8', 
