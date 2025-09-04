@@ -9,6 +9,12 @@ import * as path from 'path';
 import { ensureDirectorySync } from '../lib/utils/filesystem';
 import { validateComponent, formatValidationIssues } from '../lib/utils/componentValidator';
 
+interface CreateCommandOptions {
+  from?: string;
+  global?: boolean;
+  nonInteractive?: boolean;
+}
+
 export const createCommand = new Command('create')
   .description('Create new custom components (modes, workflows, agents)')
   .argument('<type>', 'Component type (mode, workflow, agent)')
@@ -16,7 +22,7 @@ export const createCommand = new Command('create')
   .option('--from <template>', 'Clone from existing component')
   .option('--global', 'Create in global scope (~/.zcc) instead of project')
   .option('--non-interactive', 'Skip interactive prompts (use defaults)')
-  .action(async (type: string, name?: string, options?: any) => {
+  .action(async (type: string, name?: string, options?: CreateCommandOptions) => {
     try {
       const core = new ZccCore(process.cwd());
       const opts = options || {};
@@ -227,7 +233,7 @@ async function findSourceComponent(
 async function createFromTemplate(
   type: ComponentInfo['type'],
   _name: string,
-  opts: any
+  opts: CreateCommandOptions
 ): Promise<string> {
   const templates: Record<'mode' | 'workflow' | 'agent', string> = {
     mode: `---
@@ -452,7 +458,7 @@ async function applyTemplateVariables(
   content: string,
   name: string,
   type: ComponentInfo['type'],
-  opts: any
+  opts: CreateCommandOptions & { templateData?: any }
 ): Promise<string> {
   const templateData = opts.templateData || {};
   
@@ -490,7 +496,7 @@ async function writeNewComponent(
   name: string,
   type: ComponentInfo['type'],
   content: string,
-  opts: any
+  opts: CreateCommandOptions
 ): Promise<string> {
   const targetScope = opts.global ? 'global' : 'project';
   const scopes = core.getScopes();

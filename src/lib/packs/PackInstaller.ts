@@ -28,7 +28,6 @@ export class PackInstaller {
 
   constructor(projectRoot: string, fs?: FileSystemAdapter) {
     this.fs = fs || new NodeFileSystemAdapter();
-    // this._projectRoot = projectRoot; // TODO: store for future use
     this.directoryManager = new DirectoryManager(projectRoot);
     this.zccDir = this.fs.join(projectRoot, '.zcc');
     this.claudeDir = this.fs.join(projectRoot, '.claude');

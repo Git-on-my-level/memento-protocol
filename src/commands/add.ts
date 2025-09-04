@@ -8,6 +8,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ensureDirectorySync } from '../lib/utils/filesystem';
 
+interface AddCommandOptions {
+  source?: string;
+  force?: boolean;
+  global?: boolean;
+}
+
 export const addCommand = new Command('add')
   .description('Add components to your zcc setup')
   .argument('<type>', 'Component type (mode, workflow, agent, script, hook, command, template)')
@@ -15,7 +21,7 @@ export const addCommand = new Command('add')
   .option('-s, --source <scope>', 'Install from specific scope (builtin, global)', 'builtin')
   .option('-f, --force', 'Force installation even if component already exists')
   .option('--global', 'Install to global scope (~/.zcc) instead of project')
-  .action(async (type: string, name?: string, options?: any) => {
+  .action(async (type: string, name?: string, options?: AddCommandOptions) => {
     try {
       const core = new ZccCore(process.cwd());
       const opts = options || {};

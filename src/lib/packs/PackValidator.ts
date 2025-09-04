@@ -98,7 +98,7 @@ export class PackValidator {
     await this.initialize();
 
     const errors: string[] = [];
-    const warnings: string[] = []; // TODO: Implement warning collection
+    const warnings: string[] = [];
 
     // JSON Schema validation
     await this.validateSchema(manifest, errors);
