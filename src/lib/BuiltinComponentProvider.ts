@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { ComponentInfo } from './MementoScope';
+import { ComponentInfo } from './ZccScope';
 import { logger } from './logger';
 import { SimpleCache } from './SimpleCache';
 

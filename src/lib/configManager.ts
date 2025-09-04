@@ -1,6 +1,6 @@
 import { ConfigSchemaRegistry, MementoConfig } from './configSchema';
 import { ValidationError } from './errors';
-import { MementoCore } from './MementoCore';
+import { ZccCore } from './ZccCore';
 import { FileSystemAdapter } from './adapters/FileSystemAdapter';
 import { NodeFileSystemAdapter } from './adapters/NodeFileSystemAdapter';
 
@@ -9,13 +9,13 @@ import { NodeFileSystemAdapter } from './adapters/NodeFileSystemAdapter';
  * No JSON support, no migrations, clean and simple
  */
 export class ConfigManager {
-  private mementoCore: MementoCore;
+  private mementoCore: ZccCore;
   private schemaRegistry: ConfigSchemaRegistry;
   private fs: FileSystemAdapter;
 
   constructor(projectRoot: string, fsAdapter?: FileSystemAdapter) {
     this.fs = fsAdapter || new NodeFileSystemAdapter();
-    this.mementoCore = new MementoCore(projectRoot, this.fs);
+    this.mementoCore = new ZccCore(projectRoot, this.fs);
     this.schemaRegistry = ConfigSchemaRegistry.getInstance();
   }
 
@@ -33,7 +33,7 @@ export class ConfigManager {
     // Validate config before saving
     this.validateConfig(config);
     
-    // Save using MementoCore (as YAML)
+    // Save using ZccCore (as YAML)
     await this.mementoCore.saveConfig(config, global);
   }
 

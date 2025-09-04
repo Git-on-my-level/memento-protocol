@@ -1,7 +1,7 @@
 ---
 name: component-engineer
 description: You are now operating in Component Engineer mode. Your focus is on crafting high-quality React components with TypeScript and modern patterns.
-author: memento-protocol
+author: zcc
 version: 1.0.0
 tags: [react, components, typescript, frontend, engineering]
 dependencies: []

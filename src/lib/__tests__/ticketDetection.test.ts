@@ -3,7 +3,7 @@ import * as path from "path";
 import * as fs from "fs";
 
 describe("Ticket Detection in Routing Hook", () => {
-  const hookPath = path.join(__dirname, "../../../.memento/hooks/scripts/memento-routing.sh");
+  const hookPath = path.join(__dirname, "../../../.zcc/hooks/scripts/memento-routing.sh");
   
   // Helper to test a prompt through the routing hook
   const testPrompt = (prompt: string): string => {
@@ -37,7 +37,7 @@ describe("Ticket Detection in Routing Hook", () => {
       it(`should show detailed help for: "${prompt}"`, () => {
         const output = testPrompt(prompt);
         expect(output).toContain("Ticket System - Quick Reference");
-        expect(output).toContain("npx memento-protocol ticket create");
+        expect(output).toContain("npx zcc ticket create");
       });
     });
   });

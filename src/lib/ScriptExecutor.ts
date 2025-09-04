@@ -34,7 +34,7 @@ export interface ScriptExecutorOptions {
 
 /**
  * Handles script execution across different scopes with proper context management.
- * Scripts can be defined in global (~/.memento/scripts/) or project (.memento/scripts/).
+ * Scripts can be defined in global (~/.zcc/scripts/) or project (.zcc/scripts/).
  * All scripts execute in the project root directory with appropriate environment variables.
  */
 export class ScriptExecutor {
@@ -45,7 +45,7 @@ export class ScriptExecutor {
 
   constructor(projectRoot: string, options?: Partial<ScriptExecutorOptions>) {
     this.projectRoot = projectRoot;
-    this.globalRoot = path.join(os.homedir(), '.memento');
+    this.globalRoot = path.join(os.homedir(), '.zcc');
     this.defaultTimeout = options?.timeout || 30000; // 30 seconds default
     this.defaultShell = this.detectShell();
   }
@@ -215,18 +215,18 @@ export class ScriptExecutor {
     }
 
     // Add Memento-specific environment variables
-    env.MEMENTO_SCRIPT_SOURCE = context.scriptPath;
-    env.MEMENTO_SCRIPT_SCOPE = context.source;
-    env.MEMENTO_PROJECT_ROOT = context.workingDirectory; // Always project root
-    env.MEMENTO_GLOBAL_ROOT = this.globalRoot;
-    env.MEMENTO_SCRIPT_NAME = path.parse(context.scriptPath).name;
+    env.ZCC_SCRIPT_SOURCE = context.scriptPath;
+    env.ZCC_SCRIPT_SCOPE = context.source;
+    env.ZCC_PROJECT_ROOT = context.workingDirectory; // Always project root
+    env.ZCC_GLOBAL_ROOT = this.globalRoot;
+    env.ZCC_SCRIPT_NAME = path.parse(context.scriptPath).name;
 
     // Add additional context from the context.env
     Object.assign(env, context.env);
 
     // Ensure PATH includes common script locations
     const additionalPaths = [
-      path.join(this.projectRoot, '.memento', 'scripts'),
+      path.join(this.projectRoot, '.zcc', 'scripts'),
       path.join(this.globalRoot, 'scripts'),
       path.join(this.projectRoot, 'node_modules', '.bin')
     ];
@@ -246,7 +246,7 @@ export class ScriptExecutor {
    * Resolve the full path to a script by name and scope
    */
   resolveScriptPath(name: string, scope: 'global' | 'project'): string {
-    const baseDir = scope === 'global' ? this.globalRoot : path.join(this.projectRoot, '.memento');
+    const baseDir = scope === 'global' ? this.globalRoot : path.join(this.projectRoot, '.zcc');
     const scriptsDir = path.join(baseDir, 'scripts');
     
     // Try different extensions
@@ -369,7 +369,7 @@ export class ScriptExecutor {
    * List scripts in a specific scope
    */
   private async listScriptsInScope(scope: 'global' | 'project'): Promise<Script[]> {
-    const baseDir = scope === 'global' ? this.globalRoot : path.join(this.projectRoot, '.memento');
+    const baseDir = scope === 'global' ? this.globalRoot : path.join(this.projectRoot, '.zcc');
     const scriptsDir = path.join(baseDir, 'scripts');
     
     if (!fs.existsSync(scriptsDir)) {

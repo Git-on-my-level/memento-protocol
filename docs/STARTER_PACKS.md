@@ -424,8 +424,8 @@ memento init --starter-pack frontend-react --dry-run
 cat templates/starter-packs/frontend-react.json
 
 # Check installed components
-ls .memento/modes/
-ls .memento/workflows/
+ls .zcc/modes/
+ls .zcc/workflows/
 ```
 
 ### Advanced Scenarios

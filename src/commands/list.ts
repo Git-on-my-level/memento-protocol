@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import { MementoCore } from '../lib/MementoCore';
-import { ComponentInfo } from '../lib/MementoScope';
+import { ZccCore } from '../lib/ZccCore';
+import { ComponentInfo } from '../lib/ZccScope';
 import { logger } from '../lib/logger';
 import chalk from 'chalk';
 
@@ -13,7 +13,7 @@ export const listCommand = new Command('list')
   .option('--installed', 'Legacy option: show all components (equivalent to no filter)')
   .action(async (options) => {
     try {
-      const core = new MementoCore(process.cwd());
+      const core = new ZccCore(process.cwd());
       const status = await core.getStatus();
       
       // Validate type filter
@@ -58,7 +58,7 @@ export const listCommand = new Command('list')
  * Show status summary of all scopes
  */
 async function showStatusSummary(status: any): Promise<void> {
-  logger.info(chalk.bold('Memento Protocol Status:'));
+  logger.info(chalk.bold('zcc Status:'));
   logger.info('');
   
   // Built-in components
@@ -154,9 +154,9 @@ async function showComponents(
     if (!scopeFilter || scopeFilter === 'builtin') {
       logger.info('');
       logger.info('To add components:');
-      logger.info('  memento add mode <name>      # Add a mode');
-      logger.info('  memento add workflow <name>  # Add a workflow');
-      logger.info('  memento add agent <name>     # Add an agent');
+      logger.info('  zcc add mode <name>      # Add a mode');
+      logger.info('  zcc add workflow <name>  # Add a workflow');
+      logger.info('  zcc add agent <name>     # Add an agent');
     }
   }
 }

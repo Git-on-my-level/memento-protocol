@@ -33,7 +33,7 @@ Triggered when a new Claude Code session begins. Perfect for loading context.
 
 ## Hook Configuration
 
-Hooks are defined in JSON files in `.memento/hooks/definitions/`:
+Hooks are defined in JSON files in `.zcc/hooks/definitions/`:
 
 ```json
 {
@@ -139,7 +139,7 @@ memento hook remove my-hook
 
 1. Create a hook definition file:
 ```bash
-cat > .memento/hooks/definitions/my-hook.json << 'EOF'
+cat > .zcc/hooks/definitions/my-hook.json << 'EOF'
 {
   "version": "1.0.0",
   "hooks": [{
@@ -151,7 +151,7 @@ cat > .memento/hooks/definitions/my-hook.json << 'EOF'
       "type": "regex",
       "pattern": "\\.(js|ts)$"
     },
-    "command": "./.memento/hooks/scripts/my-script.sh"
+    "command": "./.zcc/hooks/scripts/my-script.sh"
   }]
 }
 EOF
@@ -159,13 +159,13 @@ EOF
 
 2. Create the script:
 ```bash
-mkdir -p .memento/hooks/scripts
-cat > .memento/hooks/scripts/my-script.sh << 'EOF'
+mkdir -p .zcc/hooks/scripts
+cat > .zcc/hooks/scripts/my-script.sh << 'EOF'
 #!/bin/bash
 echo "File modified: $HOOK_TOOL_ARG_FILE_PATH"
 # Your custom logic here
 EOF
-chmod +x .memento/hooks/scripts/my-script.sh
+chmod +x .zcc/hooks/scripts/my-script.sh
 ```
 
 3. Regenerate hook configuration:
@@ -199,7 +199,7 @@ Loads git status and project structure at session start.
 Loads git status and project structure at session start.
 
 ### acronym-expander
-Automatically expands configured acronyms in user prompts. Configured acronyms are stored in `.memento/acronyms.json` and managed via `memento acronym` commands.
+Automatically expands configured acronyms in user prompts. Configured acronyms are stored in `.zcc/acronyms.json` and managed via `memento acronym` commands.
 
 ## Examples
 
@@ -249,7 +249,7 @@ Log file modifications:
     "type": "tool",
     "pattern": "Write,Edit"
   },
-  "command": "echo \"File modified: $HOOK_TOOL_ARG_FILE_PATH\" >> .memento/file-changes.log",
+  "command": "echo \"File modified: $HOOK_TOOL_ARG_FILE_PATH\" >> .zcc/file-changes.log",
   "continueOnError": true
 }
 ```
@@ -276,7 +276,7 @@ Log specific commands for audit:
     "type": "regex",
     "pattern": "\\b(deploy|publish|release)\\b"
   },
-  "command": "echo \"[$(date)] Command requested: $HOOK_PROMPT\" >> .memento/command-audit.log",
+  "command": "echo \"[$(date)] Command requested: $HOOK_PROMPT\" >> .zcc/command-audit.log",
   "continueOnError": true
 }
 ```
@@ -316,7 +316,7 @@ Log specific commands for audit:
 Hooks with the same event run in priority order, allowing you to chain operations.
 
 ### Dynamic Hook Loading
-Hooks are loaded from `.memento/hooks/definitions/` at initialization, supporting hot-reloading by running `memento`.
+Hooks are loaded from `.zcc/hooks/definitions/` at initialization, supporting hot-reloading by running `memento`.
 
 ### Custom Matchers
 Extend the system by implementing new matcher types in the codebase.
@@ -326,7 +326,7 @@ Track hook execution with custom logging in your scripts.
 
 ## Migration from Old System
 
-The new hook system is backwards compatible. Your existing `.memento/hooks/routing.sh` will continue to work. To migrate:
+The new hook system is backwards compatible. Your existing `.zcc/hooks/routing.sh` will continue to work. To migrate:
 
 1. The routing hook is now built-in and automatically generated
 2. Custom hooks should be defined in JSON format

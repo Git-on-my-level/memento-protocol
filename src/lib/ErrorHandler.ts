@@ -1,5 +1,5 @@
-import { MementoCore } from './MementoCore';
-import { ComponentInfo } from './MementoScope';
+import { ZccCore } from './ZccCore';
+import { ComponentInfo } from './ZccScope';
 import { logger } from './logger';
 import chalk from 'chalk';
 
@@ -10,9 +10,9 @@ export interface ErrorSuggestion {
 }
 
 export class ErrorHandler {
-  private core: MementoCore;
+  private core: ZccCore;
 
-  constructor(core: MementoCore) {
+  constructor(core: ZccCore) {
     this.core = core;
   }
 
@@ -123,7 +123,7 @@ export class ErrorHandler {
     if (scope === 'project') {
       suggestions.push({
         type: 'hint',
-        message: 'Memento Protocol is not initialized in this project.'
+        message: 'zcc is not initialized in this project.'
       });
       suggestions.push({
         type: 'command',
@@ -133,7 +133,7 @@ export class ErrorHandler {
     } else {
       suggestions.push({
         type: 'hint',
-        message: 'Global Memento Protocol scope is not initialized.'
+        message: 'Global zcc scope is not initialized.'
       });
       suggestions.push({
         type: 'command',
@@ -199,11 +199,11 @@ export class ErrorHandler {
       });
       suggestions.push({
         type: 'hint',
-        message: 'Check if Memento Protocol is properly initialized.'
+        message: 'Check if zcc is properly initialized.'
       });
       suggestions.push({
         type: 'command',
-        message: 'Reinitialize Memento Protocol',
+        message: 'Reinitialize zcc',
         action: 'memento init --force'
       });
     } else if (error.code === 'EACCES') {

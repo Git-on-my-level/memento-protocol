@@ -1,7 +1,7 @@
 ---
 name: refactoring-specialist
 description: Expert mode focused on safe, semantic-aware code refactoring and transformation
-author: memento-protocol
+author: zcc
 version: 1.0.0
 tags: [refactoring, ast-grep, code-transformation, semantic-analysis]
 ---

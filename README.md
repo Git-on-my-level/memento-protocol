@@ -1,6 +1,6 @@
-# Memento Protocol: The zsh for Claude Code
+# zcc: The zsh for Claude Code
 
-[![npm version](https://badge.fury.io/js/memento-protocol.svg)](https://badge.fury.io/js/memento-protocol)
+[![npm version](https://badge.fury.io/js/zcc.svg)](https://badge.fury.io/js/zcc)
 
 **Transform Claude Code from a basic AI assistant into a project-aware, context-intelligent development powerhouse.**
 
@@ -14,13 +14,13 @@ Claude Code breaks down as your codebase grows:
 
 ## The Solution: oh-my-zsh for AI
 
-Just as zsh transformed terminals with themes and plugins, Memento Protocol transforms Claude Code with:
+Just as zsh transformed terminals with themes and plugins, zcc transforms Claude Code with:
 
 ```bash
 # Before: Basic Claude Code
 "Please review my code"  # Generic responses
 
-# After: With Memento Protocol
+# After: With zcc
 /mode reviewer          # Specialized AI personality
 "Review the auth module" # Context-aware, focused analysis
 ```
@@ -29,7 +29,7 @@ Just as zsh transformed terminals with themes and plugins, Memento Protocol tran
 
 ```bash
 # 1. Install (30 seconds)
-npx memento-protocol init
+npx zcc init
 
 # 2. Use enhanced features immediately
 /mode architect         # Switch to system design mode
@@ -56,18 +56,18 @@ npx memento-protocol init
 
 ### Basic Setup
 ```bash
-npx memento-protocol init
+npx zcc init
 ```
 
 ### With Recommendations
 ```bash
-npx memento-protocol init --all-recommended
+npx zcc init --all-recommended
 ```
 
 ### Global Install
 ```bash
-npm install -g memento-protocol
-memento init
+npm install -g zcc
+zcc init
 ```
 
 ## Starter Packs: Ready-to-Use Bundles
@@ -76,10 +76,10 @@ Get up and running instantly with curated collections of modes, workflows, and a
 
 ```bash
 # Install with automatic detection
-npx memento-protocol init --starter-pack
+npx zcc init --starter-pack
 
 # Or specify a pack directly
-npx memento-protocol init --starter-pack frontend-react
+npx zcc init --starter-pack frontend-react
 ```
 
 ### Available Packs
@@ -151,25 +151,25 @@ npx memento-protocol init --starter-pack frontend-react
 
 ### Auto-Expand Acronyms
 ```bash
-memento acronym add API "Application Programming Interface"
-memento acronym add DDD "Domain-Driven Design"
+zcc acronym add API "Application Programming Interface"
+zcc acronym add DDD "Domain-Driven Design"
 # Now Claude automatically understands your project's terminology
 ```
 
 ## Philosophy
 
-Like zsh enhances bash without replacing it, Memento Protocol enhances Claude Code while preserving everything that works. Start simple, add power as needed.
+Like zsh enhances bash without replacing it, zcc enhances Claude Code while preserving everything that works. Start simple, add power as needed.
 
 ## Coming Soon
 
 - 🌍 **Community Hub**: Share modes and workflows
-- 📝 **~/.memento/config.yaml**: Global config file (unified structure with project config)
+- 📝 **~/.zcc/config.yaml**: Global config file (unified structure with project config)
 - 🔌 **Plugin Manager**: Easy install/update (like zplug)
 - 📊 **Analytics**: Track productivity and usage patterns
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=git-on-my-level/memento-protocol&type=Timeline)](https://www.star-history.com/#git-on-my-level/memento-protocol&Timeline)
+[![Star History Chart](https://api.star-history.com/svg?repos=git-on-my-level/zcc&type=Timeline)](https://www.star-history.com/#git-on-my-level/zcc&Timeline)
 
 ## Contributing
 
@@ -177,13 +177,13 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Support
 
-- 🐛 [Issues](https://github.com/git-on-my-level/memento-protocol/issues)
-- 💬 [Discussions](https://github.com/git-on-my-level/memento-protocol/discussions)
-- 📖 [Wiki](https://github.com/git-on-my-level/memento-protocol/wiki)
+- 🐛 [Issues](https://github.com/git-on-my-level/zcc/issues)
+- 💬 [Discussions](https://github.com/git-on-my-level/zcc/discussions)
+- 📖 [Wiki](https://github.com/git-on-my-level/zcc/wiki)
 
 ## License
 
-MIT © Memento Protocol Contributors
+MIT © zcc Contributors
 
 ---
 

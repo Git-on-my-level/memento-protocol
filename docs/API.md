@@ -8,7 +8,7 @@ This document describes the programmatic API for extending and integrating with 
 
 ### DirectoryManager
 
-Manages the `.memento` directory structure.
+Manages the `.zcc` directory structure.
 
 ```typescript
 import { DirectoryManager } from 'memento-protocol';

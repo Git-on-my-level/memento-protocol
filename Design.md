@@ -1,10 +1,10 @@
-# Memento Protocol Design Philosophy
+# zcc Design Philosophy
 
 ## Core Concept: The zsh for Claude Code
 
-Memento Protocol is designed around a powerful analogy: **We are to Claude Code what zsh is to bash.**
+zcc is designed around a powerful analogy: **We are to Claude Code what zsh is to bash.**
 
-This isn't just a marketing tagline—it's our north star for every design decision. Just as zsh transformed the shell experience while remaining compatible with bash, Memento Protocol transforms Claude Code while preserving its core functionality.
+This isn't just a marketing tagline—it's our north star for every design decision. Just as zsh transformed the shell experience while remaining compatible with bash, zcc transforms Claude Code while preserving its core functionality.
 
 ## The zsh Philosophy Applied
 
@@ -12,7 +12,7 @@ This isn't just a marketing tagline—it's our north star for every design decis
 
 **zsh Principle**: zsh doesn't replace bash; it enhances it. Bash scripts still work, but you get so much more.
 
-**Memento Application**: 
+**zcc Application**: 
 - Claude Code continues to work exactly as before
 - We add layers of functionality on top
 - Users can adopt features gradually
@@ -22,7 +22,7 @@ This isn't just a marketing tagline—it's our north star for every design decis
 
 **zsh Principle**: A theme isn't just colors—it transforms your entire prompt experience (robbyrussell vs powerlevel10k).
 
-**Memento Application**:
+**zcc Application**:
 - Modes are our themes
 - Each mode completely changes Claude's personality and approach
 - `architect` mode thinks big picture like powerlevel10k is feature-rich
@@ -33,7 +33,7 @@ This isn't just a marketing tagline—it's our north star for every design decis
 
 **zsh Principle**: Plugins add focused capabilities. The git plugin adds git aliases, the docker plugin adds docker completions.
 
-**Memento Application**:
+**zcc Application**:
 - Agents are specialized plugins (claude-code-research = git plugin)
 - Workflows are reusable functions (review workflow = custom function)
 - Each component does one thing well
@@ -43,11 +43,11 @@ This isn't just a marketing tagline—it's our north star for every design decis
 
 **zsh Principle**: Configuration layers from system → global → local, each overriding the previous.
 
-**Memento Application**:
+**zcc Application**:
 ```
 1. Built-in defaults (like zsh defaults)
-2. Global config ~/.memento/config.json (like ~/.zshrc)
-3. Project config .memento/config.json (like project .envrc)
+2. Global config ~/.zcc/config.json (like ~/.zshrc)
+3. Project config .zcc/config.json (like project .envrc)
 4. Environment variables (runtime overrides)
 ```
 
@@ -55,7 +55,7 @@ This isn't just a marketing tagline—it's our north star for every design decis
 
 **zsh Principle**: Intelligent tab completion that understands context and fuzzy matches.
 
-**Memento Application**:
+**zcc Application**:
 - Fuzzy mode matching: `eng` → `engineer`
 - Acronym expansion: `apm` → `autonomous-project-manager`
 - Context-aware suggestions
@@ -65,24 +65,24 @@ This isn't just a marketing tagline—it's our north star for every design decis
 
 **zsh Principle**: Hooks like precmd, preexec, and chpwd enable powerful automation.
 
-**Memento Application**:
+**zcc Application**:
 
-| **Memento Hook** | **zsh Equivalent** | **Purpose** |
+| **zcc Hook** | **zsh Equivalent** | **Purpose** |
 |------------------|-------------------|-------------|
 | user-prompt-submit | preexec | Transform commands before execution |
 | project-overview | chpwd | Load context on project switch |
 | git-context-loader | precmd | Update context before prompts |
-| memento-routing | command-not-found | Intelligent command routing |
+| zcc-routing | command-not-found | Intelligent command routing |
 
 ### 7. Community-Driven
 
 **zsh Principle**: oh-my-zsh's success comes from community contributions.
 
-**Memento Application**:
+**zcc Application**:
 - Templates for easy component creation
 - Shareable configurations
 - Future: Community hub for modes/workflows
-- Future: oh-my-memento starter packs
+- Future: oh-my-zcc starter packs
 
 ## Design Patterns
 
@@ -96,7 +96,7 @@ Every component (mode, workflow, agent) follows the plugin pattern:
 
 ```typescript
 // Like a zsh plugin
-interface MementoComponent {
+interface ZccComponent {
   name: string;           // Plugin name
   description: string;    // What it does
   metadata: {};          // Configuration
@@ -168,7 +168,7 @@ Like zsh works great out-of-the-box:
 ```
 project-root/
 ├── CLAUDE.md                    # Router (like .zshenv - always loaded)
-└── .memento/                    # Framework directory (like ~/.oh-my-zsh/)
+└── .zcc/                    # Framework directory (like ~/.oh-my-zsh/)
     ├── config.json              # Configuration (like .zshrc)
     ├── modes/                   # AI personalities (like themes/)
     ├── workflows/               # Procedures (like functions/)
@@ -208,9 +208,9 @@ Like zsh's autoload:
 - ✅ Hooks (automation)
 - ✅ Custom commands (aliases)
 
-### Phase 2: oh-my-memento
+### Phase 2: oh-my-zcc
 - 📦 Starter packs (theme bundles)
-- 🔧 .mementorc global config
+- 🔧 .zccrc global config
 - 🌍 Community repository
 - 📚 Component marketplace
 
@@ -300,32 +300,32 @@ Work for beginners with defaults, power users with customization.
 ## CLI Tool Responsibilities (Like oh-my-zsh Installer)
 
 ### Setup Phase
-1. Initialize `.memento/` directory structure (like ~/.oh-my-zsh/)
+1. Initialize `.zcc/` directory structure (like ~/.oh-my-zsh/)
 2. Install selected modes and workflows (like choosing plugins)
 3. Configure hooks and integrations (like enabling features)
 4. Generate CLAUDE.md router (like updating .zshrc)
 
 ### Maintenance Phase
-1. Add/remove components (`memento add/remove`)
-2. Update from templates (`memento update`)
-3. Validate integrity (`memento doctor`)
-4. Manage tickets (`memento ticket`)
+1. Add/remove components (`zcc add/remove`)
+2. Update from templates (`zcc update`)
+3. Validate integrity (`zcc doctor`)
+4. Manage tickets (`zcc ticket`)
 
 ### Discovery Phase
-1. List available components (`memento list`)
-2. Search for components (`memento search`)
-3. Show component details (`memento info`)
-4. Preview before installing (`memento preview`)
+1. List available components (`zcc list`)
+2. Search for components (`zcc search`)
+3. Show component details (`zcc info`)
+4. Preview before installing (`zcc preview`)
 
 ## The Ultimate Vision
 
-**Memento Protocol becomes to Claude Code what oh-my-zsh became to zsh:**
+**zcc becomes to Claude Code what oh-my-zsh became to zsh:**
 - The default enhancement everyone installs
 - A thriving ecosystem of components
 - Community-driven development
 - The obvious choice for serious users
 
-When someone starts using Claude Code, installing Memento Protocol should feel as natural and necessary as installing oh-my-zsh when setting up a new shell.
+When someone starts using Claude Code, installing zcc should feel as natural and necessary as installing oh-my-zsh when setting up a new shell.
 
 ## Technical Implementation Notes
 

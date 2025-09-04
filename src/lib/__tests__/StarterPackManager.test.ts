@@ -532,7 +532,7 @@ describe("StarterPackManager", () => {
           configuration: {
             defaultMode: "architect",
             projectSettings: {
-              gitignoreEntries: [".memento/cache", "*.tmp"]
+              gitignoreEntries: [".zcc/cache", "*.tmp"]
             }
           },
           postInstall: {

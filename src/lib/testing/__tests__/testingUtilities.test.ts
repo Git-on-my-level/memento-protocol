@@ -57,14 +57,14 @@ describe('Testing Utilities', () => {
     it('should create default project structure', async () => {
       const fs = await createTestMementoProject();
       
-      // Check Memento directories
-      expect(fs.existsSync('/project/.memento')).toBe(true);
-      expect(fs.existsSync('/project/.memento/config.json')).toBe(true);
-      expect(fs.existsSync('/project/.memento/modes')).toBe(true);
-      expect(fs.existsSync('/project/.memento/workflows')).toBe(true);
-      expect(fs.existsSync('/project/.memento/tickets/next')).toBe(true);
-      expect(fs.existsSync('/project/.memento/tickets/in-progress')).toBe(true);
-      expect(fs.existsSync('/project/.memento/tickets/done')).toBe(true);
+      // Check ZCC directories
+      expect(fs.existsSync('/project/.zcc')).toBe(true);
+      expect(fs.existsSync('/project/.zcc/config.json')).toBe(true);
+      expect(fs.existsSync('/project/.zcc/modes')).toBe(true);
+      expect(fs.existsSync('/project/.zcc/workflows')).toBe(true);
+      expect(fs.existsSync('/project/.zcc/tickets/next')).toBe(true);
+      expect(fs.existsSync('/project/.zcc/tickets/in-progress')).toBe(true);
+      expect(fs.existsSync('/project/.zcc/tickets/done')).toBe(true);
       
       // Check Claude directories
       expect(fs.existsSync('/project/.claude')).toBe(true);
@@ -72,7 +72,7 @@ describe('Testing Utilities', () => {
       expect(fs.existsSync('/project/.claude/commands')).toBe(true);
       
       // Check config content
-      const config = JSON.parse(fs.readFileSync('/project/.memento/config.json', 'utf8') as string);
+      const config = JSON.parse(fs.readFileSync('/project/.zcc/config.json', 'utf8') as string);
       expect(config.version).toBe('1.0.0');
       expect(config.theme).toBe('default');
     });
@@ -80,8 +80,8 @@ describe('Testing Utilities', () => {
     it('should accept custom project root', async () => {
       const fs = await createTestMementoProject('/custom-project');
       
-      expect(fs.existsSync('/custom-project/.memento')).toBe(true);
-      expect(fs.existsSync('/custom-project/.memento/config.json')).toBe(true);
+      expect(fs.existsSync('/custom-project/.zcc')).toBe(true);
+      expect(fs.existsSync('/custom-project/.zcc/config.json')).toBe(true);
       expect(fs.existsSync('/custom-project/package.json')).toBe(true);
     });
 
@@ -339,17 +339,17 @@ describe('Testing Utilities', () => {
     });
 
     describe('setupMementoProjectStructure', () => {
-      it('should create complete Memento project structure', async () => {
+      it('should create complete ZCC project structure', async () => {
         await setupMementoProjectStructure(fs, '/test-project');
         
         // Check all expected directories exist
         const expectedDirs = [
-          '/test-project/.memento',
-          '/test-project/.memento/modes',
-          '/test-project/.memento/workflows',
-          '/test-project/.memento/tickets/next',
-          '/test-project/.memento/tickets/in-progress',
-          '/test-project/.memento/tickets/done',
+          '/test-project/.zcc',
+          '/test-project/.zcc/modes',
+          '/test-project/.zcc/workflows',
+          '/test-project/.zcc/tickets/next',
+          '/test-project/.zcc/tickets/in-progress',
+          '/test-project/.zcc/tickets/done',
           '/test-project/.claude',
           '/test-project/.claude/agents',
           '/test-project/.claude/commands',
@@ -361,8 +361,8 @@ describe('Testing Utilities', () => {
         }
         
         // Check config file
-        expect(fs.existsSync('/test-project/.memento/config.json')).toBe(true);
-        const config = JSON.parse(fs.readFileSync('/test-project/.memento/config.json', 'utf8') as string);
+        expect(fs.existsSync('/test-project/.zcc/config.json')).toBe(true);
+        const config = JSON.parse(fs.readFileSync('/test-project/.zcc/config.json', 'utf8') as string);
         expect(config.version).toBe('1.0.0');
         
         // Check package.json
@@ -378,7 +378,7 @@ describe('Testing Utilities', () => {
         
         const ticketPath = await createSampleTicket(fs, '/project', 'test-ticket');
         
-        expect(ticketPath).toBe('/project/.memento/tickets/next/test-ticket.md');
+        expect(ticketPath).toBe('/project/.zcc/tickets/next/test-ticket.md');
         expect(fs.existsSync(ticketPath)).toBe(true);
         
         const content = fs.readFileSync(ticketPath, 'utf8') as string;
@@ -392,7 +392,7 @@ describe('Testing Utilities', () => {
         
         const ticketPath = await createSampleTicket(fs, '/project', 'in-progress-ticket', 'in-progress');
         
-        expect(ticketPath).toBe('/project/.memento/tickets/in-progress/in-progress-ticket.md');
+        expect(ticketPath).toBe('/project/.zcc/tickets/in-progress/in-progress-ticket.md');
         expect(fs.existsSync(ticketPath)).toBe(true);
       });
     });
@@ -403,7 +403,7 @@ describe('Testing Utilities', () => {
         
         const modePath = await createSampleMode(fs, '/project', 'test-mode');
         
-        expect(modePath).toBe('/project/.memento/modes/test-mode.md');
+        expect(modePath).toBe('/project/.zcc/modes/test-mode.md');
         expect(fs.existsSync(modePath)).toBe(true);
         
         const content = fs.readFileSync(modePath, 'utf8') as string;

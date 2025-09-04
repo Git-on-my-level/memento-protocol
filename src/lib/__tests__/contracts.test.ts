@@ -1,12 +1,12 @@
 /**
- * Contract Tests for Memento Protocol
+ * Contract Tests for ZCC
  * 
  * These tests ensure that core interfaces remain stable as implementations change.
  * They test behavior, not implementation details, making them resistant to refactoring.
  */
 
 import { BuiltinComponentProvider } from '../BuiltinComponentProvider';
-import { MementoScope, ComponentInfo } from '../MementoScope';
+import { ZccScope, ComponentInfo } from '../ZccScope';
 import { ScriptExecutor, Script, ScriptContext } from '../ScriptExecutor';
 import { FuzzyMatcher } from '../fuzzyMatcher';
 import { ConfigManager } from '../configManager';
@@ -90,12 +90,12 @@ describe('Contract Tests', () => {
       return new BuiltinComponentProvider('/test');
     });
     
-    // Test MementoScope against the contract
-    testComponentProviderContract('MementoScope', async () => {
+    // Test ZccScope against the contract
+    testComponentProviderContract('ZccScope', async () => {
       const fs = await createTestMementoProject('/test', {
         '/test/modes/test-scope-mode.md': '# Test Scope Mode\nA test mode for contract testing.'
       });
-      return new MementoScope('/test', false, fs);
+      return new ZccScope('/test', false, fs);
     });
   });
   
@@ -256,7 +256,7 @@ describe('Contract Tests', () => {
     
     it('environment variables override all', async () => {
       // Set environment variable
-      process.env.MEMENTO_COLOR_OUTPUT = 'false';
+      process.env.ZCC_COLOR_OUTPUT = 'false';
       
       try {
         const config = await configManager.load();
@@ -266,14 +266,14 @@ describe('Contract Tests', () => {
           expect(config.ui.colorOutput).toBe(false);
         }
       } finally {
-        delete process.env.MEMENTO_COLOR_OUTPUT;
+        delete process.env.ZCC_COLOR_OUTPUT;
       }
     });
     
     it('invalid configs do not crash (graceful degradation)', async () => {
       // Since configManager.fs is private, we'll test with a fresh config manager that has the invalid file
       const fs = await createTestMementoProject(tempProjectRoot, {
-        [`${tempProjectRoot}/.memento/config.yaml`]: 'invalid: yaml: content: [}'
+        [`${tempProjectRoot}/.zcc/config.yaml`]: 'invalid: yaml: content: [}'
       });
       const testConfigManager = new ConfigManager(tempProjectRoot, fs);
       

@@ -14,7 +14,7 @@ jest.mock('../../lib/logger', () => ({
 
 describe('Acronym Command', () => {
   const mockProjectRoot = '/test/project';
-  const mockAcronymsPath = '/test/project/.memento/acronyms.json';
+  const mockAcronymsPath = '/test/project/.zcc/acronyms.json';
   let testFs: any;
 
   beforeEach(async () => {
@@ -22,7 +22,7 @@ describe('Acronym Command', () => {
     
     // Create test filesystem
     testFs = await createTestFileSystem({
-      '/test/project/.memento/config.json': JSON.stringify({ version: '1.0.0' }, null, 2)
+      '/test/project/.zcc/config.json': JSON.stringify({ version: '1.0.0' }, null, 2)
     });
   });
 
@@ -100,7 +100,7 @@ describe('Acronym Command', () => {
   describe('CLI commands (integration tests)', () => {
     // Note: These tests run against the real filesystem since the CLI commands 
     // directly use process.cwd() and don't accept a filesystem parameter.
-    // The existing .memento/acronyms.json file in this project contains:
+    // The existing .zcc/acronyms.json file in this project contains:
     // { "acronyms": { "SSA": "Sonic Sub-Agents" }, "settings": { ... } }
     
     it('should add acronym via CLI', async () => {
@@ -116,7 +116,7 @@ describe('Acronym Command', () => {
     });
 
     it('should list acronyms via CLI when acronyms exist', async () => {
-      // The project has existing acronyms in .memento/acronyms.json
+      // The project has existing acronyms in .zcc/acronyms.json
       await acronymCommand.parseAsync(['node', 'test', 'list']);
       
       expect(logger.info).toHaveBeenCalledWith('Configured Acronyms:');

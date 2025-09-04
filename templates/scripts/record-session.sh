@@ -2,7 +2,7 @@
 set -euo pipefail
 
 project_root="${PWD}"
-tickets_dir="${project_root}/.memento/tickets"
+tickets_dir="${project_root}/.zcc/tickets"
 statuses=("next" "in-progress" "done")
 ticket_name_raw="${1:-}"
 

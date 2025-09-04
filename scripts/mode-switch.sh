@@ -2,7 +2,7 @@
 if [ -z "$1" ]; then
   sh scripts/list-modes.sh
 else
-  MODE_FILE=$(find .memento/modes -name "*$1*.md" | head -1)
+  MODE_FILE=$(find .zcc/modes -name "*$1*.md" | head -1)
   if [ -n "$MODE_FILE" ]; then
     echo "# Switching to Mode: $(basename "$MODE_FILE" .md)"
     cat "$MODE_FILE"

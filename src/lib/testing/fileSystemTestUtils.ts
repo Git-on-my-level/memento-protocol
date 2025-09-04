@@ -256,17 +256,17 @@ export function debugMemoryFileSystem(fs: FileSystemAdapter, label: string = 'Fi
 // ============================================================================
 
 /**
- * Setup a typical Memento project structure for testing
+ * Setup a typical ZCC project structure for testing
  */
 export async function setupMementoProjectStructure(fs: FileSystemAdapter, projectRoot: string = '/project'): Promise<void> {
   const directories = [
-    fs.join(projectRoot, '.memento'),
-    fs.join(projectRoot, '.memento', 'modes'),
-    fs.join(projectRoot, '.memento', 'workflows'),
-    fs.join(projectRoot, '.memento', 'tickets'),
-    fs.join(projectRoot, '.memento', 'tickets', 'next'),
-    fs.join(projectRoot, '.memento', 'tickets', 'in-progress'),
-    fs.join(projectRoot, '.memento', 'tickets', 'done'),
+    fs.join(projectRoot, '.zcc'),
+    fs.join(projectRoot, '.zcc', 'modes'),
+    fs.join(projectRoot, '.zcc', 'workflows'),
+    fs.join(projectRoot, '.zcc', 'tickets'),
+    fs.join(projectRoot, '.zcc', 'tickets', 'next'),
+    fs.join(projectRoot, '.zcc', 'tickets', 'in-progress'),
+    fs.join(projectRoot, '.zcc', 'tickets', 'done'),
     fs.join(projectRoot, '.claude'),
     fs.join(projectRoot, '.claude', 'agents'),
     fs.join(projectRoot, '.claude', 'commands'),
@@ -276,7 +276,7 @@ export async function setupMementoProjectStructure(fs: FileSystemAdapter, projec
   await createDirectoryStructure(fs, directories);
   
   const files = {
-    [fs.join(projectRoot, '.memento', 'config.json')]: JSON.stringify({
+    [fs.join(projectRoot, '.zcc', 'config.json')]: JSON.stringify({
       version: '1.0.0',
       theme: 'default',
       enableHooks: true
@@ -295,7 +295,7 @@ export async function setupMementoProjectStructure(fs: FileSystemAdapter, projec
  * Create a sample ticket for testing
  */
 export async function createSampleTicket(fs: FileSystemAdapter, projectRoot: string, ticketName: string, status: 'next' | 'in-progress' | 'done' = 'next'): Promise<string> {
-  const ticketPath = fs.join(projectRoot, '.memento', 'tickets', status, `${ticketName}.md`);
+  const ticketPath = fs.join(projectRoot, '.zcc', 'tickets', status, `${ticketName}.md`);
   const content = `# ${ticketName}
 
 ## Description
@@ -318,11 +318,11 @@ Created for testing.
  * Create a sample mode for testing
  */
 export async function createSampleMode(fs: FileSystemAdapter, projectRoot: string, modeName: string): Promise<string> {
-  const modePath = fs.join(projectRoot, '.memento', 'modes', `${modeName}.md`);
+  const modePath = fs.join(projectRoot, '.zcc', 'modes', `${modeName}.md`);
   const content = `---
 name: ${modeName}
 description: A sample mode for testing
-author: memento-protocol
+author: zcc
 version: 1.0.0
 tags: [test, sample]
 ---

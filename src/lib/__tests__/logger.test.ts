@@ -84,10 +84,10 @@ describe('logger', () => {
 
     it('should handle MementoError with suggestions', () => {
       const error = new MementoError('Test error', 'TEST_ERROR', 'Try this instead');
-      logger.error('Memento error occurred', error);
+      logger.error('Error with suggestions occurred', error);
       
       expect(consoleErrorSpy).toHaveBeenCalledTimes(3);
-      expect(consoleErrorSpy.mock.calls[0][0]).toContain('Memento error occurred');
+      expect(consoleErrorSpy.mock.calls[0][0]).toContain('Error with suggestions occurred');
       expect(consoleErrorSpy.mock.calls[1][0]).toContain('Test error');
       expect(consoleErrorSpy.mock.calls[2][0]).toContain('💡');
       expect(consoleErrorSpy.mock.calls[2][0]).toContain('Try this instead');
@@ -95,10 +95,10 @@ describe('logger', () => {
 
     it('should handle MementoError without suggestions', () => {
       const error = new MementoError('Test error', 'TEST_ERROR');
-      logger.error('Memento error occurred', error);
+      logger.error('Error without suggestions occurred', error);
       
       expect(consoleErrorSpy).toHaveBeenCalledTimes(2);
-      expect(consoleErrorSpy.mock.calls[0][0]).toContain('Memento error occurred');
+      expect(consoleErrorSpy.mock.calls[0][0]).toContain('Error without suggestions occurred');
       expect(consoleErrorSpy.mock.calls[1][0]).toContain('Test error');
     });
   });

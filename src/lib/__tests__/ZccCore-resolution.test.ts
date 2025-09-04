@@ -1,25 +1,25 @@
-import { MementoCore } from '../MementoCore';
-import { MementoScope } from '../MementoScope';
+import { ZccCore } from '../ZccCore';
+import { ZccScope } from '../ZccScope';
 import { BuiltinComponentProvider } from '../BuiltinComponentProvider';
 import { ScriptExecutor } from '../ScriptExecutor';
 
 // Mock dependencies
-jest.mock('../MementoScope');
+jest.mock('../ZccScope');
 jest.mock('../BuiltinComponentProvider');
 jest.mock('../ScriptExecutor');
 
-const mockMementoScope = MementoScope as jest.MockedClass<typeof MementoScope>;
+const mockZccScope = ZccScope as jest.MockedClass<typeof ZccScope>;
 const mockBuiltinProvider = BuiltinComponentProvider as jest.MockedClass<typeof BuiltinComponentProvider>;
 const mockScriptExecutor = ScriptExecutor as jest.MockedClass<typeof ScriptExecutor>;
 
-describe('MementoCore - Component Resolution', () => {
-  let core: MementoCore;
-  let mockProjectScope: jest.Mocked<MementoScope>;
-  let mockGlobalScope: jest.Mocked<MementoScope>;
+describe('ZccCore - Component Resolution', () => {
+  let core: ZccCore;
+  let mockProjectScope: jest.Mocked<ZccScope>;
+  let mockGlobalScope: jest.Mocked<ZccScope>;
   let mockBuiltin: jest.Mocked<BuiltinComponentProvider>;
 
-  // Create a test-friendly version of MementoCore
-  class TestMementoCore extends MementoCore {
+  // Create a test-friendly version of ZccCore
+  class TestZccCore extends ZccCore {
     constructor(projectRoot: string) {
       super(projectRoot);
       // Replace the scopes with our mocked instances after they're created
@@ -89,7 +89,7 @@ describe('MementoCore - Component Resolution', () => {
       getComponents: jest.fn(),
       getComponentsByType: jest.fn(),
       exists: jest.fn().mockReturnValue(true),
-      getPath: jest.fn().mockReturnValue('/project/.memento'),
+      getPath: jest.fn().mockReturnValue('/project/.zcc'),
       getIsGlobal: jest.fn().mockReturnValue(false),
       clearCache: jest.fn(),
       getConfig: jest.fn()
@@ -100,7 +100,7 @@ describe('MementoCore - Component Resolution', () => {
       getComponents: jest.fn(),
       getComponentsByType: jest.fn(),
       exists: jest.fn().mockReturnValue(true),
-      getPath: jest.fn().mockReturnValue('/global/.memento'),
+      getPath: jest.fn().mockReturnValue('/global/.zcc'),
       getIsGlobal: jest.fn().mockReturnValue(true),
       clearCache: jest.fn(),
       getConfig: jest.fn()
@@ -115,7 +115,7 @@ describe('MementoCore - Component Resolution', () => {
       clearCache: jest.fn()
     } as any;
 
-    mockMementoScope.mockImplementation(((_: string, isGlobal: boolean) => {
+    mockZccScope.mockImplementation(((_: string, isGlobal: boolean) => {
       return isGlobal ? mockGlobalScope : mockProjectScope;
     }) as any);
 
@@ -132,7 +132,7 @@ describe('MementoCore - Component Resolution', () => {
     mockGlobalScope.getComponentsByType.mockResolvedValue([]);
     mockBuiltin.getComponentsByType.mockResolvedValue([]);
 
-    core = new TestMementoCore('/test/project');
+    core = new TestZccCore('/test/project');
   });
 
   describe('resolveComponent', () => {

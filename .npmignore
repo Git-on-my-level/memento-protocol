@@ -18,7 +18,7 @@ test-project/
 # Development directories
 node_modules/
 .git/
-.memento/
+.zcc/
 
 # Documentation (keep only essential)
 docs/

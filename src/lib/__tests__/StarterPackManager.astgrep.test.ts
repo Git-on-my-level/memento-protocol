@@ -23,7 +23,7 @@ describe('StarterPackManager - Advanced Code Refactoring Pack', () => {
     name: 'advanced-code-refactoring',
     version: '1.0.0',
     description: 'Advanced code refactoring toolkit with AST-based analysis',
-    author: 'memento-protocol',
+    author: 'zcc',
     category: 'general',
     tags: ['refactoring', 'ast', 'code-quality', 'semantic-search'],
     components: {
@@ -237,7 +237,7 @@ describe('StarterPackManager - Advanced Code Refactoring Pack', () => {
       
       const refactoringPack = packs.find(p => p.manifest.name === 'advanced-code-refactoring');
       expect(refactoringPack).toBeDefined();
-      expect(refactoringPack?.manifest.author).toBe('memento-protocol');
+      expect(refactoringPack?.manifest.author).toBe('zcc');
     });
   });
 });

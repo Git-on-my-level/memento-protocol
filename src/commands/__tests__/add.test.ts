@@ -1,11 +1,11 @@
 import { addCommand } from '../add';
-import { MementoCore } from '../../lib/MementoCore';
+import { ZccCore } from '../../lib/ZccCore';
 import { logger } from '../../lib/logger';
 import inquirer from 'inquirer';
 import { createTestFileSystem } from '../../lib/testing';
 import * as fs from 'fs';
 
-jest.mock('../../lib/MementoCore');
+jest.mock('../../lib/ZccCore');
 jest.mock('../../lib/logger', () => ({
   logger: {
     info: jest.fn(),
@@ -27,7 +27,7 @@ jest.mock('../../lib/utils/filesystem', () => ({
 }));
 
 describe('Add Command', () => {
-  let mockCore: jest.Mocked<MementoCore>;
+  let mockCore: jest.Mocked<ZccCore>;
   let originalExit: any;
   let mockInquirer: jest.Mocked<typeof inquirer>;
   let testFs: any;
@@ -44,9 +44,9 @@ describe('Add Command', () => {
     
     // Create test filesystem
     testFs = await createTestFileSystem({
-      '/project/.memento/config.json': JSON.stringify({ version: '1.0.0' }, null, 2),
-      '/project/.memento/modes/architect.md': '# Architect Mode\n\nSystem design mode',
-      '/project/.memento/workflows/review.md': '# Review Workflow\n\nCode review workflow'
+      '/project/.zcc/config.json': JSON.stringify({ version: '1.0.0' }, null, 2),
+      '/project/.zcc/modes/architect.md': '# Architect Mode\n\nSystem design mode',
+      '/project/.zcc/workflows/review.md': '# Review Workflow\n\nCode review workflow'
     });
 
     mockCore = {
@@ -60,7 +60,7 @@ describe('Add Command', () => {
 
     mockInquirer = inquirer as jest.Mocked<typeof inquirer>;
 
-    (MementoCore as jest.MockedClass<typeof MementoCore>).mockImplementation(() => mockCore);
+    (ZccCore as jest.MockedClass<typeof ZccCore>).mockImplementation(() => mockCore);
     
     originalExit = process.exit;
     process.exit = jest.fn() as any;
@@ -88,8 +88,8 @@ describe('Add Command', () => {
       mockCore.findComponents.mockResolvedValue([mockComponent]);
       mockCore.getComponentConflicts.mockResolvedValue([]);
       mockCore.getScopes.mockReturnValue({
-        project: { getPath: () => '/project/.memento', fs: testFs } as any,
-        global: { getPath: () => '/global/.memento', fs: testFs } as any
+        project: { getPath: () => '/project/.zcc', fs: testFs } as any,
+        global: { getPath: () => '/global/.zcc', fs: testFs } as any
       });
 
       await addCommand.parseAsync(['node', 'test', 'mode', 'architect']);
@@ -132,8 +132,8 @@ describe('Add Command', () => {
       });
       mockCore.getComponentConflicts.mockResolvedValue([]);
       mockCore.getScopes.mockReturnValue({
-        project: { getPath: () => '/project/.memento', fs: testFs } as any,
-        global: { getPath: () => '/global/.memento', fs: testFs } as any
+        project: { getPath: () => '/project/.zcc', fs: testFs } as any,
+        global: { getPath: () => '/global/.zcc', fs: testFs } as any
       });
 
       await addCommand.parseAsync(['node', 'test', 'mode']);
@@ -175,8 +175,8 @@ describe('Add Command', () => {
       mockCore.findComponents.mockResolvedValue([mockComponent]);
       mockCore.getComponentConflicts.mockResolvedValue([]);
       mockCore.getScopes.mockReturnValue({
-        project: { getPath: () => '/project/.memento', fs: testFs } as any,
-        global: { getPath: () => '/global/.memento', fs: testFs } as any
+        project: { getPath: () => '/project/.zcc', fs: testFs } as any,
+        global: { getPath: () => '/global/.zcc', fs: testFs } as any
       });
 
       await addCommand.parseAsync(['node', 'test', 'workflow', 'review']);
@@ -210,8 +210,8 @@ describe('Add Command', () => {
       });
       mockCore.getComponentConflicts.mockResolvedValue([]);
       mockCore.getScopes.mockReturnValue({
-        project: { getPath: () => '/project/.memento', fs: testFs } as any,
-        global: { getPath: () => '/global/.memento', fs: testFs } as any
+        project: { getPath: () => '/project/.zcc', fs: testFs } as any,
+        global: { getPath: () => '/global/.zcc', fs: testFs } as any
       });
 
       await addCommand.parseAsync(['node', 'test', 'workflow']);
@@ -256,7 +256,7 @@ describe('Add Command', () => {
           component: {
             name: 'architect-pro',
             type: 'mode' as const,
-            path: '/global/.memento/modes/architect-pro.md',
+            path: '/global/.zcc/modes/architect-pro.md',
             metadata: { description: 'Advanced system design mode' }
           },
           source: 'global' as const,
@@ -272,8 +272,8 @@ describe('Add Command', () => {
       });
       mockCore.getComponentConflicts.mockResolvedValue([]);
       mockCore.getScopes.mockReturnValue({
-        project: { getPath: () => '/project/.memento', fs: testFs } as any,
-        global: { getPath: () => '/global/.memento', fs: testFs } as any
+        project: { getPath: () => '/project/.zcc', fs: testFs } as any,
+        global: { getPath: () => '/global/.zcc', fs: testFs } as any
       });
 
       await addCommand.parseAsync(['node', 'test', 'mode', 'arch']);
@@ -308,8 +308,8 @@ describe('Add Command', () => {
       ]);
       mockInquirer.prompt.mockResolvedValue({ shouldOverwrite: true });
       mockCore.getScopes.mockReturnValue({
-        project: { getPath: () => '/project/.memento', fs: testFs } as any,
-        global: { getPath: () => '/global/.memento', fs: testFs } as any
+        project: { getPath: () => '/project/.zcc', fs: testFs } as any,
+        global: { getPath: () => '/global/.zcc', fs: testFs } as any
       });
 
       await addCommand.parseAsync(['node', 'test', 'mode', 'architect']);

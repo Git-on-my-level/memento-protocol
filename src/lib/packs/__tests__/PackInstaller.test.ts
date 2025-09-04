@@ -69,14 +69,14 @@ describe("PackInstaller", () => {
       expect(result.installed.agents).toContain("claude-code-research");
 
       // Verify files were created
-      expect(await fs.exists(`${mockProjectRoot}/.memento/modes/engineer.md`)).toBe(true);
-      expect(await fs.exists(`${mockProjectRoot}/.memento/workflows/review.md`)).toBe(true);
+      expect(await fs.exists(`${mockProjectRoot}/.zcc/modes/engineer.md`)).toBe(true);
+      expect(await fs.exists(`${mockProjectRoot}/.zcc/workflows/review.md`)).toBe(true);
       expect(await fs.exists(`${mockProjectRoot}/.claude/agents/claude-code-research.md`)).toBe(true);
     });
 
     it("should skip existing components without force flag", async () => {
       // Pre-create an existing component
-      await fs.writeFile(`${mockProjectRoot}/.memento/modes/engineer.md`, '# Existing Engineer Mode');
+      await fs.writeFile(`${mockProjectRoot}/.zcc/modes/engineer.md`, '# Existing Engineer Mode');
 
       const result = await installer.installPack(mockValidPack, packSource, { force: false });
 
@@ -86,7 +86,7 @@ describe("PackInstaller", () => {
 
     it("should overwrite existing components with force flag", async () => {
       // Pre-create an existing component
-      await fs.writeFile(`${mockProjectRoot}/.memento/modes/engineer.md`, '# Existing Engineer Mode');
+      await fs.writeFile(`${mockProjectRoot}/.zcc/modes/engineer.md`, '# Existing Engineer Mode');
 
       const result = await installer.installPack(mockValidPack, packSource, { force: true });
 
@@ -94,7 +94,7 @@ describe("PackInstaller", () => {
       expect(result.installed.modes).toContain("engineer");
       
       // Verify content was updated
-      const content = await fs.readFile(`${mockProjectRoot}/.memento/modes/engineer.md`, 'utf-8');
+      const content = await fs.readFile(`${mockProjectRoot}/.zcc/modes/engineer.md`, 'utf-8');
       expect(content).toContain('# Engineer Mode');
       expect(content).toContain('You are a software engineer');
     });
@@ -105,8 +105,8 @@ describe("PackInstaller", () => {
       expect(result.success).toBe(true);
       
       // Verify no files were actually created
-      expect(await fs.exists(`${mockProjectRoot}/.memento/modes/engineer.md`)).toBe(false);
-      expect(await fs.exists(`${mockProjectRoot}/.memento/workflows/review.md`)).toBe(false);
+      expect(await fs.exists(`${mockProjectRoot}/.zcc/modes/engineer.md`)).toBe(false);
+      expect(await fs.exists(`${mockProjectRoot}/.zcc/workflows/review.md`)).toBe(false);
       expect(await fs.exists(`${mockProjectRoot}/.claude/agents/claude-code-research.md`)).toBe(false);
     });
 
@@ -142,8 +142,8 @@ describe("PackInstaller", () => {
       expect(result.success).toBe(true);
       
       // Verify configuration was written
-      expect(await fs.exists(`${mockProjectRoot}/.memento/config.json`)).toBe(true);
-      const config = JSON.parse(await fs.readFile(`${mockProjectRoot}/.memento/config.json`, 'utf-8') as string);
+      expect(await fs.exists(`${mockProjectRoot}/.zcc/config.json`)).toBe(true);
+      const config = JSON.parse(await fs.readFile(`${mockProjectRoot}/.zcc/config.json`, 'utf-8') as string);
       expect(config.theme).toBe("dark");
       expect(config.enableAnalytics).toBe(false);
       expect(config.defaultMode).toBe("engineer");
@@ -155,8 +155,8 @@ describe("PackInstaller", () => {
       expect(result.success).toBe(true);
       
       // Verify project manifest was updated
-      expect(await fs.exists(`${mockProjectRoot}/.memento/packs.json`)).toBe(true);
-      const manifest = JSON.parse(await fs.readFile(`${mockProjectRoot}/.memento/packs.json`, 'utf-8') as string);
+      expect(await fs.exists(`${mockProjectRoot}/.zcc/packs.json`)).toBe(true);
+      const manifest = JSON.parse(await fs.readFile(`${mockProjectRoot}/.zcc/packs.json`, 'utf-8') as string);
       expect(manifest.packs["test-pack"]).toBeDefined();
       expect(manifest.packs["test-pack"].version).toBe("1.0.0");
     });

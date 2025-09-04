@@ -4,8 +4,8 @@ import { createTestFileSystem } from '../../testing';
 
 describe('HookFileManager', () => {
   const projectRoot = '/project';
-  const hooksDir = '/project/.memento/hooks';
-  const definitionsDir = '/project/.memento/hooks/definitions';
+  const hooksDir = '/project/.zcc/hooks';
+  const definitionsDir = '/project/.zcc/hooks/definitions';
 
   describe('removeHookFiles', () => {
     it('should remove hook definition file', async () => {
@@ -47,7 +47,7 @@ describe('HookFileManager', () => {
         name: 'Test Hook',
         event: 'UserPromptSubmit',
         enabled: true,
-        command: './.memento/hooks/scripts/test-script.sh'
+        command: './.zcc/hooks/scripts/test-script.sh'
       };
 
       expect(await fs.exists(scriptPath)).toBe(true);
@@ -108,7 +108,7 @@ describe('HookFileManager', () => {
       const scriptContent = '#!/bin/bash\necho "Hello, World!"';
       const commandPath = await fileManager.writeScriptFile('test-script', scriptContent);
 
-      expect(commandPath).toBe('./.memento/hooks/scripts/test-script.sh');
+      expect(commandPath).toBe('./.zcc/hooks/scripts/test-script.sh');
       
       const savedContent = await fs.readFile(`${hooksDir}/scripts/test-script.sh`, 'utf-8');
       expect(savedContent).toBe(scriptContent);
@@ -134,7 +134,7 @@ describe('HookFileManager', () => {
       
       const commandPath = await fileManager.writeScriptFile('relative-test', '#!/bin/bash\necho test');
       
-      expect(commandPath).toBe('./.memento/hooks/scripts/relative-test.sh');
+      expect(commandPath).toBe('./.zcc/hooks/scripts/relative-test.sh');
       expect(commandPath.startsWith('./')).toBe(true);
     });
   });
@@ -211,7 +211,7 @@ describe('HookFileManager', () => {
           name: 'Test Hook',
           event: 'UserPromptSubmit',
           enabled: true,
-          command: './.memento/hooks/scripts/test-hook-1234567890123.sh'
+          command: './.zcc/hooks/scripts/test-hook-1234567890123.sh'
         }
       };
 
@@ -227,7 +227,7 @@ describe('HookFileManager', () => {
       expect(mockRegistry.addHook).toHaveBeenCalledWith(
         expect.objectContaining({
           id: 'test-hook',
-          command: './.memento/hooks/scripts/test-hook.sh'
+          command: './.zcc/hooks/scripts/test-hook.sh'
         })
       );
 

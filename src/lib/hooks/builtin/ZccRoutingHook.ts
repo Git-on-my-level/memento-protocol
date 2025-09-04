@@ -2,7 +2,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { logger } from '../../logger';
 
-export class MementoRoutingHook {
+export class ZccRoutingHook {
   private scriptPath: string;
 
   constructor(projectRoot: string) {
@@ -44,19 +44,19 @@ WORKFLOW_REQUEST=$(echo "$PROMPT" | grep -o '[Ww]orkflow:[[:space:]]*[A-Za-z0-9_
 TICKET_REQUEST=$(echo "$PROMPT" | grep -o '[Tt]icket:[[:space:]]*[A-Za-z0-9_/-]*' | sed 's/[Tt]icket:[[:space:]]*//' || true)
 
 # Extract .memento paths from prompt
-MEMENTO_MODE_PATH=$(echo "$PROMPT" | grep -o '\\.memento/modes/[A-Za-z0-9_-]*\\.md' | sed 's|\\.memento/modes/||; s|\\.md||' | head -1 || true)
-MEMENTO_WORKFLOW_PATH=$(echo "$PROMPT" | grep -o '\\.memento/workflows/[A-Za-z0-9_-]*\\.md' | sed 's|\\.memento/workflows/||; s|\\.md||' | head -1 || true)
-MEMENTO_TICKET_PATH=$(echo "$PROMPT" | grep -o '\\.memento/tickets/[A-Za-z0-9_/-]*' | sed 's|\\.memento/tickets/||' | head -1 || true)
+ZCC_MODE_PATH=$(echo "$PROMPT" | grep -o '\\.memento/modes/[A-Za-z0-9_-]*\\.md' | sed 's|\\.memento/modes/||; s|\\.md||' | head -1 || true)
+ZCC_WORKFLOW_PATH=$(echo "$PROMPT" | grep -o '\\.memento/workflows/[A-Za-z0-9_-]*\\.md' | sed 's|\\.memento/workflows/||; s|\\.md||' | head -1 || true)
+ZCC_TICKET_PATH=$(echo "$PROMPT" | grep -o '\\.memento/tickets/[A-Za-z0-9_/-]*' | sed 's|\\.memento/tickets/||' | head -1 || true)
 
 # Use path-based detection if no explicit request
-if [ -z "$MODE_REQUEST" ] && [ -n "$MEMENTO_MODE_PATH" ]; then
-    MODE_REQUEST="$MEMENTO_MODE_PATH"
+if [ -z "$MODE_REQUEST" ] && [ -n "$ZCC_MODE_PATH" ]; then
+    MODE_REQUEST="$ZCC_MODE_PATH"
 fi
-if [ -z "$WORKFLOW_REQUEST" ] && [ -n "$MEMENTO_WORKFLOW_PATH" ]; then
-    WORKFLOW_REQUEST="$MEMENTO_WORKFLOW_PATH"
+if [ -z "$WORKFLOW_REQUEST" ] && [ -n "$ZCC_WORKFLOW_PATH" ]; then
+    WORKFLOW_REQUEST="$ZCC_WORKFLOW_PATH"
 fi
-if [ -z "$TICKET_REQUEST" ] && [ -n "$MEMENTO_TICKET_PATH" ]; then
-    TICKET_REQUEST="$MEMENTO_TICKET_PATH"
+if [ -z "$TICKET_REQUEST" ] && [ -n "$ZCC_TICKET_PATH" ]; then
+    TICKET_REQUEST="$ZCC_TICKET_PATH"
 fi
 
 # Read default mode from config if no mode specified
@@ -269,16 +269,16 @@ if [ -n "$TICKET_REQUEST" ]; then
         echo "### Ticket Commands"
         printf '%s\\n' '\`\`\`bash'
         echo "# Create a new ticket"
-        echo "npx memento-protocol ticket create \\"ticket-name\\""
+        echo "npx zcc ticket create \\"ticket-name\\""
         echo ""
         echo "# Move ticket to different status"
-        echo "npx memento-protocol ticket move $TICKET_REQUEST --to in-progress  # or: next, done"
+        echo "npx zcc ticket move $TICKET_REQUEST --to in-progress  # or: next, done"
         echo ""
         echo "# Delete a ticket"
-        echo "npx memento-protocol ticket delete $TICKET_REQUEST"
+        echo "npx zcc ticket delete $TICKET_REQUEST"
         echo ""
         echo "# List all tickets"
-        echo "npx memento-protocol ticket list"
+        echo "npx zcc ticket list"
         printf '%s\\n' '\`\`\`'
         echo ""
         echo "### Working with Tickets"
@@ -320,16 +320,16 @@ if [ -z "$TICKET_REQUEST" ]; then
         echo "### Available Commands"
         printf '%s\\n' '\`\`\`bash'
         echo "# Create a new ticket"
-        echo "npx memento-protocol ticket create \\"ticket-name\\""
+        echo "npx zcc ticket create \\"ticket-name\\""
         echo ""
         echo "# List all tickets"
-        echo "npx memento-protocol ticket list"
+        echo "npx zcc ticket list"
         echo ""
         echo "# Move ticket to different status"
-        echo "npx memento-protocol ticket move ticket-name --to in-progress  # or: next, done"
+        echo "npx zcc ticket move ticket-name --to in-progress  # or: next, done"
         echo ""
         echo "# Delete a ticket"
-        echo "npx memento-protocol ticket delete ticket-name"
+        echo "npx zcc ticket delete ticket-name"
         printf '%s\\n' '\`\`\`'
         echo ""
         echo "### Working with Tickets"
@@ -349,8 +349,8 @@ if [ -z "$TICKET_REQUEST" ]; then
     elif echo "$PROMPT" | grep -qi 'ticket' && ! echo "$PROMPT" | grep -qi '^[[:space:]]*ticket[[:space:]]*:'; then
         echo "## Ticket System Available"
         echo ""
-        echo "Memento Protocol includes a ticket system for task management."
-        echo "Use \\\`npx memento-protocol ticket --help\\\` for more information."
+        echo "zcc includes a ticket system for task management."
+        echo "Use \\\`npx zcc ticket --help\\\` for more information."
         echo ""
     fi
 fi

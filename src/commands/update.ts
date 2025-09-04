@@ -38,9 +38,9 @@ export function createUpdateCommand(): Command {
             );
           });
 
-          logger.info('\nRun "memento update" to install all updates');
+          logger.info('\nRun "zcc update" to install all updates');
           logger.info(
-            'Run "memento update <component>" to update a specific component'
+            'Run "zcc update <component>" to update a specific component'
           );
           return;
         }
@@ -68,7 +68,7 @@ export function createUpdateCommand(): Command {
         }
       } catch (error: any) {
         // Check if this is a "not initialized" error and provide helpful guidance
-        if (error.message.includes("Memento Protocol is not initialized")) {
+        if (error.message.includes("zcc is not initialized")) {
           logger.error(error.message);
         } else {
           logger.error(`Update failed: ${error.message}`);

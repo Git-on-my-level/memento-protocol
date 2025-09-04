@@ -1,11 +1,11 @@
 ---
-allowed-tools: Bash(sh .memento/scripts/mode-switch.sh)
+allowed-tools: Bash(sh .zcc/scripts/mode-switch.sh)
 argument-hint: [mode-name]
 description: List available modes or switch to a specific mode
 ---
 # Mode Management
 
-!`sh .memento/scripts/mode-switch.sh $ARGUMENTS`
+!`sh .zcc/scripts/mode-switch.sh $ARGUMENTS`
 
 
 

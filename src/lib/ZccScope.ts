@@ -17,7 +17,7 @@ export interface ComponentInfo {
  * Handles a single Memento scope (global or project)
  * Manages config.yaml loading and component discovery
  */
-export class MementoScope {
+export class ZccScope {
   private scopePath: string;
   private configPath: string;
   private cache: SimpleCache;

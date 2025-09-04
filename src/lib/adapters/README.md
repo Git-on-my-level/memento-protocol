@@ -232,8 +232,8 @@ const service = new MyService(await createTestFileSystem());
 This adapter system is designed to work seamlessly with Memento Protocol components:
 
 ```typescript
-// Use in MementoCore or other components
-class MementoCore {
+// Use in ZccCore or other components
+class ZccCore {
   constructor(
     private projectRoot: string,
     private fs: FileSystemAdapter = new NodeFileSystemAdapter()
@@ -251,5 +251,5 @@ class MementoCore {
 
 // Easy testing
 const fs = await createTestMementoProject('/test-project');
-const core = new MementoCore('/test-project', fs);
+const core = new ZccCore('/test-project', fs);
 ```

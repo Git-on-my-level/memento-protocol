@@ -48,7 +48,7 @@ export class PermissionGenerator {
       "Bash(../dist/cli.js)",
       "Bash(../src/cli.ts)",
       "WebFetch(domain:docs.anthropic.com)",
-      "Bash(npx memento-protocol ticket:*)",
+      "Bash(npx zcc ticket:*)",
     ];
 
     // Add base permissions
@@ -86,11 +86,11 @@ export class PermissionGenerator {
               const tools = toolsMatch[1].split(",").map((t) => t.trim());
               tools.forEach((tool) => {
                 // Convert tool format to permission format
-                // Handle formats like "Bash(sh:.memento/scripts/mode-switch.sh)"
+                // Handle formats like "Bash(sh:.zcc/scripts/mode-switch.sh)"
                 if (tool.startsWith("Bash(") && tool.endsWith(")")) {
                   const innerContent = tool.slice(5, -1); // Remove "Bash(" and ")"
                   if (innerContent.includes(":")) {
-                    // Already has pattern like "sh:.memento/scripts/mode-switch.sh"
+                    // Already has pattern like "sh:.zcc/scripts/mode-switch.sh"
                     allowPermissions.add(`Bash(${innerContent}:*)`);
                   } else {
                     // Add :* for simple patterns
@@ -104,7 +104,7 @@ export class PermissionGenerator {
           }
 
           // Also extract command patterns from the content body
-          // Look for patterns like !`sh .memento/scripts/mode-switch.sh $ARGUMENTS`
+          // Look for patterns like !`sh .zcc/scripts/mode-switch.sh $ARGUMENTS`
           const commandPatternMatch = content.match(/!\`([^`]+)\`/g);
           if (commandPatternMatch) {
             commandPatternMatch.forEach((pattern) => {
@@ -112,8 +112,8 @@ export class PermissionGenerator {
               const command = pattern.slice(2, -1); // Remove !` and `
 
               // Convert to proper Claude Code permission format
-              // For commands like "sh .memento/scripts/mode-switch.sh $ARGUMENTS"
-              // Generate "Bash(sh .memento/scripts/mode-switch.sh)" without colons
+              // For commands like "sh .zcc/scripts/mode-switch.sh $ARGUMENTS"
+              // Generate "Bash(sh .zcc/scripts/mode-switch.sh)" without colons
               const parts = command.trim().split(/\s+/);
               if (parts.length > 0) {
                 const baseCommand = parts[0];

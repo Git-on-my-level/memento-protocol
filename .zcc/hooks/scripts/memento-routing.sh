@@ -19,26 +19,26 @@ MODE_REQUEST=$(echo "$PROMPT" | grep -o '[Mm]ode:[[:space:]]*[A-Za-z0-9_-]*' | s
 WORKFLOW_REQUEST=$(echo "$PROMPT" | grep -o '[Ww]orkflow:[[:space:]]*[A-Za-z0-9_-]*' | sed 's/[Ww]orkflow:[[:space:]]*//' || true)
 TICKET_REQUEST=$(echo "$PROMPT" | grep -o '[Tt]icket:[[:space:]]*[A-Za-z0-9_/-]*' | sed 's/[Tt]icket:[[:space:]]*//' || true)
 
-# Extract .memento paths from prompt
-MEMENTO_MODE_PATH=$(echo "$PROMPT" | grep -o '\.memento/modes/[A-Za-z0-9_-]*\.md' | sed 's|\.memento/modes/||; s|\.md||' | head -1 || true)
-MEMENTO_WORKFLOW_PATH=$(echo "$PROMPT" | grep -o '\.memento/workflows/[A-Za-z0-9_-]*\.md' | sed 's|\.memento/workflows/||; s|\.md||' | head -1 || true)
-MEMENTO_TICKET_PATH=$(echo "$PROMPT" | grep -o '\.memento/tickets/[A-Za-z0-9_/-]*' | sed 's|\.memento/tickets/||' | head -1 || true)
+# Extract .zcc paths from prompt
+ZCC_MODE_PATH=$(echo "$PROMPT" | grep -o '\.zcc/modes/[A-Za-z0-9_-]*\.md' | sed 's|\.zcc/modes/||; s|\.md||' | head -1 || true)
+ZCC_WORKFLOW_PATH=$(echo "$PROMPT" | grep -o '\.zcc/workflows/[A-Za-z0-9_-]*\.md' | sed 's|\.zcc/workflows/||; s|\.md||' | head -1 || true)
+ZCC_TICKET_PATH=$(echo "$PROMPT" | grep -o '\.zcc/tickets/[A-Za-z0-9_/-]*' | sed 's|\.zcc/tickets/||' | head -1 || true)
 
 # Use path-based detection if no explicit request
-if [ -z "$MODE_REQUEST" ] && [ -n "$MEMENTO_MODE_PATH" ]; then
-    MODE_REQUEST="$MEMENTO_MODE_PATH"
+if [ -z "$MODE_REQUEST" ] && [ -n "$ZCC_MODE_PATH" ]; then
+    MODE_REQUEST="$ZCC_MODE_PATH"
 fi
-if [ -z "$WORKFLOW_REQUEST" ] && [ -n "$MEMENTO_WORKFLOW_PATH" ]; then
-    WORKFLOW_REQUEST="$MEMENTO_WORKFLOW_PATH"
+if [ -z "$WORKFLOW_REQUEST" ] && [ -n "$ZCC_WORKFLOW_PATH" ]; then
+    WORKFLOW_REQUEST="$ZCC_WORKFLOW_PATH"
 fi
-if [ -z "$TICKET_REQUEST" ] && [ -n "$MEMENTO_TICKET_PATH" ]; then
-    TICKET_REQUEST="$MEMENTO_TICKET_PATH"
+if [ -z "$TICKET_REQUEST" ] && [ -n "$ZCC_TICKET_PATH" ]; then
+    TICKET_REQUEST="$ZCC_TICKET_PATH"
 fi
 
 # Read default mode from config if no mode specified
 DEFAULT_MODE=""
-if [ -z "$MODE_REQUEST" ] && [ -f ".memento/config.json" ]; then
-    DEFAULT_MODE=$(grep '"defaultMode"' .memento/config.json | sed 's/.*"defaultMode"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/' || true)
+if [ -z "$MODE_REQUEST" ] && [ -f ".zcc/config.json" ]; then
+    DEFAULT_MODE=$(grep '"defaultMode"' .zcc/config.json | sed 's/.*"defaultMode"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/' || true)
 fi
 
 # Function to find fuzzy matches
@@ -49,14 +49,14 @@ find_matches() {
     
     # Get all available items
     if [ "$type" = "mode" ]; then
-        if [ -d ".memento/modes" ]; then
-            items=($(ls .memento/modes/*.md 2>/dev/null | xargs -n1 basename | sed 's/.md//' || true))
+        if [ -d ".zcc/modes" ]; then
+            items=($(ls .zcc/modes/*.md 2>/dev/null | xargs -n1 basename | sed 's/.md//' || true))
         else
             items=()
         fi
     else
-        if [ -d ".memento/workflows" ]; then
-            items=($(ls .memento/workflows/*.md 2>/dev/null | xargs -n1 basename | sed 's/.md//' || true))
+        if [ -d ".zcc/workflows" ]; then
+            items=($(ls .zcc/workflows/*.md 2>/dev/null | xargs -n1 basename | sed 's/.md//' || true))
         else
             items=()
         fi
@@ -136,21 +136,21 @@ if [ -n "$MODE_REQUEST" ]; then
     if [ ${#MATCHES[@]} -eq 0 ]; then
         echo "## No Mode Match Found"
         echo "Could not find a mode matching: $MODE_REQUEST"
-        echo "Available modes in .memento/modes/:"
-        if [ -d ".memento/modes" ]; then
-            ls .memento/modes/*.md 2>/dev/null | xargs -n1 basename | sed 's/.md//' | sed 's/^/  - /' || echo "  (none)"
+        echo "Available modes in .zcc/modes/:"
+        if [ -d ".zcc/modes" ]; then
+            ls .zcc/modes/*.md 2>/dev/null | xargs -n1 basename | sed 's/.md//' | sed 's/^/  - /' || echo "  (none)"
         else
-            echo "  (none - .memento/modes directory not found)"
+            echo "  (none - .zcc/modes directory not found)"
         fi
     elif [ ${#MATCHES[@]} -eq 1 ]; then
         echo "## Mode: ${MATCHES[0]}"
-        cat ".memento/modes/${MATCHES[0]}.md"
+        cat ".zcc/modes/${MATCHES[0]}.md"
     else
         echo "## Multiple Mode Matches Found for: $MODE_REQUEST"
         for match in "${MATCHES[@]}"; do
             echo ""
             echo "### Mode: $match"
-            cat ".memento/modes/$match.md"
+            cat ".zcc/modes/$match.md"
             echo ""
             echo "---"
         done
@@ -160,9 +160,9 @@ if [ -n "$MODE_REQUEST" ]; then
     echo ""
 elif [ -n "$DEFAULT_MODE" ]; then
     # No explicit mode requested, but default mode is configured
-    if [ -f ".memento/modes/$DEFAULT_MODE.md" ]; then
+    if [ -f ".zcc/modes/$DEFAULT_MODE.md" ]; then
         echo "## Mode: $DEFAULT_MODE (default)"
-        cat ".memento/modes/$DEFAULT_MODE.md"
+        cat ".zcc/modes/$DEFAULT_MODE.md"
         echo ""
     fi
 fi
@@ -174,21 +174,21 @@ if [ -n "$WORKFLOW_REQUEST" ]; then
     if [ ${#MATCHES[@]} -eq 0 ]; then
         echo "## No Workflow Match Found"
         echo "Could not find a workflow matching: $WORKFLOW_REQUEST"
-        echo "Available workflows in .memento/workflows/:"
-        if [ -d ".memento/workflows" ]; then
-            ls .memento/workflows/*.md 2>/dev/null | xargs -n1 basename | sed 's/.md//' | sed 's/^/  - /' || echo "  (none)"
+        echo "Available workflows in .zcc/workflows/:"
+        if [ -d ".zcc/workflows" ]; then
+            ls .zcc/workflows/*.md 2>/dev/null | xargs -n1 basename | sed 's/.md//' | sed 's/^/  - /' || echo "  (none)"
         else
-            echo "  (none - .memento/workflows directory not found)"
+            echo "  (none - .zcc/workflows directory not found)"
         fi
     elif [ ${#MATCHES[@]} -eq 1 ]; then
         echo "## Workflow: ${MATCHES[0]}"
-        cat ".memento/workflows/${MATCHES[0]}.md"
+        cat ".zcc/workflows/${MATCHES[0]}.md"
     else
         echo "## Multiple Workflow Matches Found for: $WORKFLOW_REQUEST"
         for match in "${MATCHES[@]}"; do
             echo ""
             echo "### Workflow: $match"
-            cat ".memento/workflows/$match.md"
+            cat ".zcc/workflows/$match.md"
             echo ""
             echo "---"
         done
@@ -208,16 +208,16 @@ if [ -n "$TICKET_REQUEST" ]; then
         for status in "${statuses[@]}"; do
             # Check if ticket is already a path with status
             if echo "$ticket" | grep -q "^$status/"; then
-                if [ -f ".memento/tickets/$ticket.md" ] || [ -f ".memento/tickets/$ticket" ]; then
+                if [ -f ".zcc/tickets/$ticket.md" ] || [ -f ".zcc/tickets/$ticket" ]; then
                     echo "$ticket"
                     return
                 fi
             else
                 # Search in each status directory
-                if [ -f ".memento/tickets/$status/$ticket.md" ]; then
+                if [ -f ".zcc/tickets/$status/$ticket.md" ]; then
                     echo "$status/$ticket"
                     return
-                elif [ -f ".memento/tickets/$status/$ticket" ]; then
+                elif [ -f ".zcc/tickets/$status/$ticket" ]; then
                     echo "$status/$ticket"
                     return
                 fi
@@ -234,9 +234,9 @@ if [ -n "$TICKET_REQUEST" ]; then
         echo "Could not find a ticket matching: $TICKET_REQUEST"
         echo "Available tickets:"
         for status in next in-progress done; do
-            if [ -d ".memento/tickets/$status" ]; then
+            if [ -d ".zcc/tickets/$status" ]; then
                 echo "  $status:"
-                ls ".memento/tickets/$status" 2>/dev/null | sed 's/^/    - /' || true
+                ls ".zcc/tickets/$status" 2>/dev/null | sed 's/^/    - /' || true
             fi
         done
     else
@@ -245,39 +245,39 @@ if [ -n "$TICKET_REQUEST" ]; then
         echo "### Ticket Commands"
         printf '%s\n' '```bash'
         echo "# Create a new ticket"
-        echo "npx memento-protocol ticket create \"ticket-name\""
+        echo "npx zcc ticket create \"ticket-name\""
         echo ""
         echo "# Move ticket to different status"
-        echo "npx memento-protocol ticket move $TICKET_REQUEST --to in-progress  # or: next, done"
+        echo "npx zcc ticket move $TICKET_REQUEST --to in-progress  # or: next, done"
         echo ""
         echo "# Delete a ticket"
-        echo "npx memento-protocol ticket delete $TICKET_REQUEST"
+        echo "npx zcc ticket delete $TICKET_REQUEST"
         echo ""
         echo "# List all tickets"
-        echo "npx memento-protocol ticket list"
+        echo "npx zcc ticket list"
         printf '%s\n' '```'
         echo ""
         echo "### Working with Tickets"
         echo ""
-        echo "- **Tickets are markdown files stored in .memento/tickets/{status}/ directories**"
-        echo "- **File locations**: .memento/tickets/next/, .memento/tickets/in-progress/, .memento/tickets/done/"
-        echo "- **To read ticket content: Use Read tool with full file path like .memento/tickets/next/ticket-name.md**"
+        echo "- **Tickets are markdown files stored in .zcc/tickets/{status}/ directories**"
+        echo "- **File locations**: .zcc/tickets/next/, .zcc/tickets/in-progress/, .zcc/tickets/done/"
+        echo "- **To read ticket content: Use Read tool with full file path like .zcc/tickets/next/ticket-name.md**"
         echo "- **To edit tickets: Use Edit tool directly on the .md files**"
         echo "- **Important: There is NO CLI command to read ticket content - always use Read tool**"
         echo "- **CLI commands only manage ticket lifecycle (create/move/list/delete)**"
         echo "- Example file paths:"
-        echo "  - .memento/tickets/next/fix-login-bug.md"
-        echo "  - .memento/tickets/in-progress/add-feature.md"
-        echo "  - .memento/tickets/done/completed-task.md"
+        echo "  - .zcc/tickets/next/fix-login-bug.md"
+        echo "  - .zcc/tickets/in-progress/add-feature.md"
+        echo "  - .zcc/tickets/done/completed-task.md"
         echo ""
         
         # Output ticket content
-        if [ -f ".memento/tickets/$TICKET_PATH.md" ]; then
+        if [ -f ".zcc/tickets/$TICKET_PATH.md" ]; then
             echo "### Ticket Content"
-            cat ".memento/tickets/$TICKET_PATH.md"
-        elif [ -f ".memento/tickets/$TICKET_PATH" ]; then
+            cat ".zcc/tickets/$TICKET_PATH.md"
+        elif [ -f ".zcc/tickets/$TICKET_PATH" ]; then
             echo "### Ticket Content"
-            cat ".memento/tickets/$TICKET_PATH"
+            cat ".zcc/tickets/$TICKET_PATH"
         else
             echo "### Error"
             echo "Ticket file not found at expected location."
@@ -296,37 +296,37 @@ if [ -z "$TICKET_REQUEST" ]; then
         echo "### Available Commands"
         printf '%s\n' '```bash'
         echo "# Create a new ticket"
-        echo "npx memento-protocol ticket create \"ticket-name\""
+        echo "npx zcc ticket create \"ticket-name\""
         echo ""
         echo "# List all tickets"
-        echo "npx memento-protocol ticket list"
+        echo "npx zcc ticket list"
         echo ""
         echo "# Move ticket to different status"
-        echo "npx memento-protocol ticket move ticket-name --to in-progress  # or: next, done"
+        echo "npx zcc ticket move ticket-name --to in-progress  # or: next, done"
         echo ""
         echo "# Delete a ticket"
-        echo "npx memento-protocol ticket delete ticket-name"
+        echo "npx zcc ticket delete ticket-name"
         printf '%s\n' '```'
         echo ""
         echo "### Working with Tickets"
         echo ""
-        echo "- **Tickets are markdown files stored in .memento/tickets/{status}/ directories**"
-        echo "- **File locations**: .memento/tickets/next/, .memento/tickets/in-progress/, .memento/tickets/done/"
-        echo "- **To read ticket content: Use Read tool with full file path like .memento/tickets/next/ticket-name.md**"
+        echo "- **Tickets are markdown files stored in .zcc/tickets/{status}/ directories**"
+        echo "- **File locations**: .zcc/tickets/next/, .zcc/tickets/in-progress/, .zcc/tickets/done/"
+        echo "- **To read ticket content: Use Read tool with full file path like .zcc/tickets/next/ticket-name.md**"
         echo "- **To edit tickets: Use Edit tool directly on the .md files**"
         echo "- **Important: There is NO CLI command to read ticket content - always use Read tool**"
         echo "- **CLI commands only manage ticket lifecycle (create/move/list/delete)**"
         echo "- Example file paths:"
-        echo "  - .memento/tickets/next/fix-login-bug.md"
-        echo "  - .memento/tickets/in-progress/add-feature.md"
-        echo "  - .memento/tickets/done/completed-task.md"
+        echo "  - .zcc/tickets/next/fix-login-bug.md"
+        echo "  - .zcc/tickets/in-progress/add-feature.md"
+        echo "  - .zcc/tickets/done/completed-task.md"
         echo ""
     # Low-confidence patterns (case-insensitive) - exclude explicit ticket: requests
     elif echo "$PROMPT" | grep -qi 'ticket' && ! echo "$PROMPT" | grep -qi '^[[:space:]]*ticket[[:space:]]*:'; then
         echo "## Ticket System Available"
         echo ""
         echo "Memento Protocol includes a ticket system for task management."
-        echo "Use \`npx memento-protocol ticket --help\` for more information."
+        echo "Use \`npx zcc ticket --help\` for more information."
         echo ""
     fi
 fi

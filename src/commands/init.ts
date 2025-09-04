@@ -69,23 +69,23 @@ function parseNonInteractiveOptions(
   }
 
   // 2. Override with environment variables
-  if (process.env.MEMENTO_MODES) {
-    options.modes = process.env.MEMENTO_MODES.split(",").map((m: string) =>
+  if (process.env.ZCC_MODES) {
+    options.modes = process.env.ZCC_MODES.split(",").map((m: string) =>
       m.trim()
     );
   }
-  if (process.env.MEMENTO_WORKFLOWS) {
-    options.workflows = process.env.MEMENTO_WORKFLOWS.split(",").map(
+  if (process.env.ZCC_WORKFLOWS) {
+    options.workflows = process.env.ZCC_WORKFLOWS.split(",").map(
       (w: string) => w.trim()
     );
   }
-  if (process.env.MEMENTO_HOOKS) {
-    options.hooks = process.env.MEMENTO_HOOKS.split(",").map((h: string) =>
+  if (process.env.ZCC_HOOKS) {
+    options.hooks = process.env.ZCC_HOOKS.split(",").map((h: string) =>
       h.trim()
     );
   }
-  if (process.env.MEMENTO_DEFAULT_MODE) {
-    options.defaultMode = process.env.MEMENTO_DEFAULT_MODE;
+  if (process.env.ZCC_DEFAULT_MODE) {
+    options.defaultMode = process.env.ZCC_DEFAULT_MODE;
   }
 
   // 3. Override with CLI flags ONLY if explicitly provided in this invocation
@@ -111,14 +111,14 @@ function parseNonInteractiveOptions(
 }
 
 export const initCommand = new Command("init")
-  .description("Initialize Memento Protocol in the current project or globally")
-  .option("-f, --force", "Force initialization even if .memento already exists")
+  .description("Initialize zcc in the current project or globally")
+  .option("-f, --force", "Force initialization even if .zcc already exists")
   .option(
     "-n, --non-interactive",
     "Non-interactive setup (no component installation)"
   )
-  .option("--global", "Initialize global ~/.memento configuration instead of project")
-  .option("-g, --gitignore", "Add .memento/ to .gitignore (defaults to false)")
+  .option("--global", "Initialize global ~/.zcc configuration instead of project")
+  .option("-g, --gitignore", "Add .zcc/ to .gitignore (defaults to false)")
   .option("-m, --modes <modes>", "Comma-separated list of modes to install")
   .option(
     "-w, --workflows <workflows>",
@@ -136,7 +136,7 @@ export const initCommand = new Command("init")
       if (options.global) {
         const { initGlobalCommand } = await import("./init-global");
         // Re-run with init-global command, preserving relevant options
-        const args = ["node", "memento"];
+        const args = ["node", "zcc"];
         
         if (options.force) args.push("--force");
         if (options.nonInteractive) args.push("--no-interactive");
@@ -157,14 +157,14 @@ export const initCommand = new Command("init")
 
       // Check if already initialized
       if (dirManager.isInitialized() && !options.force) {
-        logger.warn("Memento Protocol is already initialized in this project.");
+        logger.warn("zcc is already initialized in this project.");
         logger.info("Use --force to reinitialize.");
         return;
       }
 
       
       // Initialize directory structure
-      logger.info("Initializing Memento Protocol...");
+      logger.info("Initializing zcc...");
       await dirManager.initializeStructure();
 
 
@@ -297,14 +297,14 @@ export const initCommand = new Command("init")
       await commandGenerator.initialize();
 
       logger.space();
-      logger.success("Memento Protocol initialized successfully!");
+      logger.success("zcc initialized successfully!");
       logger.space();
       logger.info("To use with Claude Code:");
       logger.info(
         '  - Say "mode: [name]" to activate a mode (fuzzy matching supported)'
       );
       logger.info('  - Say "workflow: [name]" to execute a workflow');
-      logger.info("  - Use custom commands: /ticket, /mode, /memento:status");
+      logger.info("  - Use custom commands: /ticket, /mode, /zcc:status");
       if (setupOptions.defaultMode) {
         logger.info(
           `  - Default mode "${setupOptions.defaultMode}" will be used when no mode is specified`
@@ -321,10 +321,10 @@ export const initCommand = new Command("init")
         logger.info(packResult.postInstallMessage);
       }
       logger.space();
-      logger.info('Run "memento --help" to see all available commands.');
-      logger.info('Run "memento hook list" to see installed hooks.');
+      logger.info('Run "zcc --help" to see all available commands.');
+      logger.info('Run "zcc hook list" to see installed hooks.');
     } catch (error) {
-      logger.error("Failed to initialize Memento Protocol:", error);
+      logger.error("Failed to initialize zcc:", error);
       process.exit(1);
     }
   });

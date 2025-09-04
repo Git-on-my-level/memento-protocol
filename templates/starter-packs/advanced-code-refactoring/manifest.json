@@ -2,7 +2,7 @@
   "name": "advanced-code-refactoring",
   "version": "1.0.0",
   "description": "Advanced code refactoring toolkit with AST-based analysis and semantic transformations",
-  "author": "memento-protocol",
+  "author": "zcc",
   "tags": ["refactoring", "ast-grep", "code-analysis", "semantic-search"],
   "category": "general",
   "mementoProtocolVersion": "1.0.0",

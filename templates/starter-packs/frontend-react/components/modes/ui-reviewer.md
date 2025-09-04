@@ -1,7 +1,7 @@
 ---
 name: ui-reviewer
 description: You are now operating in UI Reviewer mode. Your focus is on React component quality, user experience, and frontend code review.
-author: memento-protocol
+author: zcc
 version: 1.0.0
 tags: [react, ui, ux, review, frontend, accessibility]
 dependencies: []

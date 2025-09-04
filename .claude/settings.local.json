@@ -17,8 +17,8 @@
       "Bash(head:CLAUDE.md:*)",
       "Bash(ls -1)",
       "Bash(ls:*)",
-      "Bash(ls:.memento/modes/:*)",
-      "Bash(ls:.memento/workflows/:*)",
+      "Bash(ls:.zcc/modes/:*)",
+      "Bash(ls:.zcc/workflows/:*)",
       "Bash(mkdir:*)",
       "Bash(mv:*)",
       "Bash(node:*)",
@@ -35,10 +35,10 @@
       "Bash(npx tsx:*)",
       "Bash(rm:*)",
       "Bash(scripts/npm/commit-tag-and-publish.sh:*)",
-      "Bash(sh .memento/scripts/mode-switch.sh)",
-      "Bash(sh .memento/scripts/mode-switch.sh):*",
-      "Bash(sh .memento/scripts/ticket-context.sh)",
-      "Bash(sh .memento/scripts/ticket-context.sh):*",
+      "Bash(sh .zcc/scripts/mode-switch.sh)",
+      "Bash(sh .zcc/scripts/mode-switch.sh):*",
+      "Bash(sh .zcc/scripts/ticket-context.sh)",
+      "Bash(sh .zcc/scripts/ticket-context.sh):*",
       "Bash(timeout 15 npm run dev init -- --force --quick)",
       "WebFetch(domain:docs.anthropic.com)"
     ],
@@ -51,7 +51,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./.memento/hooks/scripts/acronym-expander.sh",
+            "command": "./.zcc/hooks/scripts/acronym-expander.sh",
             "timeout": 30
           }
         ]
@@ -61,7 +61,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./.memento/hooks/scripts/git-context-loader.sh",
+            "command": "./.zcc/hooks/scripts/git-context-loader.sh",
             "timeout": 30
           }
         ]
@@ -71,7 +71,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./.memento/hooks/scripts/memento-routing.sh",
+            "command": "./.zcc/hooks/scripts/memento-routing.sh",
             "timeout": 30
           }
         ]
@@ -81,7 +81,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/dazheng/workspace/personal/memento-protocol/.memento/hooks/scripts/acronym-expander.sh",
+            "command": "/Users/dazheng/workspace/personal/memento-protocol/.zcc/hooks/scripts/acronym-expander.sh",
             "timeout": 30
           }
         ]
@@ -93,7 +93,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./.memento/hooks/scripts/project-overview.sh",
+            "command": "./.zcc/hooks/scripts/project-overview.sh",
             "timeout": 30
           }
         ]

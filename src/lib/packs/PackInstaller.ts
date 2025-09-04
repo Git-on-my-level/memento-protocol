@@ -21,7 +21,7 @@ import { ToolDependencyChecker, ToolDependency } from "./ToolDependencyChecker";
 export class PackInstaller {
   private directoryManager: DirectoryManager;
   // projectRoot will be used in future implementation
-  private mementoDir: string;
+  private zccDir: string;
   private claudeDir: string;
   private fs: FileSystemAdapter;
   private toolChecker: ToolDependencyChecker;
@@ -30,7 +30,7 @@ export class PackInstaller {
     this.fs = fs || new NodeFileSystemAdapter();
     // this._projectRoot = projectRoot; // TODO: store for future use
     this.directoryManager = new DirectoryManager(projectRoot);
-    this.mementoDir = this.fs.join(projectRoot, '.memento');
+    this.zccDir = this.fs.join(projectRoot, '.zcc');
     this.claudeDir = this.fs.join(projectRoot, '.claude');
     this.toolChecker = new ToolDependencyChecker();
   }
@@ -142,7 +142,7 @@ export class PackInstaller {
     // TODO: Implement actual uninstallation logic
     // This would involve:
     // 1. Loading the pack manifest to know what components to remove
-    // 2. Removing component files from .memento directories
+    // 2. Removing component files from .zcc directories
     // 3. Removing agents from .claude directory
     // 4. Cleaning up configuration
     // 5. Updating project manifest
@@ -222,8 +222,8 @@ export class PackInstaller {
         // Agents go to .claude directory
         targetPath = path.join(this.claudeDir, 'agents', `${componentName}.md`);
       } else {
-        // Other components go to .memento directory
-        targetPath = path.join(this.mementoDir, componentType, `${componentName}.md`);
+        // Other components go to .zcc directory
+        targetPath = path.join(this.zccDir, componentType, `${componentName}.md`);
       }
 
       // Check for conflicts
@@ -259,7 +259,7 @@ export class PackInstaller {
       return;
     }
 
-    const configPath = this.fs.join(this.mementoDir, 'config.json');
+    const configPath = this.fs.join(this.zccDir, 'config.json');
     let existingConfig: Record<string, unknown> = {};
 
     // Load existing config if it exists
@@ -319,7 +319,7 @@ export class PackInstaller {
         if (componentType === 'agents') {
           targetPath = this.fs.join(this.claudeDir, 'agents', `${component.name}.md`);
         } else {
-          targetPath = this.fs.join(this.mementoDir, componentType, `${component.name}.md`);
+          targetPath = this.fs.join(this.zccDir, componentType, `${component.name}.md`);
         }
 
         if (await this.fs.exists(targetPath)) {
@@ -338,7 +338,7 @@ export class PackInstaller {
     packManifest: PackStructure['manifest'],
     source: any
   ): Promise<void> {
-    const manifestPath = this.fs.join(this.mementoDir, 'packs.json');
+    const manifestPath = this.fs.join(this.zccDir, 'packs.json');
     let projectManifest: ProjectPackManifest = { packs: {} };
 
     // Load existing manifest
@@ -367,7 +367,7 @@ export class PackInstaller {
    * Load the project pack manifest
    */
   private async loadProjectManifest(): Promise<ProjectPackManifest> {
-    const manifestPath = this.fs.join(this.mementoDir, 'packs.json');
+    const manifestPath = this.fs.join(this.zccDir, 'packs.json');
     
     if (!await this.fs.exists(manifestPath)) {
       return { packs: {} };
@@ -390,9 +390,9 @@ export class PackInstaller {
     
     // Ensure pack-specific directories exist
     const packDirs = [
-      this.fs.join(this.mementoDir, 'modes'),
-      this.fs.join(this.mementoDir, 'workflows'),
-      this.fs.join(this.mementoDir, 'hooks'),
+      this.fs.join(this.zccDir, 'modes'),
+      this.fs.join(this.zccDir, 'workflows'),
+      this.fs.join(this.zccDir, 'hooks'),
       this.fs.join(this.claudeDir, 'agents'),
     ];
 

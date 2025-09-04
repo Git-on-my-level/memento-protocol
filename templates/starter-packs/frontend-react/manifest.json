@@ -2,7 +2,7 @@
   "name": "frontend-react",
   "version": "1.0.0",
   "description": "Complete React frontend development setup with TypeScript support and best practices",
-  "author": "memento-protocol",
+  "author": "zcc",
   "tags": ["react", "frontend", "typescript", "web"],
   "category": "frontend",
   "mementoProtocolVersion": "1.0.0",

@@ -1,7 +1,7 @@
 ---
 name: safe-refactoring
 description: Step-by-step procedure for performing safe, AST-aware code refactoring with proper validation
-author: memento-protocol
+author: zcc
 version: 1.0.0
 tags: [refactoring, ast-grep, safety, validation, testing]
 ---

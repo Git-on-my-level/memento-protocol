@@ -13,13 +13,13 @@ const projectRoot = process.cwd();
 // Define required dependencies for each command
 const dependencies = {
   'ticket': [
-    '.memento/scripts/ticket-context.sh'
+    '.zcc/scripts/ticket-context.sh'
   ],
   'mode': [
-    '.memento/scripts/mode-switch.sh'
+    '.zcc/scripts/mode-switch.sh'
   ],
-  'memento': [
-    // The memento command doesn't depend on scripts, just CLI availability
+  'zcc': [
+    // The zcc command doesn't depend on scripts, just CLI availability
   ]
 };
 
@@ -32,10 +32,10 @@ function validateCommands() {
   const errors = [];
   const warnings = [];
 
-  // Check if .memento directory exists
-  if (!checkFileExists('.memento')) {
-    warnings.push('⚠️  .memento directory not found - this is expected in fresh checkouts');
-    warnings.push('   Run "memento init" to initialize the project structure');
+  // Check if .zcc directory exists
+  if (!checkFileExists('.zcc')) {
+    warnings.push('⚠️  .zcc directory not found - this is expected in fresh checkouts');
+    warnings.push('   Run "zcc init" to initialize the project structure');
     return { errors, warnings };
   }
 
@@ -50,7 +50,7 @@ function validateCommands() {
 
   // Check if Claude Code commands directory exists
   if (checkFileExists('.claude/commands')) {
-    const commandFiles = ['ticket.md', 'mode.md', 'memento.md'];
+    const commandFiles = ['ticket.md', 'mode.md', 'zcc.md'];
     for (const file of commandFiles) {
       if (checkFileExists(`.claude/commands/${file}`)) {
         // Validate allowed-tools patterns in command files
@@ -59,10 +59,10 @@ function validateCommands() {
           const content = fs.readFileSync(filePath, 'utf-8');
           
           // Check for old pattern with colon prefix
-          if (content.includes('sh:.memento/scripts/')) {
+          if (content.includes('sh:.zcc/scripts/')) {
             errors.push(`❌ Invalid allowed-tools pattern in .claude/commands/${file}`);
-            errors.push(`   Found: sh:.memento/scripts/... (incorrect)`);
-            errors.push(`   Should be: sh .memento/scripts/... (without colon)`);
+            errors.push(`   Found: sh:.zcc/scripts/... (incorrect)`);
+            errors.push(`   Should be: sh .zcc/scripts/... (without colon)`);
           }
         } catch (err) {
           warnings.push(`⚠️  Could not validate .claude/commands/${file}: ${err.message}`);
@@ -75,7 +75,7 @@ function validateCommands() {
 }
 
 function main() {
-  console.log('🔍 Validating Memento Protocol dependencies...\n');
+  console.log('🔍 Validating zcc dependencies...\n');
 
   const { errors, warnings } = validateCommands();
 
@@ -90,7 +90,7 @@ function main() {
     console.error('❌ Validation failed!\n');
     errors.forEach(error => console.error(error));
     console.error('\n💡 To fix these issues:');
-    console.error('   1. Run "memento init --force" to regenerate missing files');
+    console.error('   1. Run "zcc init --force" to regenerate missing files');
     console.error('   2. Or manually create the missing scripts from templates/scripts/');
     process.exit(1);
   }

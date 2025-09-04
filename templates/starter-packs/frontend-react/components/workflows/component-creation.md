@@ -1,7 +1,7 @@
 ---
 name: component-creation
 description: A systematic approach to creating React components with TypeScript, following best practices for reusability, accessibility, and testing.
-author: memento-protocol
+author: zcc
 version: 1.0.0
 tags: [react, components, typescript, frontend, development]
 dependencies: []

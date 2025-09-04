@@ -22,7 +22,7 @@ A structured approach to code review that ensures quality, security, and maintai
 - **depth**: Review thoroughness (quick, standard, deep)
 
 ## Outputs
-- Structured feedback document in `.memento/tickets/[current]/reviews/`
+- Structured feedback document in `.zcc/tickets/[current]/reviews/`
 - Prioritized list of issues and suggestions
 - Actionable improvement recommendations
 

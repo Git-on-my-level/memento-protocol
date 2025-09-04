@@ -57,7 +57,7 @@ Implement curated starter packs that instantly configure Claude Code for specifi
   "description": "React, components, and modern UI development",
   "version": "1.0.0",
   "mementoVersion": ">=0.9.0",
-  "author": "memento-protocol",
+  "author": "zcc",
   "components": {
     "modes": [
       {

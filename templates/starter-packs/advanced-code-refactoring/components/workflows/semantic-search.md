@@ -1,7 +1,7 @@
 ---
 name: semantic-search
 description: Systematic approach to finding code patterns using AST-based structural search
-author: memento-protocol
+author: zcc
 version: 1.0.0
 tags: [ast-grep, search, patterns, semantic-analysis]
 ---

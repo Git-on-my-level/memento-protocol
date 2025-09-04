@@ -44,7 +44,7 @@ Find relevant tickets by analyzing:
 ### Relevant Tickets Found
 ```
 📋 **[STATUS] Ticket Title**
-Path: .memento/tickets/[status]/[filename].md
+Path: .zcc/tickets/[status]/[filename].md
 
 Brief description of the ticket content...
 ```

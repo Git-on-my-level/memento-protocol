@@ -1,4 +1,4 @@
-import { MementoScope, ComponentInfo } from './MementoScope';
+import { ZccScope, ComponentInfo } from './ZccScope';
 import { MementoConfig } from './configSchema';
 import { BuiltinComponentProvider } from './BuiltinComponentProvider';
 import { FuzzyMatcher, FuzzyMatch, FuzzyMatchOptions } from './fuzzyMatcher';
@@ -9,7 +9,7 @@ import { NodeFileSystemAdapter } from './adapters/NodeFileSystemAdapter';
 
 /**
  * Central manager for all Memento configuration and components
- * Manages both global (~/.memento) and project (.memento) scopes
+ * Manages both global (~/.zcc) and project (.zcc) scopes
  * Implements clean precedence: project → global → built-in
  */
 export interface ComponentResolutionResult {
@@ -24,12 +24,12 @@ export interface ComponentSearchResult extends FuzzyMatch {
 
 /**
  * Central manager for all Memento configuration and components
- * Manages built-in templates, global (~/.memento), and project (.memento) scopes
+ * Manages built-in templates, global (~/.zcc), and project (.zcc) scopes
  * Implements clean precedence: project → global → built-in
  */
-export class MementoCore {
-  private globalScope: MementoScope;
-  private projectScope: MementoScope;
+export class ZccCore {
+  private globalScope: ZccScope;
+  private projectScope: ZccScope;
   private builtinProvider: BuiltinComponentProvider;
   private cache: SimpleCache;
   private fs: FileSystemAdapter;
@@ -39,11 +39,11 @@ export class MementoCore {
     
     // Create global path using filesystem adapter for cross-platform compatibility
     const homeDir = process.env.HOME || process.env.USERPROFILE || '/tmp';
-    const globalPath = this.fs.join(homeDir, '.memento');
-    const projectPath = this.fs.join(projectRoot, '.memento');
+    const globalPath = this.fs.join(homeDir, '.zcc');
+    const projectPath = this.fs.join(projectRoot, '.zcc');
     
-    this.globalScope = new MementoScope(globalPath, true, this.fs);
-    this.projectScope = new MementoScope(projectPath, false, this.fs);
+    this.globalScope = new ZccScope(globalPath, true, this.fs);
+    this.projectScope = new ZccScope(projectPath, false, this.fs);
     this.builtinProvider = new BuiltinComponentProvider();
     this.cache = new SimpleCache(300000); // 5 minutes TTL for config/component caching
   }
@@ -334,7 +334,7 @@ export class MementoCore {
   /**
    * Get scope instances for direct access (internal use)
    */
-  getScopes(): { global: MementoScope; project: MementoScope } {
+  getScopes(): { global: ZccScope; project: ZccScope } {
     return {
       global: this.globalScope,
       project: this.projectScope
@@ -526,21 +526,21 @@ export class MementoCore {
   private applyEnvironmentOverrides(config: MementoConfig): MementoConfig {
     const result = { ...config };
 
-    // MEMENTO_DEFAULT_MODE
-    if (process.env.MEMENTO_DEFAULT_MODE) {
-      result.defaultMode = process.env.MEMENTO_DEFAULT_MODE;
+    // ZCC_DEFAULT_MODE
+    if (process.env.ZCC_DEFAULT_MODE) {
+      result.defaultMode = process.env.ZCC_DEFAULT_MODE;
     }
 
-    // MEMENTO_COLOR_OUTPUT
-    if (process.env.MEMENTO_COLOR_OUTPUT !== undefined) {
+    // ZCC_COLOR_OUTPUT
+    if (process.env.ZCC_COLOR_OUTPUT !== undefined) {
       result.ui = result.ui || {};
-      result.ui.colorOutput = process.env.MEMENTO_COLOR_OUTPUT === 'true';
+      result.ui.colorOutput = process.env.ZCC_COLOR_OUTPUT === 'true';
     }
 
-    // MEMENTO_VERBOSE
-    if (process.env.MEMENTO_VERBOSE !== undefined) {
+    // ZCC_VERBOSE
+    if (process.env.ZCC_VERBOSE !== undefined) {
       result.ui = result.ui || {};
-      result.ui.verboseLogging = process.env.MEMENTO_VERBOSE === 'true';
+      result.ui.verboseLogging = process.env.ZCC_VERBOSE === 'true';
     }
 
     return result;

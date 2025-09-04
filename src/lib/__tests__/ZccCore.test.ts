@@ -2,22 +2,22 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import * as yaml from 'js-yaml';
-import { MementoCore } from '../MementoCore';
-import { MementoScope } from '../MementoScope';
+import { ZccCore } from '../ZccCore';
+import { ZccScope } from '../ZccScope';
 import { MementoConfig } from '../configSchema';
 
-describe('MementoCore', () => {
+describe('ZccCore', () => {
   let tempDir: string;
   let globalDir: string;
   let projectDir: string;
-  let mementoCore: MementoCore;
+  let mementoCore: ZccCore;
 
-  // Create a test-friendly version of MementoCore
-  class TestMementoCore extends MementoCore {
+  // Create a test-friendly version of ZccCore
+  class TestZccCore extends ZccCore {
     constructor(projectRoot: string, globalPath: string) {
       super(projectRoot);
       // Replace the global scope with our test path
-      (this as any).globalScope = new MementoScope(globalPath, true);
+      (this as any).globalScope = new ZccScope(globalPath, true);
       // Mock the built-in component provider to return empty results during testing
       (this as any).builtinProvider = {
         isAvailable: () => false,
@@ -33,13 +33,13 @@ describe('MementoCore', () => {
   beforeEach(() => {
     // Create temporary directories
     tempDir = path.join(os.tmpdir(), 'memento-core-test-' + Date.now());
-    globalDir = path.join(tempDir, 'global', '.memento');
-    projectDir = path.join(tempDir, 'project', '.memento');
+    globalDir = path.join(tempDir, 'global', '.zcc');
+    projectDir = path.join(tempDir, 'project', '.zcc');
     
     fs.mkdirSync(globalDir, { recursive: true });
     fs.mkdirSync(projectDir, { recursive: true });
 
-    mementoCore = new TestMementoCore(
+    mementoCore = new TestZccCore(
       path.join(tempDir, 'project'),
       globalDir
     );
@@ -109,9 +109,9 @@ describe('MementoCore', () => {
     });
 
     it('should apply environment variable overrides', async () => {
-      process.env.MEMENTO_DEFAULT_MODE = 'env-mode';
-      process.env.MEMENTO_COLOR_OUTPUT = 'false';
-      process.env.MEMENTO_VERBOSE = 'true';
+      process.env.ZCC_DEFAULT_MODE = 'env-mode';
+      process.env.ZCC_COLOR_OUTPUT = 'false';
+      process.env.ZCC_VERBOSE = 'true';
 
       const config = await mementoCore.getConfig();
       
@@ -119,9 +119,9 @@ describe('MementoCore', () => {
       expect(config.ui?.colorOutput).toBe(false);
       expect(config.ui?.verboseLogging).toBe(true);
 
-      delete process.env.MEMENTO_DEFAULT_MODE;
-      delete process.env.MEMENTO_COLOR_OUTPUT;
-      delete process.env.MEMENTO_VERBOSE;
+      delete process.env.ZCC_DEFAULT_MODE;
+      delete process.env.ZCC_COLOR_OUTPUT;
+      delete process.env.ZCC_VERBOSE;
     });
 
     it('should cache merged configuration', async () => {
@@ -415,9 +415,9 @@ describe('MementoCore', () => {
 
   describe('environment variable handling', () => {
     it('should handle all supported environment variables', async () => {
-      process.env.MEMENTO_DEFAULT_MODE = 'env-architect';
-      process.env.MEMENTO_COLOR_OUTPUT = 'false';
-      process.env.MEMENTO_VERBOSE = 'true';
+      process.env.ZCC_DEFAULT_MODE = 'env-architect';
+      process.env.ZCC_COLOR_OUTPUT = 'false';
+      process.env.ZCC_VERBOSE = 'true';
 
       // Create base config
       const baseConfig: MementoConfig = {
@@ -440,9 +440,9 @@ describe('MementoCore', () => {
       expect(config.ui?.verboseLogging).toBe(true);
 
       // Cleanup
-      delete process.env.MEMENTO_DEFAULT_MODE;
-      delete process.env.MEMENTO_COLOR_OUTPUT;
-      delete process.env.MEMENTO_VERBOSE;
+      delete process.env.ZCC_DEFAULT_MODE;
+      delete process.env.ZCC_COLOR_OUTPUT;
+      delete process.env.ZCC_VERBOSE;
     });
 
     it('should ignore unset environment variables', async () => {
