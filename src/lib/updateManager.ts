@@ -4,6 +4,7 @@ import { DirectoryManager } from "./directoryManager";
 import { logger } from "./logger";
 import { createHash } from "crypto";
 import { PackagePaths } from "./packagePaths";
+import { UPDATE_ERROR_MESSAGES } from "./errorMessages";
 
 interface ComponentVersion {
   name: string;
@@ -38,7 +39,7 @@ export class UpdateManager {
     const updates: UpdateInfo[] = [];
     
     if (!this.dirManager.isInitialized()) {
-      return updates;
+      throw new Error(UPDATE_ERROR_MESSAGES.NOT_INITIALIZED());
     }
     
     const manifest = await this.dirManager.getManifest();
@@ -79,7 +80,7 @@ export class UpdateManager {
     );
 
     if (!(await this.fs.exists(componentPath))) {
-      throw new Error(`${type} '${name}' is not installed`);
+      throw new Error(UPDATE_ERROR_MESSAGES.COMPONENT_NOT_INSTALLED(type, name));
     }
 
     // Check if update is available
@@ -91,18 +92,16 @@ export class UpdateManager {
 
     // Check for local modifications
     if (updateInfo.hasLocalChanges && !force) {
-      logger.warn(
-        `${type} '${name}' has local modifications. Use --force to overwrite.`
-      );
-      return;
+      throw new Error(UPDATE_ERROR_MESSAGES.HAS_LOCAL_MODIFICATIONS(type, name));
     }
 
     // Copy new version from templates
-    const templatePath = this.fs.join(
-      this.templatesDir,
-      type === "mode" ? "modes" : "workflows",
-      `${name}.md`
-    );
+    const templatePath = this.getTemplatePath(type, name);
+    
+    // Validate template exists before attempting update
+    if (!(await this.fs.exists(templatePath))) {
+      throw new Error(UPDATE_ERROR_MESSAGES.TEMPLATE_NOT_FOUND(type, name));
+    }
 
     const newContent = await this.fs.readFile(templatePath, "utf-8") as string;
     await this.fs.writeFile(componentPath, newContent);
@@ -159,11 +158,7 @@ export class UpdateManager {
     const currentVersion = await this.getComponentVersion(type, name);
 
     // Get latest version from templates
-    const templatePath = this.fs.join(
-      this.templatesDir,
-      type === "mode" ? "modes" : "workflows",
-      `${name}.md`
-    );
+    const templatePath = this.getTemplatePath(type, name);
 
     if (!(await this.fs.exists(templatePath))) {
       return null;
@@ -283,17 +278,13 @@ export class UpdateManager {
     );
 
     if (!(await this.fs.exists(componentPath))) {
-      throw new Error(`${type} '${name}' is not installed`);
+      throw new Error(UPDATE_ERROR_MESSAGES.COMPONENT_NOT_INSTALLED(type, name));
     }
 
-    const templatePath = this.fs.join(
-      this.templatesDir,
-      type === "mode" ? "modes" : "workflows",
-      `${name}.md`
-    );
+    const templatePath = this.getTemplatePath(type, name);
 
     if (!(await this.fs.exists(templatePath))) {
-      throw new Error(`No template found for ${type} '${name}'`);
+      throw new Error(UPDATE_ERROR_MESSAGES.NO_TEMPLATE_FOR_DIFF(type, name));
     }
 
     const currentContent = await this.fs.readFile(componentPath, "utf-8") as string;
@@ -308,5 +299,16 @@ export class UpdateManager {
     // For now, just show a simple message
     logger.info(`${type} '${name}' has differences from the latest template`);
     logger.info('Run "zcc update --check" for more details');
+  }
+  
+  /**
+   * Get the template path for a component
+   */
+  private getTemplatePath(type: "mode" | "workflow", name: string): string {
+    return this.fs.join(
+      this.templatesDir,
+      type === "mode" ? "modes" : "workflows",
+      `${name}.md`
+    );
   }
 }

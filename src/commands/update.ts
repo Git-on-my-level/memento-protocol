@@ -1,6 +1,8 @@
 import { Command } from "commander";
 import { UpdateManager } from "../lib/updateManager";
 import { logger } from "../lib/logger";
+import { DirectoryManager } from "../lib/directoryManager";
+import { UPDATE_ERROR_MESSAGES } from "../lib/errorMessages";
 
 export function createUpdateCommand(): Command {
   const cmd = new Command("update");
@@ -16,6 +18,13 @@ export function createUpdateCommand(): Command {
     .action(async (component: string | undefined, options: any) => {
       try {
         const projectRoot = process.cwd();
+        
+        // Check if zcc is initialized
+        const dirManager = new DirectoryManager(projectRoot);
+        if (!dirManager.isInitialized()) {
+          throw new Error(UPDATE_ERROR_MESSAGES.NOT_INITIALIZED());
+        }
+        
         const updateManager = new UpdateManager(projectRoot);
 
         if (options.check) {
@@ -47,12 +56,20 @@ export function createUpdateCommand(): Command {
 
         if (component) {
           // Update specific component
-          const [type, name] = component.split(":");
-
-          if (!["mode", "workflow"].includes(type) || !name) {
-            throw new Error(
-              'Invalid component format. Use "mode:name" or "workflow:name"'
-            );
+          const parts = component.split(":");
+          
+          if (parts.length !== 2) {
+            throw new Error(UPDATE_ERROR_MESSAGES.INVALID_COMPONENT_FORMAT(component));
+          }
+          
+          const [type, name] = parts;
+          
+          if (!["mode", "workflow"].includes(type)) {
+            throw new Error(UPDATE_ERROR_MESSAGES.INVALID_COMPONENT_TYPE(type));
+          }
+          
+          if (!name || name.trim() === '') {
+            throw new Error(UPDATE_ERROR_MESSAGES.EMPTY_COMPONENT_NAME());
           }
 
           logger.info(`Updating ${type} '${name}'...`);
@@ -67,8 +84,8 @@ export function createUpdateCommand(): Command {
           await updateManager.updateAll(options.force || false);
         }
       } catch (error: any) {
-        // Check if this is a "not initialized" error and provide helpful guidance
-        if (error.message.includes("zcc is not initialized")) {
+        // Use the full error message if it already contains helpful guidance
+        if (error.message.includes("\n")) {
           logger.error(error.message);
         } else {
           logger.error(`Update failed: ${error.message}`);
@@ -83,15 +100,30 @@ export function createUpdateCommand(): Command {
     .description("Show differences between installed and template version")
     .action(async (component: string) => {
       try {
-        const [type, name] = component.split(":");
-
-        if (!["mode", "workflow"].includes(type) || !name) {
-          throw new Error(
-            'Invalid component format. Use "mode:name" or "workflow:name"'
-          );
-        }
-
         const projectRoot = process.cwd();
+        
+        // Check if zcc is initialized
+        const dirManager = new DirectoryManager(projectRoot);
+        if (!dirManager.isInitialized()) {
+          throw new Error(UPDATE_ERROR_MESSAGES.NOT_INITIALIZED());
+        }
+        
+        const parts = component.split(":");
+        
+        if (parts.length !== 2) {
+          throw new Error(UPDATE_ERROR_MESSAGES.INVALID_COMPONENT_FORMAT(component));
+        }
+        
+        const [type, name] = parts;
+        
+        if (!["mode", "workflow"].includes(type)) {
+          throw new Error(UPDATE_ERROR_MESSAGES.INVALID_COMPONENT_TYPE_DIFF(type));
+        }
+        
+        if (!name || name.trim() === '') {
+          throw new Error(UPDATE_ERROR_MESSAGES.EMPTY_COMPONENT_NAME_DIFF());
+        }
+        
         const updateManager = new UpdateManager(projectRoot);
 
         await updateManager.showDiff(type as "mode" | "workflow", name);
