@@ -1,18 +1,22 @@
 import { createUpdateCommand } from '../update';
 import { UpdateManager } from '../../lib/updateManager';
+import { DirectoryManager } from '../../lib/directoryManager';
 import { logger } from '../../lib/logger';
 
 jest.mock('../../lib/updateManager');
+jest.mock('../../lib/directoryManager');
 jest.mock('../../lib/logger', () => ({
   logger: {
     info: jest.fn(),
     success: jest.fn(),
     error: jest.fn(),
+    warn: jest.fn(),
   }
 }));
 
 describe('Update Command', () => {
   let mockUpdateManager: jest.Mocked<UpdateManager>;
+  let mockDirectoryManager: jest.Mocked<DirectoryManager>;
   let originalExit: any;
 
   beforeEach(() => {
@@ -23,8 +27,13 @@ describe('Update Command', () => {
       updateAll: jest.fn(),
       showDiff: jest.fn()
     } as any;
+    
+    mockDirectoryManager = {
+      isInitialized: jest.fn().mockReturnValue(true),
+    } as any;
 
     (UpdateManager as jest.MockedClass<typeof UpdateManager>).mockImplementation(() => mockUpdateManager);
+    (DirectoryManager as jest.MockedClass<typeof DirectoryManager>).mockImplementation(() => mockDirectoryManager);
     
     originalExit = process.exit;
     process.exit = jest.fn() as any;
@@ -94,13 +103,34 @@ describe('Update Command', () => {
       const cmd = createUpdateCommand();
       await cmd.parseAsync(['node', 'test', 'invalid-format']);
 
-      // Check that the error message contains the essential parts without being brittle
-      const calls = (logger.error as jest.Mock).mock.calls;
-      const errorCall = calls.find(call => call[0].includes('Invalid component format'));
-      expect(errorCall).toBeDefined();
-      expect(errorCall[0]).toMatch(/Invalid component format/);
-      expect(errorCall[0]).toMatch(/mode.*name/);
-      expect(errorCall[0]).toMatch(/workflow.*name/);
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Invalid component format'));
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Expected format:'));
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Examples:'));
+      expect(process.exit).toHaveBeenCalledWith(1);
+    });
+    
+    it('should handle invalid component type', async () => {
+      const cmd = createUpdateCommand();
+      await cmd.parseAsync(['node', 'test', 'invalid:architect']);
+
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Invalid component type'));
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Valid types are: mode, workflow'));
+      expect(process.exit).toHaveBeenCalledWith(1);
+    });
+    
+    it('should handle empty component name', async () => {
+      const cmd = createUpdateCommand();
+      await cmd.parseAsync(['node', 'test', 'mode:']);
+
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Component name cannot be empty'));
+      expect(process.exit).toHaveBeenCalledWith(1);
+    });
+    
+    it('should handle too many colons in component format', async () => {
+      const cmd = createUpdateCommand();
+      await cmd.parseAsync(['node', 'test', 'mode:architect:extra']);
+
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Invalid component format'));
       expect(process.exit).toHaveBeenCalledWith(1);
     });
   });
@@ -133,13 +163,17 @@ describe('Update Command', () => {
       const cmd = createUpdateCommand();
       await cmd.parseAsync(['node', 'test', 'diff', 'invalid']);
 
-      // Check that the error message contains the essential parts without being brittle
-      const calls = (logger.error as jest.Mock).mock.calls;
-      const errorCall = calls.find(call => call[0].includes('Invalid component format'));
-      expect(errorCall).toBeDefined();
-      expect(errorCall[0]).toMatch(/Invalid component format/);
-      expect(errorCall[0]).toMatch(/mode.*name/);
-      expect(errorCall[0]).toMatch(/workflow.*name/);
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Invalid component format'));
+      expect(process.exit).toHaveBeenCalledWith(1);
+    });
+    
+    it('should handle zcc not initialized in diff', async () => {
+      mockDirectoryManager.isInitialized.mockReturnValue(false);
+      const cmd = createUpdateCommand();
+      await cmd.parseAsync(['node', 'test', 'diff', 'mode:architect']);
+
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('zcc is not initialized'));
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Run \'zcc init\' to initialize'));
       expect(process.exit).toHaveBeenCalledWith(1);
     });
   });
@@ -152,6 +186,52 @@ describe('Update Command', () => {
       await cmd.parseAsync(['node', 'test']);
 
       expect(logger.error).toHaveBeenCalledWith('Update failed: Network error');
+      expect(process.exit).toHaveBeenCalledWith(1);
+    });
+    
+    it('should handle zcc not initialized error', async () => {
+      mockDirectoryManager.isInitialized.mockReturnValue(false);
+      const cmd = createUpdateCommand();
+      await cmd.parseAsync(['node', 'test']);
+
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('zcc is not initialized'));
+      expect(process.exit).toHaveBeenCalledWith(1);
+    });
+    
+    it('should handle component not installed error', async () => {
+      mockUpdateManager.updateComponent.mockRejectedValue(
+        new Error('mode \'architect\' is not installed.\nRun \'zcc add mode architect\' to install it first.')
+      );
+      
+      const cmd = createUpdateCommand();
+      await cmd.parseAsync(['node', 'test', 'mode:architect']);
+
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('mode \'architect\' is not installed'));
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Run \'zcc add mode architect\' to install'));
+      expect(process.exit).toHaveBeenCalledWith(1);
+    });
+    
+    it('should handle local modifications error', async () => {
+      mockUpdateManager.updateComponent.mockRejectedValue(
+        new Error('mode \'architect\' has local modifications.\nUse --force to overwrite your changes')
+      );
+      
+      const cmd = createUpdateCommand();
+      await cmd.parseAsync(['node', 'test', 'mode:architect']);
+
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('local modifications'));
+      expect(process.exit).toHaveBeenCalledWith(1);
+    });
+    
+    it('should handle template not found error', async () => {
+      mockUpdateManager.updateComponent.mockRejectedValue(
+        new Error('Template for mode \'architect\' not found.\nThe component may have been removed')
+      );
+      
+      const cmd = createUpdateCommand();
+      await cmd.parseAsync(['node', 'test', 'mode:architect']);
+
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Template for mode \'architect\' not found'));
       expect(process.exit).toHaveBeenCalledWith(1);
     });
   });

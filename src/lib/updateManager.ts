@@ -38,7 +38,10 @@ export class UpdateManager {
     const updates: UpdateInfo[] = [];
     
     if (!this.dirManager.isInitialized()) {
-      return updates;
+      throw new Error(
+        "zcc is not initialized in this project.\n" +
+        "Run 'zcc init' to initialize zcc first."
+      );
     }
     
     const manifest = await this.dirManager.getManifest();
@@ -79,7 +82,10 @@ export class UpdateManager {
     );
 
     if (!(await this.fs.exists(componentPath))) {
-      throw new Error(`${type} '${name}' is not installed`);
+      throw new Error(
+        `${type} '${name}' is not installed.\n` +
+        `Run 'zcc add ${type} ${name}' to install it first.`
+      );
     }
 
     // Check if update is available
@@ -91,10 +97,11 @@ export class UpdateManager {
 
     // Check for local modifications
     if (updateInfo.hasLocalChanges && !force) {
-      logger.warn(
-        `${type} '${name}' has local modifications. Use --force to overwrite.`
+      throw new Error(
+        `${type} '${name}' has local modifications.\n` +
+        `Use --force to overwrite your changes, or\n` +
+        `Run 'zcc update diff ${type}:${name}' to see the differences.`
       );
-      return;
     }
 
     // Copy new version from templates
@@ -103,6 +110,15 @@ export class UpdateManager {
       type === "mode" ? "modes" : "workflows",
       `${name}.md`
     );
+    
+    // Validate template exists before attempting update
+    if (!(await this.fs.exists(templatePath))) {
+      throw new Error(
+        `Template for ${type} '${name}' not found.\n` +
+        `The component may have been removed from zcc templates.\n` +
+        `Run 'zcc list' to see available components.`
+      );
+    }
 
     const newContent = await this.fs.readFile(templatePath, "utf-8") as string;
     await this.fs.writeFile(componentPath, newContent);
@@ -283,7 +299,10 @@ export class UpdateManager {
     );
 
     if (!(await this.fs.exists(componentPath))) {
-      throw new Error(`${type} '${name}' is not installed`);
+      throw new Error(
+        `${type} '${name}' is not installed.\n` +
+        `Run 'zcc add ${type} ${name}' to install it first.`
+      );
     }
 
     const templatePath = this.fs.join(
@@ -293,7 +312,11 @@ export class UpdateManager {
     );
 
     if (!(await this.fs.exists(templatePath))) {
-      throw new Error(`No template found for ${type} '${name}'`);
+      throw new Error(
+        `No template found for ${type} '${name}'.\n` +
+        `The component may have been removed from zcc templates.\n` +
+        `Run 'zcc list' to see available components.`
+      );
     }
 
     const currentContent = await this.fs.readFile(componentPath, "utf-8") as string;

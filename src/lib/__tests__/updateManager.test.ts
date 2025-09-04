@@ -37,8 +37,19 @@ describe("UpdateManager", () => {
   });
 
   describe("checkForUpdates", () => {
-    // Removed complex test that relies on brittle hash comparisons
-    // Removed complex test that relies on mock file system operations
+    it("should throw error when zcc is not initialized", async () => {
+      // Create UpdateManager without proper initialization
+      const uninitFs = new MemoryFileSystemAdapter();
+      const uninitUpdateManager = new UpdateManager("/uninitialized", uninitFs);
+      
+      await expect(
+        uninitUpdateManager.checkForUpdates()
+      ).rejects.toThrow("zcc is not initialized in this project");
+      
+      await expect(
+        uninitUpdateManager.checkForUpdates()
+      ).rejects.toThrow("Run 'zcc init' to initialize zcc first");
+    });
   });
 
   describe("updateComponent", () => {
@@ -48,9 +59,13 @@ describe("UpdateManager", () => {
       await expect(
         updateManager.updateComponent("mode", "missing")
       ).rejects.toThrow("mode 'missing' is not installed");
+      
+      await expect(
+        updateManager.updateComponent("mode", "missing")
+      ).rejects.toThrow("Run 'zcc add mode missing' to install it first");
     });
 
-    it("should warn about local changes without force flag", async () => {
+    it("should throw error about local changes without force flag", async () => {
       // Set up manifest with architect mode
       await fs.writeFile(
         fs.join(projectRoot, ".zcc", "manifest.json"),
@@ -90,12 +105,13 @@ describe("UpdateManager", () => {
         JSON.stringify({ version: "1.1.0" })
       );
 
-
-      await updateManager.updateComponent("mode", "architect", false);
-
-      expect(logger.warn).toHaveBeenCalledWith(
-        "mode 'architect' has local modifications. Use --force to overwrite."
-      );
+      await expect(
+        updateManager.updateComponent("mode", "architect", false)
+      ).rejects.toThrow("mode 'architect' has local modifications");
+      
+      await expect(
+        updateManager.updateComponent("mode", "architect", false)
+      ).rejects.toThrow("Use --force to overwrite your changes");
     });
   });
 
@@ -154,6 +170,32 @@ describe("UpdateManager", () => {
       expect(logger.info).toHaveBeenCalledWith(
         "mode 'architect' is up to date"
       );
+    });
+    
+    it("should throw error when component is not installed", async () => {
+      await expect(
+        updateManager.showDiff("mode", "nonexistent")
+      ).rejects.toThrow("mode 'nonexistent' is not installed");
+      
+      await expect(
+        updateManager.showDiff("mode", "nonexistent")
+      ).rejects.toThrow("Run 'zcc add mode nonexistent' to install it first");
+    });
+    
+    it("should throw error when template is not found", async () => {
+      // Create component without corresponding template
+      await fs.writeFile(
+        fs.join(projectRoot, ".zcc", "modes", "orphaned.md"),
+        "orphaned content"
+      );
+      
+      await expect(
+        updateManager.showDiff("mode", "orphaned")
+      ).rejects.toThrow("No template found for mode 'orphaned'");
+      
+      await expect(
+        updateManager.showDiff("mode", "orphaned")
+      ).rejects.toThrow("The component may have been removed from zcc templates");
     });
   });
 });
