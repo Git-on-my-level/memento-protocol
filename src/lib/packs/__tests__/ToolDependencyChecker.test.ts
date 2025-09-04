@@ -4,9 +4,9 @@
 
 import { ToolDependencyChecker, ToolDependency } from '../ToolDependencyChecker';
 
-// Mock child_process
-jest.mock('child_process');
-const mockExecSync = jest.requireMock('child_process').execSync;
+// Mock execa
+jest.mock('execa');
+const mockExeca = jest.requireMock('execa').execa;
 
 describe('ToolDependencyChecker', () => {
   let checker: ToolDependencyChecker;
@@ -31,7 +31,13 @@ describe('ToolDependencyChecker', () => {
       };
 
       // Mock successful command
-      mockExecSync.mockReturnValue('ast-grep 0.12.0\n');
+      mockExeca.mockResolvedValue({ 
+        stdout: 'ast-grep 0.12.0\n',
+        stderr: '',
+        exitCode: 0,
+        command: 'ast-grep --version',
+        escapedCommand: 'ast-grep --version'
+      });
 
       const results = await checker.checkToolDependencies([toolDependency]);
       
@@ -49,9 +55,7 @@ describe('ToolDependencyChecker', () => {
       };
 
       // Mock command failure
-      mockExecSync.mockImplementation(() => {
-        throw new Error('Command not found');
-      });
+      mockExeca.mockRejectedValue(new Error('Command not found'));
 
       const results = await checker.checkToolDependencies([toolDependency]);
       
@@ -84,9 +88,7 @@ describe('ToolDependencyChecker', () => {
       };
 
       // Mock unavailable tool
-      mockExecSync.mockImplementation(() => {
-        throw new Error('Command not found');
-      });
+      mockExeca.mockRejectedValue(new Error('Command not found'));
 
       const results = await checker.checkToolDependencies([toolDependency]);
       const guidance = checker.generateInstallationGuidance(results);
@@ -104,9 +106,7 @@ describe('ToolDependencyChecker', () => {
       };
 
       // Mock unavailable tool
-      mockExecSync.mockImplementation(() => {
-        throw new Error('Command not found');
-      });
+      mockExeca.mockRejectedValue(new Error('Command not found'));
 
       const results = await checker.checkToolDependencies([toolDependency], { interactive: true });
       const guidance = checker.generateInstallationGuidance(results);
@@ -123,7 +123,13 @@ describe('ToolDependencyChecker', () => {
       };
 
       // Mock available tool
-      mockExecSync.mockReturnValue('ast-grep 0.12.0\n');
+      mockExeca.mockResolvedValue({
+        stdout: 'ast-grep 0.12.0\n',
+        stderr: '',
+        exitCode: 0,
+        command: 'ast-grep --version',
+        escapedCommand: 'ast-grep --version'
+      });
 
       const results = await checker.checkToolDependencies([toolDependency]);
       const guidance = checker.generateInstallationGuidance(results);
@@ -165,8 +171,14 @@ describe('ToolDependencyChecker', () => {
       const checker = new ToolDependencyChecker();
       const checkCommand = (checker as any).checkCommand.bind(checker);
 
-      // Mock successful execSync for whitelisted commands
-      mockExecSync.mockReturnValue('tool-version 1.0.0\n');
+      // Mock successful execa for whitelisted commands
+      mockExeca.mockResolvedValue({
+        stdout: 'tool-version 1.0.0\n',
+        stderr: '',
+        exitCode: 0,
+        command: 'tool-version',
+        escapedCommand: 'tool-version'
+      });
 
       const allowedCommands = [
         'ast-grep --version',

@@ -66,8 +66,8 @@ describe("InteractiveSetup", () => {
 
   describe("run", () => {
     const mockProjectInfo: ProjectInfo = {
-      type: "fullstack",
-      framework: "nextjs",
+      type: "typescript",
+      framework: "react",
       suggestedModes: ["architect", "engineer"],
       suggestedWorkflows: ["review"],
       files: [],

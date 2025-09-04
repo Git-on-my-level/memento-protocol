@@ -5,6 +5,7 @@
 import { FileSystemAdapter } from "../adapters/FileSystemAdapter";
 import { NodeFileSystemAdapter } from "../adapters/NodeFileSystemAdapter";
 import Ajv from "ajv";
+import sanitizeFilename from "sanitize-filename";
 import {
   PackManifest,
   PackStructure,
@@ -167,21 +168,25 @@ export class PackValidator {
     errors: string[],
     warnings: string[]
   ): Promise<void> {
-    // Check name security
+    // Check name security using sanitize-filename
     if (manifest.name && manifest.name.length > this.rules.maxNameLength) {
       errors.push(`Pack name too long (max ${this.rules.maxNameLength} characters)`);
     }
 
-    if (manifest.name && !/^[a-z0-9-]+$/.test(manifest.name)) {
-      errors.push("Pack name must contain only lowercase letters, numbers, and hyphens");
-    }
-
-    // Check for forbidden patterns
     if (manifest.name) {
-      for (const forbiddenPath of this.rules.forbiddenPaths) {
-        if (manifest.name.includes(forbiddenPath)) {
-          errors.push(`Pack name contains forbidden pattern: ${forbiddenPath}`);
-        }
+      const sanitized = sanitizeFilename(manifest.name, { replacement: '' });
+      if (sanitized !== manifest.name) {
+        errors.push(`Pack name contains invalid characters or patterns. Suggested: ${sanitized || 'pack-name'}`);
+      }
+      
+      // Additional check for empty result after sanitization
+      if (sanitized.length === 0) {
+        errors.push("Pack name contains only invalid characters");
+      }
+
+      // Keep basic format validation for pack names (lowercase, numbers, hyphens)
+      if (manifest.name && !/^[a-z0-9-]+$/.test(manifest.name)) {
+        warnings.push("Pack name should contain only lowercase letters, numbers, and hyphens");
       }
     }
 
@@ -374,22 +379,17 @@ export class PackValidator {
 
   /**
    * Check if a command looks suspicious
+   * Simplified to focus on most dangerous patterns
    */
   private isCommandSuspicious(command: string): boolean {
     const suspiciousPatterns = [
       /rm\s+-rf\s*\//, // dangerous rm commands
       /sudo\s+/, // sudo usage
-      /chmod\s+777/, // overly permissive permissions
       /curl\s+.*\|\s*sh/, // pipe to shell
       /wget\s+.*\|\s*sh/, // pipe to shell
       /eval\s+/, // eval usage
-      /exec\s+/, // exec usage
-      /system\s*\(/, // system calls
       /`.*`/, // backticks (command substitution)
       /\$\(.*\)/, // command substitution
-      />\/dev\/null.*2>&1.*&/, // background processes
-      /nohup\s+/, // background processes
-      /&\s*$/, // background processes
     ];
 
     return suspiciousPatterns.some(pattern => pattern.test(command));

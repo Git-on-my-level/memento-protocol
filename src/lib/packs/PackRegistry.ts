@@ -10,12 +10,6 @@ import { logger } from "../logger";
 import { ZccError } from "../errors";
 import { PackagePaths } from "../packagePaths";
 import { IPackSource, LocalPackSource } from "./PackSource";
-import { RemotePackSource } from "./RemotePackSource";
-import { GitHubPackSource } from "./GitHubPackSource";
-import { 
-  RemotePackSource as RemotePackSourceInterface,
-  GitHubPackSource as GitHubPackSourceInterface 
-} from "../types/packs";
 import { FileSystemAdapter } from "../adapters/FileSystemAdapter";
 import { NodeFileSystemAdapter } from "../adapters/NodeFileSystemAdapter";
 
@@ -53,80 +47,6 @@ export class PackRegistry {
     logger.debug(`Registered pack source: ${name}`);
   }
 
-  /**
-   * Register a remote pack source
-   */
-  registerRemoteSource(name: string, sourceInfo: RemotePackSourceInterface): void {
-    const remoteSource = new RemotePackSource(sourceInfo);
-    this.registerSource(name, remoteSource);
-    logger.debug(`Registered remote pack source: ${name} -> ${sourceInfo.url}`);
-  }
-
-  /**
-   * Register a GitHub pack source
-   */
-  registerGitHubSource(name: string, sourceInfo: GitHubPackSourceInterface): void {
-    const githubSource = new GitHubPackSource(sourceInfo);
-    this.registerSource(name, githubSource);
-    logger.debug(`Registered GitHub pack source: ${name} -> ${sourceInfo.owner}/${sourceInfo.repo}`);
-  }
-
-  /**
-   * Register a GitHub source using repository URL
-   */
-  registerGitHubFromUrl(name: string, url: string, options?: {
-    branch?: string;
-    authToken?: string;
-    cacheTtl?: number;
-  }): void {
-    const parsed = this.parseGitHubUrl(url);
-    if (!parsed) {
-      throw new ZccError(
-        'Invalid GitHub URL format',
-        'INVALID_GITHUB_URL',
-        'Expected format: https://github.com/owner/repo or github:owner/repo'
-      );
-    }
-
-    const sourceInfo: GitHubPackSourceInterface = {
-      name,
-      type: 'github',
-      owner: parsed.owner,
-      repo: parsed.repo,
-      branch: options?.branch || 'main',
-      authToken: options?.authToken,
-      cacheTtl: options?.cacheTtl
-    };
-
-    this.registerGitHubSource(name, sourceInfo);
-  }
-
-  /**
-   * Register a remote source from URL with automatic type detection
-   */
-  registerFromUrl(name: string, url: string, options?: {
-    authToken?: string;
-    cacheTtl?: number;
-    branch?: string;
-  }): void {
-    // Try to detect if it's a GitHub URL
-    const githubParsed = this.parseGitHubUrl(url);
-    if (githubParsed) {
-      this.registerGitHubFromUrl(name, url, options);
-      return;
-    }
-
-    // Otherwise, treat as generic remote source
-    const sourceInfo: RemotePackSourceInterface = {
-      name,
-      type: 'remote',
-      url,
-      authToken: options?.authToken,
-      cacheTtl: options?.cacheTtl
-    };
-
-    this.registerRemoteSource(name, sourceInfo);
-  }
 
   /**
    * Get a pack source by name
@@ -427,31 +347,6 @@ export class PackRegistry {
     logger.debug('Cleared pack cache');
   }
 
-  /**
-   * Clear expired caches from all remote sources
-   */
-  clearExpiredCaches(): void {
-    for (const source of this.sources.values()) {
-      if (source instanceof RemotePackSource || source instanceof GitHubPackSource) {
-        source.clearExpiredCache();
-      }
-    }
-    logger.debug('Cleared expired caches from remote sources');
-  }
-
-  /**
-   * Clear all caches from all sources
-   */
-  clearAllCaches(): void {
-    this.packCache.clear();
-    
-    for (const source of this.sources.values()) {
-      if (source instanceof RemotePackSource || source instanceof GitHubPackSource) {
-        source.clearAllCache();
-      }
-    }
-    logger.debug('Cleared all caches from all sources');
-  }
 
   /**
    * Get registry statistics
@@ -482,33 +377,4 @@ export class PackRegistry {
     };
   }
 
-  /**
-   * Parse GitHub URL to extract owner and repo
-   */
-  private parseGitHubUrl(url: string): { owner: string; repo: string } | null {
-    // Handle various GitHub URL formats:
-    // - https://github.com/owner/repo
-    // - https://github.com/owner/repo.git
-    // - github:owner/repo
-    // - git@github.com:owner/repo.git
-    
-    const patterns = [
-      /^https?:\/\/github\.com\/([^\/]+)\/([^\/]+?)(?:\.git)?(?:\/.*)?$/,
-      /^github:([^\/]+)\/([^\/]+)$/,
-      /^git@github\.com:([^\/]+)\/([^\/]+?)(?:\.git)?$/
-    ];
-
-    for (const pattern of patterns) {
-      const match = url.match(pattern);
-      if (match) {
-        const [, owner, repo] = match;
-        return {
-          owner: owner.trim(),
-          repo: repo.trim()
-        };
-      }
-    }
-
-    return null;
-  }
 }

@@ -7,6 +7,7 @@ import inquirer from 'inquirer';
 import * as fs from 'fs';
 import * as path from 'path';
 import { ensureDirectorySync } from '../lib/utils/filesystem';
+import { validateComponent, formatValidationIssues } from '../lib/utils/componentValidator';
 
 export const createCommand = new Command('create')
   .description('Create new custom components (modes, workflows, agents)')
@@ -122,7 +123,30 @@ export const createCommand = new Command('create')
       templateContent = await applyTemplateVariables(templateContent, componentName!, componentType, opts);
       
       // Write the new component
-      await writeNewComponent(core, componentName!, componentType, templateContent, opts);
+      const componentPath = await writeNewComponent(core, componentName!, componentType, templateContent, opts);
+      
+      // Automatically validate the created component (non-blocking)
+      try {
+        const validationResult = validateComponent(componentPath);
+        if (!validationResult.isValid || validationResult.issues.length > 0) {
+          const errors = validationResult.issues.filter(issue => issue.type === 'error');
+          const warnings = validationResult.issues.filter(issue => issue.type === 'warning');
+          
+          if (errors.length > 0) {
+            logger.warn(`Component created with errors:`);
+            formatValidationIssues(errors).forEach(error => logger.warn(`  ${error}`));
+          }
+          
+          if (warnings.length > 0) {
+            const warningCount = warnings.length;
+            logger.info(`Component created with ${warningCount} warning${warningCount > 1 ? 's' : ''}:`);
+            formatValidationIssues(warnings).forEach(warning => logger.info(`  ${warning}`));
+          }
+        }
+      } catch (validationError: any) {
+        // Don't block creation if validation fails
+        logger.debug(`Validation failed: ${validationError.message}`);
+      }
       
       logger.success(`Successfully created ${componentType} '${componentName}' in ${targetScope} scope.`);
       
@@ -446,7 +470,6 @@ async function applyTemplateVariables(
     '{{WORKFLOW_DISPLAY_NAME}}': displayName,
     '{{AGENT_DISPLAY_NAME}}': displayName,
     '{{TOOLS}}': templateData.tools || 'Read, Write, Edit, Bash',
-    '{{PROJECT_TYPE}}': await detectProjectType(),
     '{{DATE}}': new Date().toISOString().split('T')[0]
   };
   
@@ -458,52 +481,6 @@ async function applyTemplateVariables(
   return result;
 }
 
-/**
- * Detect project type for template variables
- */
-async function detectProjectType(): Promise<string> {
-  try {
-    const cwd = process.cwd();
-    
-    // Check for common project indicators
-    if (fs.existsSync(path.join(cwd, 'package.json'))) {
-      const packageJson = JSON.parse(fs.readFileSync(path.join(cwd, 'package.json'), 'utf-8'));
-      if (packageJson.dependencies?.react || packageJson.devDependencies?.react) {
-        return 'React';
-      }
-      if (packageJson.dependencies?.['@angular/core'] || packageJson.devDependencies?.['@angular/core']) {
-        return 'Angular';
-      }
-      if (packageJson.dependencies?.vue || packageJson.devDependencies?.vue) {
-        return 'Vue';
-      }
-      if (packageJson.dependencies?.next || packageJson.devDependencies?.next) {
-        return 'Next.js';
-      }
-      return 'Node.js';
-    }
-    
-    if (fs.existsSync(path.join(cwd, 'Cargo.toml'))) {
-      return 'Rust';
-    }
-    
-    if (fs.existsSync(path.join(cwd, 'go.mod'))) {
-      return 'Go';
-    }
-    
-    if (fs.existsSync(path.join(cwd, 'requirements.txt')) || fs.existsSync(path.join(cwd, 'pyproject.toml'))) {
-      return 'Python';
-    }
-    
-    if (fs.existsSync(path.join(cwd, 'pom.xml')) || fs.existsSync(path.join(cwd, 'build.gradle'))) {
-      return 'Java';
-    }
-    
-    return 'General';
-  } catch {
-    return 'General';
-  }
-}
 
 /**
  * Write the new component to the appropriate location
@@ -514,7 +491,7 @@ async function writeNewComponent(
   type: ComponentInfo['type'],
   content: string,
   opts: any
-): Promise<void> {
+): Promise<string> {
   const targetScope = opts.global ? 'global' : 'project';
   const scopes = core.getScopes();
   const targetScopeObj = targetScope === 'global' ? scopes.global : scopes.project;
@@ -532,6 +509,8 @@ async function writeNewComponent(
   
   // Clear caches
   core.clearCache();
+  
+  return targetPath;
 }
 
 /**
@@ -567,3 +546,4 @@ function getMatchTypeIndicator(matchType: ComponentSearchResult['matchType']): s
       return '';
   }
 }
+

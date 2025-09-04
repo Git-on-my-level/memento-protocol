@@ -9,10 +9,8 @@ import { createUpdateCommand } from "./commands/update";
 import { upsertCommand } from "./commands/upsert";
 import { hookCommand } from "./commands/hook";
 import { acronymCommand } from "./commands/acronym";
-import { packCommand } from "./commands/pack";
 import { createCommand } from "./commands/create";
 import { editCommand } from "./commands/edit";
-import { validateCommand } from "./commands/validate";
 import { logger } from "./lib/logger";
 import { handleError } from "./lib/errors";
 
@@ -42,12 +40,8 @@ Examples:
   $ zcc create mode my-custom  # Create a new custom mode interactively
   $ zcc create workflow --from review custom-review  # Clone review workflow
   $ zcc edit mode my-custom    # Edit a component in your editor
-  $ zcc validate mode my-custom # Validate a component
-  $ zcc validate all           # Validate all components
   $ zcc ticket create "auth"   # Create a ticket for authentication work
   $ zcc list --installed       # Show installed components
-  $ zcc pack add react-starter --github owner/repo  # Install pack from GitHub
-  $ zcc pack list --source https://example.com/packs # List remote packs
 
 For Claude Code users:
   Say "act as architect" to switch to architect mode
@@ -78,10 +72,8 @@ program.addCommand(createUpdateCommand());
 program.addCommand(upsertCommand);
 program.addCommand(hookCommand);
 program.addCommand(acronymCommand);
-program.addCommand(packCommand);
 program.addCommand(createCommand);
 program.addCommand(editCommand);
-program.addCommand(validateCommand);
 
 // Global error handling
 process.on("unhandledRejection", (error) => {

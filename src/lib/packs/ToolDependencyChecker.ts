@@ -5,7 +5,7 @@
 
 import { logger } from "../logger";
 import { ZccError } from "../errors";
-import { execSync } from "child_process";
+import { execa } from "execa";
 
 export interface ToolDependency {
   readonly name: string;
@@ -247,13 +247,18 @@ export class ToolDependencyChecker {
     }
 
     try {
-      const output = execSync(command, { 
-        encoding: 'utf-8', 
-        stdio: ['pipe', 'pipe', 'pipe'],
-        timeout: 5000 
+      // Parse command into parts for execa
+      const commandParts = command.split(' ');
+      const cmd = commandParts[0];
+      const args = commandParts.slice(1);
+
+      const result = await execa(cmd, args, {
+        timeout: 5000,
+        stripFinalNewline: true,
       });
       
       // Extract version from output (first line, first version-like string)
+      const output = result.stdout;
       const match = output.match(/(\d+\.\d+\.\d+[^\s]*)/);
       return match ? match[1] : output.trim().split('\n')[0];
     } catch (error) {

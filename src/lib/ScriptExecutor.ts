@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { spawn, ChildProcess } from 'child_process';
+import { execa } from 'execa';
 import { logger } from './logger';
 
 export interface Script {
@@ -87,117 +87,59 @@ export class ScriptExecutor {
       }
     }
 
-    return new Promise((resolve) => {
-      let stdout = '';
-      let stderr = '';
-      let timeoutId: NodeJS.Timeout;
-
+    try {
       // Determine command and arguments based on platform and file type
       const { command, args } = this.prepareCommand(context.scriptPath, shell);
 
-      // Spawn the process
-      const childProcess: ChildProcess = spawn(command, args, {
+      logger.debug(`Executing command: ${command} with args: [${args.join(', ')}]`);
+
+      const result = await execa(command, args, {
         cwd: context.workingDirectory,
         env,
-        stdio: ['pipe', 'pipe', 'pipe'],
-        windowsHide: true, // Hide console window on Windows
-        detached: false
+        timeout,
+        maxBuffer,
+        stripFinalNewline: false,
+        windowsHide: true,
+        preferLocal: true,
       });
 
-      // Handle timeout
-      timeoutId = setTimeout(() => {
-        logger.warn(`Script execution timeout after ${timeout}ms: ${script.name}`);
-        
-        if (childProcess.pid) {
-          try {
-            // Kill the process tree
-            if (process.platform === 'win32') {
-              spawn('taskkill', ['/pid', childProcess.pid.toString(), '/t', '/f']);
-            } else {
-              process.kill(-childProcess.pid, 'SIGKILL'); // Kill process group
-            }
-          } catch (error) {
-            logger.debug(`Error killing process: ${error}`);
-          }
-        }
+      const duration = Date.now() - startTime;
+      logger.debug(`Script completed: ${script.name} (exit code: 0, duration: ${duration}ms)`);
 
-        resolve({
+      return {
+        success: true,
+        exitCode: 0,
+        stdout: result.stdout.trim(),
+        stderr: result.stderr.trim(),
+        duration
+      };
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+
+      if (error.timedOut) {
+        logger.warn(`Script execution timeout after ${timeout}ms: ${script.name}`);
+        return {
           success: false,
           exitCode: -2,
-          stdout,
-          stderr,
+          stdout: error.stdout?.trim() || '',
+          stderr: error.stderr?.trim() || '',
           error: `Script execution timeout after ${timeout}ms`,
-          duration: Date.now() - startTime
-        });
-      }, timeout);
-
-      // Handle stdout
-      if (childProcess.stdout) {
-        childProcess.stdout.on('data', (data: Buffer) => {
-          const chunk = data.toString();
-          stdout += chunk;
-          
-          // Prevent memory issues with large outputs
-          if (stdout.length > maxBuffer) {
-            stdout = stdout.slice(-maxBuffer / 2); // Keep last half
-            logger.warn(`Script output truncated due to size limit: ${script.name}`);
-          }
-        });
-      }
-
-      // Handle stderr
-      if (childProcess.stderr) {
-        childProcess.stderr.on('data', (data: Buffer) => {
-          const chunk = data.toString();
-          stderr += chunk;
-          
-          // Prevent memory issues with large outputs
-          if (stderr.length > maxBuffer) {
-            stderr = stderr.slice(-maxBuffer / 2); // Keep last half
-            logger.warn(`Script error output truncated due to size limit: ${script.name}`);
-          }
-        });
-      }
-
-      // Handle process completion
-      childProcess.on('close', (code: number | null, signal: string | null) => {
-        clearTimeout(timeoutId);
-        
-        const exitCode = code !== null ? code : (signal ? -1 : 0);
-        const duration = Date.now() - startTime;
-        
-        logger.debug(`Script completed: ${script.name} (exit code: ${exitCode}, duration: ${duration}ms)`);
-        
-        if (signal) {
-          logger.debug(`Script terminated by signal: ${signal}`);
-        }
-
-        resolve({
-          success: exitCode === 0,
-          exitCode,
-          stdout: stdout.trim(),
-          stderr: stderr.trim(),
-          error: exitCode !== 0 ? `Script exited with code ${exitCode}` : undefined,
           duration
-        });
-      });
+        };
+      }
 
-      // Handle spawn errors
-      childProcess.on('error', (error: Error) => {
-        clearTimeout(timeoutId);
-        
-        logger.error(`Script spawn error: ${script.name} - ${error.message}`);
-        
-        resolve({
-          success: false,
-          exitCode: -1,
-          stdout: stdout.trim(),
-          stderr: stderr.trim(),
-          error: `Failed to spawn script: ${error.message}`,
-          duration: Date.now() - startTime
-        });
-      });
-    });
+      const exitCode = error.exitCode || -1;
+      logger.debug(`Script completed: ${script.name} (exit code: ${exitCode}, duration: ${duration}ms)`);
+
+      return {
+        success: false,
+        exitCode,
+        stdout: error.stdout?.trim() || '',
+        stderr: error.stderr?.trim() || '',
+        error: error.message || `Script exited with code ${exitCode}`,
+        duration
+      };
+    }
   }
 
   /**
@@ -451,21 +393,24 @@ export class ScriptExecutor {
     const ext = path.extname(scriptPath).toLowerCase();
     const isWindows = process.platform === 'win32';
 
+    // Resolve absolute path for security
+    const absoluteScriptPath = path.resolve(scriptPath);
+
     // Handle different script types
     switch (ext) {
       case '.js':
-        return { command: 'node', args: [scriptPath] };
+        return { command: 'node', args: [absoluteScriptPath] };
       
       case '.py':
-        return { command: 'python', args: [scriptPath] };
+        return { command: 'python', args: [absoluteScriptPath] };
       
       case '.ts':
-        return { command: 'npx', args: ['tsx', scriptPath] };
+        return { command: 'npx', args: ['tsx', absoluteScriptPath] };
       
       case '.bat':
       case '.cmd':
         if (isWindows) {
-          return { command: scriptPath, args: [] };
+          return { command: absoluteScriptPath, args: [] };
         }
         // Fallback to shell for non-Windows
         break;
@@ -477,10 +422,11 @@ export class ScriptExecutor {
     }
 
     // Default to shell execution
+    // execa handles path escaping internally, so we don't need shell-escape here
     if (isWindows) {
-      return { command: 'cmd', args: ['/c', scriptPath] };
+      return { command: 'cmd', args: ['/c', absoluteScriptPath] };
     } else {
-      return { command: shell, args: [scriptPath] };
+      return { command: shell, args: [absoluteScriptPath] };
     }
   }
 

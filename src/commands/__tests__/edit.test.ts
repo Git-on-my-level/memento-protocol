@@ -6,6 +6,7 @@ import { createTestFileSystem } from '../../lib/testing';
 import * as fs from 'fs';
 import { spawn } from 'child_process';
 import { EventEmitter } from 'events';
+import * as componentValidator from '../../lib/utils/componentValidator';
 
 jest.mock('../../lib/ZccCore');
 jest.mock('../../lib/logger', () => ({
@@ -27,6 +28,10 @@ jest.mock('fs', () => ({
 jest.mock('child_process', () => ({
   spawn: jest.fn()
 }));
+jest.mock('../../lib/utils/componentValidator', () => ({
+  validateComponent: jest.fn(),
+  formatValidationIssues: jest.fn().mockReturnValue([]),
+}));
 
 describe('Edit Command', () => {
   let mockCore: jest.Mocked<ZccCore>;
@@ -34,6 +39,7 @@ describe('Edit Command', () => {
   let mockInquirer: jest.Mocked<typeof inquirer>;
   let mockFs: jest.Mocked<typeof fs>;
   let mockSpawn: jest.MockedFunction<typeof spawn>;
+  let mockValidator: jest.Mocked<typeof componentValidator>;
   let originalEnv: NodeJS.ProcessEnv;
 
   beforeEach(async () => {
@@ -58,6 +64,14 @@ describe('Edit Command', () => {
     // Setup mocks
     mockCore = new ZccCore('') as jest.Mocked<ZccCore>;
     mockInquirer = inquirer as jest.Mocked<typeof inquirer>;
+    mockValidator = componentValidator as jest.Mocked<typeof componentValidator>;
+    
+    // Setup validation mocks
+    mockValidator.validateComponent.mockReturnValue({
+      isValid: true,
+      issues: []
+    });
+    mockValidator.formatValidationIssues.mockReturnValue([]);
     
     // Mock ZccCore methods
     mockCore.findComponents.mockResolvedValue([]);
@@ -357,7 +371,7 @@ describe('Edit Command', () => {
       });
     });
 
-    it('should validate component after editing when requested', async () => {
+    it('should validate component after editing when requested (clean validation)', async () => {
       const mockComponent = {
         name: 'custom-mode',
         component: {
@@ -388,12 +402,162 @@ describe('Edit Command', () => {
         .mockReturnValueOnce('---\nname: custom-mode\n---\n# Original')
         .mockReturnValueOnce('---\nname: custom-mode\ndescription: test\nauthor: test\nversion: 1.0.0\n---\n# Modified');
 
+      // Mock clean validation result
+      mockValidator.validateComponent.mockReturnValue({
+        isValid: true,
+        issues: []
+      });
+
       await editCommand.parseAsync(['mode', 'custom-mode', '--validate'], { from: 'user' });
 
       await new Promise(resolve => setTimeout(resolve, 20));
 
+      expect(mockValidator.validateComponent).toHaveBeenCalledWith('/project/.zcc/modes/custom-mode.md');
       expect(logger.info).toHaveBeenCalledWith('Validating component...');
       expect(logger.success).toHaveBeenCalledWith('Component validation passed.');
+    });
+
+    it('should show validation warnings after editing', async () => {
+      const mockComponent = {
+        name: 'custom-mode',
+        component: {
+          name: 'custom-mode',
+          type: 'mode' as const,
+          path: '/project/.zcc/modes/custom-mode.md',
+          metadata: {}
+        },
+        source: 'project' as const,
+        score: 100,
+        matchType: 'exact' as const
+      };
+
+      mockCore.findComponents.mockResolvedValueOnce([mockComponent]);
+
+      // Mock editor process
+      const mockEditorProcess = new EventEmitter() as any;
+      mockEditorProcess.on = jest.fn().mockImplementation((event, callback) => {
+        if (event === 'close') {
+          setTimeout(() => callback(0), 10);
+        }
+        return mockEditorProcess;
+      });
+      mockSpawn.mockReturnValueOnce(mockEditorProcess);
+
+      // Mock file content change
+      mockFs.readFileSync
+        .mockReturnValueOnce('---\nname: custom-mode\n---\n# Original')
+        .mockReturnValueOnce('---\nname: custom-mode\ndescription: test\nauthor: test\nversion: 1.0.0\n---\n# Modified');
+
+      // Mock validation with warnings
+      const warnings = [
+        { type: 'warning' as const, message: 'Description could be more detailed' }
+      ];
+      mockValidator.validateComponent.mockReturnValue({
+        isValid: true,
+        issues: warnings
+      });
+      mockValidator.formatValidationIssues.mockReturnValue(['⚠ Description could be more detailed']);
+
+      await editCommand.parseAsync(['mode', 'custom-mode', '--validate'], { from: 'user' });
+
+      await new Promise(resolve => setTimeout(resolve, 20));
+
+      expect(logger.warn).toHaveBeenCalledWith('Validation warnings:');
+      expect(logger.warn).toHaveBeenCalledWith('  ⚠ Description could be more detailed');
+      expect(logger.success).toHaveBeenCalledWith('Component validation passed (with warnings).');
+    });
+
+    it('should show validation errors after editing', async () => {
+      const mockComponent = {
+        name: 'custom-mode',
+        component: {
+          name: 'custom-mode',
+          type: 'mode' as const,
+          path: '/project/.zcc/modes/custom-mode.md',
+          metadata: {}
+        },
+        source: 'project' as const,
+        score: 100,
+        matchType: 'exact' as const
+      };
+
+      mockCore.findComponents.mockResolvedValueOnce([mockComponent]);
+
+      // Mock editor process
+      const mockEditorProcess = new EventEmitter() as any;
+      mockEditorProcess.on = jest.fn().mockImplementation((event, callback) => {
+        if (event === 'close') {
+          setTimeout(() => callback(0), 10);
+        }
+        return mockEditorProcess;
+      });
+      mockSpawn.mockReturnValueOnce(mockEditorProcess);
+
+      // Mock file content change
+      mockFs.readFileSync
+        .mockReturnValueOnce('---\nname: custom-mode\n---\n# Original')
+        .mockReturnValueOnce('---\nname: custom-mode\ndescription: test\nauthor: test\nversion: 1.0.0\n---\n# Modified');
+
+      // Mock validation with errors
+      const errors = [
+        { type: 'error' as const, message: 'Missing required field: version' }
+      ];
+      mockValidator.validateComponent.mockReturnValue({
+        isValid: false,
+        issues: errors
+      });
+      mockValidator.formatValidationIssues.mockReturnValue(['✗ Missing required field: version']);
+
+      await editCommand.parseAsync(['mode', 'custom-mode', '--validate'], { from: 'user' });
+
+      await new Promise(resolve => setTimeout(resolve, 20));
+
+      expect(logger.error).toHaveBeenCalledWith('Validation errors found:');
+      expect(logger.error).toHaveBeenCalledWith('  ✗ Missing required field: version');
+      expect(logger.warn).toHaveBeenCalledWith('Component validation failed.');
+    });
+
+    it('should handle validation errors gracefully', async () => {
+      const mockComponent = {
+        name: 'custom-mode',
+        component: {
+          name: 'custom-mode',
+          type: 'mode' as const,
+          path: '/project/.zcc/modes/custom-mode.md',
+          metadata: {}
+        },
+        source: 'project' as const,
+        score: 100,
+        matchType: 'exact' as const
+      };
+
+      mockCore.findComponents.mockResolvedValueOnce([mockComponent]);
+
+      // Mock editor process
+      const mockEditorProcess = new EventEmitter() as any;
+      mockEditorProcess.on = jest.fn().mockImplementation((event, callback) => {
+        if (event === 'close') {
+          setTimeout(() => callback(0), 10);
+        }
+        return mockEditorProcess;
+      });
+      mockSpawn.mockReturnValueOnce(mockEditorProcess);
+
+      // Mock file content change
+      mockFs.readFileSync
+        .mockReturnValueOnce('---\nname: custom-mode\n---\n# Original')
+        .mockReturnValueOnce('---\nname: custom-mode\ndescription: test\nauthor: test\nversion: 1.0.0\n---\n# Modified');
+
+      // Mock validation system error
+      mockValidator.validateComponent.mockImplementation(() => {
+        throw new Error('Validation system error');
+      });
+
+      await editCommand.parseAsync(['mode', 'custom-mode', '--validate'], { from: 'user' });
+
+      await new Promise(resolve => setTimeout(resolve, 20));
+
+      expect(logger.warn).toHaveBeenCalledWith('Validation failed: Validation system error');
     });
   });
 

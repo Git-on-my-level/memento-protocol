@@ -6,6 +6,7 @@ import chalk from 'chalk';
 import inquirer from 'inquirer';
 import { spawn } from 'child_process';
 import * as fs from 'fs';
+import { validateComponent, formatValidationIssues } from '../lib/utils/componentValidator';
 
 export const editCommand = new Command('edit')
   .description('Edit existing components in your preferred editor')
@@ -271,10 +272,32 @@ async function editComponent(
         if (opts.validate) {
           logger.info('Validating component...');
           try {
-            await validateComponent(component.path, component.type);
-            logger.success('Component validation passed.');
-          } catch (error: any) {
-            logger.warn(`Validation issues found: ${error.message}`);
+            const validationResult = validateComponent(component.path);
+            
+            if (validationResult.isValid && validationResult.issues.length === 0) {
+              logger.success('Component validation passed.');
+            } else {
+              const errors = validationResult.issues.filter(issue => issue.type === 'error');
+              const warnings = validationResult.issues.filter(issue => issue.type === 'warning');
+              
+              if (errors.length > 0) {
+                logger.error('Validation errors found:');
+                formatValidationIssues(errors).forEach(error => logger.error(`  ${error}`));
+              }
+              
+              if (warnings.length > 0) {
+                logger.warn('Validation warnings:');
+                formatValidationIssues(warnings).forEach(warning => logger.warn(`  ${warning}`));
+              }
+              
+              if (validationResult.isValid) {
+                logger.success('Component validation passed (with warnings).');
+              } else {
+                logger.warn('Component validation failed.');
+              }
+            }
+          } catch (validationError: any) {
+            logger.warn(`Validation failed: ${validationError.message}`);
           }
         }
         
@@ -305,57 +328,6 @@ async function editComponent(
   });
 }
 
-/**
- * Basic component validation
- */
-async function validateComponent(filePath: string, type: ComponentInfo['type']): Promise<void> {
-  const content = fs.readFileSync(filePath, 'utf-8');
-  
-  // Check for YAML frontmatter
-  if (!content.startsWith('---\n')) {
-    throw new Error('Missing YAML frontmatter at the beginning of the file');
-  }
-  
-  const frontmatterEnd = content.indexOf('\n---\n', 4);
-  if (frontmatterEnd === -1) {
-    throw new Error('Malformed YAML frontmatter - missing closing "---"');
-  }
-  
-  const frontmatterContent = content.substring(4, frontmatterEnd);
-  
-  // Basic YAML validation
-  try {
-    // Simple check for required fields
-    const requiredFields = ['name', 'description', 'author', 'version'];
-    for (const field of requiredFields) {
-      if (!frontmatterContent.includes(`${field}:`)) {
-        throw new Error(`Missing required field: ${field}`);
-      }
-    }
-  } catch (error: any) {
-    throw new Error(`Frontmatter validation failed: ${error.message}`);
-  }
-  
-  const bodyContent = content.substring(frontmatterEnd + 5);
-  
-  // Check for minimum content
-  if (bodyContent.trim().length < 50) {
-    logger.warn('Component content seems very short - consider adding more details');
-  }
-  
-  // Type-specific validation
-  if (type === 'mode' && !bodyContent.includes('## Behavioral Guidelines')) {
-    logger.warn('Mode should include "## Behavioral Guidelines" section');
-  }
-  
-  if (type === 'workflow' && !bodyContent.includes('## Workflow Steps')) {
-    logger.warn('Workflow should include "## Workflow Steps" section');
-  }
-  
-  if (type === 'agent' && !bodyContent.includes('## Core Responsibilities')) {
-    logger.warn('Agent should include "## Core Responsibilities" section');
-  }
-}
 
 /**
  * Get icon for different component sources

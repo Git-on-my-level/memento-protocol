@@ -7,21 +7,15 @@ import * as os from 'os';
 jest.mock('fs');
 const mockFs = fs as jest.Mocked<typeof fs>;
 
-// Mock child_process
-jest.mock('child_process', () => ({
-  spawn: jest.fn()
-}));
-
-const { spawn: mockSpawn } = require('child_process');
+// Mock execa (already set up in moduleNameMapper)
+jest.mock('execa');
+const { execa: mockExeca } = require('execa');
 
 describe('ScriptExecutor', () => {
   let tempDir: string;
   let projectRoot: string;
   let globalRoot: string;
   let scriptExecutor: ScriptExecutor;
-
-  // Mock child process
-  let mockChildProcess: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -33,20 +27,12 @@ describe('ScriptExecutor', () => {
     
     scriptExecutor = new ScriptExecutor(projectRoot);
 
-    // Mock child process
-    mockChildProcess = {
-      stdout: {
-        on: jest.fn()
-      },
-      stderr: {
-        on: jest.fn()
-      },
-      on: jest.fn(),
-      pid: 12345,
-      kill: jest.fn()
-    };
-
-    mockSpawn.mockReturnValue(mockChildProcess);
+    // Reset execa mock to default success behavior
+    (mockExeca as jest.Mock).mockImplementation(async () => ({
+      stdout: 'Success output',
+      stderr: '',
+      exitCode: 0
+    }));
 
     // Mock fs.existsSync to return true by default
     mockFs.existsSync.mockReturnValue(true);
@@ -149,31 +135,15 @@ describe('ScriptExecutor', () => {
         env: {}
       };
 
-      // Setup child process to succeed
-      mockChildProcess.on.mockImplementation((event: string, callback: Function) => {
-        if (event === 'close') {
-          setTimeout(() => callback(0), 10);
-        }
-      });
-
-      mockChildProcess.stdout.on.mockImplementation((event: string, callback: Function) => {
-        if (event === 'data') {
-          setTimeout(() => callback(Buffer.from('Success output')), 5);
-        }
-      });
-
-      mockChildProcess.stderr.on.mockImplementation((event: string, _callback: Function) => {
-        if (event === 'data') {
-          // No stderr output
-        }
-      });
+      // Set mock to success behavior (default)
+      (mockExeca as any).setMockBehavior('success');
 
       const result = await scriptExecutor.execute(script, context);
 
       expect(result.success).toBe(true);
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toBe('Success output');
-      expect(result.duration).toBeGreaterThan(0);
+      expect(result.duration).toBeGreaterThanOrEqual(0);
     });
 
     it('should handle script execution failure', async () => {
@@ -189,17 +159,13 @@ describe('ScriptExecutor', () => {
         env: {}
       };
 
-      // Setup child process to fail
-      mockChildProcess.on.mockImplementation((event: string, callback: Function) => {
-        if (event === 'close') {
-          setTimeout(() => callback(1), 10);
-        }
-      });
-
-      mockChildProcess.stderr.on.mockImplementation((event: string, callback: Function) => {
-        if (event === 'data') {
-          setTimeout(() => callback(Buffer.from('Error output')), 5);
-        }
+      // Mock execa to throw error
+      (mockExeca as jest.Mock).mockImplementationOnce(async () => {
+        const error = new Error('Script exited with code 1') as any;
+        error.exitCode = 1;
+        error.stdout = '';
+        error.stderr = 'Error output';
+        throw error;
       });
 
       const result = await scriptExecutor.execute(script, context);
@@ -246,9 +212,13 @@ describe('ScriptExecutor', () => {
         env: {}
       };
 
-      // Mock child process that never completes
-      mockChildProcess.on.mockImplementation(() => {
-        // Never call the callback
+      // Mock execa to timeout
+      (mockExeca as jest.Mock).mockImplementationOnce(async () => {
+        const error = new Error('Command timed out after 100ms') as any;
+        error.timedOut = true;
+        error.stdout = '';
+        error.stderr = '';
+        throw error;
       });
 
       const result = await scriptExecutor.execute(script, context, { timeout: 100 });
@@ -271,11 +241,11 @@ describe('ScriptExecutor', () => {
         env: {}
       };
 
-      // Setup child process to emit error
-      mockChildProcess.on.mockImplementation((event: string, callback: Function) => {
-        if (event === 'error') {
-          setTimeout(() => callback(new Error('Spawn failed')), 10);
-        }
+      // Mock execa to throw spawn error
+      (mockExeca as jest.Mock).mockImplementationOnce(async () => {
+        const error = new Error('Failed to spawn script') as any;
+        error.code = 'ENOENT';
+        throw error;
       });
 
       const result = await scriptExecutor.execute(script, context);
@@ -332,17 +302,13 @@ describe('ScriptExecutor', () => {
         return pathStr.includes('.zcc/scripts/test-script');
       });
 
-      // Setup successful execution
-      mockChildProcess.on.mockImplementation((event: string, callback: Function) => {
-        if (event === 'close') {
-          setTimeout(() => callback(0), 10);
-        }
-      });
+      // Set mock to success behavior (default)
+      (mockExeca as any).setMockBehavior('success');
 
       const result = await scriptExecutor.executeByName('test-script', ['arg1', 'arg2']);
 
       expect(result.success).toBe(true);
-      expect(mockSpawn).toHaveBeenCalled();
+      expect(mockExeca).toHaveBeenCalled();
     });
 
     it('should return error if script not found', async () => {
@@ -462,14 +428,11 @@ describe('ScriptExecutor', () => {
           env: {}
         };
 
-        mockChildProcess.on.mockImplementation((event: string, callback: Function) => {
-          if (event === 'close') {
-            setTimeout(() => callback(0), 10);
-          }
-        });
+        // Set mock to success behavior
+        (mockExeca as any).setMockBehavior('success');
 
         await scriptExecutor.execute(script, context);
-        expect(mockSpawn).toHaveBeenCalled();
+        expect(mockExeca).toHaveBeenCalled();
       }
     });
   });

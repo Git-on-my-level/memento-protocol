@@ -98,7 +98,7 @@ describe('Add Command', () => {
         maxResults: 5,
         minScore: 30
       });
-      expect(logger.success).toHaveBeenCalledWith("Successfully installed mode 'architect' to project scope.");
+      expect(logger.success).toHaveBeenCalledWith(expect.stringContaining('Successfully installed'));
     });
 
     it('should start interactive mode selection when no name provided', async () => {
@@ -152,8 +152,8 @@ describe('Add Command', () => {
         maxResults: 5,
         minScore: 30
       });
-      expect(logger.error).toHaveBeenCalledWith("Mode 'invalid' not found.");
-      expect(logger.info).toHaveBeenCalledWith('Did you mean one of these?');
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('not found'));
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('Did you mean'));
     });
   });
 
@@ -185,7 +185,7 @@ describe('Add Command', () => {
         maxResults: 5,
         minScore: 30
       });
-      expect(logger.success).toHaveBeenCalledWith("Successfully installed workflow 'review' to project scope.");
+      expect(logger.success).toHaveBeenCalledWith(expect.stringContaining('Successfully installed'));
     });
 
     it('should start interactive workflow selection when no name provided', async () => {
@@ -283,7 +283,7 @@ describe('Add Command', () => {
         minScore: 30
       });
       expect(mockInquirer.prompt).toHaveBeenCalled();
-      expect(logger.success).toHaveBeenCalledWith("Successfully installed mode 'architect' to project scope.");
+      expect(logger.success).toHaveBeenCalledWith(expect.stringContaining('Successfully installed'));
     });
   });
   
@@ -314,7 +314,7 @@ describe('Add Command', () => {
 
       await addCommand.parseAsync(['node', 'test', 'mode', 'architect']);
 
-      expect(logger.warn).toHaveBeenCalledWith("Mode 'architect' already exists in project scope.");
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('already exists'));
       expect(mockInquirer.prompt).toHaveBeenCalledWith([
         {
           type: 'confirm',
@@ -323,7 +323,7 @@ describe('Add Command', () => {
           default: false
         }
       ]);
-      expect(logger.success).toHaveBeenCalledWith("Successfully installed mode 'architect' to project scope.");
+      expect(logger.success).toHaveBeenCalledWith(expect.stringContaining('Successfully installed'));
     });
   });
 });

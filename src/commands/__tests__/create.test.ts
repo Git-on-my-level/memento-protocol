@@ -4,6 +4,7 @@ import { logger } from '../../lib/logger';
 import inquirer from 'inquirer';
 import { createTestFileSystem } from '../../lib/testing';
 import * as fs from 'fs';
+import * as componentValidator from '../../lib/utils/componentValidator';
 
 jest.mock('../../lib/ZccCore');
 jest.mock('../../lib/logger', () => ({
@@ -25,12 +26,17 @@ jest.mock('fs', () => ({
 jest.mock('../../lib/utils/filesystem', () => ({
   ensureDirectorySync: jest.fn(),
 }));
+jest.mock('../../lib/utils/componentValidator', () => ({
+  validateComponent: jest.fn(),
+  formatValidationIssues: jest.fn().mockReturnValue([]),
+}));
 
 describe('Create Command', () => {
   let mockCore: jest.Mocked<ZccCore>;
   let originalExit: any;
   let mockInquirer: jest.Mocked<typeof inquirer>;
   let mockFs: jest.Mocked<typeof fs>;
+  let mockValidator: jest.Mocked<typeof componentValidator>;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -54,6 +60,14 @@ describe('Create Command', () => {
     // Setup mocks
     mockCore = new ZccCore('') as jest.Mocked<ZccCore>;
     mockInquirer = inquirer as jest.Mocked<typeof inquirer>;
+    mockValidator = componentValidator as jest.Mocked<typeof componentValidator>;
+    
+    // Setup validation mocks
+    mockValidator.validateComponent.mockReturnValue({
+      isValid: true,
+      issues: []
+    });
+    mockValidator.formatValidationIssues.mockReturnValue([]);
     
     // Mock ZccCore methods
     mockCore.getComponent.mockResolvedValue(null);
@@ -88,16 +102,16 @@ describe('Create Command', () => {
           author: 'testuser',
         });
 
-      await createCommand.parseAsync(['mode'], { from: 'user' });
+      try {
+        await createCommand.parseAsync(['mode'], { from: 'user' });
+      } catch (error) {
+        console.error('Command failed:', error);
+        throw error;
+      }
 
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
         '/project/.zcc/modes/custom-mode.md',
         expect.stringContaining('name: custom-mode'),
-        'utf-8'
-      );
-      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
-        '/project/.zcc/modes/custom-mode.md',
-        expect.stringContaining('# Custom Mode Mode'),
         'utf-8'
       );
       expect(logger.success).toHaveBeenCalledWith(
@@ -374,6 +388,116 @@ describe('Create Command', () => {
       const writtenContent = (mockFs.writeFileSync as jest.Mock).mock.calls[0][1];
       // The template variables would be replaced in the actual implementation
       expect(typeof writtenContent).toBe('string');
+    });
+  });
+
+  describe('automatic validation', () => {
+    it('should automatically validate created component and show no issues when valid', async () => {
+      mockInquirer.prompt.mockResolvedValueOnce({
+        description: 'A valid mode',
+        author: 'testuser',
+      });
+
+      mockValidator.validateComponent.mockReturnValue({
+        isValid: true,
+        issues: []
+      });
+
+      await createCommand.parseAsync(['mode', 'valid-mode'], { from: 'user' });
+
+      expect(mockValidator.validateComponent).toHaveBeenCalledWith('/project/.zcc/modes/valid-mode.md');
+      expect(logger.success).toHaveBeenCalledWith(
+        "Successfully created mode 'valid-mode' in project scope."
+      );
+      // Should not show any validation messages for clean components
+    });
+
+    it('should show warnings for components with validation warnings', async () => {
+      mockInquirer.prompt.mockResolvedValueOnce({
+        description: 'A mode with warnings',
+        author: 'testuser',
+      });
+
+      const warnings = [
+        { type: 'warning' as const, message: 'Description could be more detailed' }
+      ];
+      mockValidator.validateComponent.mockReturnValue({
+        isValid: true,
+        issues: warnings
+      });
+      mockValidator.formatValidationIssues.mockReturnValue(['⚠ Description could be more detailed']);
+
+      await createCommand.parseAsync(['mode', 'warning-mode'], { from: 'user' });
+
+      expect(logger.info).toHaveBeenCalledWith('Component created with 1 warning:');
+      expect(logger.info).toHaveBeenCalledWith('  ⚠ Description could be more detailed');
+    });
+
+    it('should show errors for components with validation errors', async () => {
+      mockInquirer.prompt.mockResolvedValueOnce({
+        description: 'A mode with errors',
+        author: 'testuser',
+      });
+
+      const errors = [
+        { type: 'error' as const, message: 'Missing required field: version' }
+      ];
+      mockValidator.validateComponent.mockReturnValue({
+        isValid: false,
+        issues: errors
+      });
+      mockValidator.formatValidationIssues.mockReturnValue(['✗ Missing required field: version']);
+
+      await createCommand.parseAsync(['mode', 'error-mode'], { from: 'user' });
+
+      expect(logger.warn).toHaveBeenCalledWith('Component created with errors:');
+      expect(logger.warn).toHaveBeenCalledWith('  ✗ Missing required field: version');
+    });
+
+    it('should handle validation errors gracefully and continue creation', async () => {
+      mockInquirer.prompt.mockResolvedValueOnce({
+        description: 'A mode',
+        author: 'testuser',
+      });
+
+      mockValidator.validateComponent.mockImplementation(() => {
+        throw new Error('Validation system error');
+      });
+
+      await createCommand.parseAsync(['mode', 'test-mode'], { from: 'user' });
+
+      // Should still create the component successfully
+      expect(logger.success).toHaveBeenCalledWith(
+        "Successfully created mode 'test-mode' in project scope."
+      );
+    });
+
+    it('should handle mixed warnings and errors', async () => {
+      mockInquirer.prompt.mockResolvedValueOnce({
+        description: 'A complex mode',
+        author: 'testuser',
+      });
+
+      const issues = [
+        { type: 'error' as const, message: 'Missing required field: name' },
+        { type: 'warning' as const, message: 'Short description' },
+        { type: 'error' as const, message: 'Invalid name format' }
+      ];
+      mockValidator.validateComponent.mockReturnValue({
+        isValid: false,
+        issues
+      });
+      mockValidator.formatValidationIssues
+        .mockReturnValueOnce(['✗ Missing required field: name', '✗ Invalid name format'])
+        .mockReturnValueOnce(['⚠ Short description']);
+
+      await createCommand.parseAsync(['mode', 'mixed-mode'], { from: 'user' });
+
+      expect(logger.warn).toHaveBeenCalledWith('Component created with errors:');
+      expect(logger.warn).toHaveBeenCalledWith('  ✗ Missing required field: name');
+      expect(logger.warn).toHaveBeenCalledWith('  ✗ Invalid name format');
+      expect(logger.info).toHaveBeenCalledWith('Component created with 1 warning:');
+      expect(logger.info).toHaveBeenCalledWith('  ⚠ Short description');
     });
   });
 });

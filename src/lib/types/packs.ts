@@ -132,10 +132,10 @@ export interface PackConflictResolution {
   readonly skip: boolean;
 }
 
-// Registry and source interfaces
+// Registry and source interfaces (simplified for 1.0)
 export interface PackSource {
   readonly name: string;
-  readonly type: 'local' | 'remote' | 'registry' | 'github';
+  readonly type: 'local';
 }
 
 export interface LocalPackSource extends PackSource {
@@ -143,38 +143,6 @@ export interface LocalPackSource extends PackSource {
   readonly path: string;
 }
 
-export interface RemotePackSource extends PackSource {
-  readonly type: 'remote';
-  readonly url: string;
-  readonly authToken?: string;
-  readonly cacheTtl?: number; // TTL in milliseconds
-}
-
-export interface RegistryPackSource extends PackSource {
-  readonly type: 'registry';
-  readonly registry: string;
-}
-
-export interface GitHubPackSource extends PackSource {
-  readonly type: 'github';
-  readonly owner: string;
-  readonly repo: string;
-  readonly branch?: string;
-  readonly authToken?: string;
-  readonly cacheTtl?: number; // TTL in milliseconds
-}
-
-// Cache interfaces for remote sources
-export interface PackManifestCache {
-  readonly manifest: PackManifest;
-  readonly timestamp: number;
-  readonly ttl: number;
-}
-
-export interface RemotePackCache {
-  readonly manifestCache: Map<string, PackManifestCache>;
-  readonly componentCache: Map<string, { content: string; timestamp: number; ttl: number }>;
-}
 
 // Error types for better error handling
 export interface PackError {
