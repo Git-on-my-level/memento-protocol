@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2025-09-05
+
+### Added
+- Add --non-interactive flags for CI/automation support (#66)
+- Complete v1.0 release preparation with comprehensive refactoring (#59)
+- Improve error handling and validation for zcc update command (#55)
+- Implement registry pattern for extensible component system (#54)
+- Complete rename from memento-protocol to zcc (#52)
+- Add ast-grep focused integration with Advanced Code Refactoring starter pack (#51)
+- Improve error messages with actionable suggestions (#48)
+- Add specific error types for better debugging (#49)
+- Implement filesystem test isolation with memfs (#38) (#40)
+- Implement starter packs for instant Claude Code configuration (#37)
+- Improve acronym command ergonomics with bulk operations (#33)
+- Self-describing templates with YAML frontmatter (#31)
+
+### Fixed
+- resolve starter pack component resolution issue (#68) (#69)
+- Update documentation command references from memento to zcc for v1.0 (#64)
+- resolve npm run dev ERR_PACKAGE_PATH_NOT_EXPORTED error (#60) (#65)
+- Implement proper filtering for list --installed flag (#67)
+
+### Changed
+- Simplify MementoCore by removing unused functionality (#36)
+- Clean configuration system with directory-based architecture (#35)
+- Remove redundant 'command' CLI command (#32)
+- Embrace "zsh for Claude Code" positioning (#28)
+
+### Chore
+- prepare for v1.0.0 release
+
 ## [0.9.0] - 2025-08-13
 
 ### Added
@@ -159,6 +190,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-platform support (macOS, Linux)
 - npm and standalone distribution
 
+[1.0.0]: https://github.com/git-on-my-level/zcc/releases/tag/v1.0.0
 [0.9.0]: https://github.com/git-on-my-level/zcc/releases/tag/v0.9.0
 [0.8.0]: https://github.com/git-on-my-level/zcc/releases/tag/v0.8.0
 [0.7.1]: https://github.com/git-on-my-level/zcc/releases/tag/v0.7.1
