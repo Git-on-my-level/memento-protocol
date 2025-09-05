@@ -14,6 +14,7 @@ export const editCommand = new Command('edit')
   .argument('[name]', 'Component name (supports fuzzy matching and interactive selection)')
   .option('-e, --editor <editor>', 'Override default editor (uses $EDITOR environment variable by default)')
   .option('--validate', 'Validate component after editing')
+  .option('--non-interactive', 'Skip interactive prompts, require exact matches')
   .action(async (type: string, name?: string, options?: any) => {
     try {
       const core = new ZccCore(process.cwd());
@@ -29,8 +30,13 @@ export const editCommand = new Command('edit')
       
       const componentType = type as ComponentInfo['type'];
       
-      // If no name provided, show interactive selection
+      // If no name provided, show interactive selection or fail in non-interactive mode
       if (!name) {
+        if (opts.nonInteractive) {
+          logger.error('Component name is required in non-interactive mode');
+          logger.info(`Usage: zcc edit ${type} <component-name> --non-interactive`);
+          process.exit(1);
+        }
         await showInteractiveSelection(core, componentType, opts);
         return;
       }
@@ -42,7 +48,11 @@ export const editCommand = new Command('edit')
       });
       
       if (matches.length === 0) {
-        // No matches found, show suggestions
+        // No matches found, show suggestions or fail in non-interactive mode
+        if (opts.nonInteractive) {
+          logger.error(`${type.charAt(0).toUpperCase() + type.slice(1)} '${name}' not found.`);
+          process.exit(1);
+        }
         await handleNoMatches(core, name, componentType);
         return;
       }
@@ -51,6 +61,22 @@ export const editCommand = new Command('edit')
         // Single match, edit it
         await editComponent(matches[0], opts);
         return;
+      }
+      
+      // Multiple matches - in non-interactive mode, use exact match or fail
+      if (opts.nonInteractive) {
+        const exactMatch = matches.find(m => m.matchType === 'exact');
+        if (exactMatch) {
+          await editComponent(exactMatch, opts);
+          return;
+        } else {
+          logger.error(`Multiple matches found for '${name}'. In non-interactive mode, exact matches are required.`);
+          logger.info('Available matches:');
+          matches.forEach(match => {
+            logger.info(`  - ${match.name} (${match.matchType} match, ${match.score}%)`);
+          });
+          process.exit(1);
+        }
       }
       
       // Multiple matches, let user choose

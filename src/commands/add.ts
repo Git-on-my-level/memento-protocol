@@ -12,6 +12,7 @@ interface AddCommandOptions {
   source?: string;
   force?: boolean;
   global?: boolean;
+  nonInteractive?: boolean;
 }
 
 export const addCommand = new Command('add')
@@ -21,6 +22,7 @@ export const addCommand = new Command('add')
   .option('-s, --source <scope>', 'Install from specific scope (builtin, global)', 'builtin')
   .option('-f, --force', 'Force installation even if component already exists')
   .option('--global', 'Install to global scope (~/.zcc) instead of project')
+  .option('--non-interactive', 'Skip interactive prompts, require exact matches')
   .action(async (type: string, name?: string, options?: AddCommandOptions) => {
     try {
       const core = new ZccCore(process.cwd());
@@ -44,8 +46,13 @@ export const addCommand = new Command('add')
       
       const componentType = type as ComponentInfo['type'];
       
-      // If no name provided, show interactive selection
+      // If no name provided, show interactive selection or fail in non-interactive mode
       if (!name) {
+        if (opts.nonInteractive) {
+          logger.error('Component name is required in non-interactive mode');
+          logger.info(`Usage: zcc add ${type} <component-name> --non-interactive`);
+          process.exit(1);
+        }
         await showInteractiveSelection(core, componentType, opts);
         return;
       }
@@ -57,7 +64,11 @@ export const addCommand = new Command('add')
       });
       
       if (matches.length === 0) {
-        // No matches found, show suggestions
+        // No matches found, show suggestions or fail in non-interactive mode
+        if (opts.nonInteractive) {
+          logger.error(`${type.charAt(0).toUpperCase() + type.slice(1)} '${name}' not found.`);
+          process.exit(1);
+        }
         await handleNoMatches(core, name, componentType);
         return;
       }
@@ -66,6 +77,22 @@ export const addCommand = new Command('add')
         // Single match, install it
         await installComponent(core, matches[0], opts);
         return;
+      }
+      
+      // Multiple matches - in non-interactive mode, use exact match or fail
+      if (opts.nonInteractive) {
+        const exactMatch = matches.find(m => m.matchType === 'exact');
+        if (exactMatch) {
+          await installComponent(core, exactMatch, opts);
+          return;
+        } else {
+          logger.error(`Multiple matches found for '${name}'. In non-interactive mode, exact matches are required.`);
+          logger.info('Available matches:');
+          matches.forEach(match => {
+            logger.info(`  - ${match.name} (${match.matchType} match, ${match.score}%)`);
+          });
+          process.exit(1);
+        }
       }
       
       // Multiple matches, let user choose
@@ -225,6 +252,11 @@ async function installComponent(
   );
   
   if (targetConflict && !opts.force) {
+    if (opts.nonInteractive) {
+      logger.error(`${component.type.charAt(0).toUpperCase() + component.type.slice(1)} '${component.name}' already exists in ${targetScope} scope. Use --force to overwrite.`);
+      process.exit(1);
+    }
+    
     logger.warn(`${component.type.charAt(0).toUpperCase() + component.type.slice(1)} '${component.name}' already exists in ${targetScope} scope.`);
     
     const { shouldOverwrite } = await inquirer.prompt([
