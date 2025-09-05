@@ -3,10 +3,6 @@ allowed-tools: Bash(sh .zcc/scripts/mode-switch.sh:*)
 argument-hint: [mode-name]
 description: List available modes or switch to a specific mode
 ---
-# Mode Management
-
 !`sh .zcc/scripts/mode-switch.sh $ARGUMENTS`
 
-
-
-I'll now operate according to the mode guidelines shown above.
+I'll now operate according to the selected mode.

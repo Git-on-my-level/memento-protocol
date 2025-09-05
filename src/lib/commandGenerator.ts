@@ -8,7 +8,35 @@ export interface CommandTemplate {
   allowedTools: string[];
   argumentHint?: string;
   body: string;
+  executeOnly?: boolean; // If true, command executes without prompting continuation
 }
+
+/**
+ * IMPORTANT: Claude Code Permission Pattern Documentation
+ * 
+ * For custom commands that execute shell scripts with arguments, the correct
+ * allowed-tools pattern format is:
+ * 
+ *   "Bash(command:*)"  - where the colon comes IMMEDIATELY after the command
+ * 
+ * Examples:
+ *   ✅ CORRECT:
+ *   - "Bash(sh .zcc/scripts/script.sh:*)"     - Allows script with any arguments
+ *   - "Bash(git commit:*)"                    - Allows git commit with any args
+ *   - "Bash(npm run test:*)"                  - Allows npm run test with any args
+ * 
+ *   ❌ INCORRECT:
+ *   - "Bash(sh .zcc/scripts/script.sh):*"     - Colon outside parentheses
+ *   - "Bash(sh .zcc/scripts/script.sh *)"     - Space instead of colon
+ *   - "Bash(sh .zcc/scripts/script.sh)"       - No wildcard for arguments
+ * 
+ * The ":*" suffix tells Claude Code to allow the command with any arguments
+ * passed via $ARGUMENTS in the command body.
+ * 
+ * For commands without arguments, use the exact command:
+ *   - "Bash(ls)"                              - Exact command, no arguments
+ *   - "Bash(pwd)"                             - Exact command, no arguments
+ */
 
 export class CommandGenerator {
   private projectRoot: string;
@@ -61,13 +89,11 @@ export class CommandGenerator {
     const ticketMain: CommandTemplate = {
       name: "ticket",
       description: "Manage tickets stored as .md files in .zcc/tickets/ directories",
+      // IMPORTANT: Use "command:*" pattern - colon immediately after command path
       allowedTools: ["Bash(sh .zcc/scripts/ticket-context.sh:*)"],
       argumentHint: "[ticket-name]",
-      body: `# Ticket Management
-
-!\`sh .zcc/scripts/ticket-context.sh $ARGUMENTS\`
-
-I now have ticket information loaded. Use Read tool to access actual ticket content.`,
+      // Minimal body - just execute the command without extra continuation text
+      body: `!\`sh .zcc/scripts/ticket-context.sh $ARGUMENTS\``,
     };
 
     // Generate ticket command file
@@ -84,15 +110,13 @@ I now have ticket information loaded. Use Read tool to access actual ticket cont
     const modeMain: CommandTemplate = {
       name: "mode",
       description: "List available modes or switch to a specific mode",
+      // IMPORTANT: Use "command:*" pattern - colon immediately after command path
       allowedTools: ["Bash(sh .zcc/scripts/mode-switch.sh:*)"],
       argumentHint: "[mode-name]",
-      body: `# Mode Management
+      // Minimal continuation - mode changes require acknowledgment
+      body: `!\`sh .zcc/scripts/mode-switch.sh $ARGUMENTS\`
 
-!\`sh .zcc/scripts/mode-switch.sh $ARGUMENTS\`
-
-${"" /* No arguments: Shows available modes */}
-${"" /* With arguments: Loads and activates the specified mode */}
-I'll now operate according to the mode guidelines shown above.`,
+I'll now operate according to the selected mode.`,
     };
 
     // Generate mode command file
