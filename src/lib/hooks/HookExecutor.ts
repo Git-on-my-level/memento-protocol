@@ -139,11 +139,19 @@ export class HookExecutor {
       env.HOOK_PROMPT = context.prompt;
     }
 
+    // Prepare stdin data based on hook event and context
+    let stdin: string | undefined;
+    if (context.event === 'UserPromptSubmit' && context.prompt) {
+      // For UserPromptSubmit hooks, pass the prompt as JSON via stdin
+      stdin = JSON.stringify({ prompt: context.prompt });
+    }
+
     return {
       source,
       scriptPath,
       workingDirectory: context.projectRoot, // Always execute in project root
-      env
+      env,
+      stdin
     };
   }
 

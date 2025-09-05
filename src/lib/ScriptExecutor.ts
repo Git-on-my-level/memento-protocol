@@ -15,6 +15,7 @@ export interface ScriptContext {
   scriptPath: string;
   workingDirectory: string;  // Always project root
   env: Record<string, string>;  // Environment variables
+  stdin?: string;  // Optional stdin input
 }
 
 export interface ScriptResult {
@@ -101,6 +102,7 @@ export class ScriptExecutor {
         stripFinalNewline: false,
         windowsHide: true,
         preferLocal: true,
+        input: context.stdin,
       });
 
       const duration = Date.now() - startTime;

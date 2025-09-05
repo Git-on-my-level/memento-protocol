@@ -269,7 +269,7 @@ async function editComponent(
   
   // Launch editor
   return new Promise((resolve, reject) => {
-    const editorProcess = spawn(editor, [component.path], {
+    const editorProcess = spawn(`${editor} "${component.path}"`, [], {
       stdio: 'inherit',
       shell: true
     });
