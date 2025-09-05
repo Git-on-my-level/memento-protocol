@@ -225,11 +225,19 @@ export const initCommand = new Command("init")
           selectedWorkflows = nonInteractiveOpts.workflows || [];
           selectedHooks = nonInteractiveOpts.hooks || [];
           
-          // Note: Pack components are already installed by the starter pack installer,
-          // so we don't need to add them to selectedModes/selectedWorkflows.
-          // The applySetup method would try to install them again using the regular
-          // ComponentInstaller which looks in templates/, but pack components
-          // are only available in the pack's components/ directory.
+          // Merge starter pack components with CLI-specified components
+          if (packResult && packResult.success && packResult.installed) {
+            // Add pack components to the selection (avoid duplicates)
+            const packModes = packResult.installed.modes || [];
+            const packWorkflows = packResult.installed.workflows || [];
+            const packAgents = packResult.installed.agents || [];
+            const packHooks = packResult.installed.hooks || [];
+
+            selectedModes = [...new Set([...selectedModes, ...packModes])];
+            selectedWorkflows = [...new Set([...selectedWorkflows, ...packWorkflows])];
+            selectedAgents = [...new Set([...selectedAgents, ...packAgents])];
+            selectedHooks = [...new Set([...selectedHooks, ...packHooks])];
+          }
         } else if (options.allRecommended) {
           // For --all-recommended, get all available components
           const availableComponents = await componentInstaller.listAvailableComponents();
@@ -239,6 +247,12 @@ export const initCommand = new Command("init")
           // Get all available hooks for --all-recommended
           const availableHooks = await hookManager.listTemplates();
           selectedHooks = availableHooks;
+        } else if (packResult && packResult.success && packResult.installed) {
+          // If only a starter pack is installed (no explicit CLI selections), still include pack components
+          selectedModes = [...(packResult.installed.modes || [])];
+          selectedWorkflows = [...(packResult.installed.workflows || [])];
+          selectedAgents = [...(packResult.installed.agents || [])];
+          selectedHooks = [...(packResult.installed.hooks || [])];
         }
 
         setupOptions = {

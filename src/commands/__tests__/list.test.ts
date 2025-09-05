@@ -122,13 +122,14 @@ describe('List Command', () => {
 
       await listCommand.parseAsync(['node', 'test', '--installed']);
 
-      expect(logger.info).toHaveBeenCalledWith('zcc Status:');
+      // With --installed flag, status summary is not shown, components are listed directly
       expect(logger.info).toHaveBeenCalledWith('Modes:');
       expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('architect'));
       expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('engineer'));
       expect(logger.info).toHaveBeenCalledWith('Workflows:');
       expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('review'));
-      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('refactor'));
+      // builtin refactor should NOT appear with --installed flag
+      expect(logger.info).not.toHaveBeenCalledWith(expect.stringContaining('refactor'));
     });
 
     it('should handle no components found', async () => {
@@ -152,7 +153,8 @@ describe('List Command', () => {
 
       await listCommand.parseAsync(['node', 'test', '--installed']);
 
-      expect(logger.info).toHaveBeenCalledWith('No components found.');
+      // The message now includes filter context
+      expect(logger.info).toHaveBeenCalledWith('No components found matching installed components only.');
       
       // Check that the help message contains essential parts without being brittle about exact wording
       const calls = (logger.info as jest.Mock).mock.calls;
@@ -188,9 +190,13 @@ describe('List Command', () => {
 
       await listCommand.parseAsync(['node', 'test', '--installed']);
 
-      // Should not error, just show available builtin components
-      expect(logger.info).toHaveBeenCalledWith('zcc Status:');
-      expect(logger.info).toHaveBeenCalledWith('Built-in:  ✓ 15 components');
+      // With --installed flag, should show "no components found" message because builtin components are filtered out
+      expect(logger.info).toHaveBeenCalledWith('No components found matching installed components only.');
+      
+      // Should also show help message since no components were found
+      const calls = (logger.info as jest.Mock).mock.calls;
+      const helpMessage = calls.find(call => call[0].includes('To add components'));
+      expect(helpMessage).toBeDefined();
     });
   });
 
