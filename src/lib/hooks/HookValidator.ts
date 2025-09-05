@@ -257,7 +257,7 @@ export class HookValidator {
    */
   private async checkCommandAvailable(command: string): Promise<boolean> {
     return new Promise((resolve) => {
-      const child = spawn('which', [command], {
+      const child = spawn(`which ${command}`, [], {
         stdio: 'ignore',
         shell: true
       });

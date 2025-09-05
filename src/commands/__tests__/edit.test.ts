@@ -138,7 +138,7 @@ describe('Edit Command', () => {
       // Wait for async operations to complete
       await new Promise(resolve => setTimeout(resolve, 20));
       
-      expect(mockSpawn).toHaveBeenCalledWith('nano', ['/project/.zcc/modes/custom-mode.md'], {
+      expect(mockSpawn).toHaveBeenCalledWith('nano "/project/.zcc/modes/custom-mode.md"', [], {
         stdio: 'inherit',
         shell: true
       });
@@ -368,7 +368,7 @@ describe('Edit Command', () => {
 
       await editCommand.parseAsync(['mode', 'custom-mode', '--editor', 'vim'], { from: 'user' });
 
-      expect(mockSpawn).toHaveBeenCalledWith('vim', ['/project/.zcc/modes/custom-mode.md'], {
+      expect(mockSpawn).toHaveBeenCalledWith('vim "/project/.zcc/modes/custom-mode.md"', [], {
         stdio: 'inherit',
         shell: true
       });
