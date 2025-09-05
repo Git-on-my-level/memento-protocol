@@ -1,6 +1,6 @@
 # zcc: The zsh for Claude Code
 
-[![npm version](https://badge.fury.io/js/zcc.svg)](https://badge.fury.io/js/zcc)
+[![npm version](https://badge.fury.io/js/z-claude-code.svg)](https://badge.fury.io/js/z-claude-code)
 
 **Transform Claude Code from a basic AI assistant into a project-aware, context-intelligent development powerhouse.**
 
@@ -66,7 +66,7 @@ npx zcc init --all-recommended
 
 ### Global Install
 ```bash
-npm install -g zcc
+npm install -g z-claude-code
 zcc init
 ```
 

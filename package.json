@@ -1,5 +1,5 @@
 {
-  "name": "zcc",
+  "name": "z-claude-code",
   "version": "1.0.0",
   "description": "The zsh for Claude Code - Power tools for AI-assisted development",
   "main": "dist/cli.js",
