@@ -1,6 +1,5 @@
 import { Command } from "commander";
 import { initCommand } from "./commands/init";
-import { initGlobalCommand } from "./commands/init-global";
 import { addCommand } from "./commands/add";
 import { listCommand } from "./commands/list";
 import { ticketCommand } from "./commands/ticket";
@@ -31,11 +30,10 @@ program
     "after",
     `
 Examples:
-  $ zcc                        # Initialize or update zcc
-  $ zcc init                   # Explicitly initialize zcc
+  $ zcc                        # Initialize or update zcc (equivalent to 'upsert')
+  $ zcc init                   # Initialize zcc in current project
   $ zcc init --global          # Initialize global ~/.zcc configuration
-  $ zcc init-global            # Initialize global configuration (alternative)
-  $ zcc update                 # Explicitly update components
+  $ zcc update                 # Update existing components from templates
   $ zcc add mode architect     # Add the architect mode
   $ zcc add workflow review    # Add the code review workflow
   $ zcc create mode my-custom  # Create a new custom mode interactively
@@ -66,7 +64,6 @@ Documentation: https://github.com/git-on-my-level/zcc#readme`
 
 // Register commands
 program.addCommand(initCommand);
-program.addCommand(initGlobalCommand);
 program.addCommand(addCommand);
 program.addCommand(listCommand);
 program.addCommand(ticketCommand);
