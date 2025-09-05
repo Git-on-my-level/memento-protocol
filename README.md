@@ -34,7 +34,7 @@ npx zcc init
 # 2. Use enhanced features immediately
 /mode architect         # Switch to system design mode
 /ticket create "Add authentication"  # Persistent task tracking
-/memento               # See project status
+/zcc                    # See project status
 
 # 3. Claude becomes context-aware
 "Implement the auth feature"  # Claude knows about your ticket, 
@@ -87,8 +87,11 @@ npx zcc init --starter-pack frontend-react
 | Pack | Description | Includes |
 |------|-------------|----------|
 | **frontend-react** | Complete React development setup | `component-engineer`, `react-architect`, `ui-reviewer` modes + creation workflows |
-| **backend-api** | RESTful API development | `api-architect`, `backend-engineer`, `security-reviewer` modes + testing workflows |
-| **fullstack** | End-to-end development | Both frontend and backend capabilities combined |
+| **advanced-code-refactoring** | AST-grep focused code refactoring | Advanced refactoring modes and workflows |
+
+### Coming Soon
+- **backend-api** - RESTful API development with `api-architect`, `backend-engineer`, `security-reviewer` modes
+- **fullstack** - End-to-end development combining frontend and backend capabilities
 
 *Just like oh-my-zsh themes transform your terminal experience, starter packs transform Claude Code for your project type.*
 
@@ -125,13 +128,16 @@ npx zcc init --starter-pack frontend-react
 
 ## Documentation
 
-- 📚 [Installation Guide](docs/INSTALLATION.md) - Detailed setup instructions
-- 🚀 [Quick Start](docs/QUICKSTART.md) - Get running in 5 minutes
 - 📦 [Starter Packs Guide](docs/STARTER_PACKS.md) - Ready-to-use bundles for different project types
-- 🎨 [Creating Modes](docs/MODES.md) - Build custom AI personalities
-- 🔧 [Workflows](docs/WORKFLOWS.md) - Automate complex tasks
 - 🪝 [Hooks Guide](docs/HOOKS_GUIDE.md) - Event-driven automation
+- 🧩 [Component Guide](docs/COMPONENT_GUIDE.md) - Creating modes, workflows, and agents
 - 📖 [API Reference](docs/API.md) - Programmatic usage
+
+### Coming Soon
+- 📚 Installation Guide - Detailed setup instructions
+- 🚀 Quick Start - Get running in 5 minutes  
+- 🎨 Creating Modes - Build custom AI personalities
+- 🔧 Workflows - Automate complex tasks
 
 ## Examples
 
