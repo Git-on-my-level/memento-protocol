@@ -4,6 +4,11 @@ import { logger } from "../lib/logger";
 import { DirectoryManager } from "../lib/directoryManager";
 import { UPDATE_ERROR_MESSAGES } from "../lib/errorMessages";
 
+interface UpdateCommandOptions {
+  check?: boolean;
+  force?: boolean;
+}
+
 export function createUpdateCommand(): Command {
   const cmd = new Command("update");
 
@@ -15,7 +20,7 @@ export function createUpdateCommand(): Command {
       "[component]",
       "specific component to update (e.g., mode:architect)"
     )
-    .action(async (component: string | undefined, options: any) => {
+    .action(async (component: string | undefined, options: UpdateCommandOptions) => {
       try {
         const projectRoot = process.cwd();
         

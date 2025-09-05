@@ -191,8 +191,8 @@ describe("Init Command", () => {
     it("should initialize with non-interactive setup", async () => {
       mockDirManager.isInitialized.mockReturnValue(false);
       mockProjectDetector.detect.mockResolvedValue({
-        type: "fullstack",
-        framework: "nextjs",
+        type: "typescript",
+        framework: "react",
         suggestedModes: ["architect", "engineer"],
         suggestedWorkflows: ["review"],
         files: [],
@@ -228,7 +228,7 @@ describe("Init Command", () => {
     it("should install components specified via CLI flags", async () => {
       mockDirManager.isInitialized.mockReturnValue(false);
       mockProjectDetector.detect.mockResolvedValue({
-        type: "web",
+        type: "javascript",
         suggestedModes: ["architect", "engineer"],
         suggestedWorkflows: ["review"],
         files: [],
@@ -258,7 +258,7 @@ describe("Init Command", () => {
     it("should install all recommended components with --all-recommended", async () => {
       mockDirManager.isInitialized.mockReturnValue(false);
       mockProjectDetector.detect.mockResolvedValue({
-        type: "web",
+        type: "javascript",
         suggestedModes: ["architect", "engineer"],
         suggestedWorkflows: ["review", "refactor"],
         files: [],
@@ -284,7 +284,7 @@ describe("Init Command", () => {
     it("should read configuration from file", async () => {
       mockDirManager.isInitialized.mockReturnValue(false);
       mockProjectDetector.detect.mockResolvedValue({
-        type: "web",
+        type: "javascript",
         suggestedModes: [],
         suggestedWorkflows: [],
         files: [],
@@ -343,7 +343,7 @@ describe("Init Command", () => {
     it("should read configuration from environment variables", async () => {
       mockDirManager.isInitialized.mockReturnValue(false);
       mockProjectDetector.detect.mockResolvedValue({
-        type: "web",
+        type: "javascript",
         suggestedModes: [],
         suggestedWorkflows: [],
         files: [],
@@ -401,7 +401,7 @@ describe("Init Command", () => {
     it("should reinitialize with force flag", async () => {
       mockDirManager.isInitialized.mockReturnValue(true);
       mockProjectDetector.detect.mockResolvedValue({
-        type: "cli",
+        type: "javascript",
         suggestedModes: [],
         suggestedWorkflows: [],
         files: [],
@@ -486,7 +486,7 @@ describe("Init Command", () => {
     const setupStarterPackMocks = () => {
       mockDirManager.isInitialized.mockReturnValue(false);
       mockProjectDetector.detect.mockResolvedValue({
-        type: "web",
+        type: "javascript",
         suggestedModes: [],
         suggestedWorkflows: [],
         files: [],
@@ -922,7 +922,7 @@ describe("Init Command", () => {
     it("should work without starter pack options (existing behavior)", async () => {
       mockDirManager.isInitialized.mockReturnValue(false);
       mockProjectDetector.detect.mockResolvedValue({
-        type: "web",
+        type: "javascript",
         suggestedModes: ["engineer"],
         suggestedWorkflows: ["review"],
         files: [],
@@ -950,7 +950,7 @@ describe("Init Command", () => {
     it("should prioritize CLI flags over starter pack in combined usage", async () => {
       mockDirManager.isInitialized.mockReturnValue(false);
       mockProjectDetector.detect.mockResolvedValue({
-        type: "web",
+        type: "javascript",
         suggestedModes: [],
         suggestedWorkflows: [],
         files: [],

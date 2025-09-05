@@ -47,6 +47,29 @@ export class PackRegistry {
     logger.debug(`Registered pack source: ${name}`);
   }
 
+
+  /**
+   * Get a pack source by name
+   */
+  getSource(name: string): IPackSource | undefined {
+    return this.sources.get(name);
+  }
+
+  /**
+   * Get the default local pack source
+   */
+  getDefaultSource(): IPackSource {
+    const defaultSource = this.sources.get('local');
+    if (!defaultSource) {
+      throw new ZccError(
+        'Default pack source not found',
+        'SOURCE_NOT_FOUND',
+        'The default local pack source was not properly initialized'
+      );
+    }
+    return defaultSource;
+  }
+
   /**
    * List all available packs from all sources
    */
@@ -324,6 +347,7 @@ export class PackRegistry {
     logger.debug('Cleared pack cache');
   }
 
+
   /**
    * Get registry statistics
    */
@@ -352,4 +376,5 @@ export class PackRegistry {
       authorCounts,
     };
   }
+
 }

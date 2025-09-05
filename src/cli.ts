@@ -9,6 +9,8 @@ import { createUpdateCommand } from "./commands/update";
 import { upsertCommand } from "./commands/upsert";
 import { hookCommand } from "./commands/hook";
 import { acronymCommand } from "./commands/acronym";
+import { createCommand } from "./commands/create";
+import { editCommand } from "./commands/edit";
 import { logger } from "./lib/logger";
 import { handleError } from "./lib/errors";
 
@@ -35,6 +37,9 @@ Examples:
   $ zcc update                 # Explicitly update components
   $ zcc add mode architect     # Add the architect mode
   $ zcc add workflow review    # Add the code review workflow
+  $ zcc create mode my-custom  # Create a new custom mode interactively
+  $ zcc create workflow --from review custom-review  # Clone review workflow
+  $ zcc edit mode my-custom    # Edit a component in your editor
   $ zcc ticket create "auth"   # Create a ticket for authentication work
   $ zcc list --installed       # Show installed components
 
@@ -67,6 +72,8 @@ program.addCommand(createUpdateCommand());
 program.addCommand(upsertCommand);
 program.addCommand(hookCommand);
 program.addCommand(acronymCommand);
+program.addCommand(createCommand);
+program.addCommand(editCommand);
 
 // Global error handling
 process.on("unhandledRejection", (error) => {

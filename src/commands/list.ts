@@ -1,8 +1,42 @@
 import { Command } from 'commander';
-import { ZccCore } from '../lib/ZccCore';
+import { ZccCore, ComponentResolutionResult } from '../lib/ZccCore';
 import { ComponentInfo } from '../lib/ZccScope';
 import { logger } from '../lib/logger';
 import chalk from 'chalk';
+
+type ZccStatus = {
+  builtin: {
+    available: boolean;
+    path: string;
+    components: number;
+  };
+  global: {
+    exists: boolean;
+    path: string;
+    components: number;
+    hasConfig: boolean;
+  };
+  project: {
+    exists: boolean;
+    path: string;
+    components: number;
+    hasConfig: boolean;
+  };
+  totalComponents: number;
+  uniqueComponents: number;
+};
+
+// ComponentResolutionResult is imported from ZccCore
+
+type ComponentsByType = {
+  modes: ComponentResolutionResult[];
+  workflows: ComponentResolutionResult[];
+  scripts: ComponentResolutionResult[];
+  hooks: ComponentResolutionResult[];
+  agents: ComponentResolutionResult[];
+  commands: ComponentResolutionResult[];
+  templates: ComponentResolutionResult[];
+};
 
 export const listCommand = new Command('list')
   .description('List components across all scopes (built-in, global, project)')
@@ -57,7 +91,7 @@ export const listCommand = new Command('list')
 /**
  * Show status summary of all scopes
  */
-async function showStatusSummary(status: any): Promise<void> {
+async function showStatusSummary(status: ZccStatus): Promise<void> {
   logger.info(chalk.bold('zcc Status:'));
   logger.info('');
   
@@ -87,7 +121,7 @@ async function showStatusSummary(status: any): Promise<void> {
  * Show components organized by type
  */
 async function showComponents(
-  componentsByType: any,
+  componentsByType: ComponentsByType,
   options: {
     typeFilter?: string;
     scopeFilter?: string;
@@ -104,11 +138,11 @@ async function showComponents(
   let hasAnyComponents = false;
   
   for (const typeKey of typesToShow) {
-    const components = componentsByType[typeKey] || [];
+    const components = componentsByType[typeKey as keyof ComponentsByType] || [];
     
     // Apply scope filter
     const filteredComponents = scopeFilter
-      ? components.filter((comp: any) => comp.source === scopeFilter)
+      ? components.filter((comp: ComponentResolutionResult) => comp.source === scopeFilter)
       : components;
     
     if (filteredComponents.length === 0) continue;
@@ -165,7 +199,7 @@ async function showComponents(
  * Show only components that have conflicts (exist in multiple scopes)
  */
 async function showConflictingComponents(
-  componentsByType: any,
+  componentsByType: ComponentsByType,
   verbose: boolean
 ): Promise<void> {
   logger.info(chalk.bold('Components with conflicts:'));
@@ -174,15 +208,15 @@ async function showConflictingComponents(
   let hasConflicts = false;
   
   // Group all components by name and type to find conflicts
-  const componentGroups = new Map<string, any[]>();
+  const componentGroups = new Map<string, ComponentResolutionResult[]>();
   
-  for (const [typeKey, components] of Object.entries(componentsByType)) {
-    for (const comp of components as any[]) {
+  for (const [, components] of Object.entries(componentsByType)) {
+    for (const comp of components as ComponentResolutionResult[]) {
       const key = `${comp.component.type}:${comp.component.name}`;
       if (!componentGroups.has(key)) {
         componentGroups.set(key, []);
       }
-      componentGroups.get(key)!.push({ ...comp, typeKey });
+      componentGroups.get(key)!.push(comp);
     }
   }
   

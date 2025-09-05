@@ -5,7 +5,7 @@
 
 import { logger } from "../logger";
 import { ZccError } from "../errors";
-import { execSync } from "child_process";
+import { execa } from "execa";
 
 export interface ToolDependency {
   readonly name: string;
@@ -223,17 +223,42 @@ export class ToolDependencyChecker {
   }
 
   /**
+   * Whitelist of allowed commands for security
+   * SECURITY: Only these exact commands are allowed to prevent command injection
+   */
+  private readonly ALLOWED_COMMANDS = new Set([
+    'ast-grep --version',
+    'npx --no-install @ast-grep/cli --version',
+    'rg --version'
+  ]);
+
+  /**
    * Check if a command is available and get its version
+   * SECURITY: Uses strict whitelist to prevent command injection attacks
    */
   private async checkCommand(command: string): Promise<string> {
+    // SECURITY CRITICAL: Strict whitelist validation
+    if (!this.ALLOWED_COMMANDS.has(command)) {
+      throw new ZccError(
+        `Command '${command}' not allowed for security reasons`,
+        'TOOL_CHECK_SECURITY_ERROR',
+        `Only whitelisted commands are allowed. Blocked: ${command}`
+      );
+    }
+
     try {
-      const output = execSync(command, { 
-        encoding: 'utf-8', 
-        stdio: ['pipe', 'pipe', 'pipe'],
-        timeout: 5000 
+      // Parse command into parts for execa
+      const commandParts = command.split(' ');
+      const cmd = commandParts[0];
+      const args = commandParts.slice(1);
+
+      const result = await execa(cmd, args, {
+        timeout: 5000,
+        stripFinalNewline: true,
       });
       
       // Extract version from output (first line, first version-like string)
+      const output = result.stdout;
       const match = output.match(/(\d+\.\d+\.\d+[^\s]*)/);
       return match ? match[1] : output.trim().split('\n')[0];
     } catch (error) {

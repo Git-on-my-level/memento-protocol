@@ -100,7 +100,7 @@ export class StarterPackManager {
   }
 
   /**
-   * Install a starter pack
+   * Install a starter pack with iterative dependency resolution to prevent stack overflow
    */
   async installPack(
     packName: string,
@@ -109,48 +109,7 @@ export class StarterPackManager {
     await this.initialize();
 
     try {
-      // Load the pack
-      const packStructure = await this.registry.loadPack(packName);
-      const source = this.registry['sources'].get('local')!; // Get local source
-
-      // Validate the pack
-      const validation = await this.validator.validatePackStructure(packStructure, source);
-      if (!validation.valid) {
-        return {
-          success: false,
-          installed: { modes: [], workflows: [], agents: [], hooks: [] },
-          skipped: { modes: [], workflows: [], agents: [], hooks: [] },
-          errors: validation.errors,
-        };
-      }
-
-      // Check dependencies
-      const dependencies = await this.registry.resolveDependencies(packName);
-      if (dependencies.missing.length > 0 || dependencies.circular.length > 0) {
-        const errors = [
-          ...dependencies.missing.map(dep => `Dependency '${dep}' not found`),
-          ...dependencies.circular.map(dep => `Circular dependency: ${dep}`),
-        ];
-        
-        return {
-          success: false,
-          installed: { modes: [], workflows: [], agents: [], hooks: [] },
-          skipped: { modes: [], workflows: [], agents: [], hooks: [] },
-          errors,
-        };
-      }
-
-      // Install dependencies first
-      for (const depName of dependencies.resolved) {
-        const depResult = await this.installPack(depName, { ...options, skipOptional: false });
-        if (!depResult.success) {
-          logger.warn(`Failed to install dependency '${depName}', continuing anyway`);
-        }
-      }
-
-      // Install the pack itself
-      return this.installer.installPack(packStructure, source, options);
-
+      return await this.installPackWithQueue(packName, options);
     } catch (error) {
       logger.error(`Failed to install pack '${packName}': ${error}`);
       
@@ -161,6 +120,198 @@ export class StarterPackManager {
         errors: [`Installation failed: ${error}`],
       };
     }
+  }
+
+  /**
+   * Install a pack directly without processing dependencies
+   * This method prevents circular dependency issues
+   */
+  async installPackDirect(
+    packName: string,
+    options: PackInstallOptions = {}
+  ): Promise<PackInstallationResult> {
+    await this.initialize();
+
+    try {
+      logger.debug(`Installing pack '${packName}' directly (no dependencies)`);
+      
+      // Load the pack
+      const packStructure = await this.registry.loadPack(packName);
+      const source = this.registry.getDefaultSource(); // Get default local source
+
+      // Validate the pack
+      const validation = await this.validator.validatePackStructure(packStructure, source);
+      if (!validation.valid) {
+        logger.warn(`Pack '${packName}' failed validation: ${validation.errors.join(', ')}`);
+        return {
+          success: false,
+          installed: { modes: [], workflows: [], agents: [], hooks: [] },
+          skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+          errors: validation.errors,
+        };
+      }
+
+      // Install the pack itself (no dependency processing)
+      return this.installer.installPack(packStructure, source, options);
+
+    } catch (error) {
+      logger.error(`Failed to install pack '${packName}' directly: ${error}`);
+      
+      return {
+        success: false,
+        installed: { modes: [], workflows: [], agents: [], hooks: [] },
+        skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+        errors: [`Direct installation failed: ${error}`],
+      };
+    }
+  }
+
+  /**
+   * Install a pack using iterative queue-based dependency resolution
+   * This prevents stack overflow from deep dependency chains
+   */
+  private async installPackWithQueue(
+    rootPackName: string,
+    options: PackInstallOptions = {}
+  ): Promise<PackInstallationResult> {
+    const MAX_RETRIES = 3;
+    const installQueue: string[] = [rootPackName];
+    const installedPacks = new Set<string>();
+    const failedPacks = new Set<string>();
+    const retryCount = new Map<string, number>();
+    
+    let rootResult: PackInstallationResult = {
+      success: false,
+      installed: { modes: [], workflows: [], agents: [], hooks: [] },
+      skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+      errors: [],
+    };
+
+    logger.debug(`Starting queue-based installation for '${rootPackName}'`);
+    logger.debug(`Install queue: [${installQueue.join(', ')}]`);
+
+    while (installQueue.length > 0) {
+      const currentPack = installQueue.shift()!;
+      
+      // Skip if already installed or failed
+      if (installedPacks.has(currentPack) || failedPacks.has(currentPack)) {
+        logger.debug(`Skipping '${currentPack}' (already processed)`);
+        continue;
+      }
+
+      logger.debug(`Processing pack '${currentPack}' from queue`);
+
+      try {
+        // Check dependencies first
+        const dependencies = await this.registry.resolveDependencies(currentPack);
+        
+        // Handle missing and circular dependencies
+        if (dependencies.missing.length > 0 || dependencies.circular.length > 0) {
+          const errors = [
+            ...dependencies.missing.map(dep => `Dependency '${dep}' not found`),
+            ...dependencies.circular.map(dep => `Circular dependency: ${dep}`),
+          ];
+          
+          logger.warn(`Pack '${currentPack}' has dependency issues: ${errors.join(', ')}`);
+          
+          if (currentPack === rootPackName) {
+            return {
+              success: false,
+              installed: { modes: [], workflows: [], agents: [], hooks: [] },
+              skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+              errors,
+            };
+          }
+          
+          failedPacks.add(currentPack);
+          continue;
+        }
+
+        // Add uninstalled dependencies to queue (at the front for topological order)
+        const uninstalledDeps = dependencies.resolved.filter(dep => 
+          !installedPacks.has(dep) && !failedPacks.has(dep)
+        );
+        
+        if (uninstalledDeps.length > 0) {
+          logger.debug(`Adding dependencies to front of queue for '${currentPack}': [${uninstalledDeps.join(', ')}]`);
+          // Add dependencies to the front of the queue
+          installQueue.unshift(...uninstalledDeps);
+          // Re-queue current pack after its dependencies
+          installQueue.push(currentPack);
+          continue;
+        }
+
+        // All dependencies satisfied, install the pack
+        const installResult = await this.installPackDirect(currentPack, options);
+        
+        if (installResult.success) {
+          logger.debug(`Successfully installed pack '${currentPack}'`);
+          installedPacks.add(currentPack);
+          
+          // If this is the root pack, store the result
+          if (currentPack === rootPackName) {
+            rootResult = installResult;
+          }
+        } else {
+          const currentRetries = retryCount.get(currentPack) || 0;
+          
+          if (currentRetries < MAX_RETRIES) {
+            logger.warn(`Pack '${currentPack}' installation failed (attempt ${currentRetries + 1}/${MAX_RETRIES}), retrying`);
+            retryCount.set(currentPack, currentRetries + 1);
+            // Re-queue for retry
+            installQueue.push(currentPack);
+          } else {
+            logger.error(`Pack '${currentPack}' failed after ${MAX_RETRIES} attempts: ${installResult.errors.join(', ')}`);
+            failedPacks.add(currentPack);
+            
+            // If root pack fails, return failure
+            if (currentPack === rootPackName) {
+              return {
+                success: false,
+                installed: { modes: [], workflows: [], agents: [], hooks: [] },
+                skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+                errors: [`Failed to install '${currentPack}' after ${MAX_RETRIES} attempts`, ...installResult.errors],
+              };
+            }
+          }
+        }
+
+      } catch (error) {
+        const currentRetries = retryCount.get(currentPack) || 0;
+        
+        if (currentRetries < MAX_RETRIES) {
+          logger.warn(`Pack '${currentPack}' threw exception (attempt ${currentRetries + 1}/${MAX_RETRIES}), retrying: ${error}`);
+          retryCount.set(currentPack, currentRetries + 1);
+          installQueue.push(currentPack);
+        } else {
+          logger.error(`Pack '${currentPack}' threw exception after ${MAX_RETRIES} attempts: ${error}`);
+          failedPacks.add(currentPack);
+          
+          if (currentPack === rootPackName) {
+            return {
+              success: false,
+              installed: { modes: [], workflows: [], agents: [], hooks: [] },
+              skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+              errors: [`Exception installing '${currentPack}' after ${MAX_RETRIES} attempts: ${error}`],
+            };
+          }
+        }
+      }
+    }
+
+    logger.debug(`Queue-based installation completed. Installed: [${Array.from(installedPacks).join(', ')}], Failed: [${Array.from(failedPacks).join(', ')}]`);
+
+    // Return the root pack result
+    if (!installedPacks.has(rootPackName)) {
+      return {
+        success: false,
+        installed: { modes: [], workflows: [], agents: [], hooks: [] },
+        skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+        errors: [`Root pack '${rootPackName}' was not successfully installed`],
+      };
+    }
+
+    return rootResult;
   }
 
   /**

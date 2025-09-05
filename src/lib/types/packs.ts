@@ -132,10 +132,10 @@ export interface PackConflictResolution {
   readonly skip: boolean;
 }
 
-// Registry and source interfaces
+// Registry and source interfaces (simplified for 1.0)
 export interface PackSource {
   readonly name: string;
-  readonly type: 'local' | 'remote' | 'registry';
+  readonly type: 'local';
 }
 
 export interface LocalPackSource extends PackSource {
@@ -143,15 +143,6 @@ export interface LocalPackSource extends PackSource {
   readonly path: string;
 }
 
-export interface RemotePackSource extends PackSource {
-  readonly type: 'remote';
-  readonly url: string;
-}
-
-export interface RegistryPackSource extends PackSource {
-  readonly type: 'registry';
-  readonly registry: string;
-}
 
 // Error types for better error handling
 export interface PackError {

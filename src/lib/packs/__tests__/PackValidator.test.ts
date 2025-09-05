@@ -105,7 +105,21 @@ describe("PackValidator", () => {
 
       expect(result.valid).toBe(false);
       expect(result.errors.some(error => 
-        error.includes('name') && error.includes('lowercase')
+        error.includes('must match pattern') && error.includes('[a-z0-9-]')
+      )).toBe(true);
+    });
+
+    it("should reject manifest with unsafe filename characters", async () => {
+      const invalidManifest: PackManifest = {
+        ...validManifest,
+        name: "pack<>|\"/name"
+      };
+
+      const result = await validator.validateManifest(invalidManifest);
+
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(error => 
+        error.includes('invalid characters')
       )).toBe(true);
     });
 

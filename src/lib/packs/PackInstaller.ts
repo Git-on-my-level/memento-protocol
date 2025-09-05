@@ -28,7 +28,6 @@ export class PackInstaller {
 
   constructor(projectRoot: string, fs?: FileSystemAdapter) {
     this.fs = fs || new NodeFileSystemAdapter();
-    // this._projectRoot = projectRoot; // TODO: store for future use
     this.directoryManager = new DirectoryManager(projectRoot);
     this.zccDir = this.fs.join(projectRoot, '.zcc');
     this.claudeDir = this.fs.join(projectRoot, '.claude');
@@ -139,20 +138,69 @@ export class PackInstaller {
       };
     }
 
-    // TODO: Implement actual uninstallation logic
-    // This would involve:
-    // 1. Loading the pack manifest to know what components to remove
-    // 2. Removing component files from .zcc directories
-    // 3. Removing agents from .claude directory
-    // 4. Cleaning up configuration
-    // 5. Updating project manifest
+    // Track removal results
+    const removed = { modes: [] as string[], workflows: [] as string[], agents: [] as string[], hooks: [] as string[] };
+    const skipped = { modes: [] as string[], workflows: [] as string[], agents: [] as string[], hooks: [] as string[] };
+    const errors: string[] = [];
 
-    return {
-      success: true,
-      installed: { modes: [], workflows: [], agents: [], hooks: [] },
-      skipped: { modes: [], workflows: [], agents: [], hooks: [] },
-      errors: [],
-    };
+    try {
+      // Load the pack manifest from the installed source to know what components to remove
+      // For now, we'll attempt to remove based on common patterns since we don't store
+      // the original manifest. In a future enhancement, we could store the manifest
+      // during installation for precise removal.
+      
+      // Try to load pack manifest from the source if still available
+      let packManifest: PackStructure['manifest'] | null = null;
+      try {
+        // This is a fallback approach - try to reconstruct what was installed
+        // by examining the installed files and project manifest
+        packManifest = await this.reconstructPackManifest(packName, packInfo);
+      } catch (error) {
+        logger.debug(`Could not reconstruct pack manifest for '${packName}': ${error}`);
+        // Continue with file-based cleanup approach
+      }
+
+      // Remove components by type
+      if (packManifest) {
+        // If we have the manifest, use it for precise removal
+        await this.removeComponentsFromManifest(packManifest, removed, skipped, errors);
+      } else {
+        // Fallback: scan and remove files that might belong to this pack
+        logger.debug(`Using fallback file-based removal for pack '${packName}'`);
+        await this.removeComponentsByScanning(packName, removed, skipped, errors);
+      }
+
+      // Clean up pack-specific configuration
+      await this.cleanupPackConfiguration(packName, packManifest, errors);
+
+      // Update project manifest to remove this pack
+      await this.removeFromProjectManifest(packName);
+
+      const success = errors.length === 0;
+      
+      if (success) {
+        logger.info(`Successfully uninstalled starter pack '${packName}'`);
+      } else {
+        logger.warn(`Pack uninstallation completed with ${errors.length} errors`);
+      }
+
+      return {
+        success,
+        installed: removed as PackInstallationResult['installed'],
+        skipped: skipped as PackInstallationResult['skipped'],
+        errors: errors as readonly string[],
+      };
+
+    } catch (error) {
+      logger.error(`Failed to uninstall pack '${packName}': ${error}`);
+      
+      return {
+        success: false,
+        installed: removed as PackInstallationResult['installed'],
+        skipped: skipped as PackInstallationResult['skipped'],
+        errors: [...errors, `Uninstallation failed: ${error}`] as readonly string[],
+      };
+    }
   }
 
   /**
@@ -286,20 +334,26 @@ export class PackInstaller {
 
   /**
    * Run post-install actions
+   * 
+   * SECURITY: Post-install command execution is disabled to prevent RCE vulnerabilities.
+   * Untrusted starter pack manifests could contain malicious commands.
    */
   private async runPostInstall(manifest: PackStructure['manifest']): Promise<void> {
     if (!manifest.postInstall?.commands) {
       return;
     }
 
-    logger.debug('Running post-install commands');
+    // SECURITY CRITICAL: Command execution completely disabled
+    logger.warn('⚠️  SECURITY: Post-install commands detected but disabled for security');
+    logger.warn('⚠️  Post-install commands could allow arbitrary code execution from untrusted sources');
+    logger.warn('⚠️  Found commands in manifest but they will NOT be executed:');
     
     for (const command of manifest.postInstall.commands) {
-      logger.debug(`Running: ${command}`);
-      // TODO: Implement safe command execution
-      // This would need to use a secure command runner that validates commands
-      // against a whitelist and runs them in a restricted environment
+      logger.warn(`⚠️    - ${command}`);
     }
+    
+    logger.warn('⚠️  If you trust this pack and need these commands, run them manually');
+    logger.warn('⚠️  Never run commands from untrusted starter packs');
   }
 
   /**
@@ -483,5 +537,244 @@ export class PackInstaller {
     }
 
     return toolDependencies;
+  }
+
+  /**
+   * Attempt to reconstruct pack manifest from installed pack info
+   */
+  private async reconstructPackManifest(
+    packName: string, 
+    packInfo: ProjectPackManifest['packs'][string]
+  ): Promise<PackStructure['manifest'] | null> {
+    // Try to load the manifest from the original source if it's still available
+    // This is a best-effort approach
+    
+    if (packInfo.source.type === 'local') {
+      const localSource = packInfo.source as any;
+      if (localSource.path) {
+        const manifestPath = this.fs.join(localSource.path, packName, 'manifest.json');
+        if (await this.fs.exists(manifestPath)) {
+          const content = await this.fs.readFile(manifestPath, 'utf-8');
+          return JSON.parse(content as string);
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Remove components based on pack manifest
+   */
+  private async removeComponentsFromManifest(
+    manifest: PackStructure['manifest'],
+    removed: PackInstallationResult['installed'],
+    skipped: PackInstallationResult['skipped'], 
+    errors: string[]
+  ): Promise<void> {
+    const componentTypes = ['modes', 'workflows', 'agents', 'hooks'] as const;
+
+    for (const componentType of componentTypes) {
+      const components = manifest.components[componentType];
+      if (!components || components.length === 0) {
+        continue;
+      }
+
+      logger.debug(`Removing ${components.length} ${componentType}`);
+
+      for (const component of components) {
+        try {
+          const success = await this.removeComponent(componentType, component.name);
+          if (success) {
+            (removed[componentType] as string[]).push(component.name);
+            logger.debug(`Removed ${componentType.slice(0, -1)} '${component.name}'`);
+          } else {
+            (skipped[componentType] as string[]).push(component.name);
+            logger.debug(`Skipped ${componentType.slice(0, -1)} '${component.name}' (not found)`);
+          }
+        } catch (error) {
+          errors.push(`Failed to remove ${componentType.slice(0, -1)} '${component.name}': ${error}`);
+        }
+      }
+    }
+  }
+
+  /**
+   * Remove components by scanning directories (fallback approach)
+   */
+  private async removeComponentsByScanning(
+    packName: string,
+    _removed: PackInstallationResult['installed'],
+    skipped: PackInstallationResult['skipped'],
+    errors: string[]
+  ): Promise<void> {
+    const componentTypes = ['modes', 'workflows', 'hooks'] as const;
+    
+    // For file-based removal, we'll look for files that might belong to the pack
+    // This is less precise but provides a fallback when manifest is unavailable
+    
+    for (const componentType of componentTypes) {
+      const componentDir = this.fs.join(this.zccDir, componentType);
+      
+      if (await this.fs.exists(componentDir)) {
+        try {
+          const files = await this.fs.readdir(componentDir);
+          
+          for (const file of files) {
+            if (file.endsWith('.md')) {
+              const componentName = file.replace('.md', '');
+              // Note: Without the original manifest, we can't know for sure
+              // which components belonged to which pack, so we skip automatic
+              // removal in scanning mode to avoid removing user-customized components
+              (skipped[componentType] as string[]).push(componentName);
+              logger.debug(`Skipped ${componentType.slice(0, -1)} '${componentName}' (scanning mode - manual verification required)`);
+            }
+          }
+        } catch (error) {
+          errors.push(`Failed to scan ${componentType} directory: ${error}`);
+        }
+      }
+    }
+
+    // Handle agents separately (they're in .claude directory)
+    const agentsDir = this.fs.join(this.claudeDir, 'agents');
+    if (await this.fs.exists(agentsDir)) {
+      try {
+        const files = await this.fs.readdir(agentsDir);
+        
+        for (const file of files) {
+          if (file.endsWith('.md')) {
+            const componentName = file.replace('.md', '');
+            (skipped.agents as string[]).push(componentName);
+            logger.debug(`Skipped agent '${componentName}' (scanning mode - manual verification required)`);
+          }
+        }
+      } catch (error) {
+        errors.push(`Failed to scan agents directory: ${error}`);
+      }
+    }
+
+    // Add a helpful error message for scanning mode
+    if (skipped.modes.length > 0 || skipped.workflows.length > 0 || skipped.agents.length > 0 || skipped.hooks.length > 0) {
+      errors.push(
+        `Pack manifest not available - automatic component removal disabled. ` +
+        `Please manually remove components that belonged to pack '${packName}' if needed.`
+      );
+    }
+  }
+
+  /**
+   * Remove a single component
+   */
+  private async removeComponent(
+    componentType: 'modes' | 'workflows' | 'agents' | 'hooks',
+    componentName: string
+  ): Promise<boolean> {
+    let targetPath: string;
+    
+    if (componentType === 'agents') {
+      // Agents are in .claude directory
+      targetPath = this.fs.join(this.claudeDir, 'agents', `${componentName}.md`);
+    } else {
+      // Other components are in .zcc directory
+      targetPath = this.fs.join(this.zccDir, componentType, `${componentName}.md`);
+    }
+
+    if (await this.fs.exists(targetPath)) {
+      try {
+        await this.fs.unlink(targetPath);
+        return true;
+      } catch (error) {
+        throw new ZccError(
+          `Failed to remove ${componentType.slice(0, -1)} '${componentName}'`,
+          'COMPONENT_REMOVAL_ERROR',
+          `Error: ${error}`
+        );
+      }
+    }
+
+    return false; // File didn't exist
+  }
+
+  /**
+   * Clean up pack-specific configuration
+   */
+  private async cleanupPackConfiguration(
+    packName: string,
+    manifest: PackStructure['manifest'] | null,
+    errors: string[]
+  ): Promise<void> {
+    try {
+      const configPath = this.fs.join(this.zccDir, 'config.json');
+      
+      if (!await this.fs.exists(configPath)) {
+        return; // No config to clean up
+      }
+
+      // Load existing config
+      const configContent = await this.fs.readFile(configPath, 'utf-8');
+      const config = JSON.parse(configContent as string);
+
+      // If we have the manifest, we can clean up specific settings that were added by this pack
+      if (manifest && manifest.configuration) {
+        let configChanged = false;
+
+        // Reset default mode if it was set by this pack
+        if (manifest.configuration.defaultMode && config.defaultMode === manifest.configuration.defaultMode) {
+          delete config.defaultMode;
+          configChanged = true;
+          logger.debug(`Removed default mode setting from pack '${packName}'`);
+        }
+
+        // Remove pack-specific settings
+        if (manifest.configuration.projectSettings) {
+          for (const key of Object.keys(manifest.configuration.projectSettings)) {
+            if (key in config) {
+              delete config[key];
+              configChanged = true;
+              logger.debug(`Removed config setting '${key}' from pack '${packName}'`);
+            }
+          }
+        }
+
+        // Write updated config if changes were made
+        if (configChanged) {
+          await this.fs.writeFile(configPath, JSON.stringify(config, null, 2));
+          logger.debug(`Updated project configuration after removing pack '${packName}'`);
+        }
+      } else {
+        logger.debug(`Pack manifest not available - skipping configuration cleanup for '${packName}'`);
+      }
+
+    } catch (error) {
+      errors.push(`Failed to clean up configuration for pack '${packName}': ${error}`);
+    }
+  }
+
+  /**
+   * Remove pack from project manifest
+   */
+  private async removeFromProjectManifest(packName: string): Promise<void> {
+    const manifestPath = this.fs.join(this.zccDir, 'packs.json');
+    
+    if (!await this.fs.exists(manifestPath)) {
+      return; // No manifest to update
+    }
+
+    try {
+      const content = await this.fs.readFile(manifestPath, 'utf-8');
+      const projectManifest = JSON.parse(content as string) as ProjectPackManifest;
+
+      // Remove the pack from the manifest
+      delete projectManifest.packs[packName];
+
+      // Save updated manifest
+      await this.fs.writeFile(manifestPath, JSON.stringify(projectManifest, null, 2));
+      logger.debug(`Removed pack '${packName}' from project manifest`);
+
+    } catch (error) {
+      logger.warn(`Error updating project manifest after removing pack '${packName}': ${error}`);
+      throw error;
+    }
   }
 }

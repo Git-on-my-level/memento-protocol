@@ -2,8 +2,8 @@ import { logger } from './logger';
 import { FileSystemAdapter, NodeFileSystemAdapter } from './adapters';
 
 export interface ProjectInfo {
-  type: 'typescript' | 'javascript' | 'go' | 'unknown' | 'web' | 'backend' | 'fullstack' | 'cli' | 'library';
-  framework?: 'react' | 'express' | 'gin' | 'vanilla' | 'vue' | 'angular' | 'nextjs' | 'nuxt';
+  type: 'typescript' | 'javascript' | 'go' | 'unknown';
+  framework?: 'react' | 'express' | 'gin' | 'vanilla';
   suggestedModes: string[];
   suggestedWorkflows: string[];
   files: string[];

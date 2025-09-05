@@ -3,6 +3,7 @@ module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
   testMatch: ['**/__tests__/**/*.ts', '**/*.test.ts', '**/*.spec.ts'],
+  testPathIgnorePatterns: ['.*\\.helper\\.ts$'],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
@@ -20,6 +21,7 @@ module.exports = {
   coverageDirectory: '<rootDir>/coverage',
   coverageReporters: ['text', 'lcov', 'html'],
   moduleNameMapper: {
-    '^inquirer$': '<rootDir>/src/__mocks__/inquirer.ts'
+    '^inquirer$': '<rootDir>/src/__mocks__/inquirer.ts',
+    '^execa$': '<rootDir>/src/__mocks__/execa.ts'
   },
 };
