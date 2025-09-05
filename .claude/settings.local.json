@@ -35,10 +35,9 @@
       "Bash(npx zcc)",
       "Bash(rm:*)",
       "Bash(scripts/npm/commit-tag-and-publish.sh:*)",
-      "Bash(sh .zcc/scripts/mode-switch.sh)",
-      "Bash(sh .zcc/scripts/mode-switch.sh):*",
-      "Bash(sh .zcc/scripts/ticket-context.sh)",
-      "Bash(sh .zcc/scripts/ticket-context.sh):*",
+      "Bash(sh .zcc/scripts/mode-switch.sh *)",
+      "Bash(sh .zcc/scripts/ticket-context.sh *)",
+      "Bash(sh:*:*)",
       "Bash(timeout 15 npm run dev init -- --force --quick)",
       "WebFetch(domain:docs.anthropic.com)"
     ],
