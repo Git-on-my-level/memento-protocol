@@ -1,5 +1,5 @@
 #!/bin/sh
-for mode in .memento/modes/*.md; do
+for mode in .zcc/modes/*.md; do
   if [ -f "$mode" ]; then
     echo "## $(basename "$mode" .md)"
     head -3 "$mode" | tail -1

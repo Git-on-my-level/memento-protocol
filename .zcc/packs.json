@@ -1,0 +1,13 @@
+{
+  "packs": {
+    "frontend-react": {
+      "version": "1.0.0",
+      "installedAt": "2025-09-05T08:05:12.755Z",
+      "source": {
+        "name": "local",
+        "type": "local",
+        "path": "/Users/dazheng/workspace/zcc/templates/starter-packs"
+      }
+    }
+  }
+}

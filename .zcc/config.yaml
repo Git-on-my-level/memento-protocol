@@ -1,0 +1,13 @@
+defaultMode: autonomous-project-manager
+components:
+  modes:
+    - ai-debt-maintainer
+    - architect
+    - autonomous-project-manager
+    - engineer
+    - reviewer
+  workflows:
+    - openmemory-setup
+    - review
+    - summarize
+  agents: []

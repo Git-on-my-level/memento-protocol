@@ -1,6 +1,10 @@
 ---
 name: ticket-finder
 description: Find relevant tickets based on current work, files being modified, or keywords
+author: zcc
+version: 1.0.0
+tags: []
+dependencies: []
 tools: Read, Glob, Grep
 model: haiku
 ---
@@ -41,8 +45,6 @@ Find relevant tickets by analyzing:
 ```
 📋 **[STATUS] Ticket Title**
 Path: .zcc/tickets/[status]/[filename].md
-Priority: [High/Medium/Low]
-Match: [Why this ticket is relevant]
 
 Brief description of the ticket content...
 ```
@@ -69,30 +71,14 @@ Group results by:
 
 ## Response Guidelines
 
-- **Be Fast**: Quick scans using Haiku model
 - **Be Relevant**: Focus on tickets that actually relate to current context
 - **Be Organized**: Group results by relevance and status
 - **Be Actionable**: Include ticket paths for easy access
 
-## Example Queries
-
-- "Find tickets related to authentication"
-- "What tickets mention the user profile component?"
-- "Show me high-priority bugs"
-- "Find tickets I can work on next"
-
-## Quick Commands
-
-### Context Search
+## Context Search
 When no specific query is given, automatically search based on:
 - Git status and modified files
 - Current working directory
 - Recent commit messages
-
-### Status Summary
-Provide quick counts:
-- X tickets in next
-- Y tickets in progress  
-- Z tickets recently completed
 
 Always aim to help developers quickly find the tickets they need and understand how their current work relates to planned tasks.

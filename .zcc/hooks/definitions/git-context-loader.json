@@ -7,7 +7,7 @@
       "description": "Loads current git status on each user prompt",
       "event": "UserPromptSubmit",
       "enabled": true,
-      "command": "./.memento/hooks/scripts/git-context-loader.sh",
+      "command": "./.zcc/hooks/scripts/git-context-loader.sh",
       "continueOnError": true,
       "priority": 95,
       "requirements": {

@@ -36,9 +36,9 @@
       "Bash(rm:*)",
       "Bash(scripts/npm/commit-tag-and-publish.sh:*)",
       "Bash(sh .zcc/scripts/mode-switch.sh)",
-      "Bash(sh .zcc/scripts/mode-switch.sh):*",
+      "Bash(sh .zcc/scripts/mode-switch.sh:*:*)",
       "Bash(sh .zcc/scripts/ticket-context.sh)",
-      "Bash(sh .zcc/scripts/ticket-context.sh):*",
+      "Bash(sh .zcc/scripts/ticket-context.sh:*:*)",
       "Bash(timeout 15 npm run dev init -- --force --quick)",
       "WebFetch(domain:docs.anthropic.com)"
     ],
@@ -46,6 +46,16 @@
   },
   "hooks": {
     "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.zcc/hooks/scripts/zcc-routing.sh",
+            "timeout": 30
+          }
+        ]
+      },
       {
         "matcher": "*",
         "hooks": [
@@ -71,7 +81,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./.zcc/hooks/scripts/zcc-routing.sh",
+            "command": "./.memento/hooks/scripts/git-context-loader.sh",
             "timeout": 30
           }
         ]
@@ -81,7 +91,27 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./.memento/hooks/scripts/git-context-loader.sh",
+            "command": "./.zcc/hooks/scripts/acronym-expander.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.zcc/hooks/scripts/ast-grep-awareness.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.zcc/hooks/scripts/git-context-loader.sh",
             "timeout": 30
           }
         ]
@@ -94,6 +124,16 @@
           {
             "type": "command",
             "command": "./.memento/hooks/scripts/project-overview.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.zcc/hooks/scripts/project-overview.sh",
             "timeout": 30
           }
         ]
