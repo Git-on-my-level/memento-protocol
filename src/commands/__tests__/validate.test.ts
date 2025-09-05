@@ -53,7 +53,7 @@ describe('Validate Command', () => {
         await validateCommand.parseAsync(['node', 'test', 'invalid-type']);
       }).rejects.toThrow('Process.exit called');
 
-      expect(mockLogger.error).toHaveBeenCalledWith('Invalid component type: invalid-type');
+      expect(mockLogger.error).toHaveBeenCalledWith('Invalid component type: invalid-type. Valid types are: mode, workflow, agent');
     });
 
     it('should validate all components when no arguments provided', async () => {
@@ -142,7 +142,7 @@ describe('Validate Command', () => {
         await validateCommand.parseAsync(['node', 'test', 'mode', 'nonexistent']);
       }).rejects.toThrow('Process.exit called');
 
-      expect(mockLogger.error).toHaveBeenCalledWith('Component mode \'nonexistent\' not found.');
+      expect(mockLogger.error).toHaveBeenCalledWith('Component mode \'nonexistent\' not found.\n\nDid you mean one of these?\n  similar-mode\n  other-mode');
     });
   });
 });

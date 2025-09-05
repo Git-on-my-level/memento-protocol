@@ -6,6 +6,36 @@ import chalk from 'chalk';
 import inquirer from 'inquirer';
 import { validateComponent, formatValidationIssues } from '../lib/utils/componentValidator';
 
+// Custom error types for better error handling
+class ValidationError extends Error {
+  constructor(message: string, public exitCode: number = 1) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
+/**
+ * Sanitize component name input to prevent injection attacks
+ */
+function sanitizeComponentName(name: string): string {
+  if (typeof name !== 'string') {
+    throw new ValidationError('Component name must be a string');
+  }
+  
+  // Remove potentially dangerous characters while preserving valid component name characters
+  const sanitized = name.trim().replace(/[^a-zA-Z0-9\-_\.]/g, '');
+  
+  if (sanitized.length === 0) {
+    throw new ValidationError('Component name cannot be empty after sanitization');
+  }
+  
+  if (sanitized.length > 100) {
+    throw new ValidationError('Component name is too long (max 100 characters)');
+  }
+  
+  return sanitized;
+}
+
 export const validateCommand = new Command('validate')
   .description('Validate components for correctness and best practices')
   .argument('[type]', 'Component type (mode, workflow, agent) - validates all types if not specified')
@@ -21,28 +51,34 @@ export const validateCommand = new Command('validate')
       // Validate type if provided
       const validTypes: ComponentInfo['type'][] = ['mode', 'workflow', 'agent'];
       if (type && !validTypes.includes(type as ComponentInfo['type'])) {
-        logger.error(`Invalid component type: ${type}`);
-        logger.info(`Valid types are: ${validTypes.join(', ')}`);
-        process.exit(1);
+        throw new ValidationError(`Invalid component type: ${type}. Valid types are: ${validTypes.join(', ')}`);
       }
       
       const componentType = type as ComponentInfo['type'] | undefined;
       
+      // Sanitize name input if provided
+      const sanitizedName = name ? sanitizeComponentName(name) : undefined;
+      
       // Determine what to validate
-      if (!componentType && !name) {
+      if (!componentType && !sanitizedName) {
         // Validate all components
         await validateAllComponents(core, opts);
-      } else if (componentType && !name) {
+      } else if (componentType && !sanitizedName) {
         // Validate all components of a specific type
         await validateComponentsByType(core, componentType, opts);
-      } else if (name) {
+      } else if (sanitizedName) {
         // Validate specific component(s)
-        await validateSpecificComponent(core, name, componentType, opts);
+        await validateSpecificComponent(core, sanitizedName, componentType, opts);
       }
       
     } catch (error) {
-      logger.error('Failed to validate components:', error);
-      process.exit(1);
+      if (error instanceof ValidationError) {
+        logger.error(error.message);
+        process.exit(error.exitCode);
+      } else {
+        logger.error('Failed to validate components:', error);
+        process.exit(1);
+      }
     }
   });
 
@@ -93,8 +129,7 @@ async function validateAllComponents(core: ZccCore, opts: any): Promise<void> {
   const hasIssues = totalErrors > 0 || (opts.strict && totalWarnings > 0);
   if (hasIssues) {
     logger.info('');
-    logger.error('Validation completed with issues.');
-    process.exit(1);
+    throw new ValidationError('Validation completed with issues.');
   } else {
     logger.success('All components are valid!');
   }
@@ -131,8 +166,7 @@ async function validateComponentsByType(core: ZccCore, type: ComponentInfo['type
   const hasIssues = results.errors > 0 || (opts.strict && results.warnings > 0);
   if (hasIssues) {
     logger.info('');
-    logger.error(`${type.charAt(0).toUpperCase() + type.slice(1)} validation completed with issues.`);
-    process.exit(1);
+    throw new ValidationError(`${type.charAt(0).toUpperCase() + type.slice(1)} validation completed with issues.`);
   } else {
     logger.success(`All ${type}s are valid!`);
   }
@@ -161,20 +195,19 @@ async function validateSpecificComponent(
   
   if (allMatches.length === 0) {
     const typeText = type ? ` ${type}` : '';
-    logger.error(`Component${typeText} '${name}' not found.`);
+    let errorMsg = `Component${typeText} '${name}' not found.`;
     
     // Show suggestions
     if (!opts.nonInteractive) {
       const suggestions = await core.generateSuggestions(name, type || 'mode', 3);
       if (suggestions.length > 0) {
-        logger.info('');
-        logger.info('Did you mean one of these?');
+        errorMsg += '\n\nDid you mean one of these?';
         for (const suggestion of suggestions) {
-          logger.info(`  ${chalk.cyan(suggestion)}`);
+          errorMsg += `\n  ${suggestion}`;
         }
       }
     }
-    process.exit(1);
+    throw new ValidationError(errorMsg);
   }
   
   if (allMatches.length === 1) {
@@ -190,12 +223,11 @@ async function validateSpecificComponent(
       await validateSingleComponent(exactMatch, opts);
       return;
     } else {
-      logger.error(`Multiple matches found for '${name}'. In non-interactive mode, exact matches are required.`);
-      logger.info('Available matches:');
+      let errorMsg = `Multiple matches found for '${name}'. In non-interactive mode, exact matches are required.\n\nAvailable matches:`;
       allMatches.forEach(match => {
-        logger.info(`  - ${match.name} (${match.matchType} match, ${match.score}%)`);
+        errorMsg += `\n  - ${match.name} (${match.matchType} match, ${match.score}%)`;
       });
-      process.exit(1);
+      throw new ValidationError(errorMsg);
     }
   }
   
@@ -255,30 +287,37 @@ async function validateComponentsGroup(
       const hasErrors = errors > 0;
       const hasWarnings = warnings > 0;
       
-      if (result.isValid && !hasWarnings) {
+      // A component is considered "valid" if it has no errors
+      // In strict mode, warnings also make it invalid
+      const isComponentValid = !hasErrors && (!opts.strict || !hasWarnings);
+      
+      if (isComponentValid) {
         valid++;
         if (!opts.summaryOnly) {
-          logger.info(`  ${chalk.green('✓')} ${getSourceIcon(source)} ${component.name} - Valid`);
+          const status = hasWarnings ? 'Valid with warnings' : 'Valid';
+          const icon = hasWarnings ? chalk.yellow('⚠') : chalk.green('✓');
+          logger.info(`  ${icon} ${getSourceIcon(source)} ${component.name} - ${status}`);
         }
-      } else {
-        totalErrors += errors;
-        totalWarnings += warnings;
+      }
+      
+      // Always count errors and warnings for summary
+      totalErrors += errors;
+      totalWarnings += warnings;
+      
+      if (!isComponentValid && !opts.summaryOnly) {
+        const status = hasErrors ? chalk.red('✗ Invalid') : chalk.yellow('⚠ Invalid (warnings in strict mode)');
+        logger.info(`  ${status} ${getSourceIcon(source)} ${component.name}`);
         
-        if (!opts.summaryOnly) {
-          const status = hasErrors ? chalk.red('✗ Invalid') : chalk.yellow('⚠ Valid with warnings');
-          logger.info(`  ${status} ${getSourceIcon(source)} ${component.name}`);
-          
-          if (hasErrors) {
-            const errorIssues = result.issues.filter(issue => issue.type === 'error');
-            formatValidationIssues(errorIssues).forEach(error => 
-              logger.info(`    ${chalk.red(error)}`));
-          }
-          
-          if (hasWarnings && (opts.strict || !hasErrors)) {
-            const warningIssues = result.issues.filter(issue => issue.type === 'warning');
-            formatValidationIssues(warningIssues).forEach(warning => 
-              logger.info(`    ${chalk.yellow(warning)}`));
-          }
+        if (hasErrors) {
+          const errorIssues = result.issues.filter(issue => issue.type === 'error');
+          formatValidationIssues(errorIssues).forEach(error => 
+            logger.info(`    ${chalk.red(error)}`));
+        }
+        
+        if (hasWarnings && (opts.strict || !hasErrors)) {
+          const warningIssues = result.issues.filter(issue => issue.type === 'warning');
+          formatValidationIssues(warningIssues).forEach(warning => 
+            logger.info(`    ${chalk.yellow(warning)}`));
         }
       }
     } catch (error: any) {
@@ -331,12 +370,14 @@ async function validateSingleComponent(match: ComponentSearchResult, opts: any):
     
     const hasIssues = errors.length > 0 || (opts.strict && warnings.length > 0);
     if (hasIssues) {
-      process.exit(1);
+      throw new ValidationError('Component validation failed with issues.');
     }
     
   } catch (error: any) {
-    logger.error(`Validation failed: ${error.message}`);
-    process.exit(1);
+    if (error instanceof ValidationError) {
+      throw error;
+    }
+    throw new ValidationError(`Validation failed: ${error.message}`);
   }
 }
 
