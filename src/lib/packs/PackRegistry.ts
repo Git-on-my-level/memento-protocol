@@ -170,20 +170,30 @@ export class PackRegistry {
   }
 
   /**
-   * Resolve pack dependencies in installation order
+   * Resolve pack dependencies in installation order using iterative approach to prevent stack overflow
    */
   async resolveDependencies(packName: string): Promise<PackDependencyResult> {
     const resolved: string[] = [];
     const missing: string[] = [];
     const circular: string[] = [];
-    const visiting = new Set<string>();
     const visited = new Set<string>();
+    const visiting = new Set<string>();
+    
+    // Use iterative approach with explicit recursion tracking
+    const MAX_DEPTH = 50;
+    
+    const visit = async (currentPackName: string, path: string[] = []): Promise<void> => {
+      // Prevent excessive depth
+      if (path.length > MAX_DEPTH) {
+        logger.error(`Maximum dependency depth (${MAX_DEPTH}) exceeded for pack '${currentPackName}'`);
+        missing.push(currentPackName);
+        return;
+      }
 
-    const visit = async (currentPackName: string, dependencyChain: string[] = []): Promise<void> => {
       // Check for circular dependencies
       if (visiting.has(currentPackName)) {
         circular.push(currentPackName);
-        logger.warn(`Circular dependency detected: ${dependencyChain.join(' → ')} → ${currentPackName}`);
+        logger.warn(`Circular dependency detected: ${path.join(' → ')} → ${currentPackName}`);
         return;
       }
 
@@ -206,9 +216,9 @@ export class PackRegistry {
         const pack = await this.loadPack(currentPackName);
         const dependencies = pack.manifest.dependencies || [];
 
-        // Process each dependency recursively
+        // Process each dependency
         for (const dependency of dependencies) {
-          await visit(dependency, [...dependencyChain, currentPackName]);
+          await visit(dependency, [...path, currentPackName]);
         }
 
         // Mark as processed and add to resolution order
