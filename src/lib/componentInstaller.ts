@@ -188,7 +188,13 @@ export class ComponentInstaller {
       `${name}${fileExtension}`
     );
 
-    if (!(await this.fs.exists(componentPath))) {
+    // Check if component already exists in installed location (e.g., from starter packs)
+    const destType = this.mapTypeToDestination(type);
+    const destPath = this.dirManager.getComponentPath(destType, name);
+    const alreadyInstalled = await this.fs.exists(destPath);
+
+    // Only validate against templates if the component is not already installed
+    if (!alreadyInstalled && !(await this.fs.exists(componentPath))) {
       throw new Error(`Component ${type} '${name}' not found in templates`);
     }
 
@@ -203,8 +209,22 @@ export class ComponentInstaller {
     }
 
     // Check dependencies using frontmatter parsing
-    const componentMetadata = await this.parseTemplateFrontmatter(componentPath);
-    const component = componentMetadata;
+    // Skip dependency checking if component is already installed to avoid path issues
+    let component: ComponentMetadata | null = null;
+    if (!alreadyInstalled) {
+      const componentMetadata = await this.parseTemplateFrontmatter(componentPath);
+      component = componentMetadata;
+    } else {
+      // For already installed components, try to read from installed location
+      try {
+        const componentMetadata = await this.parseTemplateFrontmatter(destPath);
+        component = componentMetadata;
+      } catch (error) {
+        // If we can't read frontmatter from installed component, skip dependency checking
+        logger.debug(`Could not parse frontmatter from installed component ${destPath}: ${error}`);
+        component = null;
+      }
+    }
 
     if (this.typeRegistry.supportsDependencies(type) && component?.dependencies && component.dependencies.length > 0) {
       for (const dep of component.dependencies) {
@@ -215,13 +235,13 @@ export class ComponentInstaller {
       }
     }
 
-    // Copy component file
-    const content = await this.fs.readFile(componentPath, "utf-8") as string;
-    const destType = this.mapTypeToDestination(type);
-    const destPath = this.dirManager.getComponentPath(destType, name);
-
-    // WARNING: This writeFile will OVERWRITE any existing custom component if force=true
-    await this.fs.writeFile(destPath, content);
+    // Copy component file if it's not already installed or if we're forcing
+    if (!alreadyInstalled || force) {
+      const content = await this.fs.readFile(componentPath, "utf-8") as string;
+      
+      // WARNING: This writeFile will OVERWRITE any existing custom component if force=true
+      await this.fs.writeFile(destPath, content);
+    }
 
     // Reload manifest to get any updates from dependency installation
     manifest = await this.dirManager.getManifest();
@@ -318,9 +338,12 @@ export class ComponentInstaller {
     const missing: { component: string; dependencies: string[] }[] = [];
 
     // Check workflow dependencies
-    const workflowsPath = this.fs.join(this.templatesDir, "workflows");
     for (const workflow of manifest.components.workflows) {
-      const workflowPath = this.fs.join(workflowsPath, `${workflow}.md`);
+      // First try installed location, then template location
+      const installedPath = this.dirManager.getComponentPath("workflows", workflow);
+      const templatePath = this.fs.join(this.templatesDir, "workflows", `${workflow}.md`);
+      const workflowPath = (await this.fs.exists(installedPath)) ? installedPath : templatePath;
+      
       const meta = await this.parseTemplateFrontmatter(workflowPath);
       
       if (meta?.dependencies && meta.dependencies.length > 0) {
@@ -339,9 +362,12 @@ export class ComponentInstaller {
 
     // Check agent dependencies (though agents typically don't have dependencies)
     if (manifest.components.agents) {
-      const agentsPath = this.fs.join(this.templatesDir, "agents");
       for (const agent of manifest.components.agents) {
-        const agentPath = this.fs.join(agentsPath, `${agent}.md`);
+        // First try installed location (.claude/agents), then template location
+        const installedPath = this.fs.join(process.cwd(), '.claude', 'agents', `${agent}.md`);
+        const templatePath = this.fs.join(this.templatesDir, "agents", `${agent}.md`);
+        const agentPath = (await this.fs.exists(installedPath)) ? installedPath : templatePath;
+        
         const meta = await this.parseTemplateFrontmatter(agentPath);
         
         if (meta?.dependencies && meta.dependencies.length > 0) {

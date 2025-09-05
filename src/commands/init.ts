@@ -235,12 +235,11 @@ export const initCommand = new Command("init")
           selectedWorkflows = nonInteractiveOpts.workflows || [];
           selectedHooks = nonInteractiveOpts.hooks || [];
           
-          // Add components from starter pack if we have one
-          if (packResult) {
-            selectedModes.push(...packResult.installed.modes.filter(mode => !selectedModes.includes(mode)));
-            selectedWorkflows.push(...packResult.installed.workflows.filter(workflow => !selectedWorkflows.includes(workflow)));
-            // Note: agents are handled differently - they're installed directly by the pack
-          }
+          // Note: Pack components are already installed by the starter pack installer,
+          // so we don't need to add them to selectedModes/selectedWorkflows.
+          // The applySetup method would try to install them again using the regular
+          // ComponentInstaller which looks in templates/, but pack components
+          // are only available in the pack's components/ directory.
         } else if (options.allRecommended) {
           selectedModes = projectInfo.suggestedModes;
           selectedWorkflows = projectInfo.suggestedWorkflows;
