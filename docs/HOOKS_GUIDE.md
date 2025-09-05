@@ -1,6 +1,6 @@
 # Claude Code Hooks Guide
 
-This guide explains the enhanced hook system in Memento Protocol, which provides powerful automation and customization capabilities for Claude Code.
+This guide explains the enhanced hook system in zcc, which provides powerful automation and customization capabilities for Claude Code.
 
 ## Overview
 
@@ -110,29 +110,29 @@ For PreToolUse/PostToolUse hooks:
 
 ### Using Templates
 
-Memento Protocol includes pre-built hook templates:
+zcc includes pre-built hook templates:
 
 ```bash
 # List available templates
-memento hook templates
+zcc hook templates
 
 # Add a hook from template
-memento hook add acronym-expander
-memento hook add git-context-loader
+zcc hook add acronym-expander
+zcc hook add git-context-loader
 ```
 
 ### Managing Hooks
 
 ```bash
 # List all hooks
-memento hook list
+zcc hook list
 
 # Enable/disable hooks
-memento hook enable my-hook
-memento hook disable my-hook
+zcc hook enable my-hook
+zcc hook disable my-hook
 
 # Remove a hook
-memento hook remove my-hook
+zcc hook remove my-hook
 ```
 
 ### Creating Custom Hooks
@@ -170,7 +170,7 @@ chmod +x .zcc/hooks/scripts/my-script.sh
 
 3. Regenerate hook configuration:
 ```bash
-memento
+zcc
 ```
 
 ## Environment Variables
@@ -222,11 +222,11 @@ Block dangerous commands:
 Automatically expand project-specific acronyms:
 ```bash
 # Configure acronyms
-memento acronym add api "Application Programming Interface"
-memento acronym add k8s "Kubernetes"
+zcc acronym add api "Application Programming Interface"
+zcc acronym add k8s "Kubernetes"
 
 # Add the hook
-memento hook add acronym-expander
+zcc hook add acronym-expander
 
 # Now when you say "Deploy the api to k8s", Claude sees:
 # ## Acronym Glossary
@@ -294,7 +294,7 @@ Log specific commands for audit:
 ## Troubleshooting
 
 ### Hook not running
-- Check if enabled: `memento hook list`
+- Check if enabled: `zcc hook list`
 - Verify matcher pattern matches your use case
 - Check script permissions: `chmod +x script.sh`
 - Look for errors in Claude Code output
@@ -330,7 +330,7 @@ The new hook system is backwards compatible. Your existing `.zcc/hooks/routing.s
 
 1. The routing hook is now built-in and automatically generated
 2. Custom hooks should be defined in JSON format
-3. Run `memento` to regenerate configuration
+3. Run `zcc` to regenerate configuration
 
 ## Contributing
 

@@ -21,14 +21,14 @@ Just as oh-my-zsh transforms a basic shell into a powerful development environme
 
 ```bash
 # Before: Manual setup
-memento add mode component-engineer
-memento add mode react-architect  
-memento add workflow component-creation
-memento add workflow state-management
+zcc add mode component-engineer
+zcc add mode react-architect  
+zcc add workflow component-creation
+zcc add workflow state-management
 # ... 10+ more steps
 
 # After: One command
-memento init --starter-pack frontend-react
+zcc init --starter-pack frontend-react
 ```
 
 ### What's Included in a Pack?
@@ -79,11 +79,11 @@ npx zcc init --starter-pack frontend-react --non-interactive --force
 
 ### Adding to Existing Project
 
-You can add a starter pack to a project that already has Memento Protocol installed:
+You can add a starter pack to a project that already has zcc installed:
 
 ```bash
 # Add pack to existing setup
-memento init --starter-pack backend-api --force
+zcc init --starter-pack backend-api --force
 ```
 
 ## Available Packs
@@ -178,13 +178,13 @@ Create a JSON file in `templates/starter-packs/` following this structure:
 1. **Plan Your Pack**
    ```bash
    # What modes do you need?
-   memento list modes
+   zcc list modes
    
    # What workflows would be useful?
-   memento list workflows
+   zcc list workflows
    
    # What agents add value?
-   memento list agents
+   zcc list agents
    ```
 
 2. **Create the Definition**
@@ -228,10 +228,10 @@ Create a JSON file in `templates/starter-packs/` following this structure:
 4. **Test Your Pack**
    ```bash
    # Validate schema
-   memento validate-pack my-pack
+   zcc validate-pack my-pack
    
    # Test installation
-   memento init --starter-pack my-pack --dry-run
+   zcc init --starter-pack my-pack --dry-run
    ```
 
 5. **Share Your Pack**
@@ -319,7 +319,7 @@ Enable specific hooks for your pack:
 {
   "tags": ["string"],                    // Tags for discovery
   "category": "frontend|backend|...",    // Primary category
-  "mementoProtocolVersion": "string",    // Minimum required version
+  "zccVersion": "string",    // Minimum required version
   "configuration": {},                   // Default settings
   "hooks": [],                          // Hook configurations  
   "dependencies": ["string"],           // Pack dependencies
@@ -374,34 +374,34 @@ Enable specific hooks for your pack:
 **Pack Not Found**
 ```bash
 # List available packs
-memento list --starter-packs
+zcc list --starter-packs
 
 # Check pack name spelling
-memento init --starter-pack frontend-react  # ✓ Correct
-memento init --starter-pack react-frontend  # ✗ Wrong
+zcc init --starter-pack frontend-react  # ✓ Correct
+zcc init --starter-pack react-frontend  # ✗ Wrong
 ```
 
 **Component Missing**
 ```bash
 # Pack references a component that doesn't exist
 # Solution: Check available components
-memento list modes
-memento list workflows
-memento list agents
+zcc list modes
+zcc list workflows
+zcc list agents
 ```
 
 **Dependency Conflicts**
 ```bash
 # Multiple packs with conflicting settings
 # Solution: Use --force to override
-memento init --starter-pack new-pack --force
+zcc init --starter-pack new-pack --force
 ```
 
 **Schema Validation Errors**
 ```bash
 # Invalid pack definition
 # Solution: Validate against schema
-memento validate-pack my-pack --verbose
+zcc validate-pack my-pack --verbose
 ```
 
 ### Getting Help
@@ -409,13 +409,13 @@ memento validate-pack my-pack --verbose
 **Debug Mode**
 ```bash
 # Get detailed installation logs
-memento init --starter-pack frontend-react --verbose
+zcc init --starter-pack frontend-react --verbose
 ```
 
 **Dry Run**
 ```bash
 # See what would be installed without making changes
-memento init --starter-pack frontend-react --dry-run
+zcc init --starter-pack frontend-react --dry-run
 ```
 
 **Manual Inspection**
@@ -433,22 +433,22 @@ ls .zcc/workflows/
 **Multiple Environments**
 ```bash
 # Different packs for different environments
-memento init --starter-pack frontend-react    # Development
-memento init --starter-pack testing --force   # Add testing setup
+zcc init --starter-pack frontend-react    # Development
+zcc init --starter-pack testing --force   # Add testing setup
 ```
 
 **Custom Overrides**
 ```bash
 # Install pack then customize
-memento init --starter-pack frontend-react
-memento add mode my-custom-mode
-memento config set defaultMode my-custom-mode
+zcc init --starter-pack frontend-react
+zcc add mode my-custom-mode
+zcc config set defaultMode my-custom-mode
 ```
 
 **Pack Updates**
 ```bash
 # Update to newer pack version
-memento update --starter-pack frontend-react
+zcc update --starter-pack frontend-react
 ```
 
 ## Next Steps

@@ -1,8 +1,8 @@
-# Memento Protocol API Documentation
+# zcc API Documentation
 
-This document describes the programmatic API for extending and integrating with Memento Protocol.
+This document describes the programmatic API for extending and integrating with zcc.
 
-> **Note**: The primary way to use Memento Protocol is through the CLI. This API documentation is for advanced users who want to integrate Memento Protocol programmatically.
+> **Note**: The primary way to use zcc is through the CLI. This API documentation is for advanced users who want to integrate zcc programmatically.
 
 ## Core Classes
 
@@ -99,7 +99,7 @@ await generator.generate();
 
 ## Error Handling
 
-Memento Protocol provides custom error classes for better error handling:
+zcc provides custom error classes for better error handling:
 
 ```typescript
 import { 
@@ -153,7 +153,7 @@ logger.success('Processing complete');
 
 ## Plugin Development
 
-To create a Memento Protocol plugin:
+To create a zcc plugin:
 
 1. Import the necessary classes
 2. Use the API to interact with components
@@ -180,7 +180,7 @@ export class MyPlugin {
   
   async install() {
     if (!this.dirManager.isInitialized()) {
-      throw new Error('Memento Protocol not initialized');
+      throw new Error('zcc not initialized');
     }
     
     logger.info('Installing my plugin...');
@@ -277,11 +277,11 @@ Future versions will support an event system for lifecycle hooks:
 
 ```typescript
 // Coming in future versions
-memento.on('component:installed', (type, name) => {
+zcc.on('component:installed', (type, name) => {
   console.log(`Component ${name} of type ${type} was installed`);
 });
 
-memento.on('ticket:created', (ticket) => {
+zcc.on('ticket:created', (ticket) => {
   console.log(`New ticket created: ${ticket.title}`);
 });
 ```

@@ -1,6 +1,6 @@
 # Component Creation Guide
 
-This guide helps LLMs and developers create effective components for Memento Protocol. Focus on what actually helps agents execute tasks successfully.
+This guide helps LLMs and developers create effective components for zcc. Focus on what actually helps agents execute tasks successfully.
 
 ## Component Types
 
