@@ -91,7 +91,12 @@ export class PermissionGenerator {
                   const innerContent = tool.slice(5, -1); // Remove "Bash(" and ")"
                   if (innerContent.includes(":")) {
                     // Already has pattern like "sh:.zcc/scripts/mode-switch.sh"
-                    allowPermissions.add(`Bash(${innerContent}:*)`);
+                    // Check if it already ends with :* to avoid double suffix
+                    if (innerContent.endsWith(":*")) {
+                      allowPermissions.add(tool); // Already has :*, use as-is
+                    } else {
+                      allowPermissions.add(`Bash(${innerContent}:*)`);
+                    }
                   } else {
                     // Add :* for simple patterns
                     allowPermissions.add(`${tool}:*`);
