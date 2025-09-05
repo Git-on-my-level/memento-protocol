@@ -50,10 +50,27 @@ export const listCommand = new Command('list')
       const core = new ZccCore(process.cwd());
       const status = await core.getStatus();
       
-      // Validate type filter
+      // Validate type filter and map singular forms to plural keys
       const validTypes: ComponentInfo['type'][] = ['mode', 'workflow', 'agent', 'script', 'hook', 'command', 'template'];
-      if (options.type && !validTypes.includes(options.type)) {
-        logger.error(`Invalid component type '${options.type}'. Valid types are: ${validTypes.join(', ')}`);
+      const typeMapping: { [key: string]: string } = {
+        'mode': 'modes',
+        'modes': 'modes',
+        'workflow': 'workflows', 
+        'workflows': 'workflows',
+        'agent': 'agents',
+        'agents': 'agents',
+        'script': 'scripts',
+        'scripts': 'scripts', 
+        'hook': 'hooks',
+        'hooks': 'hooks',
+        'command': 'commands',
+        'commands': 'commands',
+        'template': 'templates',
+        'templates': 'templates'
+      };
+      
+      if (options.type && !typeMapping[options.type]) {
+        logger.error(`Invalid component type '${options.type}'. Valid types are: ${validTypes.join(', ')} (plural forms also accepted)`);
         process.exit(1);
       }
       
@@ -77,7 +94,7 @@ export const listCommand = new Command('list')
         await showConflictingComponents(componentsByType, options.verbose || false);
       } else {
         await showComponents(componentsByType, {
-          typeFilter: options.type,
+          typeFilter: options.type ? typeMapping[options.type] || options.type : undefined,
           scopeFilter: options.scope,
           verbose: options.verbose || false,
           installedOnly: options.installed || false
