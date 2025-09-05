@@ -11,6 +11,7 @@ import { hookCommand } from "./commands/hook";
 import { acronymCommand } from "./commands/acronym";
 import { createCommand } from "./commands/create";
 import { editCommand } from "./commands/edit";
+import { validateCommand } from "./commands/validate";
 import { logger } from "./lib/logger";
 import { handleError } from "./lib/errors";
 
@@ -40,6 +41,8 @@ Examples:
   $ zcc create mode my-custom  # Create a new custom mode interactively
   $ zcc create workflow --from review custom-review  # Clone review workflow
   $ zcc edit mode my-custom    # Edit a component in your editor
+  $ zcc validate               # Validate all components
+  $ zcc validate mode          # Validate all modes
   $ zcc ticket create "auth"   # Create a ticket for authentication work
   $ zcc list --installed       # Show installed components
 
@@ -74,6 +77,7 @@ program.addCommand(hookCommand);
 program.addCommand(acronymCommand);
 program.addCommand(createCommand);
 program.addCommand(editCommand);
+program.addCommand(validateCommand);
 
 // Global error handling
 process.on("unhandledRejection", (error) => {

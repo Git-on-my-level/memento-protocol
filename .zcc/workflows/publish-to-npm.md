@@ -1,3 +1,12 @@
+---
+name: publish-to-npm
+description: Publishes a new version of the npm package using automated scripts to minimize token usage
+author: zcc
+version: 1.0.0
+tags: []
+dependencies: []
+---
+
 # NPM Package Release Workflow
 
 This workflow publishes a new version of the npm package using automated scripts to minimize token usage.
