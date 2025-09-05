@@ -2,13 +2,19 @@
 set -euo pipefail
 
 project_root="${PWD}"
-tickets_dir="${project_root}/.memento/tickets"
+tickets_dir="${project_root}/.zcc/tickets"
 statuses=("next" "in-progress" "done")
 ticket_name_raw="${1:-}"
 
 sanitize() {
   printf '%s' "$1" \
-    | sed -E 's/[^a-zA-Z0-9_-]/-/g; s/^-+//; s/-+$//' \
+    | tr -d '\000-\037\177' \
+    | sed -E \
+      -e 's/\.+/-/g' \
+      -e 's#[/\\]+#-#g' \
+      -e 's/[^a-zA-Z0-9_-]/-/g' \
+      -e 's/-{2,}/-/g' \
+      -e 's/^-+//; s/-+$//' \
     | cut -c1-100
 }
 

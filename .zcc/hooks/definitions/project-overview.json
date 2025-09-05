@@ -7,7 +7,7 @@
       "description": "Loads project overview including tickets status at session start",
       "event": "SessionStart",
       "enabled": true,
-      "command": "./.memento/hooks/scripts/project-overview.sh",
+      "command": "./.zcc/hooks/scripts/project-overview.sh",
       "continueOnError": true,
       "priority": 85,
       "requirements": {

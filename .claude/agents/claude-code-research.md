@@ -1,6 +1,10 @@
 ---
 name: claude-code-research
 description: Expert on Claude Code features and capabilities. Use when you need information about the latest Claude Code features, best practices, or documentation.
+author: zcc
+version: 1.0.0
+tags: []
+dependencies: []
 tools: WebFetch, WebSearch, Read
 ---
 

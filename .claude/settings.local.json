@@ -51,6 +51,16 @@
         "hooks": [
           {
             "type": "command",
+            "command": "./.zcc/hooks/scripts/zcc-routing.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
             "command": "./.memento/hooks/scripts/acronym-expander.sh",
             "timeout": 30
           }
@@ -71,7 +81,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./.zcc/hooks/scripts/zcc-routing.sh",
+            "command": "./.memento/hooks/scripts/git-context-loader.sh",
             "timeout": 30
           }
         ]
@@ -81,7 +91,27 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./.memento/hooks/scripts/git-context-loader.sh",
+            "command": "./.zcc/hooks/scripts/acronym-expander.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.zcc/hooks/scripts/ast-grep-awareness.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.zcc/hooks/scripts/git-context-loader.sh",
             "timeout": 30
           }
         ]
@@ -94,6 +124,16 @@
           {
             "type": "command",
             "command": "./.memento/hooks/scripts/project-overview.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.zcc/hooks/scripts/project-overview.sh",
             "timeout": 30
           }
         ]

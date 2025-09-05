@@ -53,8 +53,8 @@ describe("CommandGenerator", () => {
       // Read the generated ticket.md file
       const content = await fs.readFile(`${projectRoot}/.claude/commands/ticket.md`, 'utf8');
       
-      // Should use the correct pattern without colon prefix
-      expect(content).toContain("allowed-tools: Bash(sh .zcc/scripts/ticket-context.sh)");
+      // Should use the correct pattern with wildcard suffix for arguments
+      expect(content).toContain("allowed-tools: Bash(sh .zcc/scripts/ticket-context.sh):*");
       expect(content).not.toContain("sh:.zcc/scripts/ticket-context.sh");
     });
 
@@ -69,8 +69,8 @@ describe("CommandGenerator", () => {
       // Read the generated mode.md file
       const content = await fs.readFile(`${projectRoot}/.claude/commands/mode.md`, 'utf8');
       
-      // Should use the correct pattern without colon prefix
-      expect(content).toContain("allowed-tools: Bash(sh .zcc/scripts/mode-switch.sh)");
+      // Should use the correct pattern with wildcard suffix for arguments
+      expect(content).toContain("allowed-tools: Bash(sh .zcc/scripts/mode-switch.sh):*");
       expect(content).not.toContain("sh:.zcc/scripts/mode-switch.sh");
     });
   });

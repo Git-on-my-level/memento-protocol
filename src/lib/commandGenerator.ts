@@ -61,7 +61,7 @@ export class CommandGenerator {
     const ticketMain: CommandTemplate = {
       name: "ticket",
       description: "Manage tickets stored as .md files in .zcc/tickets/ directories",
-      allowedTools: ["Bash(sh .zcc/scripts/ticket-context.sh)"],
+      allowedTools: ["Bash(sh .zcc/scripts/ticket-context.sh):*"],
       argumentHint: "[ticket-name]",
       body: `# Ticket Management
 
@@ -84,7 +84,7 @@ I now have ticket information loaded. Use Read tool to access actual ticket cont
     const modeMain: CommandTemplate = {
       name: "mode",
       description: "List available modes or switch to a specific mode",
-      allowedTools: ["Bash(sh .zcc/scripts/mode-switch.sh)"],
+      allowedTools: ["Bash(sh .zcc/scripts/mode-switch.sh):*"],
       argumentHint: "[mode-name]",
       body: `# Mode Management
 

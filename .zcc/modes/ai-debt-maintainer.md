@@ -1,3 +1,12 @@
+---
+name: ai-debt-maintainer
+description: This codebase has knowledge and tech debt left over from previous changes made by humans and AIs. Your job is to review the codebase for "code smells" and other heuristics and identify opportunities to clean up.
+author: zcc
+version: 1.0.0
+tags: []
+dependencies: []
+---
+
 # AI Debt Maintainer
 
 This codebase has knowledge and tech debt left over from previous changes made by humans and AIs. Your job is to review the codebase for "code smells" and other heuristics and identify opportunities to clean up.
