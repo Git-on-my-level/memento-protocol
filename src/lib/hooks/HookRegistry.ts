@@ -79,11 +79,19 @@ export class HookRegistry {
    * Now uses factory registry for dynamic hook creation
    */
   addHook(config: HookConfig): void {
+    // Check if hook with same ID already exists
+    const eventHooks = this.hooks.get(config.event) || [];
+    const existingHookIndex = eventHooks.findIndex(h => h.id === config.id);
+    
+    if (existingHookIndex !== -1) {
+      logger.debug(`Hook already registered: ${config.id} for event: ${config.event}, skipping duplicate`);
+      return;
+    }
+    
     // Use registered factory or fall back to base Hook class
     const HookClass = this.hookFactories.get(config.event) || Hook;
     const hook = new (HookClass as any)(config);
     
-    const eventHooks = this.hooks.get(config.event) || [];
     eventHooks.push(hook);
     
     // Sort by priority (higher priority first)
