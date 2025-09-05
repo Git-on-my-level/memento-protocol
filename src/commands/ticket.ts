@@ -61,25 +61,54 @@ ticketCommand
     }
   });
 
-// Move subcommand
+// Move subcommand - now accepts status as positional argument
 ticketCommand
-  .command('move <name>')
-  .description('Move a ticket to a different status')
-  .requiredOption('--to <status>', 'Target status (next, in-progress, done)')
-  .action(async (name: string, options: { to: string }) => {
+  .command('move <name> <status>')
+  .description('Move a ticket to a different status (next, in-progress, done)')
+  .action(async (name: string, status: string) => {
     try {
       const ticketManager = new TicketManager(process.cwd());
       
       // Validate status
-      if (!['next', 'in-progress', 'done'].includes(options.to)) {
-        logger.error(`Invalid status: ${options.to}. Must be one of: next, in-progress, done`);
+      if (!['next', 'in-progress', 'done'].includes(status)) {
+        logger.error(`Invalid status: ${status}. Must be one of: next, in-progress, done`);
         process.exit(1);
       }
       
-      await ticketManager.move(name, options.to as TicketStatus);
-      logger.success(`Moved ticket '${name}' to ${options.to}`);
+      await ticketManager.move(name, status as TicketStatus);
+      logger.success(`Moved ticket '${name}' to ${status}`);
     } catch (error) {
       logger.error(`Failed to move ticket: ${error}`);
+      process.exit(1);
+    }
+  });
+
+// Start subcommand - convenience for moving to in-progress
+ticketCommand
+  .command('start <name>')
+  .description('Move a ticket to in-progress status')
+  .action(async (name: string) => {
+    try {
+      const ticketManager = new TicketManager(process.cwd());
+      await ticketManager.move(name, 'in-progress');
+      logger.success(`Started ticket '${name}' (moved to in-progress)`);
+    } catch (error) {
+      logger.error(`Failed to start ticket: ${error}`);
+      process.exit(1);
+    }
+  });
+
+// Finish subcommand - convenience for moving to done
+ticketCommand
+  .command('finish <name>')
+  .description('Move a ticket to done status')
+  .action(async (name: string) => {
+    try {
+      const ticketManager = new TicketManager(process.cwd());
+      await ticketManager.move(name, 'done');
+      logger.success(`Finished ticket '${name}' (moved to done)`);
+    } catch (error) {
+      logger.error(`Failed to finish ticket: ${error}`);
       process.exit(1);
     }
   });
