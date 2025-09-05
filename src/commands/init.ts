@@ -134,16 +134,16 @@ export const initCommand = new Command("init")
       
       // Handle global initialization
       if (options.global) {
-        const { initGlobalCommand } = await import("./init-global");
-        // Re-run with init-global command, preserving relevant options
-        const args = ["node", "zcc"];
+        const { initializeGlobal } = await import("../lib/globalInit");
         
-        if (options.force) args.push("--force");
-        if (options.nonInteractive) args.push("--no-interactive");
-        if (options.defaultMode) args.push("--default-mode", options.defaultMode);
-        if (options.allRecommended) args.push("--install-examples");
-        
-        await initGlobalCommand.parseAsync(args);
+        await initializeGlobal({
+          force: options.force,
+          interactive: !options.nonInteractive,
+          defaultMode: options.defaultMode,
+          colorOutput: options.colorOutput,
+          verboseLogging: options.verboseLogging,
+          installExamples: options.allRecommended
+        });
         return;
       }
 

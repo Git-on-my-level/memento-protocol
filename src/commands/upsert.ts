@@ -3,7 +3,7 @@ import { UpsertManager } from "../lib/upsertManager";
 import { logger } from "../lib/logger";
 
 export const upsertCommand = new Command("upsert")
-  .description("Install new components and update existing ones")
+  .description("Initialize project if not initialized, or update existing components (internal command - prefer using 'init' or 'update')")
   .option("-f, --force", "Force overwrite of existing components")
   .action(async (options) => {
     try {
