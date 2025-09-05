@@ -7,6 +7,7 @@ import { HookManager } from "../lib/hooks/HookManager";
 import { CommandGenerator } from "../lib/commandGenerator";
 import { InteractiveSetup } from "../lib/interactiveSetup";
 import { StarterPackManager } from "../lib/StarterPackManager";
+import { ComponentInstaller } from "../lib/componentInstaller";
 import { logger } from "../lib/logger";
 
 interface NonInteractiveOptions {
@@ -152,6 +153,7 @@ export const initCommand = new Command("init")
       const hookManager = new HookManager(projectRoot);
       const commandGenerator = new CommandGenerator(projectRoot);
       const starterPackManager = new StarterPackManager(projectRoot);
+      const componentInstaller = new ComponentInstaller(projectRoot);
 
       // Check if already initialized
       if (dirManager.isInitialized() && !options.force) {
@@ -230,7 +232,6 @@ export const initCommand = new Command("init")
           // are only available in the pack's components/ directory.
         } else if (options.allRecommended) {
           // For --all-recommended, get all available components
-          const componentInstaller = new (await import('../lib/componentInstaller')).ComponentInstaller(projectRoot);
           const availableComponents = await componentInstaller.listAvailableComponents();
           selectedModes = availableComponents.modes.map(m => m.name);
           selectedWorkflows = availableComponents.workflows.map(w => w.name);
