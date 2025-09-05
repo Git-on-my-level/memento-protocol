@@ -52,22 +52,56 @@ npx zcc init
 | **Workflows** | Reusable procedures (review, deploy, audit) | Functions |
 | **Agents** | Specialized tools (research, analysis) | Plugins |
 
-## Quick Start
+## Getting Started
 
-### Basic Setup
+### Installation Options
+
+#### 1. Quick Start (Recommended)
 ```bash
+# Interactive setup - choose components you want
 npx zcc init
-```
 
-### With Recommendations
-```bash
+# Non-interactive - installs minimal setup
+npx zcc init --non-interactive
+
+# With all recommended components
 npx zcc init --all-recommended
 ```
 
-### Global Install
+#### 2. Global Installation
 ```bash
+# Install globally for use across all projects
 npm install -g z-claude-code
 zcc init
+```
+
+#### 3. Local Development (From Source)
+```bash
+# Clone and build from source
+git clone https://github.com/git-on-my-level/zcc.git
+cd zcc
+npm install
+npm run build
+
+# Use in your project
+cd /your/project
+node /path/to/zcc/dist/cli.js init
+```
+
+### Common Setup Scenarios
+
+```bash
+# Frontend React project
+zcc init --starter-pack frontend-react
+
+# Backend API project (coming soon)
+zcc init --starter-pack backend-api
+
+# Start fresh (overwrite existing)
+zcc init --force
+
+# Automated CI/CD setup
+zcc init --force --non-interactive
 ```
 
 ## Starter Packs: Ready-to-Use Bundles
@@ -128,16 +162,21 @@ npx zcc init --starter-pack frontend-react
 
 ## Documentation
 
+### Essential Guides
+- 🚀 [Quick Start Guide](docs/QUICK_START.md) - Get running in 5 minutes
 - 📦 [Starter Packs Guide](docs/STARTER_PACKS.md) - Ready-to-use bundles for different project types
 - 🪝 [Hooks Guide](docs/HOOKS_GUIDE.md) - Event-driven automation
 - 🧩 [Component Guide](docs/COMPONENT_GUIDE.md) - Creating modes, workflows, and agents
+
+### Advanced Topics
 - 📖 [API Reference](docs/API.md) - Programmatic usage
+- 🎨 [Creating Custom Modes](docs/CUSTOM_MODES.md) - Build AI personalities
+- 🔧 [Workflow Development](docs/WORKFLOWS.md) - Automate complex tasks
+- 🛠️ [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
 
 ### Coming Soon
-- 📚 Installation Guide - Detailed setup instructions
-- 🚀 Quick Start - Get running in 5 minutes  
-- 🎨 Creating Modes - Build custom AI personalities
-- 🔧 Workflows - Automate complex tasks
+- 📚 Advanced Configuration - Deep customization
+- 🌐 Community Components - Share and discover
 
 ## Examples
 
