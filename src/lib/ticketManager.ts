@@ -21,6 +21,68 @@ export class TicketManager {
   }
 
   /**
+   * Sanitize ticket name to prevent path traversal and other security issues
+   */
+  private sanitizeTicketName(name: string): string {
+    // Validate input
+    if (!name || typeof name !== 'string') {
+      throw new Error('Ticket name must be a non-empty string');
+    }
+
+    // Remove leading/trailing whitespace
+    name = name.trim();
+
+    // Check for empty name after trimming
+    if (!name) {
+      throw new Error('Ticket name cannot be empty or only whitespace');
+    }
+
+    // Remove path traversal attempts (../, ..\, etc.)
+    name = name.replace(/\.\.[\/\\]/g, '');
+    name = name.replace(/\.\./g, '');
+
+    // Remove absolute path indicators
+    name = name.replace(/^[\/\\]+/, '');
+    
+    // Replace directory separators with hyphens
+    name = name.replace(/[\/\\]/g, '-');
+
+    // Remove dangerous characters and control characters
+    name = name.replace(/[<>:"|?*\x00-\x1f\x80-\x9f]/g, '');
+
+    // Handle Windows reserved names
+    const windowsReserved = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/i;
+    if (windowsReserved.test(name)) {
+      name = `ticket-${name}`;
+    }
+
+    // Limit length for filesystem compatibility
+    const maxLength = 100;
+    if (name.length > maxLength) {
+      name = name.substring(0, maxLength);
+    }
+
+    // Final validation
+    if (!name) {
+      throw new Error('Ticket name contains only invalid characters');
+    }
+
+    return name;
+  }
+
+  /**
+   * Validate that a path is within the tickets directory
+   */
+  private validatePath(filepath: string): void {
+    const normalizedPath = this.fs.resolve(filepath);
+    const normalizedTicketsDir = this.fs.resolve(this.ticketsDir);
+    
+    if (!normalizedPath.startsWith(normalizedTicketsDir)) {
+      throw new Error('Invalid ticket path: attempted to access outside tickets directory');
+    }
+  }
+
+  /**
    * Ensure status directories exist
    */
   private ensureStatusDirectories(): void {
@@ -60,15 +122,21 @@ export class TicketManager {
    * Create a new ticket
    */
   async create(name: string): Promise<string> {
+    // Sanitize the ticket name
+    const sanitizedName = this.sanitizeTicketName(name);
+    
     // Check if ticket already exists
-    if (this.findTicket(name)) {
-      throw new Error(`Ticket '${name}' already exists`);
+    if (this.findTicket(sanitizedName)) {
+      throw new Error(`Ticket '${sanitizedName}' already exists`);
     }
 
-    const ticketPath = this.fs.join(this.ticketsDir, 'next', `${name}.md`);
+    const ticketPath = this.fs.join(this.ticketsDir, 'next', `${sanitizedName}.md`);
     
-    // Create initial content
-    const content = `# ${name}
+    // Validate the final path
+    this.validatePath(ticketPath);
+    
+    // Create initial content (use original name for display)
+    const content = `# ${name !== sanitizedName ? name : sanitizedName}
 
 ## Description
 [Add ticket description here]
