@@ -44,7 +44,7 @@ export const listCommand = new Command('list')
   .option('-s, --scope <scope>', 'Filter by scope (builtin, global, project)')
   .option('-v, --verbose', 'Show detailed component information')
   .option('-c, --conflicts', 'Show only components with conflicts across scopes')
-  .option('--installed', 'Legacy option: show all components (equivalent to no filter)')
+  .option('--installed', 'Show only installed components (project and global scope)')
   .action(async (options) => {
     try {
       const core = new ZccCore(process.cwd());
@@ -65,7 +65,7 @@ export const listCommand = new Command('list')
       }
 
       // Show status summary
-      if (!options.type && !options.scope && !options.conflicts) {
+      if (!options.type && !options.scope && !options.conflicts && !options.installed) {
         await showStatusSummary(status);
         logger.info('');
       }
@@ -79,7 +79,8 @@ export const listCommand = new Command('list')
         await showComponents(componentsByType, {
           typeFilter: options.type,
           scopeFilter: options.scope,
-          verbose: options.verbose || false
+          verbose: options.verbose || false,
+          installedOnly: options.installed || false
         });
       }
     } catch (error) {
@@ -126,9 +127,10 @@ async function showComponents(
     typeFilter?: string;
     scopeFilter?: string;
     verbose: boolean;
+    installedOnly: boolean;
   }
 ): Promise<void> {
-  const { typeFilter, scopeFilter, verbose } = options;
+  const { typeFilter, scopeFilter, verbose, installedOnly } = options;
   
   // Filter component types
   const typesToShow = typeFilter
@@ -141,9 +143,14 @@ async function showComponents(
     const components = componentsByType[typeKey as keyof ComponentsByType] || [];
     
     // Apply scope filter
-    const filteredComponents = scopeFilter
+    let filteredComponents = scopeFilter
       ? components.filter((comp: ComponentResolutionResult) => comp.source === scopeFilter)
       : components;
+    
+    // Apply installed filter (exclude builtin-only components)
+    if (installedOnly) {
+      filteredComponents = filteredComponents.filter((comp: ComponentResolutionResult) => comp.source !== 'builtin');
+    }
     
     if (filteredComponents.length === 0) continue;
     
@@ -181,6 +188,7 @@ async function showComponents(
     const filterDesc = [];
     if (typeFilter) filterDesc.push(`type '${typeFilter}'`);
     if (scopeFilter) filterDesc.push(`scope '${scopeFilter}'`);
+    if (installedOnly) filterDesc.push('installed components only');
     const filterText = filterDesc.length > 0 ? ` matching ${filterDesc.join(' and ')}` : '';
     
     logger.info(`No components found${filterText}.`);
