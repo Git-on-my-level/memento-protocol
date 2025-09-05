@@ -34,13 +34,33 @@ echo "  \"commits\": ["
 
 # Get commits since last tag
 if [ "$LAST_TAG" != "0.0.0" ]; then
-    git log --pretty=format:"    {\"hash\": \"%h\", \"message\": \"%s\", \"type\": \"%s\"}," ${LAST_TAG}..HEAD | \
-    sed 's/\({"hash": "[^"]*", "message": "\)\([^:]*\):\s*\([^"]*\)\(", "type": "\)\([^"]*\)\("}\)/\1\3\4\2\6/g' | \
-    sed '$ s/,$//'
+    git log --pretty=format:"%h|%s" ${LAST_TAG}..HEAD | while IFS='|' read -r hash message; do
+        # Extract commit type from message
+        if [[ $message =~ ^([^:]+): ]]; then
+            type="${BASH_REMATCH[1]}"
+            # Remove type prefix from message
+            message="${message#*: }"
+        else
+            type="other"
+        fi
+        # Escape quotes and backslashes in message
+        message=$(echo "$message" | sed 's/\\/\\\\/g; s/"/\\"/g')
+        echo "    {\"hash\": \"$hash\", \"message\": \"$message\", \"type\": \"$type\"},"
+    done | sed '$ s/,$//'
 else
-    git log --pretty=format:"    {\"hash\": \"%h\", \"message\": \"%s\", \"type\": \"%s\"}," | \
-    sed 's/\({"hash": "[^"]*", "message": "\)\([^:]*\):\s*\([^"]*\)\(", "type": "\)\([^"]*\)\("}\)/\1\3\4\2\6/g' | \
-    head -20 | sed '$ s/,$//'
+    git log --pretty=format:"%h|%s" | head -20 | while IFS='|' read -r hash message; do
+        # Extract commit type from message
+        if [[ $message =~ ^([^:]+): ]]; then
+            type="${BASH_REMATCH[1]}"
+            # Remove type prefix from message
+            message="${message#*: }"
+        else
+            type="other"
+        fi
+        # Escape quotes and backslashes in message
+        message=$(echo "$message" | sed 's/\\/\\\\/g; s/"/\\"/g')
+        echo "    {\"hash\": \"$hash\", \"message\": \"$message\", \"type\": \"$type\"},"
+    done | sed '$ s/,$//'
 fi
 
 echo ""
