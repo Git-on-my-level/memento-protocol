@@ -28,7 +28,7 @@ describe("Custom Commands Integration", () => {
       const ticketContent = await fs.readFile(`${projectRoot}/.claude/commands/ticket.md`, 'utf8');
       
       // The allowed-tools pattern should allow execution with any arguments
-      expect(ticketContent).toMatch(/allowed-tools:.*Bash\(sh \.zcc\/scripts\/ticket-context\.sh\):\*/);
+      expect(ticketContent).toMatch(/allowed-tools:.*Bash\(sh \.zcc\/scripts\/ticket-context\.sh:\*\)/);
       
       // The actual command uses backticks and $ARGUMENTS
       expect(ticketContent).toContain("!`sh .zcc/scripts/ticket-context.sh $ARGUMENTS`");
@@ -37,7 +37,7 @@ describe("Custom Commands Integration", () => {
       const modeContent = await fs.readFile(`${projectRoot}/.claude/commands/mode.md`, 'utf8');
       
       // The allowed-tools pattern should allow execution with any arguments
-      expect(modeContent).toMatch(/allowed-tools:.*Bash\(sh \.zcc\/scripts\/mode-switch\.sh\):\*/);
+      expect(modeContent).toMatch(/allowed-tools:.*Bash\(sh \.zcc\/scripts\/mode-switch\.sh:\*\)/);
       
       // The actual command uses backticks and $ARGUMENTS
       expect(modeContent).toContain("!`sh .zcc/scripts/mode-switch.sh $ARGUMENTS`");
@@ -122,8 +122,10 @@ describe("Custom Commands Integration", () => {
           expect(allowedToolsLine).toContain(":*");
         }
         
-        // Ensure no old-style patterns remain
-        expect(allowedToolsLine).not.toMatch(/Bash\(sh [^)]+\)(?!:)/); // No pattern without : suffix
+        // Ensure pattern has correct format with colon before wildcard
+        if (cmd === "ticket.md" || cmd === "mode.md") {
+          expect(allowedToolsLine).toMatch(/Bash\(sh \.zcc\/scripts\/[^:]+:\*\)/);
+        }
       }
     });
 

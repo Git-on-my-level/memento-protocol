@@ -15,7 +15,7 @@
       "openmemory-setup"
     ],
     "integrations": [],
-    "updated": "2025-09-05T11:40:36.298Z",
+    "updated": "2025-09-05T11:51:39.086Z",
     "agents": [
       "claude-code-research",
       "session-summarizer",
