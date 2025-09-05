@@ -14,6 +14,7 @@ import { editCommand } from "./commands/edit";
 import { validateCommand } from "./commands/validate";
 import { logger } from "./lib/logger";
 import { handleError } from "./lib/errors";
+import { cliContext } from "./lib/context";
 
 // Version will be injected during build
 const version = process.env.VERSION || "0.1.0";
@@ -27,6 +28,9 @@ program
   .option("-v, --verbose", "enable verbose output")
   .option("-d, --debug", "enable debug output")
   .option("-h, --help", "display help for command")
+  .option("-y, --yes", "answer yes to all prompts (non-interactive mode)")
+  .option("-n, --non-interactive", "run in non-interactive mode, auto-select best matches")
+  .option("-f, --force", "force operations without confirmation prompts")
   .addHelpText(
     "after",
     `
@@ -56,10 +60,21 @@ Documentation: https://github.com/git-on-my-level/zcc#readme`
   )
   .hook("preAction", (thisCommand) => {
     const options = thisCommand.opts();
-    if (options.verbose) {
+    
+    // Initialize CLI context with global options
+    cliContext.initialize({
+      verbose: options.verbose || false,
+      debug: options.debug || false,
+      nonInteractive: options.nonInteractive || options.yes || false,
+      force: options.force || false,
+      projectRoot: process.cwd()
+    });
+    
+    // Set logger options based on context
+    if (cliContext.isVerbose()) {
       logger.setVerbose(true);
     }
-    if (options.debug) {
+    if (cliContext.isDebug()) {
       logger.setDebug(true);
     }
   });
@@ -81,11 +96,11 @@ program.addCommand(validateCommand);
 
 // Global error handling
 process.on("unhandledRejection", (error) => {
-  handleError(error, program.opts().verbose);
+  handleError(error, cliContext.isVerbose());
 });
 
 process.on("uncaughtException", (error) => {
-  handleError(error, program.opts().verbose);
+  handleError(error, cliContext.isVerbose());
 });
 
 // Check if no command is provided before parsing

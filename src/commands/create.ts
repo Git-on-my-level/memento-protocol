@@ -8,11 +8,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ensureDirectorySync } from '../lib/utils/filesystem';
 import { validateComponent, formatValidationIssues } from '../lib/utils/componentValidator';
+import { isNonInteractive, isForce } from '../lib/context';
 
 interface CreateCommandOptions {
   from?: string;
   global?: boolean;
-  nonInteractive?: boolean;
   templateData?: any;
 }
 
@@ -22,7 +22,6 @@ export const createCommand = new Command('create')
   .argument('[name]', 'Component name')
   .option('--from <template>', 'Clone from existing component')
   .option('--global', 'Create in global scope (~/.zcc) instead of project')
-  .option('--non-interactive', 'Skip interactive prompts (use defaults)')
   .action(async (type: string, name?: string, options?: CreateCommandOptions) => {
     try {
       const core = new ZccCore(process.cwd());
@@ -41,7 +40,7 @@ export const createCommand = new Command('create')
       // Get component name through interactive prompt if not provided
       let componentName = name;
       if (!componentName) {
-        if (opts.nonInteractive) {
+        if (isNonInteractive()) {
           logger.error('Component name is required in non-interactive mode');
           process.exit(1);
         }
@@ -81,7 +80,7 @@ export const createCommand = new Command('create')
           (targetScope === 'project' && c.source === 'project')
         );
         
-        if (targetConflict && !opts.nonInteractive) {
+        if (targetConflict && !isNonInteractive()) {
           logger.warn(`${componentType.charAt(0).toUpperCase() + componentType.slice(1)} '${componentName}' already exists in ${targetScope} scope.`);
           
           const { shouldOverwrite } = await inquirer.prompt([
@@ -97,9 +96,13 @@ export const createCommand = new Command('create')
             logger.info('Creation cancelled.');
             return;
           }
-        } else if (targetConflict && opts.nonInteractive) {
-          logger.error(`${componentType.charAt(0).toUpperCase() + componentType.slice(1)} '${componentName}' already exists in ${targetScope} scope. Use --force to overwrite.`);
-          process.exit(1);
+        } else if (targetConflict && isNonInteractive()) {
+          if (isForce()) {
+            logger.info(`Overwriting existing ${componentType} '${componentName}' in ${targetScope} scope (force mode)`);
+          } else {
+            logger.error(`${componentType.charAt(0).toUpperCase() + componentType.slice(1)} '${componentName}' already exists in ${targetScope} scope. Use --force to overwrite.`);
+            process.exit(1);
+          }
         }
       }
       
@@ -200,7 +203,24 @@ async function findSourceComponent(
     return matches[0];
   }
   
-  // Multiple matches - let user choose
+  // Multiple matches - in non-interactive mode, use best match with auto-selection logic
+  if (isNonInteractive()) {
+    const bestMatch = matches[0]; // matches are already sorted by score
+    const isGoodMatch = bestMatch.score >= 80 || bestMatch.matchType === 'exact';
+    
+    if (isGoodMatch) {
+      logger.info(`Auto-selected source '${bestMatch.name}' (${bestMatch.matchType} match, ${bestMatch.score}%)`);
+      return bestMatch;
+    } else {
+      logger.error(`Multiple ambiguous matches found for source '${sourceName}'. Please be more specific.`);
+      matches.forEach(match => {
+        logger.info(`  - ${match.name} (${match.matchType} match, ${match.score}%)`);
+      });
+      return null;
+    }
+  }
+
+  // Interactive mode - let user choose
   logger.info(`Found ${matches.length} matches for '${sourceName}':`);
   
   const choices = matches.map((match) => {

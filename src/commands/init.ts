@@ -9,6 +9,7 @@ import { InteractiveSetup } from "../lib/interactiveSetup";
 import { StarterPackManager } from "../lib/StarterPackManager";
 import { ComponentInstaller } from "../lib/componentInstaller";
 import { logger } from "../lib/logger";
+import { isNonInteractive, isForce } from "../lib/context";
 
 interface NonInteractiveOptions {
   modes?: string[];
@@ -169,8 +170,7 @@ export const initCommand = new Command("init")
 
       
       // Check for CI environment or explicit non-interactive mode
-      const isNonInteractive =
-        options.nonInteractive || process.env.CI === "true";
+      const isNonInteractiveMode = isNonInteractive() || options.nonInteractive;
         
 
       
@@ -180,8 +180,8 @@ export const initCommand = new Command("init")
         packResult = await handleStarterPackInstallation(
           starterPackManager,
           options.starterPack,
-          isNonInteractive,
-          options.force
+          isNonInteractiveMode,
+          options.force || isForce()
         );
         
         // If pack installation failed, stop here
@@ -197,7 +197,7 @@ export const initCommand = new Command("init")
       const interactiveSetup = new InteractiveSetup(projectRoot);
       let setupOptions;
 
-      if (isNonInteractive) {
+      if (isNonInteractiveMode) {
         // Non-interactive setup with customization options
         logger.info("Running in non-interactive mode...");
 
@@ -290,7 +290,7 @@ export const initCommand = new Command("init")
         logger.info("Installing selected components...");
         await interactiveSetup.applySetup({
           ...setupOptions,
-          force: options.force,
+          force: options.force || isForce(),
         });
       }
 
@@ -384,8 +384,11 @@ async function handleStarterPackInstallation(
     packName = selectedPack;
   } else if (packName === true) {
     // Non-interactive mode but no pack name provided
-    logger.warn("--starter-pack requires a pack name in non-interactive mode");
-    return { success: false, installed: { modes: [], workflows: [], agents: [], hooks: [] }, skipped: { modes: [], workflows: [], agents: [], hooks: [] }, errors: ["Pack name required"] };
+    if (isNonInteractive) {
+      logger.warn("--starter-pack requires a pack name in non-interactive mode");
+      return { success: false, installed: { modes: [], workflows: [], agents: [], hooks: [] }, skipped: { modes: [], workflows: [], agents: [], hooks: [] }, errors: ["Pack name required"] };
+    }
+    // In interactive mode but no specific pack - this is handled above
   }
 
   if (typeof packName === 'string') {

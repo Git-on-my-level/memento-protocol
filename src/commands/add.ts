@@ -7,12 +7,12 @@ import inquirer from 'inquirer';
 import * as fs from 'fs';
 import * as path from 'path';
 import { ensureDirectorySync } from '../lib/utils/filesystem';
+import { isNonInteractive, shouldProceedWithoutPrompt, getNonInteractiveDefault } from '../lib/context';
 
 interface AddCommandOptions {
   source?: string;
   force?: boolean;
   global?: boolean;
-  nonInteractive?: boolean;
 }
 
 export const addCommand = new Command('add')
@@ -22,7 +22,6 @@ export const addCommand = new Command('add')
   .option('-s, --source <scope>', 'Install from specific scope (builtin, global)', 'builtin')
   .option('-f, --force', 'Force installation even if component already exists')
   .option('--global', 'Install to global scope (~/.zcc) instead of project')
-  .option('--non-interactive', 'Skip interactive prompts, require exact matches')
   .action(async (type: string, name?: string, options?: AddCommandOptions) => {
     try {
       const core = new ZccCore(process.cwd());
@@ -48,9 +47,9 @@ export const addCommand = new Command('add')
       
       // If no name provided, show interactive selection or fail in non-interactive mode
       if (!name) {
-        if (opts.nonInteractive) {
+        if (isNonInteractive()) {
           logger.error('Component name is required in non-interactive mode');
-          logger.info(`Usage: zcc add ${type} <component-name> --non-interactive`);
+          logger.info(`Usage: zcc add ${type} <component-name>`);
           process.exit(1);
         }
         await showInteractiveSelection(core, componentType, opts);
@@ -65,7 +64,7 @@ export const addCommand = new Command('add')
       
       if (matches.length === 0) {
         // No matches found, show suggestions or fail in non-interactive mode
-        if (opts.nonInteractive) {
+        if (isNonInteractive()) {
           logger.error(`${type.charAt(0).toUpperCase() + type.slice(1)} '${name}' not found.`);
           process.exit(1);
         }
@@ -79,14 +78,18 @@ export const addCommand = new Command('add')
         return;
       }
       
-      // Multiple matches - in non-interactive mode, use exact match or fail
-      if (opts.nonInteractive) {
-        const exactMatch = matches.find(m => m.matchType === 'exact');
-        if (exactMatch) {
-          await installComponent(core, exactMatch, opts);
+      // Multiple matches - in non-interactive mode, use best match with auto-selection logic
+      if (isNonInteractive()) {
+        // Use the auto-selection logic from fuzzy matcher
+        const bestMatch = matches[0]; // matches are already sorted by score
+        const isGoodMatch = bestMatch.score >= 80 || bestMatch.matchType === 'exact';
+        
+        if (isGoodMatch) {
+          logger.info(`Auto-selected '${bestMatch.name}' (${bestMatch.matchType} match, ${bestMatch.score}%)`);
+          await installComponent(core, bestMatch, opts);
           return;
         } else {
-          logger.error(`Multiple matches found for '${name}'. In non-interactive mode, exact matches are required.`);
+          logger.error(`Multiple ambiguous matches found for '${name}'. Please be more specific.`);
           logger.info('Available matches:');
           matches.forEach(match => {
             logger.info(`  - ${match.name} (${match.matchType} match, ${match.score}%)`);
@@ -112,6 +115,13 @@ async function showInteractiveSelection(
   type: ComponentInfo['type'], 
   opts: any
 ): Promise<void> {
+  // This function should only be called in interactive mode
+  // Non-interactive mode is handled earlier in the main action
+  if (isNonInteractive()) {
+    logger.error(`Cannot show interactive selection in non-interactive mode`);
+    return;
+  }
+
   const components = await core.getComponentsByTypeWithSource(type);
   
   // Filter by source if specified
@@ -252,25 +262,29 @@ async function installComponent(
   );
   
   if (targetConflict && !opts.force) {
-    if (opts.nonInteractive) {
-      logger.error(`${component.type.charAt(0).toUpperCase() + component.type.slice(1)} '${component.name}' already exists in ${targetScope} scope. Use --force to overwrite.`);
-      process.exit(1);
-    }
-    
-    logger.warn(`${component.type.charAt(0).toUpperCase() + component.type.slice(1)} '${component.name}' already exists in ${targetScope} scope.`);
-    
-    const { shouldOverwrite } = await inquirer.prompt([
-      {
-        type: 'confirm',
-        name: 'shouldOverwrite',
-        message: 'Do you want to overwrite it?',
-        default: false
+    if (isNonInteractive()) {
+      if (shouldProceedWithoutPrompt()) {
+        logger.info(`Overwriting existing ${component.type} '${component.name}' in ${targetScope} scope (non-interactive mode)`);
+      } else {
+        logger.error(`${component.type.charAt(0).toUpperCase() + component.type.slice(1)} '${component.name}' already exists in ${targetScope} scope. Use --force to overwrite.`);
+        process.exit(1);
       }
-    ]);
-    
-    if (!shouldOverwrite) {
-      logger.info('Installation cancelled.');
-      return;
+    } else {
+      logger.warn(`${component.type.charAt(0).toUpperCase() + component.type.slice(1)} '${component.name}' already exists in ${targetScope} scope.`);
+      
+      const { shouldOverwrite } = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'shouldOverwrite',
+          message: 'Do you want to overwrite it?',
+          default: false
+        }
+      ]);
+      
+      if (!shouldOverwrite) {
+        logger.info('Installation cancelled.');
+        return;
+      }
     }
   }
   
