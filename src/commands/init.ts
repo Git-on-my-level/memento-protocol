@@ -5,7 +5,6 @@ import inquirer from "inquirer";
 import { DirectoryManager } from "../lib/directoryManager";
 import { HookManager } from "../lib/hooks/HookManager";
 import { CommandGenerator } from "../lib/commandGenerator";
-import { ProjectDetector } from "../lib/projectDetector";
 import { InteractiveSetup } from "../lib/interactiveSetup";
 import { StarterPackManager } from "../lib/StarterPackManager";
 import { logger } from "../lib/logger";
@@ -152,7 +151,6 @@ export const initCommand = new Command("init")
       const dirManager = new DirectoryManager(projectRoot);
       const hookManager = new HookManager(projectRoot);
       const commandGenerator = new CommandGenerator(projectRoot);
-      const projectDetector = new ProjectDetector(projectRoot);
       const starterPackManager = new StarterPackManager(projectRoot);
 
       // Check if already initialized
@@ -166,17 +164,6 @@ export const initCommand = new Command("init")
       // Initialize directory structure
       logger.info("Initializing zcc...");
       await dirManager.initializeStructure(options.force);
-
-
-      // Detect project type
-      logger.info("Detecting project type...");
-      const projectInfo = await projectDetector.detect();
-      
-      logger.info(
-        `Project type: ${projectInfo.type}${
-          projectInfo.framework ? ` (${projectInfo.framework})` : ""
-        }`
-      );
 
       
       // Check for CI environment or explicit non-interactive mode
@@ -216,6 +203,7 @@ export const initCommand = new Command("init")
         let selectedModes: string[] = [];
         let selectedWorkflows: string[] = [];
         let selectedHooks: string[] = [];
+        let selectedAgents: string[] = [];
 
         // DEBUG: Check packResult and nonInteractiveOpts
 
@@ -241,18 +229,22 @@ export const initCommand = new Command("init")
           // ComponentInstaller which looks in templates/, but pack components
           // are only available in the pack's components/ directory.
         } else if (options.allRecommended) {
-          selectedModes = projectInfo.suggestedModes;
-          selectedWorkflows = projectInfo.suggestedWorkflows;
+          // For --all-recommended, get all available components
+          const componentInstaller = new (await import('../lib/componentInstaller')).ComponentInstaller(projectRoot);
+          const availableComponents = await componentInstaller.listAvailableComponents();
+          selectedModes = availableComponents.modes.map(m => m.name);
+          selectedWorkflows = availableComponents.workflows.map(w => w.name);
+          selectedAgents = availableComponents.agents.map(a => a.name);
           // Get all available hooks for --all-recommended
           const availableHooks = await hookManager.listTemplates();
           selectedHooks = availableHooks;
         }
 
         setupOptions = {
-          projectInfo,
           selectedModes,
           selectedWorkflows,
           selectedHooks,
+          selectedAgents,  // Now properly populated from above
           selectedLanguages: [],
           defaultMode: nonInteractiveOpts.defaultMode || packResult?.defaultMode,
           addToGitignore: nonInteractiveOpts.addToGitignore || false,
@@ -260,7 +252,7 @@ export const initCommand = new Command("init")
         
       } else {
         // Interactive setup (default)
-        setupOptions = await interactiveSetup.run(projectInfo);
+        setupOptions = await interactiveSetup.run();
       }
 
       // Update .gitignore if requested via CLI flag or interactive setup
@@ -274,6 +266,7 @@ export const initCommand = new Command("init")
         setupOptions.selectedModes.length > 0 ||
         setupOptions.selectedWorkflows.length > 0 ||
         (setupOptions.selectedHooks && setupOptions.selectedHooks.length > 0) ||
+        (setupOptions.selectedAgents && setupOptions.selectedAgents.length > 0) ||
         setupOptions.defaultMode // Apply setup if defaultMode needs to be saved
       );
       

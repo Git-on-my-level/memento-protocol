@@ -1,5 +1,4 @@
 import inquirer from 'inquirer';
-import { ProjectInfo } from './projectDetector';
 import { ComponentInstaller } from './componentInstaller';
 import { ConfigManager } from './configManager';
 import { logger } from './logger';
@@ -8,14 +7,15 @@ import { PackagePaths } from './packagePaths';
 import { FileSystemAdapter, NodeFileSystemAdapter } from './adapters';
 
 export interface SetupOptions {
-  projectInfo: ProjectInfo;
   selectedModes: string[];
   selectedWorkflows: string[];
   selectedHooks?: string[];
+  selectedAgents?: string[];
   defaultMode?: string;
   skipRecommended?: boolean;
   force?: boolean;
   addToGitignore?: boolean;
+  selectedLanguages?: string[];  // Keep for compatibility
 }
 
 export class InteractiveSetup {
@@ -34,20 +34,13 @@ export class InteractiveSetup {
   /**
    * Run interactive setup flow
    */
-  async run(projectInfo: ProjectInfo): Promise<SetupOptions> {
+  async run(): Promise<SetupOptions> {
     logger.space();
     logger.info('🚀 Welcome to zcc Interactive Setup!');
     logger.space();
 
-    // Confirm project type
-    const projectTypeConfirmed = await this.confirmProjectType(projectInfo);
-    if (!projectTypeConfirmed) {
-      projectInfo = await this.selectProjectType();
-    }
-
     // Select components
     const componentSelections = await this.selectComponents();
-
 
     // Configure default mode
     const defaultMode = await this.selectDefaultMode(componentSelections.selectedModes);
@@ -57,7 +50,6 @@ export class InteractiveSetup {
 
     // Show summary and confirm
     const confirmed = await this.confirmSetup({
-      projectInfo,
       ...componentSelections,
       defaultMode,
       addToGitignore
@@ -68,83 +60,13 @@ export class InteractiveSetup {
     }
 
     return {
-      projectInfo,
       ...componentSelections,
       defaultMode,
-      addToGitignore
+      addToGitignore,
+      selectedLanguages: []  // Keep for compatibility
     };
   }
 
-
-  /**
-   * Confirm detected project type
-   */
-  private async confirmProjectType(projectInfo: ProjectInfo): Promise<boolean> {
-    const { confirmed } = await inquirer.prompt([
-      {
-        type: 'confirm',
-        name: 'confirmed',
-        message: `Detected project type: ${projectInfo.type}${
-          projectInfo.framework ? ` (${projectInfo.framework})` : ''
-        }. Is this correct?`,
-        default: true
-      }
-    ]);
-
-    return confirmed;
-  }
-
-  /**
-   * Manually select project type
-   */
-  private async selectProjectType(): Promise<ProjectInfo> {
-    const { type } = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'type',
-        message: 'Select your project type:',
-        choices: [
-          { name: 'Web Application', value: 'web' },
-          { name: 'Node.js Backend', value: 'backend' },
-          { name: 'Full-Stack Application', value: 'fullstack' },
-          { name: 'CLI Tool', value: 'cli' },
-          { name: 'Library/Package', value: 'library' },
-          { name: 'Unknown/Other', value: 'unknown' }
-        ]
-      }
-    ]);
-
-    // Follow up with framework selection for web projects
-    let framework: string | undefined;
-    if (type === 'web' || type === 'fullstack') {
-      const frameworkAnswer = await inquirer.prompt([
-        {
-          type: 'list',
-          name: 'framework',
-          message: 'Select your framework:',
-          choices: [
-            { name: 'React', value: 'react' },
-            { name: 'Vue', value: 'vue' },
-            { name: 'Angular', value: 'angular' },
-            { name: 'Next.js', value: 'nextjs' },
-            { name: 'Nuxt', value: 'nuxt' },
-            { name: 'Other/None', value: undefined }
-          ]
-        }
-      ]);
-      framework = frameworkAnswer.framework;
-    }
-
-    // Return simplified ProjectInfo
-    return {
-      type,
-      framework: framework as any,
-      suggestedModes: [],
-      suggestedWorkflows: [],
-      files: [],
-      dependencies: {}
-    };
-  }
 
   /**
    * Select components to install
@@ -218,7 +140,21 @@ export class InteractiveSetup {
       selectedHooks = hooks;
     }
 
-    return { selectedModes, selectedWorkflows, selectedHooks };
+    // Select agents
+    const { selectedAgents } = await inquirer.prompt([
+      {
+        type: 'checkbox',
+        name: 'selectedAgents',
+        message: 'Select Claude Code agents to install:',
+        choices: availableComponents.agents.map((agent: any) => ({
+          name: `${agent.name} - ${agent.description}`,
+          value: agent.name,
+          checked: false  // Don't select agents by default
+        }))
+      }
+    ]);
+
+    return { selectedModes, selectedWorkflows, selectedHooks, selectedAgents };
   }
 
   /**
@@ -272,15 +208,13 @@ export class InteractiveSetup {
     logger.space();
     logger.info('📋 Setup Summary:');
     logger.space();
-    logger.info(`Project Type: ${options.projectInfo.type}`);
-    if (options.projectInfo.framework) {
-      logger.info(`Framework: ${options.projectInfo.framework}`);
-    }
-    logger.space();
     logger.info(`Modes: ${options.selectedModes.join(', ') || 'None'}`);
     logger.info(`Workflows: ${options.selectedWorkflows.join(', ') || 'None'}`);
     if (options.selectedHooks && options.selectedHooks.length > 0) {
       logger.info(`Hooks: ${options.selectedHooks.join(', ')}`);
+    }
+    if (options.selectedAgents && options.selectedAgents.length > 0) {
+      logger.info(`Agents: ${options.selectedAgents.join(', ')}`);
     }
     if (options.defaultMode) {
       logger.info(`Default Mode: ${options.defaultMode}`);
@@ -323,6 +257,13 @@ export class InteractiveSetup {
       }
     }
 
+    // Install selected agents
+    if (options.selectedAgents && options.selectedAgents.length > 0) {
+      for (const agent of options.selectedAgents) {
+        await this.componentInstaller.installComponent('agent', agent, options.force);
+      }
+    }
+
     // Save configuration
     if (options.defaultMode || options.selectedModes.length > 0) {
       const config = {
@@ -330,6 +271,7 @@ export class InteractiveSetup {
         components: {
           modes: options.selectedModes,
           workflows: options.selectedWorkflows,
+          agents: options.selectedAgents || [],
         }
       };
       await this.configManager.save(config);
