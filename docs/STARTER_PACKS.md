@@ -50,7 +50,7 @@ The easiest way to get started:
 
 ```bash
 # Shows available packs and lets you choose
-npx zcc init --pack
+npx zcc init
 ```
 
 This will:
@@ -59,12 +59,12 @@ This will:
 3. Install your chosen pack with all components
 4. Configure project settings automatically
 
-### Direct Installation
+### Direct Installation (Headless)
 
 If you know which pack you want:
 
 ```bash
-# Install specific pack directly
+# Install specific pack directly (headless mode)
 npx zcc init --pack frontend-react
 ```
 
@@ -87,6 +87,42 @@ zcc init --pack backend-api --force
 ```
 
 ## Available Packs
+
+### essentials
+
+**Essential zcc setup with core modes, workflows, and hooks for general development**
+
+```json
+{
+  "name": "essentials",
+  "description": "Essential zcc setup with core modes, workflows, and hooks for general development"
+}
+```
+
+**Includes:**
+- **Modes**: `autonomous-project-manager` (default), `engineer`, `architect`, `reviewer`, `ai-debt-maintainer`
+- **Workflows**: `review`, `summarize`, `openmemory-setup`
+- **Agents**: None (focused on core modes and workflows)
+- **Custom Commands**: `/review`, `/summarize`, `/openmemory`
+- **Hooks**: All essential hooks enabled (git-context-loader, project-overview, acronym-expander, ast-grep-awareness)
+- **Default Mode**: `autonomous-project-manager`
+
+**Best For:**
+- New projects getting started with zcc
+- General development across any language/framework
+- Teams wanting core functionality without project-specific customization
+- Default recommendation for most users
+
+**Quick Start:**
+```bash
+npx zcc init --pack essentials
+
+# Then use enhanced commands
+/mode apm                 # Switch to autonomous project manager
+/mode eng                 # Switch to engineer mode
+/review code-changes      # Execute review workflow
+/summarize documentation  # Summarize docs or code
+```
 
 ### frontend-react
 

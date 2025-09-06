@@ -10,12 +10,6 @@ export interface SetupOptions {
   defaultMode?: string;
   force?: boolean;
   addToGitignore?: boolean;
-  // Legacy fields for backward compatibility
-  selectedModes?: string[];
-  selectedWorkflows?: string[];
-  selectedHooks?: string[];
-  selectedAgents?: string[];
-  selectedLanguages?: string[];
 }
 
 export class InteractiveSetup {
@@ -71,13 +65,7 @@ export class InteractiveSetup {
       selectedPack,
       installScope,
       defaultMode,
-      addToGitignore,
-      // Legacy fields for backward compatibility
-      selectedModes: [],
-      selectedWorkflows: [],
-      selectedHooks: [],
-      selectedAgents: [],
-      selectedLanguages: []
+      addToGitignore
     };
   }
 

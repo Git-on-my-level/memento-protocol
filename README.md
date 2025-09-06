@@ -58,10 +58,11 @@ npx zcc init
 
 #### 1. Quick Start (Recommended)
 ```bash
-# Interactive setup - choose a starter pack
+# Interactive setup - choose from available starter packs
 npx zcc init
 
-# Install a specific starter pack directly
+# Or install a specific starter pack directly (headless)
+npx zcc init --pack essentials
 npx zcc init --pack frontend-react
 ```
 
@@ -88,6 +89,9 @@ node /path/to/zcc/dist/cli.js init
 ### Common Setup Scenarios
 
 ```bash
+# Essential setup (recommended for new users)
+zcc init --pack essentials
+
 # Frontend React project
 zcc init --pack frontend-react
 
@@ -98,7 +102,7 @@ zcc init --pack backend-api
 zcc init --force
 
 # Automated CI/CD setup
-zcc init --pack frontend-react --force
+zcc init --pack essentials --force
 ```
 
 ## Starter Packs: Ready-to-Use Bundles
@@ -117,6 +121,7 @@ npx zcc init --pack frontend-react
 
 | Pack | Description | Includes |
 |------|-------------|----------|
+| **essentials** | Essential setup for general development | Core modes (`apm`, `engineer`, `architect`, `reviewer`) + workflows (`review`, `summarize`) + essential hooks |
 | **frontend-react** | Complete React development setup | `component-engineer`, `react-architect`, `ui-reviewer` modes + creation workflows |
 | **advanced-code-refactoring** | AST-grep focused code refactoring | Advanced refactoring modes and workflows |
 

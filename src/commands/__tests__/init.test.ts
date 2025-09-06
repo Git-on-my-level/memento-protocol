@@ -426,17 +426,14 @@ describe("Init Command", () => {
       );
     });
 
-    it("should handle --pack flag requiring a value", async () => {
+    it("should run interactive setup when --pack flag has no value", async () => {
       setupStarterPackMocks();
       
-      // The --pack flag requires a value, so commander will handle the error
-      // This test ensures we don't break when no value is provided
-      try {
-        await initCommand.parseAsync(["node", "test", "--pack"]);
-      } catch (error) {
-        // Commander will throw an error for missing required option value
-        expect(error).toBeDefined();
-      }
+      // The --pack flag without a value should trigger interactive setup
+      await initCommand.parseAsync(["node", "test", "--pack"]);
+      
+      // Should run interactive setup (not headless pack installation)
+      expect(mockInteractiveSetup.run).toHaveBeenCalled();
     });
 
     // Test removed - --non-interactive flag no longer exists

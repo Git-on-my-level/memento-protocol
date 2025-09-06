@@ -13,7 +13,7 @@ export const initCommand = new Command("init")
   .option("-f, --force", "Force initialization even if .zcc already exists")
   .option("--global", "Initialize global ~/.zcc configuration instead of project")
   .option("-g, --gitignore", "Add .zcc/ to .gitignore (defaults to false)")
-  .option("-p, --pack <name>", "Install a specific starter pack (headless)")
+  .option("-p, --pack [name]", "Install a specific starter pack (headless) or open pack picker")
   .action(async (options) => {
     try {
       // Resolve force flag from both local options and global context
@@ -54,7 +54,8 @@ export const initCommand = new Command("init")
 
       
       // Handle pack installation if specified
-      if (options.pack) {
+      if (options.pack && typeof options.pack === 'string') {
+        // Headless pack installation with specific pack name
         logger.info(`Installing starter pack: ${options.pack}`);
         const packResult = await starterPackManager.installPack(options.pack, { 
           force: forceFlag,
@@ -103,12 +104,76 @@ export const initCommand = new Command("init")
         return;
       }
       
+      // If --pack flag is present without value, or no pack flag at all, run interactive setup
+      
 
       // Run interactive setup
       const interactiveSetup = new InteractiveSetup(projectRoot);
       const setupOptions = await interactiveSetup.run();
 
-      // Update .gitignore if requested
+      // Handle global installation scope
+      if (setupOptions.installScope === 'global') {
+        const { initializeGlobal } = await import("../lib/globalInit");
+        
+        // Initialize global zcc with pack installation if selected
+        await initializeGlobal({
+          force: forceFlag,
+          interactive: false, // We already collected the options
+          defaultMode: setupOptions.defaultMode,
+          installExamples: false // Don't install examples, we'll install the selected pack
+        });
+        
+        // If a pack was selected, install it to global scope
+        if (setupOptions.selectedPack) {
+          logger.space();
+          logger.info(`Installing starter pack to global scope: ${setupOptions.selectedPack}...`);
+          
+          // Use global path for StarterPackManager
+          const os = await import("os");
+          const globalRoot = process.env.HOME || os.homedir();
+          const globalStarterPackManager = new StarterPackManager(globalRoot);
+          
+          const packResult = await globalStarterPackManager.installPack(setupOptions.selectedPack, {
+            force: forceFlag,
+            interactive: false
+          });
+          
+          if (!packResult.success) {
+            logger.error("Global starter pack installation failed:");
+            packResult.errors.forEach(error => logger.error(`  ${error}`));
+            process.exit(1);
+          }
+          
+          logger.success(`Starter pack '${setupOptions.selectedPack}' installed successfully to global scope`);
+          
+          if (packResult.postInstallMessage) {
+            logger.space();
+            logger.info("Starter Pack Information:");
+            logger.info(packResult.postInstallMessage);
+          }
+        }
+        
+        logger.space();
+        logger.success("Global zcc initialized successfully!");
+        logger.space();
+        logger.info("To use with Claude Code:");
+        logger.info(
+          '  - Say "mode: [name]" to activate a mode (fuzzy matching supported)'
+        );
+        logger.info('  - Say "workflow: [name]" to execute a workflow');
+        logger.info("  - Use custom commands: /ticket, /mode, /zcc:status");
+        if (setupOptions.defaultMode) {
+          logger.info(
+            `  - Default mode "${setupOptions.defaultMode}" will be used when no mode is specified`
+          );
+        }
+        logger.space();
+        logger.info('Run "zcc --help" to see all available commands.');
+        logger.info('Global configuration is now active for all your projects.');
+        return;
+      }
+
+      // Update .gitignore if requested (only for project installations)
       if (options.gitignore || setupOptions.addToGitignore) {
         await dirManager.ensureGitignore();
       }
@@ -116,11 +181,7 @@ export const initCommand = new Command("init")
       // Apply setup (install pack and save config)
       const shouldApplySetup = (
         setupOptions.selectedPack ||
-        setupOptions.defaultMode ||
-        (setupOptions.selectedModes && setupOptions.selectedModes.length > 0) ||
-        (setupOptions.selectedWorkflows && setupOptions.selectedWorkflows.length > 0) ||
-        (setupOptions.selectedHooks && setupOptions.selectedHooks.length > 0) ||
-        (setupOptions.selectedAgents && setupOptions.selectedAgents.length > 0)
+        setupOptions.defaultMode
       );
       
       if (shouldApplySetup) {
@@ -157,11 +218,6 @@ export const initCommand = new Command("init")
       if (setupOptions.defaultMode) {
         logger.info(
           `  - Default mode "${setupOptions.defaultMode}" will be used when no mode is specified`
-        );
-      }
-      if (setupOptions.selectedHooks && setupOptions.selectedHooks.length > 0) {
-        logger.info(
-          `  - Installed hooks: ${setupOptions.selectedHooks.join(", ")}`
         );
       }
       logger.space();
