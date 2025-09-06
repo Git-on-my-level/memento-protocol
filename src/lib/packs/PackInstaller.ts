@@ -2,7 +2,6 @@
  * PackInstaller handles the actual installation of starter pack components
  */
 
-import * as path from "path";
 import { FileSystemAdapter } from "../adapters/FileSystemAdapter";
 import { NodeFileSystemAdapter } from "../adapters/NodeFileSystemAdapter";
 import {
@@ -11,27 +10,32 @@ import {
   PackInstallationResult,
   // PackConflictResolution, // TODO: unused for now
   ProjectPackManifest,
+  PackHook,
 } from "../types/packs";
 import { logger } from "../logger";
 import { ZccError } from "../errors";
 import { DirectoryManager } from "../directoryManager";
 import { IPackSource } from "./PackSource";
 import { ToolDependencyChecker, ToolDependency } from "./ToolDependencyChecker";
+import { HookManager } from "../hooks/HookManager";
 
 export class PackInstaller {
   private directoryManager: DirectoryManager;
-  // projectRoot will be used in future implementation
+  private projectRoot: string;
   private zccDir: string;
   private claudeDir: string;
   private fs: FileSystemAdapter;
   private toolChecker: ToolDependencyChecker;
+  private hookManager: HookManager;
 
   constructor(projectRoot: string, fs?: FileSystemAdapter) {
     this.fs = fs || new NodeFileSystemAdapter();
+    this.projectRoot = projectRoot;
     this.directoryManager = new DirectoryManager(projectRoot);
     this.zccDir = this.fs.join(projectRoot, '.zcc');
     this.claudeDir = this.fs.join(projectRoot, '.claude');
     this.toolChecker = new ToolDependencyChecker();
+    this.hookManager = new HookManager(projectRoot, this.fs);
   }
 
   /**
@@ -270,10 +274,10 @@ export class PackInstaller {
       let targetPath: string;
       if (componentType === 'agents') {
         // Agents go to .claude directory
-        targetPath = path.join(this.claudeDir, 'agents', `${componentName}.md`);
+        targetPath = this.fs.join(this.claudeDir, 'agents', `${componentName}.md`);
       } else {
         // Other components go to .zcc directory
-        targetPath = path.join(this.zccDir, componentType, `${componentName}.md`);
+        targetPath = this.fs.join(this.zccDir, componentType, `${componentName}.md`);
       }
 
       // Check for conflicts
@@ -332,6 +336,40 @@ export class PackInstaller {
     // Write updated config
     await this.fs.writeFile(configPath, JSON.stringify(mergedConfig, null, 2));
     logger.debug('Updated project configuration');
+
+    // Apply hook configurations if they exist
+    if (manifest.hooks && manifest.hooks.length > 0) {
+      await this.configureHooks(manifest.hooks);
+    }
+  }
+
+  /**
+   * Configure hooks specified in pack manifest
+   */
+  private async configureHooks(packHooks: readonly PackHook[]): Promise<void> {
+    try {
+      for (const hookConfig of packHooks) {
+        logger.debug(`Configuring hook: ${hookConfig.name}`);
+        
+        if (hookConfig.enabled) {
+          // Try to create/enable the hook from template if it exists
+          try {
+            await this.hookManager.createHookFromTemplate(hookConfig.name, {
+              id: hookConfig.name,
+              enabled: hookConfig.enabled,
+              ...(hookConfig.config || {}),
+            });
+            logger.debug(`Successfully configured hook: ${hookConfig.name}`);
+          } catch (error) {
+            logger.warn(`Failed to configure hook '${hookConfig.name}': ${error}`);
+            // Don't fail installation if hook configuration fails
+          }
+        }
+      }
+    } catch (error) {
+      logger.warn(`Error configuring pack hooks: ${error}`);
+      // Don't fail installation if hook configuration fails
+    }
   }
 
   /**
@@ -443,6 +481,7 @@ export class PackInstaller {
    */
   private async ensureDirectories(): Promise<void> {
     await this.directoryManager.initializeStructure();
+    logger.debug(`Ensuring directories for project: ${this.projectRoot}`);
     
     // Ensure pack-specific directories exist
     const packDirs = [
