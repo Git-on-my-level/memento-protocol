@@ -122,7 +122,7 @@ ticketCommand
       
       const ticketPath = await ticketManager.create(name, ticketOptions);
       
-      logger.success(`Created ${ticketOptions.type} ticket: ${ticketOptions.title || name}`);
+      logger.success(`Created ${ticketOptions.type || 'task'} ticket: ${ticketOptions.title || name}`);
       logger.info(`Location: ${ticketPath}`);
       
       if (ticketOptions.priority && ticketOptions.priority !== 'medium') {

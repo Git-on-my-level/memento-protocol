@@ -264,7 +264,7 @@ describe('Ticket Command', () => {
     it('should move ticket to new status', async () => {
       mockTicketManager.move.mockResolvedValue(undefined);
 
-      const result = ticketCommand.parseAsync(['node', 'test', 'move', 'Feature A', '--to', 'in-progress']);
+      const result = ticketCommand.parseAsync(['node', 'test', 'move', 'Feature A', 'in-progress']);
 
       await expect(result).resolves.not.toThrow();
       expect(mockTicketManager.move).toHaveBeenCalledWith('Feature A', 'in-progress');
@@ -272,7 +272,7 @@ describe('Ticket Command', () => {
     });
 
     it('should validate status parameter', async () => {
-      const result = ticketCommand.parseAsync(['node', 'test', 'move', 'Feature A', '--to', 'invalid-status']);
+      const result = ticketCommand.parseAsync(['node', 'test', 'move', 'Feature A', 'invalid-status']);
 
       await expect(result).resolves.not.toThrow();
       expect(logger.error).toHaveBeenCalledWith('Invalid status: invalid-status. Must be one of: next, in-progress, done');
@@ -282,7 +282,7 @@ describe('Ticket Command', () => {
     it('should handle move errors', async () => {
       mockTicketManager.move.mockRejectedValue(new Error('Ticket not found'));
 
-      const result = ticketCommand.parseAsync(['node', 'test', 'move', 'Nonexistent', '--to', 'done']);
+      const result = ticketCommand.parseAsync(['node', 'test', 'move', 'Nonexistent', 'done']);
 
       await expect(result).resolves.not.toThrow();
       expect(logger.error).toHaveBeenCalledWith('Failed to move ticket: Error: Ticket not found');
