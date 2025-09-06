@@ -26,7 +26,7 @@ zcc init
 # If you're developing zcc itself
 cd /path/to/zcc
 npm run build
-npm run dev init -- --force --non-interactive
+npm run dev init -- --force --pack frontend-react
 ```
 
 ## Your First 5 Minutes
@@ -156,7 +156,7 @@ zcc validate                # Check component health
 
 ---
 
-**Pro Tip**: The `--non-interactive` flag is perfect for CI/CD:
+**Pro Tip**: For CI/CD, specify a pack directly:
 ```bash
-zcc init --force --non-interactive
+zcc init --force --pack frontend-react
 ```

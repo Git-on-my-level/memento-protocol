@@ -1,18 +1,6 @@
 {
-  "version": "1.0.0",
-  "defaultMode": "autonomous-project-manager",
-  "components": {
-    "modes": [
-      "ai-debt-maintainer",
-      "architect",
-      "autonomous-project-manager",
-      "engineer",
-      "reviewer"
-    ],
-    "workflows": [
-      "openmemory-setup",
-      "review",
-      "summarize"
-    ]
-  }
+  "enableHooks": true,
+  "enableFuzzyMatching": true,
+  "ticketSystem": true,
+  "defaultMode": "autonomous-project-manager"
 }

@@ -28,7 +28,7 @@ zcc add workflow state-management
 # ... 10+ more steps
 
 # After: One command
-zcc init --starter-pack frontend-react
+zcc init --pack frontend-react
 ```
 
 ### What's Included in a Pack?
@@ -50,7 +50,7 @@ The easiest way to get started:
 
 ```bash
 # Shows available packs and lets you choose
-npx zcc init --starter-pack
+npx zcc init --pack
 ```
 
 This will:
@@ -65,7 +65,7 @@ If you know which pack you want:
 
 ```bash
 # Install specific pack directly
-npx zcc init --starter-pack frontend-react
+npx zcc init --pack frontend-react
 ```
 
 ### Non-Interactive Mode
@@ -74,7 +74,7 @@ For scripts and automation:
 
 ```bash
 # Silent installation
-npx zcc init --starter-pack frontend-react --non-interactive --force
+npx zcc init --pack frontend-react --force
 ```
 
 ### Adding to Existing Project
@@ -83,7 +83,7 @@ You can add a starter pack to a project that already has zcc installed:
 
 ```bash
 # Add pack to existing setup
-zcc init --starter-pack backend-api --force
+zcc init --pack backend-api --force
 ```
 
 ## Available Packs
@@ -115,7 +115,7 @@ zcc init --starter-pack backend-api --force
 
 **Quick Start:**
 ```bash
-npx zcc init --starter-pack frontend-react
+npx zcc init --pack frontend-react
 
 # Then use enhanced commands
 /component Button          # Create new component
@@ -231,7 +231,7 @@ Create a JSON file in `templates/starter-packs/` following this structure:
    zcc validate-pack my-pack
    
    # Test installation
-   zcc init --starter-pack my-pack --dry-run
+   zcc init --pack my-pack --dry-run
    ```
 
 5. **Share Your Pack**
@@ -374,11 +374,11 @@ Enable specific hooks for your pack:
 **Pack Not Found**
 ```bash
 # List available packs
-zcc list --starter-packs
+zcc list --packs
 
 # Check pack name spelling
-zcc init --starter-pack frontend-react  # ✓ Correct
-zcc init --starter-pack react-frontend  # ✗ Wrong
+zcc init --pack frontend-react  # ✓ Correct
+zcc init --pack react-frontend  # ✗ Wrong
 ```
 
 **Component Missing**
@@ -394,7 +394,7 @@ zcc list agents
 ```bash
 # Multiple packs with conflicting settings
 # Solution: Use --force to override
-zcc init --starter-pack new-pack --force
+zcc init --pack new-pack --force
 ```
 
 **Schema Validation Errors**
@@ -409,13 +409,13 @@ zcc validate-pack my-pack --verbose
 **Debug Mode**
 ```bash
 # Get detailed installation logs
-zcc init --starter-pack frontend-react --verbose
+zcc init --pack frontend-react --verbose
 ```
 
 **Dry Run**
 ```bash
 # See what would be installed without making changes
-zcc init --starter-pack frontend-react --dry-run
+zcc init --pack frontend-react --dry-run
 ```
 
 **Manual Inspection**
@@ -433,14 +433,14 @@ ls .zcc/workflows/
 **Multiple Environments**
 ```bash
 # Different packs for different environments
-zcc init --starter-pack frontend-react    # Development
-zcc init --starter-pack testing --force   # Add testing setup
+zcc init --pack frontend-react    # Development
+zcc init --pack testing --force   # Add testing setup
 ```
 
 **Custom Overrides**
 ```bash
 # Install pack then customize
-zcc init --starter-pack frontend-react
+zcc init --pack frontend-react
 zcc add mode my-custom-mode
 zcc config set defaultMode my-custom-mode
 ```
@@ -448,7 +448,7 @@ zcc config set defaultMode my-custom-mode
 **Pack Updates**
 ```bash
 # Update to newer pack version
-zcc update --starter-pack frontend-react
+zcc update --pack frontend-react
 ```
 
 ## Next Steps

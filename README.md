@@ -58,14 +58,11 @@ npx zcc init
 
 #### 1. Quick Start (Recommended)
 ```bash
-# Interactive setup - choose components you want
+# Interactive setup - choose a starter pack
 npx zcc init
 
-# Non-interactive - installs minimal setup
-npx zcc init --non-interactive
-
-# With all recommended components
-npx zcc init --all-recommended
+# Install a specific starter pack directly
+npx zcc init --pack frontend-react
 ```
 
 #### 2. Global Installation
@@ -92,16 +89,16 @@ node /path/to/zcc/dist/cli.js init
 
 ```bash
 # Frontend React project
-zcc init --starter-pack frontend-react
+zcc init --pack frontend-react
 
 # Backend API project (coming soon)
-zcc init --starter-pack backend-api
+zcc init --pack backend-api
 
 # Start fresh (overwrite existing)
 zcc init --force
 
 # Automated CI/CD setup
-zcc init --force --non-interactive
+zcc init --pack frontend-react --force
 ```
 
 ## Starter Packs: Ready-to-Use Bundles
@@ -109,11 +106,11 @@ zcc init --force --non-interactive
 Get up and running instantly with curated collections of modes, workflows, and agents:
 
 ```bash
-# Install with automatic detection
-npx zcc init --starter-pack
+# Interactive pack selection
+npx zcc init
 
 # Or specify a pack directly
-npx zcc init --starter-pack frontend-react
+npx zcc init --pack frontend-react
 ```
 
 ### Available Packs
