@@ -113,6 +113,82 @@ export class ConfigManager {
   }
 
   /**
+   * Attempt to fix configuration issues
+   */
+  async fixConfigFile(global: boolean = false): Promise<boolean> {
+    try {
+      const scope = global ? this.zccCore.getScopes().global : this.zccCore.getScopes().project;
+      const config = await scope.getConfig();
+      
+      if (!config) {
+        // Create default configuration if missing
+        const defaultConfig: ZccConfig = {
+          defaultMode: 'engineer',
+          preferredWorkflows: [],
+          ui: {
+            colorOutput: true,
+            verboseLogging: false
+          }
+        };
+        await this.save(defaultConfig, global);
+        return true;
+      }
+      
+      // Fix common issues
+      const fixedConfig = { ...config };
+      let hasChanges = false;
+      
+      // Ensure required fields have valid defaults
+      if (typeof fixedConfig.defaultMode !== 'string') {
+        fixedConfig.defaultMode = 'engineer';
+        hasChanges = true;
+      }
+      
+      if (!Array.isArray(fixedConfig.preferredWorkflows)) {
+        fixedConfig.preferredWorkflows = [];
+        hasChanges = true;
+      }
+      
+      if (!fixedConfig.ui || typeof fixedConfig.ui !== 'object') {
+        fixedConfig.ui = {
+          colorOutput: true,
+          verboseLogging: false
+        };
+        hasChanges = true;
+      } else {
+        if (typeof fixedConfig.ui.colorOutput !== 'boolean') {
+          fixedConfig.ui.colorOutput = true;
+          hasChanges = true;
+        }
+        if (typeof fixedConfig.ui.verboseLogging !== 'boolean') {
+          fixedConfig.ui.verboseLogging = false;
+          hasChanges = true;
+        }
+      }
+      
+      // Clean up invalid entries
+      if (fixedConfig.customTemplateSources && !Array.isArray(fixedConfig.customTemplateSources)) {
+        delete fixedConfig.customTemplateSources;
+        hasChanges = true;
+      }
+      
+      if (fixedConfig.components && typeof fixedConfig.components !== 'object') {
+        delete fixedConfig.components;
+        hasChanges = true;
+      }
+      
+      // Save if changes were made
+      if (hasChanges) {
+        await this.save(fixedConfig, global);
+      }
+      
+      return true;
+    } catch (error: any) {
+      return false;
+    }
+  }
+
+  /**
    * Get configuration file paths
    */
   getConfigPaths(): { global: string; project: string } {

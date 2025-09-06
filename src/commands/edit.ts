@@ -7,6 +7,7 @@ import inquirer from 'inquirer';
 import { spawn } from 'child_process';
 import * as fs from 'fs';
 import { validateComponent, formatValidationIssues } from '../lib/utils/componentValidator';
+import { isNonInteractive } from '../lib/context';
 
 export const editCommand = new Command('edit')
   .description('Edit existing components in your preferred editor')
@@ -14,7 +15,6 @@ export const editCommand = new Command('edit')
   .argument('[name]', 'Component name (supports fuzzy matching and interactive selection)')
   .option('-e, --editor <editor>', 'Override default editor (uses $EDITOR environment variable by default)')
   .option('--validate', 'Validate component after editing')
-  .option('--non-interactive', 'Skip interactive prompts, require exact matches')
   .action(async (type: string, name?: string, options?: any) => {
     try {
       const core = new ZccCore(process.cwd());
@@ -32,9 +32,9 @@ export const editCommand = new Command('edit')
       
       // If no name provided, show interactive selection or fail in non-interactive mode
       if (!name) {
-        if (opts.nonInteractive) {
+        if (isNonInteractive()) {
           logger.error('Component name is required in non-interactive mode');
-          logger.info(`Usage: zcc edit ${type} <component-name> --non-interactive`);
+          logger.info(`Usage: zcc edit ${type} <component-name>`);
           process.exit(1);
         }
         await showInteractiveSelection(core, componentType, opts);
@@ -49,7 +49,7 @@ export const editCommand = new Command('edit')
       
       if (matches.length === 0) {
         // No matches found, show suggestions or fail in non-interactive mode
-        if (opts.nonInteractive) {
+        if (isNonInteractive()) {
           logger.error(`${type.charAt(0).toUpperCase() + type.slice(1)} '${name}' not found.`);
           process.exit(1);
         }
@@ -63,14 +63,17 @@ export const editCommand = new Command('edit')
         return;
       }
       
-      // Multiple matches - in non-interactive mode, use exact match or fail
-      if (opts.nonInteractive) {
-        const exactMatch = matches.find(m => m.matchType === 'exact');
-        if (exactMatch) {
-          await editComponent(exactMatch, opts);
+      // Multiple matches - in non-interactive mode, use best match with auto-selection logic
+      if (isNonInteractive()) {
+        const bestMatch = matches[0]; // matches are already sorted by score
+        const isGoodMatch = bestMatch.score >= 80 || bestMatch.matchType === 'exact';
+        
+        if (isGoodMatch) {
+          logger.info(`Auto-selected '${bestMatch.name}' for editing (${bestMatch.matchType} match, ${bestMatch.score}%)`);
+          await editComponent(bestMatch, opts);
           return;
         } else {
-          logger.error(`Multiple matches found for '${name}'. In non-interactive mode, exact matches are required.`);
+          logger.error(`Multiple ambiguous matches found for '${name}'. Please be more specific.`);
           logger.info('Available matches:');
           matches.forEach(match => {
             logger.info(`  - ${match.name} (${match.matchType} match, ${match.score}%)`);

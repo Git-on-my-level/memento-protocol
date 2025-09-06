@@ -5,6 +5,7 @@ import { logger } from '../lib/logger';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
 import { validateComponent, formatValidationIssues } from '../lib/utils/componentValidator';
+import { isNonInteractive } from '../lib/context';
 
 // Custom error types for better error handling
 class ValidationError extends Error {
@@ -40,7 +41,6 @@ export const validateCommand = new Command('validate')
   .description('Validate components for correctness and best practices')
   .argument('[type]', 'Component type (mode, workflow, agent) - validates all types if not specified')
   .argument('[name]', 'Component name (supports fuzzy matching) - validates all components if not specified')
-  .option('--non-interactive', 'Skip interactive prompts, require exact matches')
   .option('--strict', 'Treat warnings as errors')
   .option('--summary-only', 'Show only summary, not individual issues')
   .action(async (type?: string, name?: string, options?: any) => {
@@ -198,7 +198,7 @@ async function validateSpecificComponent(
     let errorMsg = `Component${typeText} '${name}' not found.`;
     
     // Show suggestions
-    if (!opts.nonInteractive) {
+    if (!isNonInteractive()) {
       const suggestions = await core.generateSuggestions(name, type || 'mode', 3);
       if (suggestions.length > 0) {
         errorMsg += '\n\nDid you mean one of these?';
@@ -216,14 +216,17 @@ async function validateSpecificComponent(
     return;
   }
   
-  // Multiple matches - in non-interactive mode, use exact match or fail
-  if (opts.nonInteractive) {
-    const exactMatch = allMatches.find(m => m.matchType === 'exact');
-    if (exactMatch) {
-      await validateSingleComponent(exactMatch, opts);
+  // Multiple matches - in non-interactive mode, use best match with auto-selection logic
+  if (isNonInteractive()) {
+    const bestMatch = allMatches[0]; // matches are already sorted by score
+    const isGoodMatch = bestMatch.score >= 80 || bestMatch.matchType === 'exact';
+    
+    if (isGoodMatch) {
+      logger.info(`Auto-selected '${bestMatch.name}' for validation (${bestMatch.matchType} match, ${bestMatch.score}%)`);
+      await validateSingleComponent(bestMatch, opts);
       return;
     } else {
-      let errorMsg = `Multiple matches found for '${name}'. In non-interactive mode, exact matches are required.\n\nAvailable matches:`;
+      let errorMsg = `Multiple ambiguous matches found for '${name}'. Please be more specific.\n\nAvailable matches:`;
       allMatches.forEach(match => {
         errorMsg += `\n  - ${match.name} (${match.matchType} match, ${match.score}%)`;
       });
