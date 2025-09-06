@@ -1,6 +1,7 @@
 import { Command } from 'commander';
-import { TicketManager, TicketStatus } from '../lib/ticketManager';
+import { TicketManager, TicketStatus, TicketType, TicketCreationOptions } from '../lib/ticketManager';
 import { logger } from '../lib/logger';
+import inquirer from 'inquirer';
 
 const ticketCommand = new Command('ticket')
   .description('Manage tickets for persistent workspace');
@@ -9,12 +10,107 @@ const ticketCommand = new Command('ticket')
 ticketCommand
   .command('create <name>')
   .description('Create a new ticket')
-  .action(async (name: string) => {
+  .option('--type <type>', 'Ticket type (feature, bug, task, refactor)')
+  .option('--title <title>', 'Ticket title (defaults to name)')
+  .option('--description <description>', 'Ticket description')
+  .option('--priority <priority>', 'Priority (low, medium, high, critical)')
+  .option('--assignee <assignee>', 'Assignee name')
+  .option('--tags <tags>', 'Comma-separated tags')
+  .option('--interactive', 'Use interactive prompts to gather ticket information')
+  .action(async (name: string, options: any) => {
     try {
       const ticketManager = new TicketManager(process.cwd());
-      const ticketPath = await ticketManager.create(name);
-      logger.success(`Created ticket: ${name}`);
+      
+      let ticketOptions: TicketCreationOptions = {};
+      
+      // If interactive mode is enabled or no type is specified, prompt for information
+      if (options.interactive || !options.type) {
+        const answers = await inquirer.prompt([
+          {
+            type: 'list',
+            name: 'type',
+            message: 'What type of ticket is this?',
+            choices: [
+              { name: '🚀 Feature - New functionality or enhancement', value: 'feature' },
+              { name: '🐛 Bug - Something that needs to be fixed', value: 'bug' },
+              { name: '📋 Task - General work item or chore', value: 'task' },
+              { name: '♻️  Refactor - Code improvement without changing behavior', value: 'refactor' }
+            ],
+            default: options.type || 'task'
+          },
+          {
+            type: 'input',
+            name: 'title',
+            message: 'Ticket title:',
+            default: options.title || name,
+            validate: (input: string) => input.trim().length > 0 || 'Title cannot be empty'
+          },
+          {
+            type: 'input',
+            name: 'description',
+            message: 'Brief description (optional):',
+            default: options.description || ''
+          },
+          {
+            type: 'list',
+            name: 'priority',
+            message: 'Priority:',
+            choices: [
+              { name: '🔽 Low', value: 'low' },
+              { name: '➡️  Medium', value: 'medium' },
+              { name: '🔺 High', value: 'high' },
+              { name: '🚨 Critical', value: 'critical' }
+            ],
+            default: options.priority || 'medium'
+          },
+          {
+            type: 'input',
+            name: 'assignee',
+            message: 'Assignee (optional):',
+            default: options.assignee || ''
+          },
+          {
+            type: 'input',
+            name: 'tags',
+            message: 'Tags (comma-separated, optional):',
+            default: options.tags || ''
+          }
+        ]);
+        
+        ticketOptions = {
+          type: answers.type as TicketType,
+          title: answers.title,
+          description: answers.description,
+          priority: answers.priority as any,
+          assignee: answers.assignee,
+          tags: answers.tags ? answers.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0) : []
+        };
+      } else {
+        // Use command line options
+        ticketOptions = {
+          type: options.type as TicketType,
+          title: options.title,
+          description: options.description,
+          priority: options.priority as any,
+          assignee: options.assignee,
+          tags: options.tags ? options.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0) : []
+        };
+      }
+      
+      const ticketPath = await ticketManager.create(name, ticketOptions);
+      
+      logger.success(`Created ${ticketOptions.type || 'task'} ticket: ${ticketOptions.title || name}`);
       logger.info(`Location: ${ticketPath}`);
+      
+      if (ticketOptions.priority && ticketOptions.priority !== 'medium') {
+        logger.info(`Priority: ${ticketOptions.priority}`);
+      }
+      if (ticketOptions.assignee) {
+        logger.info(`Assignee: ${ticketOptions.assignee}`);
+      }
+      if (ticketOptions.tags && ticketOptions.tags.length > 0) {
+        logger.info(`Tags: ${ticketOptions.tags.join(', ')}`);
+      }
     } catch (error) {
       logger.error(`Failed to create ticket: ${error}`);
       process.exit(1);

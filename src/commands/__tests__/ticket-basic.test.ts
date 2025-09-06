@@ -42,8 +42,15 @@ describe('Ticket Command Basic Coverage', () => {
     
     await ticketCommand.parseAsync(['node', 'test', 'create', 'Test ticket']);
     
-    expect(mockTicketManager.create).toHaveBeenCalledWith('Test ticket');
-    expect(logger.success).toHaveBeenCalledWith('Created ticket: Test ticket');
+    expect(mockTicketManager.create).toHaveBeenCalledWith('Test ticket', {
+      type: undefined,
+      title: undefined, 
+      description: undefined,
+      priority: undefined,
+      assignee: undefined,
+      tags: []
+    });
+    expect(logger.success).toHaveBeenCalledWith('Created task ticket: Test ticket');
     expect(logger.info).toHaveBeenCalledWith(`Location: ${ticketPath}`);
   });
 
@@ -74,7 +81,7 @@ describe('Ticket Command Basic Coverage', () => {
   it('should move ticket between statuses', async () => {
     mockTicketManager.move.mockResolvedValue(undefined);
 
-    await ticketCommand.parseAsync(['node', 'test', 'move', 'Test ticket', '--to', 'done']);
+    await ticketCommand.parseAsync(['node', 'test', 'move', 'Test ticket', 'done']);
     
     expect(mockTicketManager.move).toHaveBeenCalledWith('Test ticket', 'done');
     expect(logger.success).toHaveBeenCalledWith(expect.stringContaining('Moved ticket'));

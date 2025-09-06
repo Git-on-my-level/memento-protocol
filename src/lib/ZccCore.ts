@@ -361,6 +361,7 @@ export class ZccCore {
   /**
    * Find components using fuzzy matching
    * Supports exact matches, substring matches, and acronym matching
+   * Deduplicates components by name, prioritizing higher-precedence scopes
    */
   async findComponents(
     query: string,
@@ -380,24 +381,58 @@ export class ZccCore {
       ...options
     });
 
-    // Enhance matches with conflict information
-    const enhancedMatches: ComponentSearchResult[] = [];
+    // Deduplicate matches by component name, keeping highest precedence source
+    const componentMap = new Map<string, ComponentSearchResult>();
     
     for (const match of matches) {
-      // Find all versions of this component across scopes
-      const conflicts = filteredComponents.filter(
-        ({ component }) => component.name === match.name && component.type === match.component.type
-      );
+      const key = `${match.component.type}:${match.component.name}`;
+      const existing = componentMap.get(key);
+      
+      if (!existing) {
+        // Find all versions of this component across scopes for conflict information
+        const conflicts = filteredComponents.filter(
+          ({ component }) => component.name === match.name && component.type === match.component.type
+        );
 
-      const searchResult: ComponentSearchResult = {
-        ...match,
-        conflictsWith: conflicts.length > 1 ? conflicts : undefined
-      };
+        const searchResult: ComponentSearchResult = {
+          ...match,
+          conflictsWith: conflicts.length > 1 ? conflicts : undefined
+        };
+        
+        componentMap.set(key, searchResult);
+      } else {
+        // Keep the match with higher precedence (project > global > builtin)
+        const sourceOrder = { project: 3, global: 2, builtin: 1 };
+        if (sourceOrder[match.source] > sourceOrder[existing.source]) {
+          // Update conflict information for the new match
+          const conflicts = filteredComponents.filter(
+            ({ component }) => component.name === match.name && component.type === match.component.type
+          );
 
-      enhancedMatches.push(searchResult);
+          const searchResult: ComponentSearchResult = {
+            ...match,
+            conflictsWith: conflicts.length > 1 ? conflicts : undefined
+          };
+          
+          componentMap.set(key, searchResult);
+        }
+        // If existing has higher or equal precedence, keep it
+      }
     }
 
-    return enhancedMatches;
+    return Array.from(componentMap.values()).sort((a, b) => {
+      // Sort by score (descending), then by source precedence, then by name
+      if (a.score !== b.score) {
+        return b.score - a.score;
+      }
+      
+      const sourceOrder = { project: 3, global: 2, builtin: 1 };
+      if (sourceOrder[a.source] !== sourceOrder[b.source]) {
+        return sourceOrder[b.source] - sourceOrder[a.source];
+      }
+      
+      return a.name.localeCompare(b.name);
+    });
   }
 
 

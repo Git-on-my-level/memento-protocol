@@ -22,10 +22,46 @@ describe('TicketManager', () => {
       
       const content = await fs.readFile(ticketPath, 'utf8') as string;
       expect(content).toContain('# test-feature');
-      expect(content).toContain('## Description');
-      expect(content).toContain('## Tasks');
+      expect(content).toContain('**Type:** Task');
+      expect(content).toContain('## Task Description');
+      expect(content).toContain('## Action Items');
       expect(content).toContain('## Notes');
       expect(content).toContain('Created:');
+    });
+
+    it('should create ticket with specific type and options', async () => {
+      const options = {
+        type: 'feature' as const,
+        title: 'User Authentication',
+        description: 'Add login and registration functionality',
+        priority: 'high' as const,
+        tags: ['auth', 'security']
+      };
+      
+      const ticketPath = await ticketManager.create('auth-feature', options);
+      const content = await fs.readFile(ticketPath, 'utf8') as string;
+      
+      expect(content).toContain('# User Authentication');
+      expect(content).toContain('**Type:** Feature');
+      expect(content).toContain('**Priority:** high');
+      expect(content).toContain('**Tags:** auth, security');
+      expect(content).toContain('Add login and registration functionality');
+      expect(content).toContain('## Problem Statement');
+      expect(content).toContain('## Acceptance Criteria');
+    });
+
+    it('should sanitize dangerous ticket names', async () => {
+      // Test path traversal prevention
+      const ticketPath = await ticketManager.create('../../../etc/passwd');
+      expect(ticketPath).toBe(fs.join(projectRoot, '.zcc', 'tickets', 'next', 'etc-passwd.md'));
+      
+      // Test dangerous character removal
+      const ticketPath2 = await ticketManager.create('ticket<>:"|?*');
+      expect(ticketPath2).toBe(fs.join(projectRoot, '.zcc', 'tickets', 'next', 'ticket.md'));
+      
+      // Test Windows reserved name handling
+      const ticketPath3 = await ticketManager.create('con');
+      expect(ticketPath3).toBe(fs.join(projectRoot, '.zcc', 'tickets', 'next', 'ticket-con.md'));
     });
 
     it('should throw error if ticket already exists', async () => {

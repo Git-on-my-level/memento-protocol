@@ -87,4 +87,59 @@ configCommand
     }
   });
 
+// Validate subcommand
+configCommand
+  .command('validate')
+  .description('Validate configuration file against schema')
+  .option('-g, --global', 'Validate global configuration')
+  .option('--fix', 'Attempt to fix validation issues')
+  .action(async (options: { global: boolean; fix: boolean }) => {
+    try {
+      const configManager = new ConfigManager(process.cwd());
+      const result = await configManager.validateConfigFile(options.global || false);
+      
+      // Display validation results
+      if (result.valid) {
+        logger.success('Configuration is valid!');
+      } else {
+        logger.error('Configuration validation failed.');
+      }
+      
+      // Show errors
+      if (result.errors.length > 0) {
+        logger.error('\nValidation errors:');
+        result.errors.forEach(error => {
+          logger.error(`  ✗ ${error}`);
+        });
+      }
+      
+      // Show warnings
+      if (result.warnings.length > 0) {
+        logger.warn('\nValidation warnings:');
+        result.warnings.forEach(warning => {
+          logger.warn(`  ⚠ ${warning}`);
+        });
+      }
+      
+      // Fix issues if requested
+      if (options.fix && !result.valid) {
+        logger.info('\nAttempting to fix validation issues...');
+        const fixed = await configManager.fixConfigFile(options.global || false);
+        if (fixed) {
+          logger.success('Configuration issues have been fixed!');
+        } else {
+          logger.warn('Some issues could not be automatically fixed. Please review manually.');
+        }
+      }
+      
+      // Exit with error if validation failed
+      if (!result.valid) {
+        process.exit(1);
+      }
+    } catch (error) {
+      logger.error(`Failed to validate configuration: ${error}`);
+      process.exit(1);
+    }
+  });
+
 export { configCommand };

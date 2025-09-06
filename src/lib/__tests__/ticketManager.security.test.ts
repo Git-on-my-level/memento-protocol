@@ -110,7 +110,7 @@ describe('TicketManager Security', () => {
       const createdFile = files.find(f => f.startsWith('a'));
       expect(createdFile).toBeDefined();
       // Should be truncated to 100 chars + .md extension
-      expect(createdFile!.length).toBe(104); // 100 chars + '.md' extension
+      expect(createdFile!.length).toBe(103); // 100 chars + '.md' extension (100 + 3)
     });
 
     it('should preserve meaningful content when truncating', async () => {
