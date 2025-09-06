@@ -1,4 +1,5 @@
 import { ComponentInfo } from './ZccScope';
+import { isNonInteractive } from './context';
 
 export interface FuzzyMatch {
   name: string;
@@ -13,6 +14,7 @@ export interface FuzzyMatchOptions {
   minScore?: number;
   caseSensitive?: boolean;
   includeMetadata?: boolean;
+  autoSelectBest?: boolean; // Automatically return best match in non-interactive mode
 }
 
 /**
@@ -96,6 +98,48 @@ export class FuzzyMatcher {
   ): FuzzyMatch | null {
     const matches = this.findMatches(query, components, { ...options, maxResults: 1 });
     return matches.length > 0 ? matches[0] : null;
+  }
+
+  /**
+   * Smart matching that considers interactive/non-interactive mode
+   * In non-interactive mode: returns best match if score is good enough, empty array otherwise
+   * In interactive mode: returns all matches for user selection
+   */
+  static findMatchesForMode(
+    query: string,
+    components: Array<{ component: ComponentInfo; source: 'builtin' | 'global' | 'project' }>,
+    options: FuzzyMatchOptions = {}
+  ): FuzzyMatch[] {
+    const isNonInteractiveMode = options.autoSelectBest ?? isNonInteractive();
+    
+    if (isNonInteractiveMode) {
+      // In non-interactive mode, we want to auto-select if we have a good match
+      const matches = this.findMatches(query, components, options);
+      
+      if (matches.length === 0) {
+        return []; // No matches found
+      }
+      
+      const bestMatch = matches[0];
+      
+      // Auto-select criteria:
+      // 1. Exact match (score 100) - always select
+      // 2. High confidence match (score >= 80) - select if unambiguous
+      // 3. For lower scores, require exact match type to avoid confusion
+      const shouldAutoSelect = 
+        bestMatch.score >= 100 || // Exact match
+        (bestMatch.score >= 80 && (matches.length === 1 || bestMatch.score > matches[1].score + 20)) || // High confidence, unambiguous
+        (bestMatch.matchType === 'exact'); // Exact string match regardless of score
+      
+      if (shouldAutoSelect) {
+        return [bestMatch]; // Return single best match for auto-selection
+      } else {
+        return []; // Ambiguous matches, require user intervention
+      }
+    } else {
+      // Interactive mode - return all matches for user selection
+      return this.findMatches(query, components, options);
+    }
   }
 
   /**
