@@ -18,8 +18,8 @@ describe('config validate command', () => {
     // Create .zcc directory
     fs.mkdirSync(path.join(tempDir, '.zcc'), { recursive: true });
     
-    // Mock process.exit
-    process.exit = jest.fn() as any;
+    // Reset process.exitCode
+    process.exitCode = 0;
   });
 
   afterEach(() => {
@@ -50,10 +50,10 @@ describe('config validate command', () => {
       
       try {
         // Run validate command
-        await configCommand.parseAsync(['node', 'zcc', 'config', 'validate']);
+        await configCommand.parseAsync(['node', 'zcc', 'validate']);
         
         expect(mockLogger.success).toHaveBeenCalledWith('Configuration is valid!');
-        expect(process.exit).not.toHaveBeenCalled();
+        expect(process.exitCode).toBe(0);
       } finally {
         process.chdir(originalCwd);
       }
@@ -79,11 +79,11 @@ describe('config validate command', () => {
       
       try {
         // Run validate command
-        await configCommand.parseAsync(['node', 'zcc', 'config', 'validate']);
+        await configCommand.parseAsync(['node', 'zcc', 'validate']);
         
         expect(mockLogger.error).toHaveBeenCalledWith('Configuration validation failed.');
         expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining('Validation errors:'));
-        expect(process.exit).toHaveBeenCalledWith(1);
+        expect(process.exitCode).toBe(1);
       } finally {
         process.chdir(originalCwd);
       }
@@ -106,7 +106,7 @@ describe('config validate command', () => {
       
       try {
         // Run validate command with --fix
-        await configCommand.parseAsync(['node', 'zcc', 'config', 'validate', '--fix']);
+        await configCommand.parseAsync(['node', 'zcc', 'validate', '--fix']);
         
         expect(mockLogger.info).toHaveBeenCalledWith('\nAttempting to fix validation issues...');
         expect(mockLogger.success).toHaveBeenCalledWith('Configuration issues have been fixed!');
@@ -135,11 +135,11 @@ describe('config validate command', () => {
       
       try {
         // Run validate command
-        await configCommand.parseAsync(['node', 'zcc', 'config', 'validate']);
+        await configCommand.parseAsync(['node', 'zcc', 'validate']);
         
         expect(mockLogger.error).toHaveBeenCalledWith('Configuration validation failed.');
         expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining('Configuration file not found'));
-        expect(process.exit).toHaveBeenCalledWith(1);
+        expect(process.exitCode).toBe(1);
       } finally {
         process.chdir(originalCwd);
       }
@@ -160,7 +160,7 @@ describe('config validate command', () => {
       
       try {
         // Run validate command with --global
-        await configCommand.parseAsync(['node', 'zcc', 'config', 'validate', '--global']);
+        await configCommand.parseAsync(['node', 'zcc', 'validate', '--global']);
         
         expect(mockLogger.success).toHaveBeenCalledWith('Configuration is valid!');
       } finally {
@@ -180,7 +180,7 @@ describe('config validate command', () => {
       
       try {
         // Run validate command with --fix
-        await configCommand.parseAsync(['node', 'zcc', 'config', 'validate', '--fix']);
+        await configCommand.parseAsync(['node', 'zcc', 'validate', '--fix']);
         
         expect(mockLogger.info).toHaveBeenCalledWith('\nAttempting to fix validation issues...');
         expect(mockLogger.success).toHaveBeenCalledWith('Configuration issues have been fixed!');

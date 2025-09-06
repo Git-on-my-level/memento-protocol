@@ -32,7 +32,8 @@ export const createCommand = new Command('create')
       if (!validTypes.includes(type as ComponentInfo['type'])) {
         logger.error(`Invalid component type: ${type}`);
         logger.info(`Valid types are: ${validTypes.join(', ')}`);
-        process.exit(1);
+        process.exitCode = 1;
+        return;
       }
       
       const componentType = type as ComponentInfo['type'];
@@ -42,7 +43,8 @@ export const createCommand = new Command('create')
       if (!componentName) {
         if (isNonInteractive()) {
           logger.error('Component name is required in non-interactive mode');
-          process.exit(1);
+          process.exitCode = 1;
+        return;
         }
         
         const { inputName } = await inquirer.prompt([
@@ -67,7 +69,8 @@ export const createCommand = new Command('create')
       // Validate component name
       if (!/^[a-z0-9-_]+$/.test(componentName!)) {
         logger.error('Component name must contain only lowercase letters, numbers, hyphens, and underscores');
-        process.exit(1);
+        process.exitCode = 1;
+        return;
       }
       
       // Check if component already exists
@@ -101,7 +104,8 @@ export const createCommand = new Command('create')
             logger.info(`Overwriting existing ${componentType} '${componentName}' in ${targetScope} scope (force mode)`);
           } else {
             logger.error(`${componentType.charAt(0).toUpperCase() + componentType.slice(1)} '${componentName}' already exists in ${targetScope} scope. Use --force to overwrite.`);
-            process.exit(1);
+            process.exitCode = 1;
+        return;
           }
         }
       }
@@ -114,7 +118,8 @@ export const createCommand = new Command('create')
         sourceComponent = await findSourceComponent(core, opts.from, componentType);
         if (!sourceComponent) {
           logger.error(`Source component '${opts.from}' not found`);
-          process.exit(1);
+          process.exitCode = 1;
+        return;
         }
         
         try {
@@ -122,7 +127,8 @@ export const createCommand = new Command('create')
           logger.info(`Cloning from ${sourceComponent.source} ${componentType}: ${chalk.cyan(sourceComponent.name)}`);
         } catch (error: any) {
           logger.error(`Failed to read source component: ${error.message}`);
-          process.exit(1);
+          process.exitCode = 1;
+        return;
         }
       } else {
         // Create from template
@@ -178,7 +184,7 @@ export const createCommand = new Command('create')
       
     } catch (error) {
       logger.error('Failed to create component:', error);
-      process.exit(1);
+      process.exitCode = 1;
     }
   });
 

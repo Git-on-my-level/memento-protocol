@@ -32,7 +32,8 @@ export const addCommand = new Command('add')
       if (!validTypes.includes(type as ComponentInfo['type'])) {
         logger.error(`Invalid component type: ${type}`);
         logger.info(`Valid types are: ${validTypes.join(', ')}`);
-        process.exit(1);
+        process.exitCode = 1;
+        return;
       }
       
       // Validate source scope
@@ -40,7 +41,8 @@ export const addCommand = new Command('add')
       if (opts.source && !validSources.includes(opts.source)) {
         logger.error(`Invalid source scope: ${opts.source}`);
         logger.info(`Valid sources are: ${validSources.join(', ')}`);
-        process.exit(1);
+        process.exitCode = 1;
+        return;
       }
       
       const componentType = type as ComponentInfo['type'];
@@ -50,7 +52,8 @@ export const addCommand = new Command('add')
         if (isNonInteractive()) {
           logger.error('Component name is required in non-interactive mode');
           logger.info(`Usage: zcc add ${type} <component-name>`);
-          process.exit(1);
+          process.exitCode = 1;
+        return;
         }
         await showInteractiveSelection(core, componentType, opts);
         return;
@@ -66,7 +69,8 @@ export const addCommand = new Command('add')
         // No matches found, show suggestions or fail in non-interactive mode
         if (isNonInteractive()) {
           logger.error(`${type.charAt(0).toUpperCase() + type.slice(1)} '${name}' not found.`);
-          process.exit(1);
+          process.exitCode = 1;
+        return;
         }
         await handleNoMatches(core, name, componentType);
         return;
@@ -94,7 +98,8 @@ export const addCommand = new Command('add')
           matches.forEach(match => {
             logger.info(`  - ${match.name} (${match.matchType} match, ${match.score}%)`);
           });
-          process.exit(1);
+          process.exitCode = 1;
+        return;
         }
       }
       
@@ -103,7 +108,8 @@ export const addCommand = new Command('add')
       
     } catch (error) {
       logger.error('Failed to add component:', error);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
   });
 
@@ -267,7 +273,8 @@ async function installComponent(
         logger.info(`Overwriting existing ${component.type} '${component.name}' in ${targetScope} scope (non-interactive mode)`);
       } else {
         logger.error(`${component.type.charAt(0).toUpperCase() + component.type.slice(1)} '${component.name}' already exists in ${targetScope} scope. Use --force to overwrite.`);
-        process.exit(1);
+        process.exitCode = 1;
+        return;
       }
     } else {
       logger.warn(`${component.type.charAt(0).toUpperCase() + component.type.slice(1)} '${component.name}' already exists in ${targetScope} scope.`);

@@ -84,7 +84,8 @@ acronymCommand
       logger.success(`Added acronym: ${acronym} → ${expansion}`);
     } catch (error) {
       logger.error('Failed to add acronym:', error);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
   });
 
@@ -102,7 +103,8 @@ acronymCommand
       }
     } catch (error) {
       logger.error('Failed to remove acronym:', error);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
   });
 
@@ -128,7 +130,8 @@ acronymCommand
       });
     } catch (error) {
       logger.error('Failed to list acronyms:', error);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
   });
 

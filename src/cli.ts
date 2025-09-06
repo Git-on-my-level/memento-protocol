@@ -111,7 +111,7 @@ if (args.length === 0) {
       await upsertManager.upsert();
     } catch (error: any) {
       logger.error(`Upsert failed: ${error.message}`);
-      process.exit(1);
+      process.exitCode = 1;
     }
   })();
 } else if (args.length === 1 && (args[0] === "--help" || args[0] === "-h")) {

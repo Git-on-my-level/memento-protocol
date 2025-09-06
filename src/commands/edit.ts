@@ -25,7 +25,8 @@ export const editCommand = new Command('edit')
       if (!validTypes.includes(type as ComponentInfo['type'])) {
         logger.error(`Invalid component type: ${type}`);
         logger.info(`Valid types are: ${validTypes.join(', ')}`);
-        process.exit(1);
+        process.exitCode = 1;
+        return;
       }
       
       const componentType = type as ComponentInfo['type'];
@@ -35,7 +36,8 @@ export const editCommand = new Command('edit')
         if (isNonInteractive()) {
           logger.error('Component name is required in non-interactive mode');
           logger.info(`Usage: zcc edit ${type} <component-name>`);
-          process.exit(1);
+          process.exitCode = 1;
+        return;
         }
         await showInteractiveSelection(core, componentType, opts);
         return;
@@ -51,7 +53,8 @@ export const editCommand = new Command('edit')
         // No matches found, show suggestions or fail in non-interactive mode
         if (isNonInteractive()) {
           logger.error(`${type.charAt(0).toUpperCase() + type.slice(1)} '${name}' not found.`);
-          process.exit(1);
+          process.exitCode = 1;
+        return;
         }
         await handleNoMatches(core, name, componentType);
         return;
@@ -78,7 +81,8 @@ export const editCommand = new Command('edit')
           matches.forEach(match => {
             logger.info(`  - ${match.name} (${match.matchType} match, ${match.score}%)`);
           });
-          process.exit(1);
+          process.exitCode = 1;
+        return;
         }
       }
       
@@ -87,7 +91,7 @@ export const editCommand = new Command('edit')
       
     } catch (error) {
       logger.error('Failed to edit component:', error);
-      process.exit(1);
+      process.exitCode = 1;
     }
   });
 
