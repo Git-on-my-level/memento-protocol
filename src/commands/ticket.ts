@@ -2,6 +2,29 @@ import { Command } from 'commander';
 import { TicketManager, TicketStatus, TicketType, TicketCreationOptions } from '../lib/ticketManager';
 import { logger } from '../lib/logger';
 import inquirer from 'inquirer';
+// Type guards for validation
+function isValidPriority(priority: string): priority is 'low' | 'medium' | 'high' | 'critical' {
+  return ['low', 'medium', 'high', 'critical'].includes(priority);
+}
+
+function isValidTicketType(type: string): type is TicketType {
+  return ['feature', 'bug', 'task', 'refactor'].includes(type);
+}
+
+// Validation functions
+function validatePriority(priority: string): 'low' | 'medium' | 'high' | 'critical' {
+  if (!isValidPriority(priority)) {
+    throw new Error(`Invalid priority: ${priority}. Must be one of: low, medium, high, critical`);
+  }
+  return priority;
+}
+
+function validateTicketType(type: string): TicketType {
+  if (!isValidTicketType(type)) {
+    throw new Error(`Invalid ticket type: ${type}. Must be one of: feature, bug, task, refactor`);
+  }
+  return type;
+}
 
 const ticketCommand = new Command('ticket')
   .description('Manage tickets for persistent workspace');
@@ -78,20 +101,20 @@ ticketCommand
         ]);
         
         ticketOptions = {
-          type: answers.type as TicketType,
+          type: validateTicketType(answers.type),
           title: answers.title,
           description: answers.description,
-          priority: answers.priority as any,
+          priority: validatePriority(answers.priority),
           assignee: answers.assignee,
           tags: answers.tags ? answers.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0) : []
         };
       } else {
-        // Use command line options
+        // Use command line options with validation
         ticketOptions = {
-          type: options.type as TicketType,
+          type: options.type ? validateTicketType(options.type) : 'task',
           title: options.title,
           description: options.description,
-          priority: options.priority as any,
+          priority: options.priority ? validatePriority(options.priority) : 'medium',
           assignee: options.assignee,
           tags: options.tags ? options.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0) : []
         };
