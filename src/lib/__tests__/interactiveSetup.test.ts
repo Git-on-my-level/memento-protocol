@@ -1,5 +1,4 @@
 import { InteractiveSetup } from "../interactiveSetup";
-import { ComponentInstaller } from "../componentInstaller";
 import { ConfigManager } from "../configManager";
 import { HookManager } from "../hooks/HookManager";
 import { StarterPackManager } from "../StarterPackManager";
@@ -7,7 +6,6 @@ import { StarterPackManager } from "../StarterPackManager";
 jest.mock("inquirer", () => ({
   prompt: jest.fn(),
 }));
-jest.mock("../componentInstaller");
 jest.mock("../configManager");
 jest.mock("../hooks/HookManager");
 jest.mock("../StarterPackManager");
@@ -23,7 +21,6 @@ jest.mock("../logger", () => ({
 
 describe("InteractiveSetup", () => {
   let interactiveSetup: InteractiveSetup;
-  let mockInstaller: jest.Mocked<ComponentInstaller>;
   let mockConfigManager: jest.Mocked<ConfigManager>;
   let mockHookManager: jest.Mocked<HookManager>;
   let mockStarterPackManager: jest.Mocked<StarterPackManager>;
@@ -32,10 +29,6 @@ describe("InteractiveSetup", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    mockInstaller = {
-      installComponent: jest.fn(),
-      listAvailableComponents: jest.fn(),
-    } as any;
 
     mockConfigManager = {
       save: jest.fn(),
@@ -55,9 +48,6 @@ describe("InteractiveSetup", () => {
       }),
     } as any;
 
-    (
-      ComponentInstaller as jest.MockedClass<typeof ComponentInstaller>
-    ).mockImplementation(() => mockInstaller);
     (
       ConfigManager as jest.MockedClass<typeof ConfigManager>
     ).mockImplementation(() => mockConfigManager);

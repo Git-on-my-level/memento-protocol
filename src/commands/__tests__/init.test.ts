@@ -4,7 +4,6 @@ import { HookManager } from "../../lib/hooks/HookManager";
 import { InteractiveSetup } from "../../lib/interactiveSetup";
 import { CommandGenerator } from "../../lib/commandGenerator";
 import { StarterPackManager } from "../../lib/StarterPackManager";
-import { ComponentInstaller } from "../../lib/componentInstaller";
 import { logger } from "../../lib/logger";
 import { createTestFileSystem } from "../../lib/testing";
 import inquirer from "inquirer";
@@ -14,7 +13,6 @@ jest.mock("../../lib/hooks/HookManager");
 jest.mock("../../lib/interactiveSetup");
 jest.mock("../../lib/commandGenerator");
 jest.mock("../../lib/StarterPackManager");
-jest.mock("../../lib/componentInstaller");
 jest.mock("../../lib/logger", () => ({
   logger: {
     info: jest.fn(),
@@ -47,15 +45,6 @@ class MockFactory {
     } as any;
   }
 
-  static createComponentInstaller(): jest.Mocked<ComponentInstaller> {
-    return {
-      listAvailableComponents: jest.fn().mockResolvedValue({
-        modes: [{ name: 'architect', description: 'Architect mode' }, { name: 'engineer', description: 'Engineer mode' }],
-        workflows: [{ name: 'review', description: 'Code review workflow' }],
-        agents: [{ name: 'claude-code-research', description: 'Research agent' }]
-      })
-    } as any;
-  }
 
   static createInteractiveSetup(): jest.Mocked<InteractiveSetup> {
     return {
@@ -95,7 +84,6 @@ describe("Init Command", () => {
   let mockInteractiveSetup: jest.Mocked<InteractiveSetup>;
   let mockCommandGenerator: jest.Mocked<CommandGenerator>;
   let mockStarterPackManager: jest.Mocked<StarterPackManager>;
-  let mockComponentInstaller: jest.Mocked<ComponentInstaller>;
   let originalExit: any;
   
   // Reference to the mocked inquirer
@@ -126,7 +114,6 @@ describe("Init Command", () => {
     mockInteractiveSetup = MockFactory.createInteractiveSetup();
     mockCommandGenerator = MockFactory.createCommandGenerator();
     mockStarterPackManager = MockFactory.createStarterPackManager();
-    mockComponentInstaller = MockFactory.createComponentInstaller();
 
     // Apply fresh mock implementations to constructors
     (
@@ -144,9 +131,6 @@ describe("Init Command", () => {
     (
       StarterPackManager as jest.MockedClass<typeof StarterPackManager>
     ).mockImplementation(() => mockStarterPackManager);
-    (
-      ComponentInstaller as jest.MockedClass<typeof ComponentInstaller>
-    ).mockImplementation(() => mockComponentInstaller);
 
     // Reset inquirer completely with fresh implementation
     mockInquirer.prompt.mockReset();
