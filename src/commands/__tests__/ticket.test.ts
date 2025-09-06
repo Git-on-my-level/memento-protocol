@@ -43,8 +43,15 @@ describe('Ticket Command', () => {
 
       await ticketCommand.parseAsync(['node', 'test', 'create', 'Add new feature']);
 
-      expect(mockTicketManager.create).toHaveBeenCalledWith('Add new feature');
-      expect(logger.success).toHaveBeenCalledWith('Created ticket: Add new feature');
+      expect(mockTicketManager.create).toHaveBeenCalledWith('Add new feature', {
+        type: undefined,
+        title: undefined, 
+        description: undefined,
+        priority: undefined,
+        assignee: undefined,
+        tags: []
+      });
+      expect(logger.success).toHaveBeenCalledWith('Created task ticket: Add new feature');
       expect(logger.info).toHaveBeenCalledWith(`Location: ${ticketPath}`);
     });
 
@@ -100,14 +107,14 @@ describe('Ticket Command', () => {
     it('should move ticket to new status', async () => {
       mockTicketManager.move.mockResolvedValue(undefined);
 
-      await ticketCommand.parseAsync(['node', 'test', 'move', 'Feature A', '--to', 'in-progress']);
+      await ticketCommand.parseAsync(['node', 'test', 'move', 'Feature A', 'in-progress']);
 
       expect(mockTicketManager.move).toHaveBeenCalledWith('Feature A', 'in-progress');
       expect(logger.success).toHaveBeenCalledWith("Moved ticket 'Feature A' to in-progress");
     });
 
     it('should validate status parameter', async () => {
-      await ticketCommand.parseAsync(['node', 'test', 'move', 'Feature A', '--to', 'invalid-status']);
+      await ticketCommand.parseAsync(['node', 'test', 'move', 'Feature A', 'invalid-status']);
 
       expect(logger.error).toHaveBeenCalledWith('Invalid status: invalid-status. Must be one of: next, in-progress, done');
       expect(process.exit).toHaveBeenCalledWith(1);
