@@ -95,7 +95,8 @@ export function createUpdateCommand(): Command {
         } else {
           logger.error(`Update failed: ${error.message}`);
         }
-        process.exit(1);
+        process.exitCode = 1;
+        return;
       }
     });
 
@@ -134,7 +135,8 @@ export function createUpdateCommand(): Command {
         await updateManager.showDiff(type as "mode" | "workflow", name);
       } catch (error: any) {
         logger.error(`Failed to show diff: ${error.message}`);
-        process.exit(1);
+        process.exitCode = 1;
+        return;
       }
     });
 

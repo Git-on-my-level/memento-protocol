@@ -26,6 +26,9 @@ describe('Add Command - Non-Interactive Mode', () => {
     originalExit = process.exit;
     process.exit = jest.fn() as any;
 
+    // Reset process.exitCode
+    process.exitCode = 0;
+
     // Reset all mocks
     jest.clearAllMocks();
 
@@ -86,7 +89,7 @@ describe('Add Command - Non-Interactive Mode', () => {
       
       await addCommand.parseAsync(['node', 'zcc', 'add', 'mode']);
 
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
       expect(mockLogger.error).toHaveBeenCalledWith('Component name is required in non-interactive mode');
     });
 
@@ -95,7 +98,7 @@ describe('Add Command - Non-Interactive Mode', () => {
 
       await addCommand.parseAsync(['node', 'zcc', 'add', 'mode', 'nonexistent']);
 
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
       expect(mockLogger.error).toHaveBeenCalledWith("Mode 'nonexistent' not found.");
     });
 
@@ -200,7 +203,7 @@ describe('Add Command - Non-Interactive Mode', () => {
 
       await addCommand.parseAsync(['node', 'zcc', 'add', 'mode', 'xyz']);
 
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Multiple ambiguous matches found for 'xyz'. Please be more specific."
       );
@@ -223,6 +226,7 @@ describe('Add Command - Non-Interactive Mode', () => {
       };
 
       const mockConflict = {
+        component: mockMatch.component,
         source: 'project' as const
       };
 
@@ -256,6 +260,7 @@ describe('Add Command - Non-Interactive Mode', () => {
       };
 
       const mockConflict = {
+        component: mockMatch.component,
         source: 'project' as const
       };
 
@@ -264,7 +269,7 @@ describe('Add Command - Non-Interactive Mode', () => {
 
       await addCommand.parseAsync(['node', 'zcc', 'add', 'mode', 'architect']);
 
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Mode 'architect' already exists in project scope. Use --force to overwrite."
       );
@@ -278,7 +283,7 @@ describe('Add Command - Non-Interactive Mode', () => {
 
       await addCommand.parseAsync(['node', 'zcc', 'add', 'mode', 'nonexistent']);
 
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
       expect(mockLogger.error).toHaveBeenCalledWith("Mode 'nonexistent' not found.");
     });
 
@@ -300,7 +305,7 @@ describe('Add Command - Non-Interactive Mode', () => {
       };
 
       mockCore.findComponents.mockResolvedValue([mockMatch]);
-      mockCore.getComponentConflicts.mockResolvedValue([{ source: 'project' }]);
+      mockCore.getComponentConflicts.mockResolvedValue([{ component: mockMatch.component, source: 'project' }]);
 
       await addCommand.parseAsync(['node', 'zcc', 'add', 'mode', 'architect']);
 

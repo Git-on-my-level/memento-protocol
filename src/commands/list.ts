@@ -71,14 +71,16 @@ export const listCommand = new Command('list')
       
       if (options.type && !typeMapping[options.type]) {
         logger.error(`Invalid component type '${options.type}'. Valid types are: ${validTypes.join(', ')} (plural forms also accepted)`);
-        process.exit(1);
+        process.exitCode = 1;
+        return;
       }
       
       // Validate scope filter
       const validScopes = ['builtin', 'global', 'project'];
       if (options.scope && !validScopes.includes(options.scope)) {
         logger.error(`Invalid scope '${options.scope}'. Valid scopes are: ${validScopes.join(', ')}`);
-        process.exit(1);
+        process.exitCode = 1;
+        return;
       }
 
       // Show status summary
@@ -102,7 +104,7 @@ export const listCommand = new Command('list')
       }
     } catch (error) {
       logger.error('Failed to list components:', error);
-      process.exit(1);
+      process.exitCode = 1;
     }
   });
 

@@ -11,6 +11,6 @@ export const upsertCommand = new Command("upsert")
       await upsertManager.upsert(options.force);
     } catch (error: any) {
       logger.error("Upsert failed:", error);
-      process.exit(1);
+      process.exitCode = 1;
     }
   });
