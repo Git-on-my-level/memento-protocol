@@ -82,9 +82,10 @@ export class PackInstaller {
         await this.installConfiguration(manifest);
       }
 
-      // Update project pack manifest
+      // Update project pack manifest and save manifest snapshot
       if (!options.dryRun) {
         await this.updateProjectManifest(manifest, source.getSourceInfo());
+        await this.saveManifestSnapshot(manifest);
       }
 
       // Run post-install actions
@@ -144,20 +145,20 @@ export class PackInstaller {
     const errors: string[] = [];
 
     try {
-      // Load the pack manifest from the installed source to know what components to remove
-      // For now, we'll attempt to remove based on common patterns since we don't store
-      // the original manifest. In a future enhancement, we could store the manifest
-      // during installation for precise removal.
-      
-      // Try to load pack manifest from the source if still available
+      // Try to load the pack manifest snapshot first for precise removal
       let packManifest: PackStructure['manifest'] | null = null;
-      try {
-        // This is a fallback approach - try to reconstruct what was installed
-        // by examining the installed files and project manifest
-        packManifest = await this.reconstructPackManifest(packName, packInfo);
-      } catch (error) {
-        logger.debug(`Could not reconstruct pack manifest for '${packName}': ${error}`);
-        // Continue with file-based cleanup approach
+      
+      // First, check for saved manifest snapshot
+      packManifest = await this.loadManifestSnapshot(packName);
+      
+      // If no snapshot, try to reconstruct from original source as fallback
+      if (!packManifest) {
+        try {
+          packManifest = await this.reconstructPackManifest(packName, packInfo);
+        } catch (error) {
+          logger.debug(`Could not reconstruct pack manifest for '${packName}': ${error}`);
+          // Continue with file-based cleanup approach
+        }
       }
 
       // Remove components by type
@@ -173,7 +174,8 @@ export class PackInstaller {
       // Clean up pack-specific configuration
       await this.cleanupPackConfiguration(packName, packManifest, errors);
 
-      // Update project manifest to remove this pack
+      // Remove manifest snapshot and update project manifest
+      await this.removeManifestSnapshot(packName);
       await this.removeFromProjectManifest(packName);
 
       const success = errors.length === 0;
@@ -447,6 +449,7 @@ export class PackInstaller {
       this.fs.join(this.zccDir, 'modes'),
       this.fs.join(this.zccDir, 'workflows'),
       this.fs.join(this.zccDir, 'hooks'),
+      this.fs.join(this.zccDir, 'packs'),
       this.fs.join(this.claudeDir, 'agents'),
     ];
 
@@ -748,6 +751,57 @@ export class PackInstaller {
 
     } catch (error) {
       errors.push(`Failed to clean up configuration for pack '${packName}': ${error}`);
+    }
+  }
+
+  /**
+   * Save manifest snapshot for precise uninstall
+   */
+  private async saveManifestSnapshot(manifest: PackStructure['manifest']): Promise<void> {
+    try {
+      const snapshotPath = this.fs.join(this.zccDir, 'packs', `${manifest.name}.manifest.json`);
+      await this.fs.writeFile(snapshotPath, JSON.stringify(manifest, null, 2));
+      logger.debug(`Saved manifest snapshot for pack '${manifest.name}'`);
+    } catch (error) {
+      logger.warn(`Failed to save manifest snapshot for pack '${manifest.name}': ${error}`);
+      // Don't fail installation for snapshot errors
+    }
+  }
+
+  /**
+   * Load manifest snapshot for precise uninstall
+   */
+  private async loadManifestSnapshot(packName: string): Promise<PackStructure['manifest'] | null> {
+    try {
+      const snapshotPath = this.fs.join(this.zccDir, 'packs', `${packName}.manifest.json`);
+      
+      if (await this.fs.exists(snapshotPath)) {
+        const content = await this.fs.readFile(snapshotPath, 'utf-8');
+        const manifest = JSON.parse(content as string);
+        logger.debug(`Loaded manifest snapshot for pack '${packName}'`);
+        return manifest;
+      }
+    } catch (error) {
+      logger.debug(`Failed to load manifest snapshot for pack '${packName}': ${error}`);
+    }
+    
+    return null;
+  }
+
+  /**
+   * Remove manifest snapshot
+   */
+  private async removeManifestSnapshot(packName: string): Promise<void> {
+    try {
+      const snapshotPath = this.fs.join(this.zccDir, 'packs', `${packName}.manifest.json`);
+      
+      if (await this.fs.exists(snapshotPath)) {
+        await this.fs.unlink(snapshotPath);
+        logger.debug(`Removed manifest snapshot for pack '${packName}'`);
+      }
+    } catch (error) {
+      logger.debug(`Failed to remove manifest snapshot for pack '${packName}': ${error}`);
+      // Don't fail uninstall for snapshot cleanup errors
     }
   }
 

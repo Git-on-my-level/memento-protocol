@@ -65,7 +65,8 @@ export const initCommand = new Command("init")
         if (!packResult.success) {
           logger.error("Starter pack installation failed:");
           packResult.errors.forEach(error => logger.error(`  ${error}`));
-          process.exit(1);
+          process.exitCode = 1;
+          return;
         }
         
         logger.success(`Starter pack '${options.pack}' installed successfully`);
@@ -141,7 +142,8 @@ export const initCommand = new Command("init")
           if (!packResult.success) {
             logger.error("Global starter pack installation failed:");
             packResult.errors.forEach(error => logger.error(`  ${error}`));
-            process.exit(1);
+            process.exitCode = 1;
+            return;
           }
           
           logger.success(`Starter pack '${setupOptions.selectedPack}' installed successfully to global scope`);
@@ -225,7 +227,8 @@ export const initCommand = new Command("init")
       logger.info('Run "zcc hook list" to see installed hooks.');
     } catch (error) {
       logger.error("Failed to initialize zcc:", error);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
   });
 
