@@ -18,6 +18,7 @@ import { DirectoryManager } from "../directoryManager";
 import { IPackSource } from "./PackSource";
 import { ToolDependencyChecker, ToolDependency } from "./ToolDependencyChecker";
 import { HookManager } from "../hooks/HookManager";
+import { isVerbose } from "../context";
 
 export class PackInstaller {
   private directoryManager: DirectoryManager;
@@ -81,9 +82,16 @@ export class PackInstaller {
       await this.installComponents('agents', manifest, source, installed, skipped, errors, options);
       await this.installComponents('hooks', manifest, source, installed, skipped, errors, options);
 
-      // Install configuration
-      if (manifest.configuration && !options.dryRun) {
-        await this.installConfiguration(manifest);
+      // Install configuration and hooks
+      if (!options.dryRun) {
+        if (manifest.configuration) {
+          await this.installConfiguration(manifest);
+        }
+        
+        // Configure hooks (independent of configuration section)
+        if (manifest.hooks && manifest.hooks.length > 0) {
+          await this.configureHooks(manifest.hooks);
+        }
       }
 
       // Update project pack manifest and save manifest snapshot
@@ -336,11 +344,6 @@ export class PackInstaller {
     // Write updated config
     await this.fs.writeFile(configPath, JSON.stringify(mergedConfig, null, 2));
     logger.debug('Updated project configuration');
-
-    // Apply hook configurations if they exist
-    if (manifest.hooks && manifest.hooks.length > 0) {
-      await this.configureHooks(manifest.hooks);
-    }
   }
 
   /**
@@ -384,16 +387,19 @@ export class PackInstaller {
     }
 
     // SECURITY CRITICAL: Command execution completely disabled
-    logger.warn('⚠️  SECURITY: Post-install commands detected but disabled for security');
-    logger.warn('⚠️  Post-install commands could allow arbitrary code execution from untrusted sources');
-    logger.warn('⚠️  Found commands in manifest but they will NOT be executed:');
+    logger.warn('Security: Post-install commands disabled (use --verbose for details)');
     
-    for (const command of manifest.postInstall.commands) {
-      logger.warn(`⚠️    - ${command}`);
+    if (isVerbose()) {
+      logger.warn('⚠️  Post-install commands could allow arbitrary code execution from untrusted sources');
+      logger.warn('⚠️  Found commands in manifest but they will NOT be executed:');
+      
+      for (const command of manifest.postInstall.commands) {
+        logger.warn(`⚠️    - ${command}`);
+      }
+      
+      logger.warn('⚠️  If you trust this pack and need these commands, run them manually');
+      logger.warn('⚠️  Never run commands from untrusted starter packs');
     }
-    
-    logger.warn('⚠️  If you trust this pack and need these commands, run them manually');
-    logger.warn('⚠️  Never run commands from untrusted starter packs');
   }
 
   /**

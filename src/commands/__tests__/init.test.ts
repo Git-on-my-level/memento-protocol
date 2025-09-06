@@ -144,6 +144,8 @@ describe("Init Command", () => {
 
     // Mock process.exit fresh for each test
     process.exit = jest.fn() as any;
+    // Reset process.exitCode
+    process.exitCode = 0;
 
     // CRITICAL: Reset commander.js internal state to prevent option parsing contamination
     // More comprehensive reset of commander.js state
@@ -258,7 +260,7 @@ describe("Init Command", () => {
 
       expect(logger.error).toHaveBeenCalledWith("Starter pack installation failed:");
       expect(logger.error).toHaveBeenCalledWith("  Pack 'invalid-pack' not found");
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
 
     it("should combine --pack with --force flag", async () => {
@@ -324,7 +326,7 @@ describe("Init Command", () => {
         "Failed to initialize zcc:",
         expect.any(Error)
       );
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
   });
 
@@ -497,7 +499,7 @@ describe("Init Command", () => {
       // The implementation logs starter pack specific errors, not generic init errors
       expect(logger.error).toHaveBeenCalledWith("Starter pack installation failed:");
       expect(logger.error).toHaveBeenCalledWith("  Pack 'non-existent' not found");
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
 
     it("should handle empty pack selection gracefully", async () => {

