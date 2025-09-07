@@ -38,22 +38,22 @@ describe('Validate Command', () => {
 
     // Setup console.log spy to avoid test output
     jest.spyOn(console, 'log').mockImplementation(() => {});
-    jest.spyOn(process, 'exit').mockImplementation(() => {
-      throw new Error('Process.exit called');
-    });
+    
+    // Reset process.exitCode
+    process.exitCode = 0;
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
+    process.exitCode = 0;
   });
 
   describe('basic validation', () => {
     it('should reject invalid component type', async () => {
-      await expect(async () => {
-        await validateCommand.parseAsync(['node', 'test', 'invalid-type']);
-      }).rejects.toThrow('Process.exit called');
+      await validateCommand.parseAsync(['node', 'test', 'invalid-type']);
 
       expect(mockLogger.error).toHaveBeenCalledWith('Invalid component type: invalid-type. Valid types are: mode, workflow, agent');
+      expect(process.exitCode).toBe(1);
     });
 
     it('should validate all components when no arguments provided', async () => {
@@ -138,11 +138,10 @@ describe('Validate Command', () => {
       mockCore.findComponents.mockResolvedValue([]);
       mockCore.generateSuggestions.mockResolvedValue(['similar-mode', 'other-mode']);
 
-      await expect(async () => {
-        await validateCommand.parseAsync(['node', 'test', 'mode', 'nonexistent']);
-      }).rejects.toThrow('Process.exit called');
+      await validateCommand.parseAsync(['node', 'test', 'mode', 'nonexistent']);
 
       expect(mockLogger.error).toHaveBeenCalledWith('Component mode \'nonexistent\' not found.\n\nDid you mean one of these?\n  similar-mode\n  other-mode');
+      expect(process.exitCode).toBe(1);
     });
   });
 });

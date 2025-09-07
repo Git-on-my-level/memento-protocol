@@ -121,7 +121,7 @@ describe('Acronym Command', () => {
       
       expect(logger.info).toHaveBeenCalledWith('Configured Acronyms:');
       expect(logger.space).toHaveBeenCalled();
-      expect(logger.info).toHaveBeenCalledWith('  SSA → Sonic Sub-Agents');
+      expect(logger.info).toHaveBeenCalledWith('  API → Application Programming Interface');
     });
   });
 

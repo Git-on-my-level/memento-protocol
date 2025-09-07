@@ -1,6 +1,6 @@
 import { addCommand } from '../add';
 import { ZccCore } from '../../lib/ZccCore';
-import { cliContext } from '../../lib/context';
+import { cliContext, isNonInteractive, shouldProceedWithoutPrompt } from '../../lib/context';
 import { logger } from '../../lib/logger';
 
 // Mock dependencies
@@ -12,6 +12,8 @@ jest.mock('inquirer');
 const mockZccCore = ZccCore as jest.MockedClass<typeof ZccCore>;
 const mockCliContext = cliContext as jest.Mocked<typeof cliContext>;
 const mockLogger = logger as jest.Mocked<typeof logger>;
+const mockIsNonInteractive = isNonInteractive as jest.MockedFunction<typeof isNonInteractive>;
+const mockShouldProceedWithoutPrompt = shouldProceedWithoutPrompt as jest.MockedFunction<typeof shouldProceedWithoutPrompt>;
 
 // Mock fs and path for component installation
 jest.mock('fs');
@@ -25,6 +27,9 @@ describe('Add Command - Non-Interactive Mode', () => {
     // Mock process.exit to prevent test termination
     originalExit = process.exit;
     process.exit = jest.fn() as any;
+
+    // Reset process.exitCode
+    process.exitCode = 0;
 
     // Reset all mocks
     jest.clearAllMocks();
@@ -45,9 +50,11 @@ describe('Add Command - Non-Interactive Mode', () => {
 
     mockZccCore.mockImplementation(() => mockCore);
 
-    // Default context setup
+    // Default context setup - mock both the context methods and direct exports
     mockCliContext.isNonInteractive = jest.fn().mockReturnValue(false);
     mockCliContext.isForce = jest.fn().mockReturnValue(false);
+    mockIsNonInteractive.mockReturnValue(false);
+    mockShouldProceedWithoutPrompt.mockReturnValue(false);
 
     // Mock logger methods
     mockLogger.error = jest.fn();
@@ -67,35 +74,28 @@ describe('Add Command - Non-Interactive Mode', () => {
 
   afterEach(() => {
     process.exit = originalExit;
+    process.exitCode = 0;
   });
 
   describe('Non-interactive mode behavior', () => {
     beforeEach(() => {
       mockCliContext.isNonInteractive = jest.fn().mockReturnValue(true);
+      mockIsNonInteractive.mockReturnValue(true);
     });
 
     it('should fail when no component name provided', async () => {
-      const mockParse = jest.fn().mockResolvedValue({
-        args: ['mode'],
-        opts: {}
-      });
-      
-      // Mock commander's parseAsync behavior
-      const command = addCommand;
-      (command as any).parseAsync = mockParse;
-      
-      await addCommand.parseAsync(['node', 'zcc', 'add', 'mode']);
+      await addCommand.parseAsync(['node', 'zcc', 'mode']);
 
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
       expect(mockLogger.error).toHaveBeenCalledWith('Component name is required in non-interactive mode');
     });
 
     it('should fail when component not found', async () => {
       mockCore.findComponents.mockResolvedValue([]);
 
-      await addCommand.parseAsync(['node', 'zcc', 'add', 'mode', 'nonexistent']);
+      await addCommand.parseAsync(['node', 'zcc', 'mode', 'nonexistent']);
 
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
       expect(mockLogger.error).toHaveBeenCalledWith("Mode 'nonexistent' not found.");
     });
 
@@ -116,7 +116,7 @@ describe('Add Command - Non-Interactive Mode', () => {
       mockCore.findComponents.mockResolvedValue([mockMatch]);
       mockCore.getComponentConflicts.mockResolvedValue([]);
 
-      await addCommand.parseAsync(['node', 'zcc', 'add', 'mode', 'architect']);
+      await addCommand.parseAsync(['node', 'zcc', 'mode', 'architect']);
 
       expect(mockCore.findComponents).toHaveBeenCalledWith('architect', 'mode', {
         maxResults: 5,
@@ -158,7 +158,7 @@ describe('Add Command - Non-Interactive Mode', () => {
       mockCore.findComponents.mockResolvedValue(mockMatches);
       mockCore.getComponentConflicts.mockResolvedValue([]);
 
-      await addCommand.parseAsync(['node', 'zcc', 'add', 'mode', 'arch']);
+      await addCommand.parseAsync(['node', 'zcc', 'mode', 'arch']);
 
       expect(mockLogger.info).toHaveBeenCalledWith(
         "Auto-selected 'architect' (substring match, 85%)"
@@ -198,9 +198,9 @@ describe('Add Command - Non-Interactive Mode', () => {
 
       mockCore.findComponents.mockResolvedValue(mockMatches);
 
-      await addCommand.parseAsync(['node', 'zcc', 'add', 'mode', 'xyz']);
+      await addCommand.parseAsync(['node', 'zcc', 'mode', 'xyz']);
 
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Multiple ambiguous matches found for 'xyz'. Please be more specific."
       );
@@ -208,6 +208,7 @@ describe('Add Command - Non-Interactive Mode', () => {
 
     it('should handle conflicts in non-interactive mode with shouldProceedWithoutPrompt', async () => {
       mockCliContext.isForce = jest.fn().mockReturnValue(true);
+      mockShouldProceedWithoutPrompt.mockReturnValue(true);
       
       const mockMatch = {
         name: 'architect',
@@ -223,13 +224,14 @@ describe('Add Command - Non-Interactive Mode', () => {
       };
 
       const mockConflict = {
+        component: mockMatch.component,
         source: 'project' as const
       };
 
       mockCore.findComponents.mockResolvedValue([mockMatch]);
       mockCore.getComponentConflicts.mockResolvedValue([mockConflict]);
 
-      await addCommand.parseAsync(['node', 'zcc', 'add', 'mode', 'architect']);
+      await addCommand.parseAsync(['node', 'zcc', 'mode', 'architect']);
 
       expect(mockLogger.info).toHaveBeenCalledWith(
         expect.stringContaining('Overwriting existing mode')
@@ -256,15 +258,16 @@ describe('Add Command - Non-Interactive Mode', () => {
       };
 
       const mockConflict = {
+        component: mockMatch.component,
         source: 'project' as const
       };
 
       mockCore.findComponents.mockResolvedValue([mockMatch]);
       mockCore.getComponentConflicts.mockResolvedValue([mockConflict]);
 
-      await addCommand.parseAsync(['node', 'zcc', 'add', 'mode', 'architect']);
+      await addCommand.parseAsync(['node', 'zcc', 'mode', 'architect']);
 
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Mode 'architect' already exists in project scope. Use --force to overwrite."
       );
@@ -274,17 +277,20 @@ describe('Add Command - Non-Interactive Mode', () => {
   describe('Global flags integration', () => {
     it('should respect global --non-interactive flag', async () => {
       mockCliContext.isNonInteractive = jest.fn().mockReturnValue(true);
+      mockIsNonInteractive.mockReturnValue(true);
       mockCore.findComponents.mockResolvedValue([]);
 
-      await addCommand.parseAsync(['node', 'zcc', 'add', 'mode', 'nonexistent']);
+      await addCommand.parseAsync(['node', 'zcc', 'mode', 'nonexistent']);
 
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
       expect(mockLogger.error).toHaveBeenCalledWith("Mode 'nonexistent' not found.");
     });
 
     it('should respect global --force flag', async () => {
       mockCliContext.isNonInteractive = jest.fn().mockReturnValue(true);
+      mockIsNonInteractive.mockReturnValue(true);
       mockCliContext.isForce = jest.fn().mockReturnValue(true);
+      mockShouldProceedWithoutPrompt.mockReturnValue(true);
       
       const mockMatch = {
         name: 'architect',
@@ -300,9 +306,9 @@ describe('Add Command - Non-Interactive Mode', () => {
       };
 
       mockCore.findComponents.mockResolvedValue([mockMatch]);
-      mockCore.getComponentConflicts.mockResolvedValue([{ source: 'project' }]);
+      mockCore.getComponentConflicts.mockResolvedValue([{ component: mockMatch.component, source: 'project' }]);
 
-      await addCommand.parseAsync(['node', 'zcc', 'add', 'mode', 'architect']);
+      await addCommand.parseAsync(['node', 'zcc', 'mode', 'architect']);
 
       expect(mockLogger.info).toHaveBeenCalledWith(
         expect.stringContaining('Overwriting existing mode')

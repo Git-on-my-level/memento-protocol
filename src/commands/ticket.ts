@@ -136,7 +136,8 @@ ticketCommand
       }
     } catch (error) {
       logger.error(`Failed to create ticket: ${error}`);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
   });
 
@@ -176,7 +177,8 @@ ticketCommand
       });
     } catch (error) {
       logger.error(`Failed to list tickets: ${error}`);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
   });
 
@@ -191,14 +193,16 @@ ticketCommand
       // Validate status
       if (!['next', 'in-progress', 'done'].includes(status)) {
         logger.error(`Invalid status: ${status}. Must be one of: next, in-progress, done`);
-        process.exit(1);
+        process.exitCode = 1;
+      return;
       }
       
       await ticketManager.move(name, status as TicketStatus);
       logger.success(`Moved ticket '${name}' to ${status}`);
     } catch (error) {
       logger.error(`Failed to move ticket: ${error}`);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
   });
 
@@ -213,7 +217,8 @@ ticketCommand
       logger.success(`Started ticket '${name}' (moved to in-progress)`);
     } catch (error) {
       logger.error(`Failed to start ticket: ${error}`);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
   });
 
@@ -228,7 +233,8 @@ ticketCommand
       logger.success(`Finished ticket '${name}' (moved to done)`);
     } catch (error) {
       logger.error(`Failed to finish ticket: ${error}`);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
   });
 
@@ -243,7 +249,8 @@ ticketCommand
       logger.success(`Deleted ticket: ${name}`);
     } catch (error) {
       logger.error(`Failed to delete ticket: ${error}`);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
   });
 

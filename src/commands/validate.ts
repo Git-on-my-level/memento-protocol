@@ -74,10 +74,12 @@ export const validateCommand = new Command('validate')
     } catch (error) {
       if (error instanceof ValidationError) {
         logger.error(error.message);
-        process.exit(error.exitCode);
+        process.exitCode = error.exitCode;
+        return;
       } else {
         logger.error('Failed to validate components:', error);
-        process.exit(1);
+        process.exitCode = 1;
+        return;
       }
     }
   });

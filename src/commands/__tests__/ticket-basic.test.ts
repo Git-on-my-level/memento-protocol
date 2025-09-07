@@ -1,4 +1,3 @@
-import { ticketCommand } from '../ticket';
 import { TicketManager } from '../../lib/ticketManager';
 import { logger } from '../../lib/logger';
 
@@ -15,6 +14,7 @@ jest.mock('../../lib/logger', () => ({
 describe('Ticket Command Basic Coverage', () => {
   let mockTicketManager: any;
   let originalExit: any;
+  let ticketCommand: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -30,23 +30,32 @@ describe('Ticket Command Basic Coverage', () => {
     
     originalExit = process.exit;
     process.exit = jest.fn() as any;
+    
+    // Reset process.exitCode
+    process.exitCode = 0;
+    
+    // Import fresh module instance for each test to prevent Commander.js state pollution
+    jest.isolateModules(() => {
+      ticketCommand = require('../ticket').ticketCommand;
+    });
   });
 
   afterEach(() => {
     process.exit = originalExit;
+    process.exitCode = 0;
   });
 
   it('should create ticket with basic params', async () => {
     const ticketPath = '/project/.zcc/tickets/next/Test ticket.md';
     mockTicketManager.create.mockResolvedValue(ticketPath);
     
-    await ticketCommand.parseAsync(['node', 'test', 'create', 'Test ticket']);
+    await ticketCommand.parseAsync(['node', 'test', 'create', 'Test ticket', '--type', 'task']);
     
     expect(mockTicketManager.create).toHaveBeenCalledWith('Test ticket', {
-      type: undefined,
+      type: 'task',
       title: undefined, 
       description: undefined,
-      priority: undefined,
+      priority: 'medium',
       assignee: undefined,
       tags: []
     });

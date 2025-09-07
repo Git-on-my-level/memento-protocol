@@ -88,6 +88,9 @@ describe('Edit Command', () => {
     // Mock exit to prevent test termination
     originalExit = process.exit;
     process.exit = jest.fn() as any;
+    
+    // Reset process.exitCode
+    process.exitCode = 0;
 
     // Reset console spies
     jest.spyOn(console, 'log').mockImplementation();
@@ -96,6 +99,7 @@ describe('Edit Command', () => {
 
   afterEach(() => {
     process.exit = originalExit;
+    process.exitCode = 0;
     process.env = originalEnv;
     jest.restoreAllMocks();
   });
@@ -569,7 +573,7 @@ describe('Edit Command', () => {
       await editCommand.parseAsync(['invalid', 'name'], { from: 'user' });
 
       expect(logger.error).toHaveBeenCalledWith('Invalid component type: invalid');
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
   });
 

@@ -21,7 +21,7 @@ configCommand
       }
     } catch (error) {
       logger.error(`Failed to get configuration: ${error}`);
-      process.exit(1);
+      process.exitCode = 1;
     }
   });
 
@@ -46,7 +46,7 @@ configCommand
       logger.success(`Configuration updated: ${key} = ${JSON.stringify(parsedValue)}`);
     } catch (error) {
       logger.error(`Failed to set configuration: ${error}`);
-      process.exit(1);
+      process.exitCode = 1;
     }
   });
 
@@ -62,7 +62,7 @@ configCommand
       logger.success(`Configuration key '${key}' removed`);
     } catch (error) {
       logger.error(`Failed to unset configuration: ${error}`);
-      process.exit(1);
+      process.exitCode = 1;
     }
   });
 
@@ -83,7 +83,7 @@ configCommand
       }
     } catch (error) {
       logger.error(`Failed to list configuration: ${error}`);
-      process.exit(1);
+      process.exitCode = 1;
     }
   });
 
@@ -134,11 +134,11 @@ configCommand
       
       // Exit with error if validation failed
       if (!result.valid) {
-        process.exit(1);
+        process.exitCode = 1;
       }
     } catch (error) {
       logger.error(`Failed to validate configuration: ${error}`);
-      process.exit(1);
+      process.exitCode = 1;
     }
   });
 

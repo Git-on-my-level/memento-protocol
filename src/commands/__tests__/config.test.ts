@@ -39,10 +39,14 @@ describe('Config Command', () => {
     
     originalExit = process.exit;
     process.exit = jest.fn() as any;
+    
+    // Reset process.exitCode
+    process.exitCode = 0;
   });
 
   afterEach(() => {
     process.exit = originalExit;
+    process.exitCode = 0;
   });
 
   describe('list subcommand', () => {
@@ -163,7 +167,7 @@ describe('Config Command', () => {
       await configCommand.parseAsync(['node', 'test', 'get', 'someKey']);
 
       expect(logger.error).toHaveBeenCalledWith('Failed to get configuration: Error: File not found');
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
 
     it('should handle errors in set operations', async () => {
@@ -172,7 +176,7 @@ describe('Config Command', () => {
       await configCommand.parseAsync(['node', 'test', 'set', 'key', 'value']);
 
       expect(logger.error).toHaveBeenCalledWith('Failed to set configuration: Error: Permission denied');
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
 
     it('should handle errors in list operations', async () => {
@@ -181,7 +185,7 @@ describe('Config Command', () => {
       await configCommand.parseAsync(['node', 'test', 'list']);
 
       expect(logger.error).toHaveBeenCalledWith('Failed to list configuration: Error: Config error');
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
   });
 });

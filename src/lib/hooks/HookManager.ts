@@ -289,7 +289,7 @@ export class HookManager {
     };
 
     await this.fs.writeFile(settingsPath, JSON.stringify(newSettings, null, 2));
-    logger.info("Updated .claude/settings.local.json");
+    logger.debug("Updated .claude/settings.local.json");
   }
 
 
@@ -341,7 +341,7 @@ export class HookManager {
       // Check if hook already exists and remove it first
       const existingHook = await this.findExistingHook(hookId);
       if (existingHook) {
-        logger.info(`Updating existing hook: ${hookId}`);
+        logger.debug(`Updating existing hook: ${hookId}`);
         await this.fileManager.removeHookFiles(existingHook);
         this.registry.removeHook(hookId);
       }
