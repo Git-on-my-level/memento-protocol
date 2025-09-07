@@ -1,8 +1,7 @@
 import { Command } from 'commander';
 import { ZccCore, ComponentSearchResult } from '../lib/ZccCore';
 import { ComponentInfo } from '../lib/ZccScope';
-import { logger } from '../lib/logger';
-import chalk from 'chalk';
+import { logger, getChalk } from '../lib/logger';
 import inquirer from 'inquirer';
 import { spawn } from 'child_process';
 import * as fs from 'fs';
@@ -107,7 +106,7 @@ async function showInteractiveSelection(
   
   if (components.length === 0) {
     logger.info(`No ${type}s available for editing.`);
-    logger.info(`Create a new ${type}: ${chalk.green(`zcc create ${type}`)}`);
+    logger.info(`Create a new ${type}: ${getChalk().green(`zcc create ${type}`)}`);
     return;
   }
   
@@ -134,9 +133,9 @@ async function showInteractiveSelection(
       const hasConflicts = comps.length > 1;
       const description = primary.component.metadata?.description || 'No description available';
       
-      const conflictIndicator = hasConflicts ? chalk.yellow(' (multiple sources)') : '';
-      const sourceBadge = chalk.dim(`[${primary.source}]`);
-      const editableIndicator = primary.source === 'builtin' ? chalk.red(' (read-only)') : '';
+      const conflictIndicator = hasConflicts ? getChalk().yellow(' (multiple sources)') : '';
+      const sourceBadge = getChalk().dim(`[${primary.source}]`);
+      const editableIndicator = primary.source === 'builtin' ? getChalk().red(' (read-only)') : '';
       
       return {
         name: `${getSourceIcon(primary.source)} ${name} ${sourceBadge}${conflictIndicator}${editableIndicator} - ${description}`,
@@ -149,7 +148,7 @@ async function showInteractiveSelection(
   
   if (choices.length === 0) {
     logger.info(`No editable ${type}s found. Built-in components are read-only.`);
-    logger.info(`Create a new ${type}: ${chalk.green(`zcc create ${type}`)}`);
+    logger.info(`Create a new ${type}: ${getChalk().green(`zcc create ${type}`)}`);
     return;
   }
   
@@ -188,16 +187,16 @@ async function handleNoMatches(
     logger.info('');
     logger.info('Did you mean one of these?');
     for (const suggestion of suggestions) {
-      logger.info(`  ${chalk.cyan(suggestion)}`);
+      logger.info(`  ${getChalk().cyan(suggestion)}`);
     }
     logger.info('');
-    logger.info(`Try: ${chalk.green(`zcc edit ${type} ${suggestions[0]}`)}`);
+    logger.info(`Try: ${getChalk().green(`zcc edit ${type} ${suggestions[0]}`)}`);
   } else {
     logger.info('');
     logger.info(`To see all available ${type}s:`);
-    logger.info(`  ${chalk.green(`zcc list --type ${type}`)}`);
+    logger.info(`  ${getChalk().green(`zcc list --type ${type}`)}`);
     logger.info(`To create a new ${type}:`);
-    logger.info(`  ${chalk.green(`zcc create ${type} ${query}`)}`);
+    logger.info(`  ${getChalk().green(`zcc create ${type} ${query}`)}`);
   }
 }
 
@@ -215,15 +214,15 @@ async function showMultipleMatches(
   
   if (editableMatches.length === 0) {
     logger.warn('All matches are built-in components, which are read-only.');
-    logger.info('Create a custom version with: ' + chalk.green('zcc create <type> --from <name>'));
+    logger.info('Create a custom version with: ' + getChalk().green('zcc create <type> --from <name>'));
     return;
   }
   
   const choices = editableMatches.map((match) => {
     const description = match.component.metadata?.description || 'No description available';
     const matchTypeIndicator = getMatchTypeIndicator(match.matchType);
-    const sourceBadge = chalk.dim(`[${match.source}]`);
-    const scoreText = chalk.dim(`(${match.score}%)`);
+    const sourceBadge = getChalk().dim(`[${match.source}]`);
+    const scoreText = getChalk().dim(`(${match.score}%)`);
     
     return {
       name: `${getSourceIcon(match.source)} ${match.name} ${sourceBadge} ${matchTypeIndicator} ${scoreText} - ${description}`,
@@ -256,7 +255,7 @@ async function editComponent(
   // Check if component is editable
   if (source === 'builtin') {
     logger.error(`Cannot edit built-in ${component.type} '${component.name}' - it's read-only.`);
-    logger.info('Create a custom version with: ' + chalk.green(`zcc create ${component.type} --from ${component.name}`));
+    logger.info('Create a custom version with: ' + getChalk().green(`zcc create ${component.type} --from ${component.name}`));
     return;
   }
   
@@ -264,7 +263,7 @@ async function editComponent(
   const editor = opts.editor || process.env.EDITOR || process.env.VISUAL || 'nano';
   
   logger.info(`Opening ${source} ${component.type} '${component.name}' in ${editor}...`);
-  logger.info(`File: ${chalk.dim(component.path)}`);
+  logger.info(`File: ${getChalk().dim(component.path)}`);
   
   // Store original content for comparison
   let originalContent = '';
@@ -337,7 +336,7 @@ async function editComponent(
         // Show usage hint
         if (component.type === 'mode') {
           logger.info('');
-          logger.info(`To use this mode: ${chalk.green(`/mode ${component.name}`)}`);
+          logger.info(`To use this mode: ${getChalk().green(`/mode ${component.name}`)}`);
         } else if (component.type === 'workflow') {
           logger.info('');
           logger.info(`This workflow is now available in your prompts and modes.`);
@@ -368,11 +367,11 @@ async function editComponent(
 function getSourceIcon(source: string): string {
   switch (source) {
     case 'project':
-      return chalk.blue('●');
+      return getChalk().blue('●');
     case 'global':
-      return chalk.green('○');
+      return getChalk().green('○');
     case 'builtin':
-      return chalk.gray('◦');
+      return getChalk().gray('◦');
     default:
       return '•';
   }
@@ -384,13 +383,13 @@ function getSourceIcon(source: string): string {
 function getMatchTypeIndicator(matchType: ComponentSearchResult['matchType']): string {
   switch (matchType) {
     case 'exact':
-      return chalk.green('✓');
+      return getChalk().green('✓');
     case 'substring':
-      return chalk.yellow('≈');
+      return getChalk().yellow('≈');
     case 'acronym':
-      return chalk.blue('⚡');
+      return getChalk().blue('⚡');
     case 'partial':
-      return chalk.dim('~');
+      return getChalk().dim('~');
     default:
       return '';
   }

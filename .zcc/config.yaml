@@ -1,0 +1,5 @@
+defaultMode: engineer
+preferredWorkflows: []
+ui:
+  colorOutput: true
+  verboseLogging: false

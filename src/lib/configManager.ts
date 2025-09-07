@@ -200,6 +200,14 @@ export class ConfigManager {
   }
 
   /**
+   * Get the global root directory for ZCC configuration
+   * Uses ZCC_HOME environment variable if set, otherwise falls back to ~/.zcc
+   */
+  getGlobalRoot(): string {
+    return this.zccCore.getGlobalRoot();
+  }
+
+  /**
    * Validate configuration schema
    */
   private validateConfig(config: ZccConfig): void {

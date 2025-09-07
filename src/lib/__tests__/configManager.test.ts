@@ -242,4 +242,100 @@ describe('ConfigManager', () => {
       await expect(configManager.save(invalidConfig)).rejects.toThrow('UI.colorOutput must be a boolean');
     });
   });
+
+  describe('ZCC_HOME support', () => {
+    const originalEnv = process.env;
+    
+    afterEach(() => {
+      process.env = originalEnv;
+    });
+
+    it('should use ZCC_HOME environment variable when set', async () => {
+      // Set ZCC_HOME to a custom path
+      const customHome = '/custom/zcc/path';
+      process.env.ZCC_HOME = customHome;
+      
+      // Create new ConfigManager to pick up the environment variable
+      const customConfigManager = new ConfigManager(projectRoot, fs);
+      
+      const globalRoot = customConfigManager.getGlobalRoot();
+      expect(globalRoot).toBe(customHome);
+    });
+
+    it('should fallback to default ~/.zcc when ZCC_HOME is not set', async () => {
+      // Ensure ZCC_HOME is not set
+      delete process.env.ZCC_HOME;
+      process.env.HOME = '/home/testuser';
+      
+      // Create new ConfigManager
+      const defaultConfigManager = new ConfigManager(projectRoot, fs);
+      
+      const globalRoot = defaultConfigManager.getGlobalRoot();
+      expect(globalRoot).toBe('/home/testuser/.zcc');
+    });
+
+    it('should use USERPROFILE on Windows when HOME is not available', async () => {
+      // Simulate Windows environment
+      delete process.env.ZCC_HOME;
+      delete process.env.HOME;
+      process.env.USERPROFILE = 'C:\\Users\\testuser';
+      
+      // Create new ConfigManager
+      const windowsConfigManager = new ConfigManager(projectRoot, fs);
+      
+      const globalRoot = windowsConfigManager.getGlobalRoot();
+      // Should use USERPROFILE and add .zcc suffix
+      expect(globalRoot).toContain('C:\\Users\\testuser');
+      expect(globalRoot).toContain('.zcc');
+    });
+
+    it('should fallback to /tmp when no home directory is available', async () => {
+      // Remove all home directory environment variables
+      delete process.env.ZCC_HOME;
+      delete process.env.HOME;
+      delete process.env.USERPROFILE;
+      
+      // Create new ConfigManager
+      const fallbackConfigManager = new ConfigManager(projectRoot, fs);
+      
+      const globalRoot = fallbackConfigManager.getGlobalRoot();
+      expect(globalRoot).toBe('/tmp/.zcc');
+    });
+
+    it('should create configuration paths using ZCC_HOME', async () => {
+      const customHome = '/custom/zcc/path';
+      process.env.ZCC_HOME = customHome;
+      
+      // Create new ConfigManager
+      const customConfigManager = new ConfigManager(projectRoot, fs);
+      
+      const configPaths = customConfigManager.getConfigPaths();
+      expect(configPaths.global).toBe('/custom/zcc/path/config.yaml');
+      expect(configPaths.project).toBe('/project/.zcc/config.yaml');
+    });
+
+    it('should save and load global config using ZCC_HOME', async () => {
+      const customHome = '/custom/zcc/home';
+      process.env.ZCC_HOME = customHome;
+      
+      // Create filesystem structure for custom home
+      await fs.writeFile(`${customHome}/.gitkeep`, '');
+      
+      // Create new ConfigManager
+      const customConfigManager = new ConfigManager(projectRoot, fs);
+      
+      // Save global config
+      const testConfig = { defaultMode: 'custom-mode' };
+      await customConfigManager.save(testConfig, true);
+      
+      // Load and verify
+      const loadedConfig = await customConfigManager.list(true);
+      expect(loadedConfig.defaultMode).toBe('custom-mode');
+      
+      // Verify the file was created in the custom location
+      const configPath = `${customHome}/config.yaml`;
+      const configExists = fs.existsSync(configPath);
+      expect(configExists).toBe(true);
+    });
+  });
 });

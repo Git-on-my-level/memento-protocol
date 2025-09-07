@@ -600,6 +600,67 @@ describe("Init Command", () => {
   });
 
   describe("pack system", () => {
+    it("should list available packs when --pack list is used", async () => {
+      const mockPacks = [
+        {
+          manifest: {
+            name: 'frontend-react',
+            version: '1.0.0',
+            description: 'Complete React frontend development setup',
+            author: 'zcc',
+            category: 'frontend' as const,
+            components: {
+              modes: [{ name: 'component-engineer', required: true }],
+              workflows: [{ name: 'component-creation', required: true }]
+            }
+          },
+          path: '/templates/starter-packs/frontend-react',
+          componentsPath: '/templates/starter-packs/frontend-react/components'
+        },
+        {
+          manifest: {
+            name: 'backend-api', 
+            version: '1.2.0',
+            description: 'RESTful API backend development setup',
+            author: 'zcc',
+            category: 'backend' as const,
+            components: {
+              modes: [{ name: 'api-engineer', required: true }]
+            }
+          },
+          path: '/templates/starter-packs/backend-api',
+          componentsPath: '/templates/starter-packs/backend-api/components'
+        }
+      ];
+      
+      mockStarterPackManager.listPacks.mockResolvedValue(mockPacks);
+
+      await initCommand.parseAsync(["node", "test", "--pack", "list"]);
+
+      expect(mockStarterPackManager.listPacks).toHaveBeenCalled();
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('Available Starter Packs:'));
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('Frontend:'));
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('frontend-react'));
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('Backend:'));
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('backend-api'));
+      
+      // Should not proceed with initialization
+      expect(mockDirManager.initializeStructure).not.toHaveBeenCalled();
+      expect(mockInteractiveSetup.run).not.toHaveBeenCalled();
+    });
+
+    it("should show empty message when no packs available for --pack list", async () => {
+      mockStarterPackManager.listPacks.mockResolvedValue([]);
+
+      await initCommand.parseAsync(["node", "test", "--pack", "list"]);
+
+      expect(mockStarterPackManager.listPacks).toHaveBeenCalled();
+      expect(logger.info).toHaveBeenCalledWith('No starter packs available.');
+      
+      // Should not proceed with initialization
+      expect(mockDirManager.initializeStructure).not.toHaveBeenCalled();
+    });
+
     it("should work without pack options (interactive setup)", async () => {
       mockDirManager.isInitialized.mockReturnValue(false);
       mockInteractiveSetup.run.mockResolvedValue({});

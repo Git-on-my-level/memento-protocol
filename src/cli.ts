@@ -11,6 +11,8 @@ import { acronymCommand } from "./commands/acronym";
 import { createCommand } from "./commands/create";
 import { editCommand } from "./commands/edit";
 import { validateCommand } from "./commands/validate";
+import { doctorCommand } from "./commands/doctor";
+import { packsCommand } from "./commands/packs";
 import { logger } from "./lib/logger";
 import { handleError } from "./lib/errors";
 import { cliContext } from "./lib/context";
@@ -26,9 +28,9 @@ program
   .version(version)
   .option("-v, --verbose", "enable verbose output")
   .option("-d, --debug", "enable debug output")
-  .option("-h, --help", "display help for command")
   .option("-y, --yes", "answer yes to all prompts (non-interactive mode)")
   .option("-f, --force", "force operations without confirmation prompts")
+  .option("--no-color", "disable colored output")
   .addHelpText(
     "after",
     `
@@ -44,6 +46,8 @@ Examples:
   $ zcc edit mode my-custom    # Edit a component in your editor
   $ zcc validate               # Validate all components
   $ zcc validate mode          # Validate all modes
+  $ zcc doctor                 # Run diagnostic checks
+  $ zcc doctor --fix           # Run diagnostics and attempt fixes
   $ zcc ticket create "auth"   # Create a ticket for authentication work
   $ zcc list --installed       # Show installed components
 
@@ -56,14 +60,17 @@ For more information, visit: https://github.com/git-on-my-level/zcc
 Documentation: https://github.com/git-on-my-level/zcc#readme`
   )
   .hook("preAction", (thisCommand) => {
+    // Get options from both parent and current command
     const options = thisCommand.opts();
+    const parentOptions = thisCommand.parent?.opts() || {};
+    const allOptions = { ...parentOptions, ...options };
     
     // Initialize CLI context with global options
     cliContext.initialize({
-      verbose: options.verbose || false,
-      debug: options.debug || false,
-      nonInteractive: options.yes || false,
-      force: options.force || false,
+      verbose: allOptions.verbose || false,
+      debug: allOptions.debug || false,
+      nonInteractive: allOptions.yes || false,
+      force: allOptions.force || false,
       projectRoot: process.cwd()
     });
     
@@ -73,6 +80,9 @@ Documentation: https://github.com/git-on-my-level/zcc#readme`
     }
     if (cliContext.isDebug()) {
       logger.setDebug(true);
+    }
+    if (allOptions.noColor) {
+      logger.setNoColor(true);
     }
   });
 
@@ -89,6 +99,8 @@ program.addCommand(acronymCommand);
 program.addCommand(createCommand);
 program.addCommand(editCommand);
 program.addCommand(validateCommand);
+program.addCommand(doctorCommand);
+program.addCommand(packsCommand);
 
 // Global error handling
 process.on("unhandledRejection", (error) => {
@@ -114,9 +126,6 @@ if (args.length === 0) {
       process.exitCode = 1;
     }
   })();
-} else if (args.length === 1 && (args[0] === "--help" || args[0] === "-h")) {
-  // Show help
-  program.outputHelp();
 } else {
   // Parse command line arguments normally
   program.parse(process.argv);

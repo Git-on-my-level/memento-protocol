@@ -1,7 +1,6 @@
 import { ZccCore } from './ZccCore';
 import { ComponentInfo } from './ZccScope';
-import { logger } from './logger';
-import chalk from 'chalk';
+import { logger, getChalk } from './logger';
 
 export interface ErrorSuggestion {
   type: 'command' | 'suggestion' | 'hint' | 'install';
@@ -242,25 +241,25 @@ export class ErrorHandler {
       switch (suggestion.type) {
         case 'command':
           if (suggestion.action) {
-            logger.info(`  ${chalk.green(suggestion.action)} ${chalk.dim('# ' + suggestion.message)}`);
+            logger.info(`  ${getChalk().green(suggestion.action)} ${getChalk().dim('# ' + suggestion.message)}`);
           } else {
-            logger.info(`  ${chalk.cyan('•')} ${suggestion.message}`);
+            logger.info(`  ${getChalk().cyan('•')} ${suggestion.message}`);
           }
           break;
           
         case 'suggestion':
-          logger.info(`${chalk.yellow('💡')} ${suggestion.message}`);
+          logger.info(`${getChalk().yellow('💡')} ${suggestion.message}`);
           break;
           
         case 'hint':
-          logger.info(`   ${chalk.dim(suggestion.message)}`);
+          logger.info(`   ${getChalk().dim(suggestion.message)}`);
           break;
           
         case 'install':
           if (suggestion.action) {
-            logger.info(`  ${chalk.green(suggestion.action)} ${chalk.dim('# ' + suggestion.message)}`);
+            logger.info(`  ${getChalk().green(suggestion.action)} ${getChalk().dim('# ' + suggestion.message)}`);
           } else {
-            logger.info(`  ${chalk.cyan('📦')} ${suggestion.message}`);
+            logger.info(`  ${getChalk().cyan('📦')} ${suggestion.message}`);
           }
           break;
       }
@@ -308,11 +307,11 @@ export class ErrorHandler {
   private getSourceIcon(source: string): string {
     switch (source) {
       case 'project':
-        return chalk.blue('●');
+        return getChalk().blue('●');
       case 'global':
-        return chalk.green('○');
+        return getChalk().green('○');
       case 'builtin':
-        return chalk.gray('◦');
+        return getChalk().gray('◦');
       default:
         return '•';
     }

@@ -1,8 +1,7 @@
 import { Command } from 'commander';
 import { ZccCore, ComponentSearchResult } from '../lib/ZccCore';
 import { ComponentInfo } from '../lib/ZccScope';
-import { logger } from '../lib/logger';
-import chalk from 'chalk';
+import { logger, getChalk } from '../lib/logger';
 import inquirer from 'inquirer';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -157,8 +156,8 @@ async function showInteractiveSelection(
     const hasConflicts = comps.length > 1;
     const description = primary.component.metadata?.description || 'No description available';
     
-    const conflictIndicator = hasConflicts ? chalk.yellow(' (multiple sources)') : '';
-    const sourceBadge = chalk.dim(`[${primary.source}]`);
+    const conflictIndicator = hasConflicts ? getChalk().yellow(' (multiple sources)') : '';
+    const sourceBadge = getChalk().dim(`[${primary.source}]`);
     
     return {
       name: `${getSourceIcon(primary.source)} ${name} ${sourceBadge}${conflictIndicator} - ${description}`,
@@ -202,14 +201,14 @@ async function handleNoMatches(
     logger.info('');
     logger.info('Did you mean one of these?');
     for (const suggestion of suggestions) {
-      logger.info(`  ${chalk.cyan(suggestion)}`);
+      logger.info(`  ${getChalk().cyan(suggestion)}`);
     }
     logger.info('');
-    logger.info(`Try: ${chalk.green(`zcc add ${type} ${suggestions[0]}`)}`);
+    logger.info(`Try: ${getChalk().green(`zcc add ${type} ${suggestions[0]}`)}`);
   } else {
     logger.info('');
     logger.info(`To see all available ${type}s:`);
-    logger.info(`  ${chalk.green(`zcc list --type ${type}`)}`);
+    logger.info(`  ${getChalk().green(`zcc list --type ${type}`)}`);
   }
 }
 
@@ -227,8 +226,8 @@ async function showMultipleMatches(
   const choices = matches.map((match) => {
     const description = match.component.metadata?.description || 'No description available';
     const matchTypeIndicator = getMatchTypeIndicator(match.matchType);
-    const sourceBadge = chalk.dim(`[${match.source}]`);
-    const scoreText = chalk.dim(`(${match.score}%)`);
+    const sourceBadge = getChalk().dim(`[${match.source}]`);
+    const scoreText = getChalk().dim(`(${match.score}%)`);
     
     return {
       name: `${getSourceIcon(match.source)} ${match.name} ${sourceBadge} ${matchTypeIndicator} ${scoreText} - ${description}`,
@@ -297,8 +296,8 @@ async function installComponent(
   
   // Show what will be installed
   logger.info('');
-  logger.info(`Installing ${component.type}: ${chalk.cyan(component.name)}`);
-  logger.info(`Source: ${chalk.dim(source)} → Target: ${chalk.dim(targetScope)}`);
+  logger.info(`Installing ${component.type}: ${getChalk().cyan(component.name)}`);
+  logger.info(`Source: ${getChalk().dim(source)} → Target: ${getChalk().dim(targetScope)}`);
   if (component.metadata?.description) {
     logger.info(`Description: ${component.metadata.description}`);
   }
@@ -334,7 +333,7 @@ async function installComponent(
     // Show usage hint
     if (component.type === 'mode') {
       logger.info('');
-      logger.info(`To use this mode: ${chalk.green(`/mode ${component.name}`)}`);
+      logger.info(`To use this mode: ${getChalk().green(`/mode ${component.name}`)}`);
     } else if (component.type === 'workflow') {
       logger.info('');
       logger.info(`This workflow is now available in your prompts and modes.`);
@@ -354,11 +353,11 @@ async function installComponent(
 function getSourceIcon(source: string): string {
   switch (source) {
     case 'project':
-      return chalk.blue('●');
+      return getChalk().blue('●');
     case 'global':
-      return chalk.green('○');
+      return getChalk().green('○');
     case 'builtin':
-      return chalk.gray('◦');
+      return getChalk().gray('◦');
     default:
       return '•';
   }
@@ -370,13 +369,13 @@ function getSourceIcon(source: string): string {
 function getMatchTypeIndicator(matchType: ComponentSearchResult['matchType']): string {
   switch (matchType) {
     case 'exact':
-      return chalk.green('✓');
+      return getChalk().green('✓');
     case 'substring':
-      return chalk.yellow('≈');
+      return getChalk().yellow('≈');
     case 'acronym':
-      return chalk.blue('⚡');
+      return getChalk().blue('⚡');
     case 'partial':
-      return chalk.dim('~');
+      return getChalk().dim('~');
     default:
       return '';
   }

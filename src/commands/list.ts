@@ -1,8 +1,7 @@
 import { Command } from 'commander';
 import { ZccCore, ComponentResolutionResult } from '../lib/ZccCore';
 import { ComponentInfo } from '../lib/ZccScope';
-import { logger } from '../lib/logger';
-import chalk from 'chalk';
+import { logger, getChalk } from '../lib/logger';
 
 type ZccStatus = {
   builtin: {
@@ -112,25 +111,25 @@ export const listCommand = new Command('list')
  * Show status summary of all scopes
  */
 async function showStatusSummary(status: ZccStatus): Promise<void> {
-  logger.info(chalk.bold('zcc Status:'));
+  logger.info(getChalk().bold('zcc Status:'));
   logger.info('');
   
   // Built-in components
   const builtinStatus = status.builtin.available 
-    ? chalk.green(`✓ ${status.builtin.components} components`) 
-    : chalk.red('✗ Not available');
+    ? getChalk().green(`✓ ${status.builtin.components} components`) 
+    : getChalk().red('✗ Not available');
   logger.info(`Built-in:  ${builtinStatus}`);
   
   // Global scope
   const globalStatus = status.global.exists
-    ? chalk.green(`✓ ${status.global.components} components`)
-    : chalk.yellow('○ Not initialized');
+    ? getChalk().green(`✓ ${status.global.components} components`)
+    : getChalk().yellow('○ Not initialized');
   logger.info(`Global:    ${globalStatus}`);
   
   // Project scope
   const projectStatus = status.project.exists
-    ? chalk.green(`✓ ${status.project.components} components`)
-    : chalk.yellow('○ Not initialized');
+    ? getChalk().green(`✓ ${status.project.components} components`)
+    : getChalk().yellow('○ Not initialized');
   logger.info(`Project:   ${projectStatus}`);
   
   logger.info('');
@@ -177,20 +176,20 @@ async function showComponents(
     
     // Capitalize and format type name
     const typeName = typeKey.charAt(0).toUpperCase() + typeKey.slice(1);
-    logger.info(chalk.bold(`${typeName}:`));
+    logger.info(getChalk().bold(`${typeName}:`));
     
     for (const { component, source } of filteredComponents) {
       const sourceIcon = getSourceIcon(source);
-      const sourceBadge = chalk.dim(`[${source}]`);
+      const sourceBadge = getChalk().dim(`[${source}]`);
       
       if (verbose && component.metadata?.description) {
         logger.info(`  ${sourceIcon} ${component.name} ${sourceBadge}`);
-        logger.info(`    ${chalk.dim(component.metadata.description)}`);
+        logger.info(`    ${getChalk().dim(component.metadata.description)}`);
         
         if (component.metadata.tags && component.metadata.tags.length > 0) {
           const tags = component.metadata.tags.filter((tag: string) => tag).join(', ');
           if (tags) {
-            logger.info(`    ${chalk.cyan('Tags:')} ${tags}`);
+            logger.info(`    ${getChalk().cyan('Tags:')} ${tags}`);
           }
         }
       } else {
@@ -229,7 +228,7 @@ async function showConflictingComponents(
   componentsByType: ComponentsByType,
   verbose: boolean
 ): Promise<void> {
-  logger.info(chalk.bold('Components with conflicts:'));
+  logger.info(getChalk().bold('Components with conflicts:'));
   logger.info('');
   
   let hasConflicts = false;
@@ -255,7 +254,7 @@ async function showConflictingComponents(
     const [type, name] = key.split(':');
     const typeName = type.charAt(0).toUpperCase() + type.slice(1);
     
-    logger.info(chalk.yellow(`${typeName}: ${name}`));
+    logger.info(getChalk().yellow(`${typeName}: ${name}`));
     
     // Sort by source precedence (project > global > builtin)
     const sourceOrder: { [key: string]: number } = { project: 3, global: 2, builtin: 1 };
@@ -265,12 +264,12 @@ async function showConflictingComponents(
       const { component, source } = group[i];
       const sourceIcon = getSourceIcon(source);
       const isActive = i === 0; // First in sorted order is active
-      const activeText = isActive ? chalk.green(' (active)') : chalk.dim(' (overridden)');
+      const activeText = isActive ? getChalk().green(' (active)') : getChalk().dim(' (overridden)');
       
-      logger.info(`  ${sourceIcon} ${chalk.dim(`[${source}]`)} ${component.name}${activeText}`);
+      logger.info(`  ${sourceIcon} ${getChalk().dim(`[${source}]`)} ${component.name}${activeText}`);
       
       if (verbose && component.metadata?.description) {
-        logger.info(`    ${chalk.dim(component.metadata.description)}`);
+        logger.info(`    ${getChalk().dim(component.metadata.description)}`);
       }
     }
     
@@ -289,11 +288,11 @@ async function showConflictingComponents(
 function getSourceIcon(source: string): string {
   switch (source) {
     case 'project':
-      return chalk.blue('●');
+      return getChalk().blue('●');
     case 'global':
-      return chalk.green('○');
+      return getChalk().green('○');
     case 'builtin':
-      return chalk.gray('◦');
+      return getChalk().gray('◦');
     default:
       return '•';
   }

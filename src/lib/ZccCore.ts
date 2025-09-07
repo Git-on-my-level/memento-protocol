@@ -37,9 +37,8 @@ export class ZccCore {
   constructor(projectRoot: string, fsAdapter?: FileSystemAdapter) {
     this.fs = fsAdapter || new NodeFileSystemAdapter();
     
-    // Create global path using filesystem adapter for cross-platform compatibility
-    const homeDir = process.env.HOME || process.env.USERPROFILE || '/tmp';
-    const globalPath = this.fs.join(homeDir, '.zcc');
+    // Create global path using ZCC_HOME if set, otherwise use default home directory
+    const globalPath = this.getGlobalRoot();
     const projectPath = this.fs.join(projectRoot, '.zcc');
     
     this.globalScope = new ZccScope(globalPath, true, this.fs);
@@ -218,6 +217,19 @@ export class ZccCore {
     };
 
     return result;
+  }
+
+  /**
+   * Get the global root directory for ZCC configuration
+   * Uses ZCC_HOME environment variable if set, otherwise falls back to ~/.zcc
+   */
+  getGlobalRoot(): string {
+    if (process.env.ZCC_HOME) {
+      return process.env.ZCC_HOME;
+    }
+    
+    const homeDir = process.env.HOME || process.env.USERPROFILE || '/tmp';
+    return this.fs.join(homeDir, '.zcc');
   }
 
   /**

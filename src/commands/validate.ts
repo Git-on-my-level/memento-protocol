@@ -1,8 +1,7 @@
 import { Command } from 'commander';
 import { ZccCore, ComponentSearchResult } from '../lib/ZccCore';
 import { ComponentInfo } from '../lib/ZccScope';
-import { logger } from '../lib/logger';
-import chalk from 'chalk';
+import { logger, getChalk } from '../lib/logger';
 import inquirer from 'inquirer';
 import { validateComponent, formatValidationIssues } from '../lib/utils/componentValidator';
 import { isNonInteractive } from '../lib/context';
@@ -102,7 +101,7 @@ async function validateAllComponents(core: ZccCore, opts: any): Promise<void> {
     if (components.length === 0) continue;
     
     if (!opts.summaryOnly) {
-      logger.info(chalk.bold(`${type.charAt(0).toUpperCase() + type.slice(1)}s:`));
+      logger.info(getChalk().bold(`${type.charAt(0).toUpperCase() + type.slice(1)}s:`));
     }
     
     const results = await validateComponentsGroup(components, opts);
@@ -117,15 +116,15 @@ async function validateAllComponents(core: ZccCore, opts: any): Promise<void> {
   }
   
   // Show summary
-  logger.info(chalk.bold('Validation Summary:'));
+  logger.info(getChalk().bold('Validation Summary:'));
   logger.info(`Total components: ${totalComponents}`);
-  logger.info(`Valid: ${chalk.green(totalValid)}`);
+  logger.info(`Valid: ${getChalk().green(totalValid)}`);
   
   if (totalErrors > 0) {
-    logger.info(`With errors: ${chalk.red(totalErrors)}`);
+    logger.info(`With errors: ${getChalk().red(totalErrors)}`);
   }
   if (totalWarnings > 0) {
-    logger.info(`With warnings: ${chalk.yellow(totalWarnings)}`);
+    logger.info(`With warnings: ${getChalk().yellow(totalWarnings)}`);
   }
   
   const hasIssues = totalErrors > 0 || (opts.strict && totalWarnings > 0);
@@ -154,15 +153,15 @@ async function validateComponentsByType(core: ZccCore, type: ComponentInfo['type
   const results = await validateComponentsGroup(components, opts);
   
   // Show summary
-  logger.info(chalk.bold('Validation Summary:'));
+  logger.info(getChalk().bold('Validation Summary:'));
   logger.info(`Total ${type}s: ${components.length}`);
-  logger.info(`Valid: ${chalk.green(results.valid)}`);
+  logger.info(`Valid: ${getChalk().green(results.valid)}`);
   
   if (results.errors > 0) {
-    logger.info(`With errors: ${chalk.red(results.errors)}`);
+    logger.info(`With errors: ${getChalk().red(results.errors)}`);
   }
   if (results.warnings > 0) {
-    logger.info(`With warnings: ${chalk.yellow(results.warnings)}`);
+    logger.info(`With warnings: ${getChalk().yellow(results.warnings)}`);
   }
   
   const hasIssues = results.errors > 0 || (opts.strict && results.warnings > 0);
@@ -250,8 +249,8 @@ async function showMultipleMatches(matches: ComponentSearchResult[], opts: any):
   const choices = matches.map((match) => {
     const description = match.component.metadata?.description || 'No description available';
     const matchTypeIndicator = getMatchTypeIndicator(match.matchType);
-    const sourceBadge = chalk.dim(`[${match.source}]`);
-    const scoreText = chalk.dim(`(${match.score}%)`);
+    const sourceBadge = getChalk().dim(`[${match.source}]`);
+    const scoreText = getChalk().dim(`(${match.score}%)`);
     
     return {
       name: `${getSourceIcon(match.source)} ${match.name} ${sourceBadge} ${matchTypeIndicator} ${scoreText} - ${description}`,
@@ -300,7 +299,7 @@ async function validateComponentsGroup(
         valid++;
         if (!opts.summaryOnly) {
           const status = hasWarnings ? 'Valid with warnings' : 'Valid';
-          const icon = hasWarnings ? chalk.yellow('⚠') : chalk.green('✓');
+          const icon = hasWarnings ? getChalk().yellow('⚠') : getChalk().green('✓');
           logger.info(`  ${icon} ${getSourceIcon(source)} ${component.name} - ${status}`);
         }
       }
@@ -310,25 +309,25 @@ async function validateComponentsGroup(
       totalWarnings += warnings;
       
       if (!isComponentValid && !opts.summaryOnly) {
-        const status = hasErrors ? chalk.red('✗ Invalid') : chalk.yellow('⚠ Invalid (warnings in strict mode)');
+        const status = hasErrors ? getChalk().red('✗ Invalid') : getChalk().yellow('⚠ Invalid (warnings in strict mode)');
         logger.info(`  ${status} ${getSourceIcon(source)} ${component.name}`);
         
         if (hasErrors) {
           const errorIssues = result.issues.filter(issue => issue.type === 'error');
           formatValidationIssues(errorIssues).forEach(error => 
-            logger.info(`    ${chalk.red(error)}`));
+            logger.info(`    ${getChalk().red(error)}`));
         }
         
         if (hasWarnings && (opts.strict || !hasErrors)) {
           const warningIssues = result.issues.filter(issue => issue.type === 'warning');
           formatValidationIssues(warningIssues).forEach(warning => 
-            logger.info(`    ${chalk.yellow(warning)}`));
+            logger.info(`    ${getChalk().yellow(warning)}`));
         }
       }
     } catch (error: any) {
       totalErrors++;
       if (!opts.summaryOnly) {
-        logger.info(`  ${chalk.red('✗')} ${getSourceIcon(source)} ${component.name} - Validation failed: ${error.message}`);
+        logger.info(`  ${getChalk().red('✗')} ${getSourceIcon(source)} ${component.name} - Validation failed: ${error.message}`);
       }
     }
   }
@@ -343,7 +342,7 @@ async function validateSingleComponent(match: ComponentSearchResult, opts: any):
   const { component, source } = match;
   
   logger.info(`Validating ${source} ${component.type} '${component.name}'...`);
-  logger.info(`File: ${chalk.dim(component.path)}`);
+  logger.info(`File: ${getChalk().dim(component.path)}`);
   logger.info('');
   
   try {
@@ -392,11 +391,11 @@ async function validateSingleComponent(match: ComponentSearchResult, opts: any):
 function getSourceIcon(source: string): string {
   switch (source) {
     case 'project':
-      return chalk.blue('●');
+      return getChalk().blue('●');
     case 'global':
-      return chalk.green('○');
+      return getChalk().green('○');
     case 'builtin':
-      return chalk.gray('◦');
+      return getChalk().gray('◦');
     default:
       return '•';
   }
@@ -408,13 +407,13 @@ function getSourceIcon(source: string): string {
 function getMatchTypeIndicator(matchType: ComponentSearchResult['matchType']): string {
   switch (matchType) {
     case 'exact':
-      return chalk.green('✓');
+      return getChalk().green('✓');
     case 'substring':
-      return chalk.yellow('≈');
+      return getChalk().yellow('≈');
     case 'acronym':
-      return chalk.blue('⚡');
+      return getChalk().blue('⚡');
     case 'partial':
-      return chalk.dim('~');
+      return getChalk().dim('~');
     default:
       return '';
   }

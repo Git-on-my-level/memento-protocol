@@ -1,8 +1,7 @@
 import { Command } from 'commander';
 import { ZccCore, ComponentSearchResult } from '../lib/ZccCore';
 import { ComponentInfo } from '../lib/ZccScope';
-import { logger } from '../lib/logger';
-import chalk from 'chalk';
+import { logger, getChalk } from '../lib/logger';
 import inquirer from 'inquirer';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -124,7 +123,7 @@ export const createCommand = new Command('create')
         
         try {
           templateContent = fs.readFileSync(sourceComponent.component.path, 'utf-8');
-          logger.info(`Cloning from ${sourceComponent.source} ${componentType}: ${chalk.cyan(sourceComponent.name)}`);
+          logger.info(`Cloning from ${sourceComponent.source} ${componentType}: ${getChalk().cyan(sourceComponent.name)}`);
         } catch (error: any) {
           logger.error(`Failed to read source component: ${error.message}`);
           process.exitCode = 1;
@@ -169,7 +168,7 @@ export const createCommand = new Command('create')
       // Show usage hint
       if (componentType === 'mode') {
         logger.info('');
-        logger.info(`To use this mode: ${chalk.green(`/mode ${componentName}`)}`);
+        logger.info(`To use this mode: ${getChalk().green(`/mode ${componentName}`)}`);
       } else if (componentType === 'workflow') {
         logger.info('');
         logger.info(`This workflow is now available in your prompts and modes.`);
@@ -180,7 +179,7 @@ export const createCommand = new Command('create')
       
       // Suggest editing
       logger.info('');
-      logger.info(`Edit your new ${componentType}: ${chalk.green(`zcc edit ${componentType} ${componentName}`)}`);
+      logger.info(`Edit your new ${componentType}: ${getChalk().green(`zcc edit ${componentType} ${componentName}`)}`);
       
     } catch (error) {
       logger.error('Failed to create component:', error);
@@ -232,8 +231,8 @@ async function findSourceComponent(
   const choices = matches.map((match) => {
     const description = match.component.metadata?.description || 'No description available';
     const matchTypeIndicator = getMatchTypeIndicator(match.matchType);
-    const sourceBadge = chalk.dim(`[${match.source}]`);
-    const scoreText = chalk.dim(`(${match.score}%)`);
+    const sourceBadge = getChalk().dim(`[${match.source}]`);
+    const scoreText = getChalk().dim(`(${match.score}%)`);
     
     return {
       name: `${getSourceIcon(match.source)} ${match.name} ${sourceBadge} ${matchTypeIndicator} ${scoreText} - ${description}`,
@@ -552,11 +551,11 @@ async function writeNewComponent(
 function getSourceIcon(source: string): string {
   switch (source) {
     case 'project':
-      return chalk.blue('●');
+      return getChalk().blue('●');
     case 'global':
-      return chalk.green('○');
+      return getChalk().green('○');
     case 'builtin':
-      return chalk.gray('◦');
+      return getChalk().gray('◦');
     default:
       return '•';
   }
@@ -568,13 +567,13 @@ function getSourceIcon(source: string): string {
 function getMatchTypeIndicator(matchType: ComponentSearchResult['matchType']): string {
   switch (matchType) {
     case 'exact':
-      return chalk.green('✓');
+      return getChalk().green('✓');
     case 'substring':
-      return chalk.yellow('≈');
+      return getChalk().yellow('≈');
     case 'acronym':
-      return chalk.blue('⚡');
+      return getChalk().blue('⚡');
     case 'partial':
-      return chalk.dim('~');
+      return getChalk().dim('~');
     default:
       return '';
   }

@@ -6,6 +6,8 @@ import { InteractiveSetup } from "../lib/interactiveSetup";
 import { StarterPackManager } from "../lib/StarterPackManager";
 import { logger } from "../lib/logger";
 import { isForce } from "../lib/context";
+import { MESSAGES } from "../lib/constants";
+import chalk from "chalk";
 
 
 export const initCommand = new Command("init")
@@ -13,11 +15,57 @@ export const initCommand = new Command("init")
   .option("-f, --force", "Force initialization even if .zcc already exists")
   .option("--global", "Initialize global ~/.zcc configuration instead of project")
   .option("-g, --gitignore", "Add .zcc/ to .gitignore (defaults to false)")
-  .option("-p, --pack [name]", "Install a specific starter pack (headless) or open pack picker")
+  .option("-p, --pack [name]", "Install a specific starter pack (headless), open pack picker, or 'list' to show available packs")
   .action(async (options) => {
     try {
       // Resolve force flag from both local options and global context
       const forceFlag = options.force || isForce();
+      
+      // Handle pack list request
+      if (options.pack === 'list') {
+        const starterPackManager = new StarterPackManager(process.cwd());
+        const packs = await starterPackManager.listPacks();
+        
+        if (packs.length === 0) {
+          logger.info('No starter packs available.');
+          return;
+        }
+        
+        logger.info(chalk.bold('Available Starter Packs:'));
+        logger.info('');
+        
+        // Group packs by category for clean display
+        const packsByCategory: Record<string, typeof packs> = {};
+        for (const pack of packs) {
+          const category = pack.manifest.category || 'general';
+          if (!packsByCategory[category]) {
+            packsByCategory[category] = [];
+          }
+          packsByCategory[category].push(pack);
+        }
+        
+        for (const [category, categoryPacks] of Object.entries(packsByCategory)) {
+          logger.info(chalk.blue(`${category.charAt(0).toUpperCase() + category.slice(1)}:`));
+          
+          for (const pack of categoryPacks) {
+            const componentCount = (
+              (pack.manifest.components.modes?.length || 0) +
+              (pack.manifest.components.workflows?.length || 0) +
+              (pack.manifest.components.agents?.length || 0) +
+              (pack.manifest.components.hooks?.length || 0)
+            );
+            const componentText = componentCount === 1 ? 'component' : 'components';
+            
+            logger.info(`  ${chalk.green('●')} ${pack.manifest.name} - ${pack.manifest.description}`);
+            logger.info(`    ${chalk.dim(`${componentCount} ${componentText} • ${pack.manifest.author} • v${pack.manifest.version}`)}`);
+          }
+          logger.info('');
+        }
+        
+        logger.info(chalk.dim('Run "zcc init -p <name>" to install a pack.'));
+        logger.info(chalk.dim('Run "zcc packs show <name>" for detailed pack information.'));
+        return;
+      }
       
       // Handle global initialization
       if (options.global) {
@@ -53,26 +101,26 @@ export const initCommand = new Command("init")
             return;
           }
           
-          logger.success(`Starter pack '${options.pack}' installed successfully to global scope`);
+          logger.success(MESSAGES.SUCCESS_MESSAGES.GLOBAL_PACK_INSTALLED(options.pack));
           
           if (packResult.postInstallMessage) {
             logger.space();
-            logger.info("Starter Pack Information:");
+            logger.info(MESSAGES.INFO_HEADERS.STARTER_PACK_INFO);
             logger.info(packResult.postInstallMessage);
           }
           
           logger.space();
           logger.success("Global zcc with starter pack initialized successfully!");
           logger.space();
-          logger.info("To use with Claude Code:");
+          logger.info(MESSAGES.INFO_HEADERS.CLAUDE_CODE_USAGE);
           logger.info(
-            '  - Say "mode: [name]" to activate a mode (fuzzy matching supported)'
+            MESSAGES.USAGE_INSTRUCTIONS.MODE_ACTIVATION
           );
-          logger.info('  - Say "workflow: [name]" to execute a workflow');
-          logger.info("  - Use custom commands: /ticket, /mode, /zcc:status");
+          logger.info(MESSAGES.USAGE_INSTRUCTIONS.WORKFLOW_EXECUTION);
+          logger.info(MESSAGES.USAGE_INSTRUCTIONS.CUSTOM_COMMANDS);
           logger.space();
-          logger.info('Run "zcc --help" to see all available commands.');
-          logger.info('Global configuration is now active for all your projects.');
+          logger.info(MESSAGES.HELP_INSTRUCTIONS.COMMAND_HELP);
+          logger.info(MESSAGES.HELP_INSTRUCTIONS.GLOBAL_CONFIG);
         }
         
         return;
@@ -117,7 +165,7 @@ export const initCommand = new Command("init")
           return;
         }
         
-        logger.success(`Starter pack '${options.pack}' installed successfully`);
+        logger.success(MESSAGES.SUCCESS_MESSAGES.PACK_INSTALLED(options.pack));
         
         // Generate hook infrastructure
         logger.space();
@@ -134,22 +182,22 @@ export const initCommand = new Command("init")
         }
 
         logger.space();
-        logger.success("zcc initialized successfully!");
+        logger.success(MESSAGES.SUCCESS_MESSAGES.ZCC_INITIALIZED);
         logger.space();
-        logger.info("To use with Claude Code:");
+        logger.info(MESSAGES.INFO_HEADERS.CLAUDE_CODE_USAGE);
         logger.info(
-          '  - Say "mode: [name]" to activate a mode (fuzzy matching supported)'
+          MESSAGES.USAGE_INSTRUCTIONS.MODE_ACTIVATION
         );
-        logger.info('  - Say "workflow: [name]" to execute a workflow');
-        logger.info("  - Use custom commands: /ticket, /mode, /zcc:status");
+        logger.info(MESSAGES.USAGE_INSTRUCTIONS.WORKFLOW_EXECUTION);
+        logger.info(MESSAGES.USAGE_INSTRUCTIONS.CUSTOM_COMMANDS);
         if (packResult.postInstallMessage) {
           logger.space();
           logger.info("Starter Pack Information:");
           logger.info(packResult.postInstallMessage);
         }
         logger.space();
-        logger.info('Run "zcc --help" to see all available commands.');
-        logger.info('Run "zcc hook list" to see installed hooks.');
+        logger.info(MESSAGES.HELP_INSTRUCTIONS.COMMAND_HELP);
+        logger.info(MESSAGES.HELP_INSTRUCTIONS.HOOK_LIST);
         return;
       }
       
@@ -194,32 +242,32 @@ export const initCommand = new Command("init")
             return;
           }
           
-          logger.success(`Starter pack '${setupOptions.selectedPack}' installed successfully to global scope`);
+          logger.success(MESSAGES.SUCCESS_MESSAGES.GLOBAL_PACK_INSTALLED(setupOptions.selectedPack));
           
           if (packResult.postInstallMessage) {
             logger.space();
-            logger.info("Starter Pack Information:");
+            logger.info(MESSAGES.INFO_HEADERS.STARTER_PACK_INFO);
             logger.info(packResult.postInstallMessage);
           }
         }
         
         logger.space();
-        logger.success("Global zcc initialized successfully!");
+        logger.success(MESSAGES.SUCCESS_MESSAGES.GLOBAL_ZCC_INITIALIZED);
         logger.space();
-        logger.info("To use with Claude Code:");
+        logger.info(MESSAGES.INFO_HEADERS.CLAUDE_CODE_USAGE);
         logger.info(
-          '  - Say "mode: [name]" to activate a mode (fuzzy matching supported)'
+          MESSAGES.USAGE_INSTRUCTIONS.MODE_ACTIVATION
         );
-        logger.info('  - Say "workflow: [name]" to execute a workflow');
-        logger.info("  - Use custom commands: /ticket, /mode, /zcc:status");
+        logger.info(MESSAGES.USAGE_INSTRUCTIONS.WORKFLOW_EXECUTION);
+        logger.info(MESSAGES.USAGE_INSTRUCTIONS.CUSTOM_COMMANDS);
         if (setupOptions.defaultMode) {
           logger.info(
             `  - Default mode "${setupOptions.defaultMode}" will be used when no mode is specified`
           );
         }
         logger.space();
-        logger.info('Run "zcc --help" to see all available commands.');
-        logger.info('Global configuration is now active for all your projects.');
+        logger.info(MESSAGES.HELP_INSTRUCTIONS.COMMAND_HELP);
+        logger.info(MESSAGES.HELP_INSTRUCTIONS.GLOBAL_CONFIG);
         return;
       }
 
@@ -257,22 +305,22 @@ export const initCommand = new Command("init")
       await commandGenerator.initialize();
 
       logger.space();
-      logger.success("zcc initialized successfully!");
+      logger.success(MESSAGES.SUCCESS_MESSAGES.ZCC_INITIALIZED);
       logger.space();
-      logger.info("To use with Claude Code:");
+      logger.info(MESSAGES.INFO_HEADERS.CLAUDE_CODE_USAGE);
       logger.info(
-        '  - Say "mode: [name]" to activate a mode (fuzzy matching supported)'
+        MESSAGES.USAGE_INSTRUCTIONS.MODE_ACTIVATION
       );
-      logger.info('  - Say "workflow: [name]" to execute a workflow');
-      logger.info("  - Use custom commands: /ticket, /mode, /zcc:status");
+      logger.info(MESSAGES.USAGE_INSTRUCTIONS.WORKFLOW_EXECUTION);
+      logger.info(MESSAGES.USAGE_INSTRUCTIONS.CUSTOM_COMMANDS);
       if (setupOptions.defaultMode) {
         logger.info(
           `  - Default mode "${setupOptions.defaultMode}" will be used when no mode is specified`
         );
       }
       logger.space();
-      logger.info('Run "zcc --help" to see all available commands.');
-      logger.info('Run "zcc hook list" to see installed hooks.');
+      logger.info(MESSAGES.HELP_INSTRUCTIONS.COMMAND_HELP);
+      logger.info(MESSAGES.HELP_INSTRUCTIONS.HOOK_LIST);
     } catch (error) {
       logger.error("Failed to initialize zcc:", error);
       process.exitCode = 1;
