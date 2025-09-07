@@ -1,23 +1,52 @@
 import { addCommand } from '../add';
 import { ZccCore } from '../../lib/ZccCore';
 import { cliContext, isNonInteractive, shouldProceedWithoutPrompt } from '../../lib/context';
-import { logger } from '../../lib/logger';
 
 // Mock dependencies
 jest.mock('../../lib/ZccCore');
 jest.mock('../../lib/context');
-jest.mock('../../lib/logger');
+jest.mock('../../lib/logger', () => ({
+  logger: {
+    error: jest.fn(),
+    info: jest.fn(),
+    success: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+    verbose: jest.fn(),
+    setVerbose: jest.fn(),
+    setDebug: jest.fn(),
+    setNoColor: jest.fn(),
+    space: jest.fn(),
+    newline: jest.fn(),
+    progress: jest.fn(),
+    clearProgress: jest.fn(),
+  },
+  getChalk: jest.fn(() => ({
+    green: (s: string) => s,
+    red: (s: string) => s,
+    yellow: (s: string) => s,
+    blue: (s: string) => s,
+    cyan: (s: string) => s,
+    gray: (s: string) => s,
+    bold: (s: string) => s,
+    dim: (s: string) => s,
+  })),
+  configureChalk: jest.fn(),
+}));
 jest.mock('inquirer');
 
 const mockZccCore = ZccCore as jest.MockedClass<typeof ZccCore>;
 const mockCliContext = cliContext as jest.Mocked<typeof cliContext>;
-const mockLogger = logger as jest.Mocked<typeof logger>;
+const mockLogger = (require('../../lib/logger') as any).logger;
 const mockIsNonInteractive = isNonInteractive as jest.MockedFunction<typeof isNonInteractive>;
 const mockShouldProceedWithoutPrompt = shouldProceedWithoutPrompt as jest.MockedFunction<typeof shouldProceedWithoutPrompt>;
 
 // Mock fs and path for component installation
 jest.mock('fs');
 jest.mock('path');
+jest.mock('../../lib/utils/filesystem', () => ({
+  ensureDirectorySync: jest.fn()
+}));
 
 describe('Add Command - Non-Interactive Mode', () => {
   let mockCore: jest.Mocked<ZccCore>;
@@ -56,16 +85,23 @@ describe('Add Command - Non-Interactive Mode', () => {
     mockIsNonInteractive.mockReturnValue(false);
     mockShouldProceedWithoutPrompt.mockReturnValue(false);
 
-    // Mock logger methods
-    mockLogger.error = jest.fn();
-    mockLogger.info = jest.fn();
-    mockLogger.success = jest.fn();
-    mockLogger.warn = jest.fn();
+    // Clear logger mocks
+    mockLogger.error.mockClear();
+    mockLogger.info.mockClear();
+    mockLogger.success.mockClear();
+    mockLogger.warn.mockClear();
 
     // Mock fs methods
     require('fs').readFileSync = jest.fn().mockReturnValue('mock content');
     require('fs').writeFileSync = jest.fn();
-    require('fs').existsSync = jest.fn().mockReturnValue(true);
+    // Mock existsSync to return false for component directories so they get created
+    require('fs').existsSync = jest.fn().mockImplementation((path) => {
+      const pathStr = path.toString();
+      if (pathStr.includes('/modes') || pathStr.includes('/workflows') || pathStr.includes('/agents')) {
+        return false; // Component directories don't exist, so they'll be created
+      }
+      return true; // Other files exist
+    });
     
     // Mock path methods
     require('path').join = jest.fn((...args) => args.join('/'));

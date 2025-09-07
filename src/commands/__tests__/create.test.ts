@@ -74,7 +74,15 @@ describe('Create Command', () => {
     mockFs = fs as jest.Mocked<typeof fs>;
     mockFs.readFileSync.mockReturnValue('# Mock Component Content\n\nThis is a mock component.');
     mockFs.writeFileSync.mockReturnValue();
-    mockFs.existsSync.mockReturnValue(true);
+    // Mock existsSync to return false for component directories (so they get created)
+    // but true for other files like package.json
+    mockFs.existsSync.mockImplementation((path) => {
+      const pathStr = path.toString();
+      if (pathStr.includes('/modes') || pathStr.includes('/workflows') || pathStr.includes('/agents')) {
+        return false; // Component directories don't exist, so they'll be created
+      }
+      return true; // Other files exist
+    });
     
     // Create test filesystem
     await createTestFileSystem({
