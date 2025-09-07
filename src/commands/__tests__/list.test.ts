@@ -30,10 +30,14 @@ describe('List Command', () => {
     
     originalExit = process.exit;
     process.exit = jest.fn() as any;
+    
+    // Reset process.exitCode
+    process.exitCode = 0;
   });
 
   afterEach(() => {
     process.exit = originalExit;
+    process.exitCode = 0;
   });
 
   describe('list components (default)', () => {
@@ -207,7 +211,7 @@ describe('List Command', () => {
       await listCommand.parseAsync(['node', 'test']);
 
       expect(logger.error).toHaveBeenCalledWith('Failed to list components:', expect.any(Error));
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
   });
 });

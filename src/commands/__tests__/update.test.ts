@@ -37,10 +37,14 @@ describe('Update Command', () => {
     
     originalExit = process.exit;
     process.exit = jest.fn() as any;
+    
+    // Reset process.exitCode
+    process.exitCode = 0;
   });
 
   afterEach(() => {
     process.exit = originalExit;
+    process.exitCode = 0;
   });
 
   describe('check flag', () => {
@@ -106,7 +110,7 @@ describe('Update Command', () => {
       expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Invalid component format'));
       expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Expected format:'));
       expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Examples:'));
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
     
     it('should handle invalid component type', async () => {
@@ -115,7 +119,7 @@ describe('Update Command', () => {
 
       expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Invalid component type'));
       expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Valid types are: mode, workflow'));
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
     
     it('should handle empty component name', async () => {
@@ -123,7 +127,7 @@ describe('Update Command', () => {
       await cmd.parseAsync(['node', 'test', 'mode:']);
 
       expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Component name cannot be empty'));
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
     
     it('should handle too many colons in component format', async () => {
@@ -131,7 +135,7 @@ describe('Update Command', () => {
       await cmd.parseAsync(['node', 'test', 'mode:architect:extra']);
 
       expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Invalid component format'));
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
   });
 
@@ -164,7 +168,7 @@ describe('Update Command', () => {
       await cmd.parseAsync(['node', 'test', 'diff', 'invalid']);
 
       expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Invalid component format'));
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
     
     it('should handle zcc not initialized in diff', async () => {
@@ -174,7 +178,7 @@ describe('Update Command', () => {
 
       expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('zcc is not initialized'));
       expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Run \'zcc init\' to initialize'));
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
   });
 
@@ -186,7 +190,7 @@ describe('Update Command', () => {
       await cmd.parseAsync(['node', 'test']);
 
       expect(logger.error).toHaveBeenCalledWith('Update failed: Network error');
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
     
     it('should handle zcc not initialized error', async () => {
@@ -195,7 +199,7 @@ describe('Update Command', () => {
       await cmd.parseAsync(['node', 'test']);
 
       expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('zcc is not initialized'));
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
     
     it('should handle component not installed error', async () => {
@@ -208,7 +212,7 @@ describe('Update Command', () => {
 
       expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('mode \'architect\' is not installed'));
       expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Run \'zcc add mode architect\' to install'));
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
     
     it('should handle local modifications error', async () => {
@@ -220,7 +224,7 @@ describe('Update Command', () => {
       await cmd.parseAsync(['node', 'test', 'mode:architect']);
 
       expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('local modifications'));
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
     
     it('should handle template not found error', async () => {
@@ -232,7 +236,7 @@ describe('Update Command', () => {
       await cmd.parseAsync(['node', 'test', 'mode:architect']);
 
       expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Template for mode \'architect\' not found'));
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
   });
 });

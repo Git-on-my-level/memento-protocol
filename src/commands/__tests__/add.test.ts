@@ -64,10 +64,14 @@ describe('Add Command', () => {
     
     originalExit = process.exit;
     process.exit = jest.fn() as any;
+    
+    // Reset process.exitCode
+    process.exitCode = 0;
   });
 
   afterEach(() => {
     process.exit = originalExit;
+    process.exitCode = 0;
   });
 
   describe('add mode', () => {
@@ -228,14 +232,14 @@ describe('Add Command', () => {
       await addCommand.parseAsync(['node', 'test', 'mode', 'architect']);
 
       expect(logger.error).toHaveBeenCalledWith('Failed to add component:', expect.any(Error));
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
 
     it('should handle invalid component type', async () => {
       await addCommand.parseAsync(['node', 'test', 'invalid']);
 
       expect(logger.error).toHaveBeenCalledWith('Invalid component type: invalid');
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
     
     it('should handle multiple matches with user selection', async () => {
