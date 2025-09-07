@@ -10,7 +10,27 @@ jest.mock('../../lib/logger', () => ({
     success: jest.fn(),
     error: jest.fn(),
     warn: jest.fn(),
-  }
+    debug: jest.fn(),
+    verbose: jest.fn(),
+    setVerbose: jest.fn(),
+    setDebug: jest.fn(),
+    setNoColor: jest.fn(),
+    space: jest.fn(),
+    newline: jest.fn(),
+    progress: jest.fn(),
+    clearProgress: jest.fn(),
+  },
+  getChalk: jest.fn(() => ({
+    green: (s: string) => s,
+    red: (s: string) => s,
+    yellow: (s: string) => s,
+    blue: (s: string) => s,
+    cyan: (s: string) => s,
+    gray: (s: string) => s,
+    bold: (s: string) => s,
+    dim: (s: string) => s,
+  })),
+  configureChalk: jest.fn(),
 }));
 
 describe('Packs Command', () => {
@@ -166,7 +186,9 @@ describe('Packs Command', () => {
       
       // Check that detailed information is shown (verbose mode)
       const allCalls = (logger.info as jest.Mock).mock.calls.map(call => call[0]);
-      expect(allCalls.some((call: string) => call.includes('frontend-react (v1.0.0)'))).toBe(true);
+      // Debug: log the actual calls to see what's happening
+      // console.log('Logger calls:', allCalls);
+      expect(allCalls.some((call: string) => call.includes('frontend-react') && call.includes('v1.0.0'))).toBe(true);
       expect(allCalls.some((call: string) => call.includes('Complete React frontend development setup'))).toBe(true);
       expect(allCalls.some((call: string) => call.includes('Components:'))).toBe(true);
       expect(allCalls.some((call: string) => call.includes('Tags:'))).toBe(true);

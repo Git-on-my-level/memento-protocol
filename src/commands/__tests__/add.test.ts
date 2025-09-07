@@ -12,7 +12,27 @@ jest.mock('../../lib/logger', () => ({
     success: jest.fn(),
     error: jest.fn(),
     warn: jest.fn(),
-  }
+    debug: jest.fn(),
+    verbose: jest.fn(),
+    setVerbose: jest.fn(),
+    setDebug: jest.fn(),
+    setNoColor: jest.fn(),
+    space: jest.fn(),
+    newline: jest.fn(),
+    progress: jest.fn(),
+    clearProgress: jest.fn(),
+  },
+  getChalk: jest.fn(() => ({
+    green: (s: string) => s,
+    red: (s: string) => s,
+    yellow: (s: string) => s,
+    blue: (s: string) => s,
+    cyan: (s: string) => s,
+    gray: (s: string) => s,
+    bold: (s: string) => s,
+    dim: (s: string) => s,
+  })),
+  configureChalk: jest.fn(),
 }));
 jest.mock('inquirer', () => ({
   prompt: jest.fn()

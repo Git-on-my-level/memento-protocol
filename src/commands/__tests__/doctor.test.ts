@@ -2,17 +2,37 @@ import { doctorCommand } from '../doctor';
 import { createTestFileSystem } from '../../lib/testing/createTestFileSystem';
 import * as fs from 'fs';
 
+// Mock fs module before any other code
+jest.mock('fs');
+
 // Mock the logger to capture output
 jest.mock('../../lib/logger', () => ({
   logger: {
     info: jest.fn(),
     success: jest.fn(),
-    warn: jest.fn(),
     error: jest.fn(),
-    newline: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
     verbose: jest.fn(),
-    debug: jest.fn()
-  }
+    setVerbose: jest.fn(),
+    setDebug: jest.fn(),
+    setNoColor: jest.fn(),
+    space: jest.fn(),
+    newline: jest.fn(),
+    progress: jest.fn(),
+    clearProgress: jest.fn(),
+  },
+  getChalk: jest.fn(() => ({
+    green: (s: string) => s,
+    red: (s: string) => s,
+    yellow: (s: string) => s,
+    blue: (s: string) => s,
+    cyan: (s: string) => s,
+    gray: (s: string) => s,
+    bold: (s: string) => s,
+    dim: (s: string) => s,
+  })),
+  configureChalk: jest.fn(),
 }));
 
 // Mock console methods
@@ -81,7 +101,8 @@ describe('doctor command', () => {
   describe('basic functionality', () => {
     it('should run diagnostics without error', async () => {
       // Mock fs.existsSync to simulate proper installation
-      jest.spyOn(fs, 'existsSync').mockImplementation((filePath) => {
+      const mockFs = fs as jest.Mocked<typeof fs>;
+      mockFs.existsSync.mockImplementation((filePath) => {
         const pathStr = filePath.toString();
         if (pathStr.includes('package.json')) return true;
         if (pathStr.includes('.zcc')) return true;
@@ -90,7 +111,7 @@ describe('doctor command', () => {
       });
       
       // Mock fs.readFileSync for package.json
-      jest.spyOn(fs, 'readFileSync').mockImplementation((filePath) => {
+      mockFs.readFileSync.mockImplementation((filePath) => {
         const pathStr = filePath.toString();
         if (pathStr.includes('package.json')) {
           return JSON.stringify({
@@ -98,7 +119,7 @@ describe('doctor command', () => {
             version: '1.0.0'
           });
         }
-        return '';
+        return '' as any;
       });
 
       // Get the action function from the doctor command
@@ -106,7 +127,9 @@ describe('doctor command', () => {
       expect(action).toBeDefined();
 
       // Run the doctor command action with empty options
-      await expect(action.call(doctorCommand, {} as any)).resolves.not.toThrow();
+      if (action) {
+        await action.call(doctorCommand, {} as any);
+      }
 
       // Verify that diagnostic output was generated
       expect(mockConsole.log).toHaveBeenCalled();
@@ -120,7 +143,7 @@ describe('doctor command', () => {
       });
 
       // Mock missing package.json
-      jest.spyOn(fs, 'existsSync').mockReturnValue(false);
+      (fs as jest.Mocked<typeof fs>).existsSync.mockReturnValue(false);
 
       const action = doctorCommand.action;
       if (action) {
@@ -134,11 +157,11 @@ describe('doctor command', () => {
   describe('diagnostic checks', () => {
     it('should detect ZCC installation correctly', async () => {
       // Mock successful package.json read
-      jest.spyOn(fs, 'existsSync').mockImplementation((filePath) => {
+      (fs as jest.Mocked<typeof fs>).existsSync.mockImplementation((filePath) => {
         return filePath.toString().includes('package.json');
       });
       
-      jest.spyOn(fs, 'readFileSync').mockImplementation((filePath) => {
+      (fs as jest.Mocked<typeof fs>).readFileSync.mockImplementation((filePath) => {
         if (filePath.toString().includes('package.json')) {
           return JSON.stringify({
             name: 'z-claude-code',
@@ -193,14 +216,14 @@ describe('doctor command', () => {
       process.env.ZCC_HOME = '/custom/zcc/home';
       
       // Mock directory exists
-      jest.spyOn(fs, 'existsSync').mockImplementation((filePath) => {
+      (fs as jest.Mocked<typeof fs>).existsSync.mockImplementation((filePath) => {
         const pathStr = filePath.toString();
         return pathStr.includes('/custom/zcc/home') || 
                pathStr.includes('package.json') ||
                pathStr.includes('.claude');
       });
 
-      jest.spyOn(fs, 'readFileSync').mockImplementation((filePath) => {
+      (fs as jest.Mocked<typeof fs>).readFileSync.mockImplementation((filePath) => {
         if (filePath.toString().includes('package.json')) {
           return JSON.stringify({ name: 'z-claude-code', version: '1.0.0' });
         }
@@ -220,14 +243,14 @@ describe('doctor command', () => {
 
     it('should detect missing project initialization', async () => {
       // Mock no .zcc directory
-      jest.spyOn(fs, 'existsSync').mockImplementation((filePath) => {
+      (fs as jest.Mocked<typeof fs>).existsSync.mockImplementation((filePath) => {
         const pathStr = filePath.toString();
         if (pathStr.includes('/.zcc')) return false;
         if (pathStr.includes('package.json')) return true;
         return true;
       });
 
-      jest.spyOn(fs, 'readFileSync').mockImplementation((filePath) => {
+      (fs as jest.Mocked<typeof fs>).readFileSync.mockImplementation((filePath) => {
         if (filePath.toString().includes('package.json')) {
           return JSON.stringify({ name: 'z-claude-code', version: '1.0.0' });
         }
@@ -246,7 +269,7 @@ describe('doctor command', () => {
 
     it('should detect Claude Code integration', async () => {
       // Mock .claude directory and files exist
-      jest.spyOn(fs, 'existsSync').mockImplementation((filePath) => {
+      (fs as jest.Mocked<typeof fs>).existsSync.mockImplementation((filePath) => {
         const pathStr = filePath.toString();
         return pathStr.includes('.claude') || pathStr.includes('package.json');
       });
@@ -255,7 +278,7 @@ describe('doctor command', () => {
         return ['mode.md', 'ticket.md'] as any;
       });
 
-      jest.spyOn(fs, 'readFileSync').mockImplementation((filePath) => {
+      (fs as jest.Mocked<typeof fs>).readFileSync.mockImplementation((filePath) => {
         if (filePath.toString().includes('package.json')) {
           return JSON.stringify({ name: 'z-claude-code', version: '1.0.0' });
         }
@@ -276,7 +299,7 @@ describe('doctor command', () => {
   describe('auto-fix functionality', () => {
     it('should attempt fixes when --fix flag is provided', async () => {
       // Mock missing global directory
-      jest.spyOn(fs, 'existsSync').mockImplementation((filePath) => {
+      (fs as jest.Mocked<typeof fs>).existsSync.mockImplementation((filePath) => {
         const pathStr = filePath.toString();
         if (pathStr.includes('/.zcc') && pathStr.includes('home')) return false;
         return pathStr.includes('package.json');
@@ -285,7 +308,7 @@ describe('doctor command', () => {
       // Mock fs.mkdirSync
       const mkdirSyncSpy = jest.spyOn(fs, 'mkdirSync').mockImplementation(() => undefined);
 
-      jest.spyOn(fs, 'readFileSync').mockImplementation((filePath) => {
+      (fs as jest.Mocked<typeof fs>).readFileSync.mockImplementation((filePath) => {
         if (filePath.toString().includes('package.json')) {
           return JSON.stringify({ name: 'z-claude-code', version: '1.0.0' });
         }
@@ -303,14 +326,14 @@ describe('doctor command', () => {
 
     it('should report when fixes succeed', async () => {
       // Mock directory creation succeeds
-      jest.spyOn(fs, 'existsSync').mockImplementation((filePath) => {
+      (fs as jest.Mocked<typeof fs>).existsSync.mockImplementation((filePath) => {
         const pathStr = filePath.toString();
         if (pathStr.includes('/.zcc')) return false;
         return pathStr.includes('package.json');
       });
 
       jest.spyOn(fs, 'mkdirSync').mockImplementation(() => undefined);
-      jest.spyOn(fs, 'readFileSync').mockImplementation((filePath) => {
+      (fs as jest.Mocked<typeof fs>).readFileSync.mockImplementation((filePath) => {
         if (filePath.toString().includes('package.json')) {
           return JSON.stringify({ name: 'z-claude-code', version: '1.0.0' });
         }
@@ -330,7 +353,7 @@ describe('doctor command', () => {
 
   describe('edge cases', () => {
     it('should handle missing package.json gracefully', async () => {
-      jest.spyOn(fs, 'existsSync').mockReturnValue(false);
+      (fs as jest.Mocked<typeof fs>).existsSync.mockReturnValue(false);
 
       const action = doctorCommand.action;
       if (action) {
@@ -343,7 +366,7 @@ describe('doctor command', () => {
     });
 
     it('should handle file system errors gracefully', async () => {
-      jest.spyOn(fs, 'existsSync').mockImplementation(() => {
+      (fs as jest.Mocked<typeof fs>).existsSync.mockImplementation(() => {
         throw new Error('File system error');
       });
 
@@ -354,7 +377,7 @@ describe('doctor command', () => {
     });
 
     it('should handle permission errors during fix attempts', async () => {
-      jest.spyOn(fs, 'existsSync').mockImplementation((filePath) => {
+      (fs as jest.Mocked<typeof fs>).existsSync.mockImplementation((filePath) => {
         return filePath.toString().includes('package.json');
       });
 
@@ -362,7 +385,7 @@ describe('doctor command', () => {
         throw new Error('Permission denied');
       });
 
-      jest.spyOn(fs, 'readFileSync').mockImplementation((filePath) => {
+      (fs as jest.Mocked<typeof fs>).readFileSync.mockImplementation((filePath) => {
         if (filePath.toString().includes('package.json')) {
           return JSON.stringify({ name: 'z-claude-code', version: '1.0.0' });
         }

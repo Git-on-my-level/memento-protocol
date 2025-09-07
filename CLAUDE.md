@@ -133,8 +133,7 @@ src/
 │   ├── ticket.ts         # Ticket management (create/move/resolve)
 │   ├── config.ts         # Configuration management
 │   ├── update.ts         # Update components
-│   ├── upsert.ts         # Combined init/update logic
-│   └── command.ts        # Claude Code custom command generator
+│   └── upsert.ts         # Combined init/update logic
 └── lib/                  # Core functionality
     ├── configManager.ts  # Config hierarchy (default->global->project->env)
     ├── ticketManager.ts  # Ticket lifecycle management
