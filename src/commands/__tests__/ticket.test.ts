@@ -1,4 +1,3 @@
-import { ticketCommand } from '../ticket';
 import { TicketManager } from '../../lib/ticketManager';
 import { logger } from '../../lib/logger';
 import inquirer from 'inquirer';
@@ -17,6 +16,7 @@ jest.mock('inquirer');
 describe('Ticket Command', () => {
   let mockTicketManager: any;
   let originalExit: any;
+  let ticketCommand: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -32,10 +32,19 @@ describe('Ticket Command', () => {
     
     originalExit = process.exit;
     process.exit = jest.fn() as any;
+    
+    // Reset process.exitCode
+    process.exitCode = 0;
+    
+    // Import fresh module instance for each test to prevent Commander.js state pollution
+    jest.isolateModules(() => {
+      ticketCommand = require('../ticket').ticketCommand;
+    });
   });
 
   afterEach(() => {
     process.exit = originalExit;
+    process.exitCode = 0;
   });
 
   describe('create ticket', () => {
@@ -73,7 +82,7 @@ describe('Ticket Command', () => {
 
         await expect(result).resolves.not.toThrow();
         expect(logger.error).toHaveBeenCalledWith('Failed to create ticket: Error: Invalid ticket type: invalid-type. Must be one of: feature, bug, task, refactor');
-        expect(process.exit).toHaveBeenCalledWith(1);
+        expect(process.exitCode).toBe(1);
       });
 
       it('should handle invalid priority validation', async () => {
@@ -85,7 +94,7 @@ describe('Ticket Command', () => {
 
         await expect(result).resolves.not.toThrow();
         expect(logger.error).toHaveBeenCalledWith('Failed to create ticket: Error: Invalid priority: super-high. Must be one of: low, medium, high, critical');
-        expect(process.exit).toHaveBeenCalledWith(1);
+        expect(process.exitCode).toBe(1);
       });
 
       it('should handle empty tags correctly', async () => {
@@ -109,29 +118,29 @@ describe('Ticket Command', () => {
         });
       });
 
-      it('should create each ticket type correctly', async () => {
-        const types = ['feature', 'bug', 'task', 'refactor'] as const;
-        
-        for (const type of types) {
-          mockTicketManager.create.mockClear();
-          const ticketPath = `/project/.zcc/tickets/next/${type}-ticket.md`;
-          mockTicketManager.create.mockResolvedValue(ticketPath);
+      it.each([
+        'feature',
+        'bug', 
+        'task',
+        'refactor'
+      ])('should create %s ticket type correctly', async (type) => {
+        const ticketPath = `/project/.zcc/tickets/next/${type}-ticket.md`;
+        mockTicketManager.create.mockResolvedValue(ticketPath);
 
-          const result = ticketCommand.parseAsync([
-            'node', 'test', 'create', `${type}-ticket`, 
-            '--type', type
-          ], { from: 'user' }); // Use from: 'user' to avoid conflicts
+        const result = ticketCommand.parseAsync([
+          'node', 'test', 'create', `${type}-ticket`, 
+          '--type', type
+        ]);
 
-          await expect(result).resolves.not.toThrow();
-          expect(mockTicketManager.create).toHaveBeenCalledWith(`${type}-ticket`, {
-            type,
-            title: undefined,
-            description: undefined,
-            priority: 'medium',
-            assignee: undefined,
-            tags: []
-          });
-        }
+        await expect(result).resolves.not.toThrow();
+        expect(mockTicketManager.create).toHaveBeenCalledWith(`${type}-ticket`, {
+          type,
+          title: undefined,
+          description: undefined,
+          priority: 'medium',
+          assignee: undefined,
+          tags: []
+        });
       });
     });
 
@@ -204,7 +213,7 @@ describe('Ticket Command', () => {
 
         await expect(result).resolves.not.toThrow();
         expect(logger.error).toHaveBeenCalledWith('Failed to create ticket: Error: Invalid ticket type: invalid-type. Must be one of: feature, bug, task, refactor');
-        expect(process.exit).toHaveBeenCalledWith(1);
+        expect(process.exitCode).toBe(1);
       });
     });
 
@@ -215,7 +224,7 @@ describe('Ticket Command', () => {
 
       await expect(result).resolves.not.toThrow();
       expect(logger.error).toHaveBeenCalledWith('Failed to create ticket: Error: Ticket already exists');
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
   });
 
@@ -256,7 +265,7 @@ describe('Ticket Command', () => {
 
       await expect(result).resolves.not.toThrow();
       expect(logger.error).toHaveBeenCalledWith('Failed to list tickets: Error: Read error');
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
   });
 
@@ -276,7 +285,7 @@ describe('Ticket Command', () => {
 
       await expect(result).resolves.not.toThrow();
       expect(logger.error).toHaveBeenCalledWith('Invalid status: invalid-status. Must be one of: next, in-progress, done');
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
 
     it('should handle move errors', async () => {
@@ -286,7 +295,7 @@ describe('Ticket Command', () => {
 
       await expect(result).resolves.not.toThrow();
       expect(logger.error).toHaveBeenCalledWith('Failed to move ticket: Error: Ticket not found');
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
   });
 
@@ -308,7 +317,7 @@ describe('Ticket Command', () => {
 
       await expect(result).resolves.not.toThrow();
       expect(logger.error).toHaveBeenCalledWith('Failed to delete ticket: Error: Ticket not found');
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
   });
 });

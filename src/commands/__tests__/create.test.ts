@@ -99,6 +99,9 @@ describe('Create Command', () => {
     // Mock exit to prevent test termination
     originalExit = process.exit;
     process.exit = jest.fn() as any;
+    
+    // Reset process.exitCode
+    process.exitCode = 0;
 
     // Reset console spies
     jest.spyOn(console, 'log').mockImplementation();
@@ -107,6 +110,7 @@ describe('Create Command', () => {
 
   afterEach(() => {
     process.exit = originalExit;
+    process.exitCode = 0;
     jest.restoreAllMocks();
   });
 
@@ -275,7 +279,7 @@ describe('Create Command', () => {
       await createCommand.parseAsync(['mode', 'new-mode', '--from', 'nonexistent'], { from: 'user' });
 
       expect(logger.error).toHaveBeenCalledWith("Source component 'nonexistent' not found");
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
 
     it('should handle multiple source matches', async () => {
@@ -343,7 +347,7 @@ describe('Create Command', () => {
       await createCommand.parseAsync(['mode'], { from: 'user' });
 
       expect(logger.error).toHaveBeenCalledWith('Component name is required in non-interactive mode');
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
   });
 
@@ -352,7 +356,7 @@ describe('Create Command', () => {
       await createCommand.parseAsync(['invalid', 'name'], { from: 'user' });
 
       expect(logger.error).toHaveBeenCalledWith('Invalid component type: invalid');
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
 
     it('should reject invalid component name', async () => {
@@ -361,7 +365,7 @@ describe('Create Command', () => {
       expect(logger.error).toHaveBeenCalledWith(
         'Component name must contain only lowercase letters, numbers, hyphens, and underscores'
       );
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toBe(1);
     });
   });
 
