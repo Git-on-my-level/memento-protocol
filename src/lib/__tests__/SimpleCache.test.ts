@@ -4,7 +4,12 @@ describe('SimpleCache', () => {
   let cache: SimpleCache;
 
   beforeEach(() => {
+    jest.useFakeTimers();
     cache = new SimpleCache(1000); // 1 second TTL for testing
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   describe('basic operations', () => {
@@ -38,22 +43,22 @@ describe('SimpleCache', () => {
   });
 
   describe('TTL behavior', () => {
-    it('should expire entries after TTL', async () => {
+    it('should expire entries after TTL', () => {
       cache.set('expiring-key', 'value');
       expect(cache.get('expiring-key')).toBe('value');
 
-      // Wait for TTL to expire
-      await new Promise(resolve => setTimeout(resolve, 1100));
+      // Advance time past TTL
+      jest.advanceTimersByTime(1100);
 
       expect(cache.get('expiring-key')).toBeNull();
     });
 
-    it('should not expire entries before TTL', async () => {
+    it('should not expire entries before TTL', () => {
       cache.set('fresh-key', 'value');
       expect(cache.get('fresh-key')).toBe('value');
 
-      // Wait less than TTL
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Advance time less than TTL
+      jest.advanceTimersByTime(500);
 
       expect(cache.get('fresh-key')).toBe('value');
     });
@@ -167,38 +172,38 @@ describe('SimpleCache', () => {
       expect(cache.has('nonexistent-key')).toBe(false);
     });
 
-    it('should check expired keys correctly', async () => {
+    it('should check expired keys correctly', () => {
       cache.set('expiring-key', 'value');
       expect(cache.has('expiring-key')).toBe(true);
 
-      // Wait for expiration
-      await new Promise(resolve => setTimeout(resolve, 1100));
+      // Advance time past expiration
+      jest.advanceTimersByTime(1100);
 
       expect(cache.has('expiring-key')).toBe(false);
     });
   });
 
   describe('cleanup functionality', () => {
-    it('should manually clean up expired entries', async () => {
+    it('should manually clean up expired entries', () => {
       cache.set('key1', 'value1');
       cache.set('key2', 'value2');
       cache.set('key3', 'value3');
 
       expect(cache.size()).toBe(3);
 
-      // Wait for expiration
-      await new Promise(resolve => setTimeout(resolve, 1100));
+      // Advance time past expiration
+      jest.advanceTimersByTime(1100);
 
       const removedCount = cache.cleanup();
       expect(removedCount).toBe(3);
       expect(cache.size()).toBe(0);
     });
 
-    it('should not remove non-expired entries during cleanup', async () => {
+    it('should not remove non-expired entries during cleanup', () => {
       cache.set('old-key', 'old-value');
       
-      // Wait for first key to expire
-      await new Promise(resolve => setTimeout(resolve, 1100));
+      // Advance time so first key expires
+      jest.advanceTimersByTime(1100);
       
       cache.set('new-key', 'new-value');
 

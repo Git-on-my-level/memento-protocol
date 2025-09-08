@@ -415,6 +415,202 @@ describe('HookManager', () => {
     });
   });
 
+  describe('Hook Configuration Edge Cases', () => {
+    it('should skip non-JSON files when loading hook definitions', async () => {
+      const fs = await createTestFileSystem({
+        '/project/.zcc/hooks/definitions/hook1.json': JSON.stringify({
+          version: '1.0.0',
+          hooks: []
+        }),
+        '/project/.zcc/hooks/definitions/README.md': '# Hooks',
+        '/project/.zcc/hooks/definitions/script.sh': '#!/bin/bash\necho test'
+      });
+
+      const hookManager = new HookManager(projectRoot, fs);
+      await hookManager.initialize();
+
+      // Should only load the JSON file, ignoring .md and .sh files
+      const allHooks = hookManager.getAllHooks();
+      // The exact count depends on built-in hooks, but the important thing is it doesn't crash
+      expect(allHooks).toBeDefined();
+    });
+
+    it('should handle invalid JSON files and continue loading other valid files', async () => {
+      const fs = await createTestFileSystem({
+        '/project/.zcc/hooks/definitions/valid.json': JSON.stringify({
+          version: '1.0.0',
+          hooks: [{ id: 'valid', name: 'Valid Hook', event: 'UserPromptSubmit', enabled: true, command: 'echo valid' }]
+        }),
+        '/project/.zcc/hooks/definitions/invalid.json': '{ invalid json',
+        '/project/.zcc/hooks/definitions/another.json': JSON.stringify({
+          version: '1.0.0',
+          hooks: [{ id: 'another', name: 'Another Hook', event: 'SessionStart', enabled: true, command: 'echo another' }]
+        })
+      });
+
+      const hookManager = new HookManager(projectRoot, fs);
+      await hookManager.initialize();
+
+      const allHooks = hookManager.getAllHooks();
+      const userPromptHooks = allHooks.find(h => h.event === 'UserPromptSubmit');
+      const sessionStartHooks = allHooks.find(h => h.event === 'SessionStart');
+      
+      // Should have loaded the valid hooks despite the invalid JSON file
+      expect(userPromptHooks?.hooks.some(h => h.id === 'valid')).toBe(true);
+      expect(sessionStartHooks?.hooks.some(h => h.id === 'another')).toBe(true);
+    });
+
+    it('should reject YAML format hook definitions', async () => {
+      const fs = await createTestFileSystem({
+        '/project/.zcc/hooks/definitions/hook.yaml': 'version: 1.0.0\nhooks: []'
+      });
+
+      const hookManager = new HookManager(projectRoot, fs);
+      
+      // YAML files should be ignored during hook loading - no error should occur
+      await expect(hookManager.initialize()).resolves.not.toThrow();
+    });
+
+    it('should handle unsupported file formats gracefully', async () => {
+      const fs = await createTestFileSystem({
+        '/project/.zcc/hooks/definitions/hook.txt': 'some text',
+        '/project/.zcc/hooks/definitions/hook.xml': '<root></root>'
+      });
+
+      const hookManager = new HookManager(projectRoot, fs);
+      
+      // Unsupported formats should be ignored during hook loading
+      await expect(hookManager.initialize()).resolves.not.toThrow();
+    });
+
+    it('should handle hook deletion error scenarios gracefully', async () => {
+      const fs = await createTestFileSystem({});
+
+      const hookManager = new HookManager(projectRoot, fs);
+      await hookManager.initialize();
+
+      // Attempting to remove a non-existent hook should return false, not throw
+      const removed = await hookManager.removeHook('non-existent-hook');
+      expect(removed).toBe(false);
+    });
+  });
+
+  describe('Hook File Management Security and Cleanup', () => {
+    it('should not remove script files outside hooks directory (security check)', async () => {
+      const fs = await createTestFileSystem({
+        '/project/.zcc/hooks/definitions/security-test.json': JSON.stringify({
+          version: '1.0.0',
+          hooks: [{
+            id: 'security-test',
+            name: 'Security Test Hook',
+            event: 'UserPromptSubmit',
+            enabled: true,
+            command: '/usr/bin/external-script.sh'
+          }]
+        }),
+        '/usr/bin/external-script.sh': '#!/bin/bash\necho "external script"'
+      });
+
+      const hookManager = new HookManager(projectRoot, fs);
+      await hookManager.initialize();
+
+      // External script should exist before removal attempt
+      expect(await fs.exists('/usr/bin/external-script.sh')).toBe(true);
+
+      // Remove the hook - this should NOT delete the external script
+      const removed = await hookManager.removeHook('security-test');
+      expect(removed).toBe(true);
+
+      // External script should still exist (security protection)
+      expect(await fs.exists('/usr/bin/external-script.sh')).toBe(true);
+    });
+
+    it('should handle missing files gracefully during hook removal', async () => {
+      const fs = await createTestFileSystem({});
+
+      const hookManager = new HookManager(projectRoot, fs);
+      await hookManager.initialize();
+
+      // Add a hook that references a non-existent script file
+      await hookManager.addHook({
+        id: 'missing-file-test',
+        name: 'Missing File Test',
+        event: 'UserPromptSubmit',
+        enabled: true,
+        command: './.zcc/hooks/scripts/non-existent.sh'
+      });
+
+      // Removing hook with missing script file should not throw error
+      await expect(hookManager.removeHook('missing-file-test')).resolves.not.toThrow();
+    });
+
+    it('should handle multiple timestamped hook cleanup during initialization', async () => {
+      const fs = await createTestFileSystem({
+        '/project/.zcc/hooks/definitions/hook1-1234567890123.json': JSON.stringify({
+          version: '1.0.0',
+          hooks: [{
+            id: 'hook1-1234567890123',
+            name: 'Hook 1',
+            event: 'UserPromptSubmit',
+            enabled: true,
+            command: 'echo hook1'
+          }]
+        }),
+        '/project/.zcc/hooks/definitions/hook2-9876543210987.json': JSON.stringify({
+          version: '1.0.0',
+          hooks: [{
+            id: 'hook2-9876543210987',
+            name: 'Hook 2',
+            event: 'SessionStart',
+            enabled: true,
+            command: 'echo hook2'
+          }]
+        })
+      });
+
+      const hookManager = new HookManager(projectRoot, fs);
+      await hookManager.initialize();
+
+      // After cleanup, should have clean hook names
+      const allHooks = hookManager.getAllHooks();
+      const userPromptHooks = allHooks.find(h => h.event === 'UserPromptSubmit');
+      const sessionStartHooks = allHooks.find(h => h.event === 'SessionStart');
+
+      expect(userPromptHooks?.hooks.some(h => h.id === 'hook1')).toBe(true);
+      expect(sessionStartHooks?.hooks.some(h => h.id === 'hook2')).toBe(true);
+      
+      // Original timestamped files should be gone
+      expect(await fs.exists('/project/.zcc/hooks/definitions/hook1-1234567890123.json')).toBe(false);
+      expect(await fs.exists('/project/.zcc/hooks/definitions/hook2-9876543210987.json')).toBe(false);
+    });
+
+    it('should skip hooks without timestamp pattern during cleanup', async () => {
+      const fs = await createTestFileSystem({
+        '/project/.zcc/hooks/definitions/clean-hook.json': JSON.stringify({
+          version: '1.0.0',
+          hooks: [{
+            id: 'clean-hook',
+            name: 'Clean Hook',
+            event: 'UserPromptSubmit',
+            enabled: true,
+            command: 'echo test'
+          }]
+        })
+      });
+
+      const hookManager = new HookManager(projectRoot, fs);
+      await hookManager.initialize();
+
+      // Clean hook should remain unchanged
+      const allHooks = hookManager.getAllHooks();
+      const userPromptHooks = allHooks.find(h => h.event === 'UserPromptSubmit');
+      expect(userPromptHooks?.hooks.some(h => h.id === 'clean-hook')).toBe(true);
+      
+      // File should still exist
+      expect(await fs.exists('/project/.zcc/hooks/definitions/clean-hook.json')).toBe(true);
+    });
+  });
+
   describe('Claude settings generation', () => {
     it('should merge hooks with existing settings', async () => {
       const fs = await createTestFileSystem({

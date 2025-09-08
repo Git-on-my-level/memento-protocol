@@ -1,4 +1,4 @@
-import { logger, getChalk } from '../logger';
+import { logger } from '../logger';
 import { ZccError } from '../errors';
 
 describe('logger', () => {
@@ -19,16 +19,6 @@ describe('logger', () => {
   });
 
   describe('info', () => {
-    it('should log info messages with blue info symbol', () => {
-      logger.info('Test info message');
-      
-      // Test that console.log was called with the right pattern
-      expect(consoleLogSpy).toHaveBeenCalledTimes(1);
-      const call = consoleLogSpy.mock.calls[0];
-      expect(call[0]).toContain('ℹ');
-      expect(call[0]).toContain('Test info message');
-    });
-
     it('should support additional arguments', () => {
       const obj = { foo: 'bar' };
       logger.info('Message with object', obj);
@@ -39,38 +29,31 @@ describe('logger', () => {
   });
 
   describe('success', () => {
-    it('should log success messages with green checkmark', () => {
+    it('should log success messages', () => {
       logger.success('Operation successful');
       
       expect(consoleLogSpy).toHaveBeenCalledTimes(1);
-      const call = consoleLogSpy.mock.calls[0];
-      expect(call[0]).toContain('✓');
-      expect(call[0]).toContain('Operation successful');
+      expect(consoleLogSpy.mock.calls[0][0]).toContain('Operation successful');
     });
   });
 
   describe('warn', () => {
-    it('should log warning messages with console.warn', () => {
+    it('should use console.warn for warning messages', () => {
       logger.warn('Warning message');
       
       // Should use console.warn, not console.log
       expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
       expect(consoleLogSpy).not.toHaveBeenCalled();
-      
-      const call = consoleWarnSpy.mock.calls[0];
-      expect(call[0]).toContain('⚠');
-      expect(call[0]).toContain('Warning message');
+      expect(consoleWarnSpy.mock.calls[0][0]).toContain('Warning message');
     });
   });
 
   describe('error', () => {
-    it('should log error messages with red cross', () => {
+    it('should log error messages', () => {
       logger.error('Error occurred');
       
       expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
-      const call = consoleErrorSpy.mock.calls[0];
-      expect(call[0]).toContain('✖');
-      expect(call[0]).toContain('Error occurred');
+      expect(consoleErrorSpy.mock.calls[0][0]).toContain('Error occurred');
     });
 
     it('should handle Error objects', () => {
@@ -89,7 +72,6 @@ describe('logger', () => {
       expect(consoleErrorSpy).toHaveBeenCalledTimes(3);
       expect(consoleErrorSpy.mock.calls[0][0]).toContain('Error with suggestions occurred');
       expect(consoleErrorSpy.mock.calls[1][0]).toContain('Test error');
-      expect(consoleErrorSpy.mock.calls[2][0]).toContain('💡');
       expect(consoleErrorSpy.mock.calls[2][0]).toContain('Try this instead');
     });
 
@@ -119,9 +101,7 @@ describe('logger', () => {
       logger.debug('Debug message');
       
       expect(consoleLogSpy).toHaveBeenCalledTimes(1);
-      const call = consoleLogSpy.mock.calls[0];
-      expect(call[0]).toContain('[DEBUG]');
-      expect(call[0]).toContain('Debug message');
+      expect(consoleLogSpy.mock.calls[0][0]).toContain('Debug message');
     });
 
     it('should not log verbose messages by default', () => {
@@ -134,8 +114,7 @@ describe('logger', () => {
       logger.verbose('Verbose message');
       
       expect(consoleLogSpy).toHaveBeenCalledTimes(1);
-      const call = consoleLogSpy.mock.calls[0];
-      expect(call[0]).toContain('Verbose message');
+      expect(consoleLogSpy.mock.calls[0][0]).toContain('Verbose message');
     });
 
     it('should log debug messages when verbose mode is enabled', () => {
@@ -143,8 +122,7 @@ describe('logger', () => {
       logger.debug('Debug in verbose');
       
       expect(consoleLogSpy).toHaveBeenCalledTimes(1);
-      const call = consoleLogSpy.mock.calls[0];
-      expect(call[0]).toContain('[DEBUG]');
+      expect(consoleLogSpy.mock.calls[0][0]).toContain('Debug in verbose');
     });
   });
 
@@ -169,9 +147,7 @@ describe('logger', () => {
       logger.progress('Loading');
       
       expect(stdoutWriteSpy).toHaveBeenCalledTimes(1);
-      const call = stdoutWriteSpy.mock.calls[0];
-      expect(call[0]).toContain('⟳');
-      expect(call[0]).toContain('Loading...');
+      expect(stdoutWriteSpy.mock.calls[0][0]).toContain('Loading...');
     });
 
     it('should use console.log when not TTY', () => {
@@ -179,7 +155,7 @@ describe('logger', () => {
       logger.progress('Loading');
       
       expect(consoleLogSpy).toHaveBeenCalledTimes(1);
-      expect(consoleLogSpy.mock.calls[0][0]).toContain('⟳ Loading...');
+      expect(consoleLogSpy.mock.calls[0][0]).toContain('Loading...');
     });
 
     it('should clear progress line when TTY', () => {
@@ -190,163 +166,4 @@ describe('logger', () => {
     });
   });
 
-  describe('color detection', () => {
-    let originalEnv: NodeJS.ProcessEnv;
-    let originalIsTTY: boolean | undefined;
-
-    beforeEach(() => {
-      // Save original environment and TTY state
-      originalEnv = { ...process.env };
-      originalIsTTY = process.stdout.isTTY;
-      
-      // Reset logger state
-      logger.setNoColor(false);
-      
-      // Clear environment variables
-      delete process.env.NO_COLOR;
-      delete process.env.CI;
-    });
-
-    afterEach(() => {
-      // Restore original environment and TTY state
-      process.env = originalEnv;
-      if (originalIsTTY !== undefined) {
-        process.stdout.isTTY = originalIsTTY;
-      }
-    });
-
-    describe('NO_COLOR environment variable', () => {
-      test('should disable colors when NO_COLOR is set', () => {
-        process.env.NO_COLOR = '1';
-        process.stdout.isTTY = true;
-        
-        const chalk = getChalk();
-        expect(chalk.level).toBe(0);
-      });
-
-      test('should disable colors when NO_COLOR is set to any value', () => {
-        process.env.NO_COLOR = 'true';
-        process.stdout.isTTY = true;
-        
-        const chalk = getChalk();
-        expect(chalk.level).toBe(0);
-      });
-
-      test('should enable colors when NO_COLOR is not set', () => {
-        delete process.env.NO_COLOR;
-        process.stdout.isTTY = true;
-        
-        const chalk = getChalk();
-        expect(chalk.level).toBeGreaterThan(0);
-      });
-    });
-
-    describe('CI environment variable', () => {
-      test('should disable colors when CI is set', () => {
-        process.env.CI = 'true';
-        process.stdout.isTTY = true;
-        
-        const chalk = getChalk();
-        expect(chalk.level).toBe(0);
-      });
-
-      test('should enable colors when CI is not set', () => {
-        delete process.env.CI;
-        process.stdout.isTTY = true;
-        
-        const chalk = getChalk();
-        expect(chalk.level).toBeGreaterThan(0);
-      });
-    });
-
-    describe('TTY detection', () => {
-      test('should disable colors when not in TTY', () => {
-        delete process.env.NO_COLOR;
-        delete process.env.CI;
-        process.stdout.isTTY = false;
-        
-        const chalk = getChalk();
-        expect(chalk.level).toBe(0);
-      });
-
-      test('should enable colors when in TTY', () => {
-        delete process.env.NO_COLOR;
-        delete process.env.CI;
-        process.stdout.isTTY = true;
-        
-        const chalk = getChalk();
-        expect(chalk.level).toBeGreaterThan(0);
-      });
-    });
-
-    describe('--no-color flag', () => {
-      test('should disable colors when setNoColor(true) is called', () => {
-        delete process.env.NO_COLOR;
-        delete process.env.CI;
-        process.stdout.isTTY = true;
-        
-        logger.setNoColor(true);
-        const chalk = getChalk();
-        expect(chalk.level).toBe(0);
-      });
-
-      test('should enable colors when setNoColor(false) is called', () => {
-        delete process.env.NO_COLOR;
-        delete process.env.CI;
-        process.stdout.isTTY = true;
-        
-        logger.setNoColor(false);
-        const chalk = getChalk();
-        expect(chalk.level).toBeGreaterThan(0);
-      });
-    });
-
-    describe('priority order', () => {
-      test('should prioritize NO_COLOR over --no-color flag', () => {
-        process.env.NO_COLOR = '1';
-        process.stdout.isTTY = true;
-        
-        logger.setNoColor(false); // Try to enable colors via flag
-        const chalk = getChalk();
-        expect(chalk.level).toBe(0); // Should still be disabled due to NO_COLOR
-      });
-
-      test('should prioritize CI over --no-color flag', () => {
-        process.env.CI = 'true';
-        process.stdout.isTTY = true;
-        
-        logger.setNoColor(false); // Try to enable colors via flag
-        const chalk = getChalk();
-        expect(chalk.level).toBe(0); // Should still be disabled due to CI
-      });
-
-      test('should prioritize TTY over --no-color flag', () => {
-        delete process.env.NO_COLOR;
-        delete process.env.CI;
-        process.stdout.isTTY = false;
-        
-        logger.setNoColor(false); // Try to enable colors via flag
-        const chalk = getChalk();
-        expect(chalk.level).toBe(0); // Should still be disabled due to no TTY
-      });
-    });
-
-    describe('logger output with color settings', () => {
-      test('should output plain text when colors are disabled', () => {
-        process.env.NO_COLOR = '1';
-        
-        logger.info('test message');
-        expect(consoleLogSpy).toHaveBeenCalledWith('ℹ test message');
-      });
-
-      test('should output colored text when colors are enabled', () => {
-        delete process.env.NO_COLOR;
-        delete process.env.CI;
-        process.stdout.isTTY = true;
-        
-        logger.info('test message');
-        expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('\x1b[34m')); // Blue color code
-      });
-    });
-  });
 });

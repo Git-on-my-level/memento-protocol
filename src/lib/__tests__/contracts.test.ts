@@ -333,17 +333,22 @@ describe('Contract Tests', () => {
     let cache: SimpleCache;
     
     beforeEach(() => {
+      jest.useFakeTimers();
       cache = new SimpleCache(100); // 100ms TTL for fast testing
     });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
     
-    it('TTL expiration works', async () => {
+    it('TTL expiration works', () => {
       cache.set('test-key', 'test-value');
       
       // Should be available immediately
       expect(cache.get('test-key')).toBe('test-value');
       
-      // Wait for TTL to expire
-      await new Promise(resolve => setTimeout(resolve, 150));
+      // Advance time past TTL
+      jest.advanceTimersByTime(150);
       
       // Should be expired
       expect(cache.get('test-key')).toBeNull();
@@ -414,14 +419,14 @@ describe('Contract Tests', () => {
       expect(typeof stats.newestEntry).toBe('number');
     });
     
-    it('cleanup removes expired entries', async () => {
+    it('cleanup removes expired entries', () => {
       cache.set('key1', 'value1');
       cache.set('key2', 'value2');
       
       expect(cache.size()).toBe(2);
       
-      // Wait for expiration
-      await new Promise(resolve => setTimeout(resolve, 150));
+      // Advance time past expiration
+      jest.advanceTimersByTime(150);
       
       // Manual cleanup
       const removedCount = cache.cleanup();

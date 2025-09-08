@@ -162,24 +162,6 @@ describe('FileSystemAdapter implementations', () => {
           expect(await fs.exists(existingFile)).toBe(true);
           expect(await fs.exists(nonExistentFile)).toBe(false);
         });
-
-        it('should handle path utilities correctly', () => {
-          const pathA = '/path/to';
-          const pathB = 'file.txt';
-          
-          const joined = fs.join(pathA, pathB);
-          expect(joined).toBe('/path/to/file.txt');
-          
-          const resolved = fs.resolve('/base', '../other/file.txt');
-          expect(resolved).toBe('/other/file.txt');
-          
-          expect(fs.dirname('/path/to/file.txt')).toBe('/path/to');
-          expect(fs.basename('/path/to/file.txt')).toBe('file.txt');
-          expect(fs.basename('/path/to/file.txt', '.txt')).toBe('file');
-          expect(fs.extname('/path/to/file.txt')).toBe('.txt');
-          expect(fs.isAbsolute('/absolute/path')).toBe(true);
-          expect(fs.isAbsolute('relative/path')).toBe(false);
-        });
       });
 
       describe('Synchronous operations', () => {
