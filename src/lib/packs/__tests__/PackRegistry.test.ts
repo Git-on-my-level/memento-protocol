@@ -63,15 +63,15 @@ describe("PackRegistry", () => {
     fs = await createTestFileSystem({
       // Default built-in packs location
       '/test/templates/starter-packs/frontend-react/manifest.json': JSON.stringify(testPack1),
-      '/test/templates/starter-packs/frontend-react/components/modes/react-dev.md': '# React Dev Mode',
-      '/test/templates/starter-packs/frontend-react/components/workflows/component-gen.md': '# Component Generator',
+      '/test/templates/starter-packs/frontend-react/modes/react-dev.md': '# React Dev Mode',
+      '/test/templates/starter-packs/frontend-react/workflows/component-gen.md': '# Component Generator',
       
       '/test/templates/starter-packs/backend-node/manifest.json': JSON.stringify(testPack2),
-      '/test/templates/starter-packs/backend-node/components/modes/node-api.md': '# Node API Mode',
-      '/test/templates/starter-packs/backend-node/components/agents/api-generator.md': '# API Generator Agent',
+      '/test/templates/starter-packs/backend-node/modes/node-api.md': '# Node API Mode',
+      '/test/templates/starter-packs/backend-node/agents/api-generator.md': '# API Generator Agent',
       
       '/test/templates/starter-packs/base-utils/manifest.json': JSON.stringify(basePack),
-      '/test/templates/starter-packs/base-utils/components/workflows/common-utils.md': '# Common Utils',
+      '/test/templates/starter-packs/base-utils/workflows/common-utils.md': '# Common Utils',
     });
 
     registry = new PackRegistry(fs);

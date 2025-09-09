@@ -85,7 +85,6 @@ export interface PackManifest {
 export interface PackStructure {
   readonly manifest: PackManifest;
   readonly path: string;
-  readonly componentsPath: string;
 }
 
 // Installation and validation interfaces

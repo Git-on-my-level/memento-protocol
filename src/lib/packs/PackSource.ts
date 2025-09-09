@@ -70,7 +70,6 @@ export class LocalPackSource implements IPackSource {
   async loadPack(name: string): Promise<PackStructure> {
     const packPath = this.fs.join(this.basePath, name);
     const manifestPath = this.fs.join(packPath, 'manifest.json');
-    const componentsPath = this.fs.join(packPath, 'components');
 
     // Check if pack directory exists
     if (!await this.fs.exists(packPath)) {
@@ -87,15 +86,6 @@ export class LocalPackSource implements IPackSource {
         `Pack manifest not found for '${name}'`,
         'MANIFEST_NOT_FOUND',
         `Expected manifest at: ${manifestPath}`
-      );
-    }
-
-    // Check if components directory exists
-    if (!await this.fs.exists(componentsPath)) {
-      throw new ZccError(
-        `Components directory not found for pack '${name}'`,
-        'COMPONENTS_NOT_FOUND',
-        `Expected components at: ${componentsPath}`
       );
     }
 
@@ -118,7 +108,6 @@ export class LocalPackSource implements IPackSource {
       return {
         manifest,
         path: packPath,
-        componentsPath,
       };
     } catch (error) {
       if (error instanceof ZccError) {
@@ -200,10 +189,11 @@ export class LocalPackSource implements IPackSource {
   ): Promise<boolean> {
     try {
       const packStructure = await this.loadPack(packName);
+      const extension = componentType === 'hooks' ? 'json' : 'md';
       const componentPath = this.fs.join(
-        packStructure.componentsPath,
+        packStructure.path,
         componentType,
-        `${componentName}.md`
+        `${componentName}.${extension}`
       );
       
       return await this.fs.exists(componentPath);
@@ -224,7 +214,7 @@ export class LocalPackSource implements IPackSource {
     const extension = componentType === 'hooks' ? 'json' : 'md';
     
     return this.fs.join(
-      packStructure.componentsPath,
+      packStructure.path,
       componentType,
       `${componentName}.${extension}`
     );

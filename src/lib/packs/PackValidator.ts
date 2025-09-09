@@ -366,11 +366,6 @@ export class PackValidator {
         }
       }
 
-      // Ensure components path is within pack path
-      const componentsPath = this.fs.resolve(packStructure.componentsPath);
-      if (!componentsPath.startsWith(packPath)) {
-        errors.push("Components directory is outside pack directory");
-      }
 
     } catch (error) {
       errors.push(`Error validating pack file structure: ${error}`);

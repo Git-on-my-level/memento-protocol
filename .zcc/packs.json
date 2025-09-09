@@ -1,17 +1,8 @@
 {
   "packs": {
-    "essentials": {
+    "advanced-code-refactoring": {
       "version": "1.0.0",
-      "installedAt": "2025-09-06T16:40:56.797Z",
-      "source": {
-        "name": "local",
-        "type": "local",
-        "path": "/Users/dazheng/workspace/zcc/templates/starter-packs"
-      }
-    },
-    "frontend-react": {
-      "version": "1.0.0",
-      "installedAt": "2025-09-06T16:40:46.657Z",
+      "installedAt": "2025-09-09T09:43:39.702Z",
       "source": {
         "name": "local",
         "type": "local",

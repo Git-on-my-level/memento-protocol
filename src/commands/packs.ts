@@ -73,6 +73,104 @@ export const packsCommand = new Command('packs')
           process.exitCode = 1;
         }
       })
+  )
+  .addCommand(
+    new Command('uninstall')
+      .argument('<name>', 'Pack name to uninstall')
+      .description('Uninstall a starter pack and remove all its components')
+      .option('-f, --force', 'Force uninstall even if there are errors')
+      .action(async (name: string, options) => {
+        try {
+          const starterPackManager = new StarterPackManager(process.cwd());
+          
+          // Check if pack is installed
+          const installedPacks = await starterPackManager.getInstalledPacks();
+          if (!installedPacks[name]) {
+            logger.error(`Starter pack '${name}' is not installed.`);
+            process.exitCode = 1;
+            return;
+          }
+          
+          logger.info(`Uninstalling starter pack '${name}'...`);
+          
+          const result = await starterPackManager.uninstallPack(name);
+          
+          if (result.success) {
+            logger.info(chalk.green(`✓ Successfully uninstalled starter pack '${name}'`));
+            
+            // Show what was removed
+            const removed = result.installed; // Using 'installed' field which contains removed items
+            const totalRemoved = 
+              removed.modes.length + 
+              removed.workflows.length + 
+              removed.agents.length + 
+              removed.hooks.length;
+            
+            if (totalRemoved > 0) {
+              logger.info('');
+              logger.info('Removed components:');
+              if (removed.modes.length > 0) {
+                logger.info(`  ${chalk.blue('Modes:')} ${removed.modes.join(', ')}`);
+              }
+              if (removed.workflows.length > 0) {
+                logger.info(`  ${chalk.green('Workflows:')} ${removed.workflows.join(', ')}`);
+              }
+              if (removed.agents.length > 0) {
+                logger.info(`  ${chalk.yellow('Agents:')} ${removed.agents.join(', ')}`);
+              }
+              if (removed.hooks.length > 0) {
+                logger.info(`  ${chalk.magenta('Hooks:')} ${removed.hooks.join(', ')}`);
+              }
+            }
+            
+            // Show what was skipped
+            const skipped = result.skipped;
+            const totalSkipped = 
+              skipped.modes.length + 
+              skipped.workflows.length + 
+              skipped.agents.length + 
+              skipped.hooks.length;
+            
+            if (totalSkipped > 0) {
+              logger.info('');
+              logger.info(chalk.yellow('Skipped (shared with other packs):'));
+              if (skipped.modes.length > 0) {
+                logger.info(`  ${chalk.blue('Modes:')} ${skipped.modes.join(', ')}`);
+              }
+              if (skipped.workflows.length > 0) {
+                logger.info(`  ${chalk.green('Workflows:')} ${skipped.workflows.join(', ')}`);
+              }
+              if (skipped.agents.length > 0) {
+                logger.info(`  ${chalk.yellow('Agents:')} ${skipped.agents.join(', ')}`);
+              }
+              if (skipped.hooks.length > 0) {
+                logger.info(`  ${chalk.magenta('Hooks:')} ${skipped.hooks.join(', ')}`);
+              }
+            }
+          } else {
+            logger.error(chalk.red(`✗ Failed to uninstall starter pack '${name}'`));
+            
+            if (result.errors.length > 0) {
+              logger.error('');
+              logger.error('Errors:');
+              for (const error of result.errors) {
+                logger.error(`  • ${error}`);
+              }
+            }
+            
+            if (!options.force) {
+              logger.info('');
+              logger.info(chalk.dim('Use --force to attempt uninstall despite errors'));
+            }
+            
+            process.exitCode = 1;
+          }
+          
+        } catch (error) {
+          logger.error('Failed to uninstall starter pack:', error);
+          process.exitCode = 1;
+        }
+      })
   );
 
 /**
