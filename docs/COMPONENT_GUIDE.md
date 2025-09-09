@@ -121,40 +121,6 @@ Workflows provide structured approaches to common tasks. The best workflows bala
 - Vague action items without clear outcomes
 - No connection to how agents actually work
 
-### 3. Language Overrides
-
-Location: `.zcc/languages/<language>/overrides.md`
-
-Language overrides help agents work effectively with specific technologies and codebases.
-
-#### Structure
-
-```markdown
-# Language: [Language Name]
-
-## Behavioral Adaptations
-- [How agents should modify their approach for this language]
-- [Language-specific mindset and priorities]
-
-## Code Conventions
-- [Specific patterns and styles to follow]
-- [Naming conventions and organization]
-
-## Best Practices
-- [Language-specific quality standards]
-- [Performance and security considerations]
-
-## Common Patterns
-### [Pattern Name]
-```[language]
-// Concrete example showing the pattern
-```
-
-## Testing & Verification
-- [Preferred testing approaches]
-- [How to validate code quality]
-```
-
 ## Component Creation Best Practices
 
 ### 1. Write for Agent Execution Context
@@ -216,7 +182,7 @@ This is an example process. Be flexible and use good judgment based on the actua
 Show agents exactly what effective execution looks like.
 
 **Examples:**
-- Code snippets for language overrides
+- Code snippets for workflows
 - Natural language commands for workflows
 - Decision-making scenarios for modes
 

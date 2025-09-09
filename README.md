@@ -43,14 +43,14 @@ npx zcc init
 
 ## Core Features
 
-| **Feature** | **What It Does** | **zsh Equivalent** |
-|------------|------------------|-------------------|
-| **AI Modes** | Switch personalities (architect/engineer/reviewer) | Themes |
-| **Tickets** | Persistent task tracking across sessions | tmux sessions |
-| **Fuzzy Matching** | `/mode eng` → finds `engineer` | Smart completions |
-| **Hooks** | Auto-load context, expand acronyms | precmd/preexec |
-| **Workflows** | Reusable procedures (review, deploy, audit) | Functions |
-| **Agents** | Specialized tools (research, analysis) | Plugins |
+| **Feature**        | **What It Does**                                   | **zsh Equivalent** |
+| ------------------ | -------------------------------------------------- | ------------------ |
+| **AI Modes**       | Switch personalities (architect/engineer/reviewer) | Themes             |
+| **Tickets**        | Persistent task tracking across sessions           | tmux sessions      |
+| **Fuzzy Matching** | `/mode eng` → finds `engineer`                     | Smart completions  |
+| **Hooks**          | Auto-load context, expand acronyms                 | precmd/preexec     |
+| **Workflows**      | Reusable procedures (review, deploy, audit)        | Functions          |
+| **Agents**         | Specialized tools (research, analysis)             | Plugins            |
 
 ## Getting Started
 
@@ -63,7 +63,7 @@ npx zcc init
 
 # Or install a specific starter pack directly (headless)
 npx zcc init --pack essentials
-npx zcc init --pack frontend-react
+npx zcc init --pack advanced-code-refactoring
 ```
 
 #### 2. Global Installation
@@ -92,11 +92,8 @@ node /path/to/zcc/dist/cli.js init
 # Essential setup (recommended for new users)
 zcc init --pack essentials
 
-# Frontend React project
-zcc init --pack frontend-react
-
-# Backend API project (coming soon)
-zcc init --pack backend-api
+# Advanced code refactoring toolkit
+zcc init --pack advanced-code-refactoring
 
 # Start fresh (overwrite existing)
 zcc init --force
@@ -119,14 +116,13 @@ npx zcc init --pack frontend-react
 
 ### Available Packs
 
-| Pack | Description | Includes |
-|------|-------------|----------|
-| **essentials** | Essential setup for general development | Core modes (`apm`, `engineer`, `architect`, `reviewer`) + workflows (`review`, `summarize`) + essential hooks |
-| **frontend-react** | Complete React development setup | `component-engineer`, `react-architect`, `ui-reviewer` modes + creation workflows |
-| **advanced-code-refactoring** | AST-grep focused code refactoring | Advanced refactoring modes and workflows |
+| Pack                          | Description                             | Includes                                                                                                                                                                                                                        |
+| ----------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **essentials**                | Essential setup for general development | Core modes (`autonomous-project-manager`, `engineer`, `architect`, `reviewer`, `ai-debt-maintainer`) + workflows (`review`, `summarize`, `openmemory-setup`) + hooks (routing, git context, project overview, acronym expander) |
+| **advanced-code-refactoring** | AST/semantic refactoring toolkit        | Mode (`refactoring-specialist`) + workflows (`semantic-search`, `safe-refactoring`) + agent (`code-archaeologist`) + hook (`ast-grep-awareness`)                                                                                |
 
 ### Coming Soon
-- **backend-api** - RESTful API development with `api-architect`, `backend-engineer`, `security-reviewer` modes
+- **backend-api** - RESTful API development
 - **fullstack** - End-to-end development combining frontend and backend capabilities
 
 *Just like oh-my-zsh themes transform your terminal experience, starter packs transform Claude Code for your project type.*
@@ -147,8 +143,8 @@ npx zcc init --pack frontend-react
 "Check for security issues"
 
 # Track Everything
-/ticket list                    # See all tasks
-/ticket view payment-system     # Load full context
+/ticket list                  # See all tasks
+/ticket payment-system        # Load ticket context
 ```
 
 ## Why It Works
@@ -172,12 +168,9 @@ npx zcc init --pack frontend-react
 
 ### Advanced Topics
 - 📖 [API Reference](docs/API.md) - Programmatic usage
-- 🎨 [Creating Custom Modes](docs/CUSTOM_MODES.md) - Build AI personalities
-- 🔧 [Workflow Development](docs/WORKFLOWS.md) - Automate complex tasks
 - 🛠️ [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
 
 ### Coming Soon
-- 📚 Advanced Configuration - Deep customization
 - 🌐 Community Components - Share and discover
 
 ## Examples
@@ -193,7 +186,7 @@ npx zcc init --pack frontend-react
 ```bash
 /ticket create "Add user authentication"
 /ticket move auth-task in-progress
-/ticket resolve auth-task
+/ticket finish auth-task
 ```
 
 ### Auto-Expand Acronyms

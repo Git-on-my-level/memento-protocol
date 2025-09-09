@@ -195,11 +195,11 @@ Hooks receive context through environment variables:
 ### git-context-loader  
 Loads git status and project structure at session start.
 
-### git-context-loader  
-Loads git status and project structure at session start.
+### project-overview  
+Provides a high-level project overview when a session starts.
 
 ### acronym-expander
-Automatically expands configured acronyms in user prompts. Configured acronyms are stored in `.zcc/acronyms.json` and managed via `memento acronym` commands.
+Automatically expands configured acronyms in user prompts. Configured acronyms are stored in `.zcc/acronyms.json` and managed via `zcc acronym` commands.
 
 ## Examples
 
@@ -286,7 +286,7 @@ Log specific commands for audit:
 1. **Use appropriate priorities**: Higher priority hooks run first (default: 0)
 2. **Handle errors gracefully**: Use `continueOnError: true` for non-critical hooks
 3. **Set reasonable timeouts**: Default is 30 seconds
-4. **Test hooks thoroughly**: Use `memento hook list` to verify configuration
+4. **Test hooks thoroughly**: Use `zcc hook list` to verify configuration
 5. **Keep scripts fast**: Hooks run synchronously and can slow down Claude Code
 6. **Use specific matchers**: Avoid running hooks unnecessarily
 7. **Document your hooks**: Use clear names and descriptions
@@ -316,7 +316,7 @@ Log specific commands for audit:
 Hooks with the same event run in priority order, allowing you to chain operations.
 
 ### Dynamic Hook Loading
-Hooks are loaded from `.zcc/hooks/definitions/` at initialization, supporting hot-reloading by running `memento`.
+Hooks are loaded from `.zcc/hooks/definitions/` at initialization, supporting hot-reloading by running `zcc`.
 
 ### Custom Matchers
 Extend the system by implementing new matcher types in the codebase.

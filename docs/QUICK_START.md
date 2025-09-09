@@ -26,7 +26,7 @@ zcc init
 # If you're developing zcc itself
 cd /path/to/zcc
 npm run build
-npm run dev init -- --force --pack frontend-react
+npm run dev init -- --force --pack essentials
 ```
 
 ## Your First 5 Minutes
@@ -37,10 +37,9 @@ cd your-project
 npx zcc init
 ```
 
-You'll be prompted to select a **Starter Pack** - a curated bundle of modes, workflows, and agents that work together seamlessly:
-- **essentials**: Core setup with fundamental modes and workflows for general development
-- **frontend-react**: Complete React development setup with specialized components
-- **advanced-code-refactoring**: AST-grep focused refactoring tools
+You'll be prompted to select a **Starter Pack** - a curated bundle of modes, workflows, hooks, and agents that work together seamlessly:
+- **essentials**: Core setup with fundamental modes, workflows, and hooks for general development
+- **advanced-code-refactoring**: AST/semantic focused refactoring tools
 
 **Tip**: Use arrow keys to navigate, `enter` to select a pack
 
@@ -77,7 +76,7 @@ zcc ticket list
 ### 4. Check Your Setup (30 seconds)
 ```bash
 # See what's installed
-zcc list
+zcc list --installed
 
 # Check project status in Claude Code
 /zcc
@@ -106,8 +105,9 @@ Claude: [Performs thorough security-focused review]
 zcc add mode <name>           # Add a mode
 zcc add workflow <name>       # Add a workflow
 zcc add agent <name>         # Add an agent
-zcc list                     # List all components
-zcc list --installed         # Show only installed
+zcc list --installed         # Show installed components
+zcc packs list               # Show available starter packs
+zcc packs show <name>        # Show pack details
 
 # Ticket Management
 zcc ticket create <name>     # Create new ticket
@@ -157,6 +157,7 @@ zcc validate                # Check component health
 ---
 
 **Pro Tips**: 
-- For CI/CD or automated setups: `zcc init --pack frontend-react`
-- For existing projects: `zcc init --force --pack essentials` 
+- For CI/CD or automated setups: `zcc init --pack essentials`
+- For refactoring workflows: `zcc init --pack advanced-code-refactoring`
+- For existing projects: `zcc init --force --pack essentials`
 - Interactive mode shows pack selection: `zcc init`
