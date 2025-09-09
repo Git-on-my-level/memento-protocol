@@ -28,7 +28,7 @@ zcc add workflow state-management
 # ... 10+ more steps
 
 # After: One command
-zcc init --pack frontend-react
+zcc init --pack essentials
 ```
 
 ### What's Included in a Pack?
@@ -65,7 +65,7 @@ If you know which pack you want:
 
 ```bash
 # Install specific pack directly (headless mode)
-npx zcc init --pack frontend-react
+npx zcc init --pack essentials
 ```
 
 ### Non-Interactive Mode
@@ -74,7 +74,7 @@ For scripts and automation:
 
 ```bash
 # Silent installation
-npx zcc init --pack frontend-react --force
+npx zcc init --pack essentials --force
 ```
 
 ### Adding to Existing Project
@@ -83,7 +83,7 @@ You can add a starter pack to a project that already has zcc installed:
 
 ```bash
 # Add pack to existing setup
-zcc init --pack backend-api --force
+zcc init --pack advanced-code-refactoring --force
 ```
 
 ## Available Packs
@@ -104,7 +104,7 @@ zcc init --pack backend-api --force
 - **Workflows**: `review`, `summarize`, `openmemory-setup`
 - **Agents**: None (focused on core modes and workflows)
 - **Custom Commands**: `/review`, `/summarize`, `/openmemory`
-- **Hooks**: All essential hooks enabled (git-context-loader, project-overview, acronym-expander, ast-grep-awareness)
+- **Hooks**: All essential hooks enabled (git-context-loader, project-overview, zcc-routing, acronym-expander)
 - **Default Mode**: `autonomous-project-manager`
 
 **Best For:**
@@ -124,73 +124,43 @@ npx zcc init --pack essentials
 /summarize documentation  # Summarize docs or code
 ```
 
-### frontend-react
+### advanced-code-refactoring
 
-**Perfect for React-based frontend development**
+**Advanced code refactoring toolkit with AST-based analysis and semantic transformations**
 
 ```json
 {
-  "name": "frontend-react",
-  "description": "Complete React frontend development setup with TypeScript support and best practices"
+  "name": "advanced-code-refactoring",
+  "description": "Advanced code refactoring toolkit with AST-based analysis and semantic transformations"
 }
 ```
 
 **Includes:**
-- **Modes**: `component-engineer`, `react-architect`, `ui-reviewer`, `engineer`
-- **Workflows**: `component-creation`, `state-management`, `style-system`, `review`
-- **Agents**: `claude-code-research`, `file-content-analyzer`
-- **Custom Commands**: `/component`, `/state`, `/styles`
-- **Hooks**: Git context loading, project overview
-- **Default Mode**: `component-engineer`
+- **Modes**: `refactoring-specialist`
+- **Workflows**: `semantic-search`, `safe-refactoring`
+- **Agents**: `code-archaeologist`
+- **Hooks**: `ast-grep-awareness`
+- **Default Mode**: `refactoring-specialist`
 
 **Best For:**
-- React applications
-- TypeScript projects
-- Component-driven development
-- UI/UX focused projects
+- Codebases requiring safe, structural refactoring
+- Teams using AST-based tooling (ast-grep)
 
 **Quick Start:**
 ```bash
-npx zcc init --pack frontend-react
+npx zcc init --pack advanced-code-refactoring
 
 # Then use enhanced commands
-/component Button          # Create new component
-/state global             # Set up state management
-/styles tailwind          # Configure styling
-/mode react-architect     # Switch to architecture planning
+/mode refactoring-specialist         # Switch to refactoring mode
+/ast 'function $NAME($ARGS) { $$$ }' # AST-based search
+/refactor variable-rename            # Trigger safe refactoring workflow
 ```
-
-### backend-api *(Coming Soon)*
-
-**Complete REST API development setup**
-
-**Will Include:**
-- **Modes**: `api-architect`, `backend-engineer`, `security-reviewer`
-- **Workflows**: `api-design`, `database-modeling`, `testing-strategy`
-- **Agents**: `database-analyzer`, `api-tester`
-
-### fullstack *(Coming Soon)*
-
-**End-to-end application development**
-
-**Will Include:**
-- All frontend-react components
-- All backend-api components
-- Additional integration workflows
-
-### devops *(Coming Soon)*
-
-**Infrastructure and deployment focused**
-
-**Will Include:**
-- **Modes**: `devops-engineer`, `infrastructure-architect`, `security-auditor`
-- **Workflows**: `ci-cd-setup`, `deployment-strategy`, `monitoring-setup`
 
 ## Creating Custom Packs
 
 ### Pack Structure
 
-Create a JSON file in `templates/starter-packs/` following this structure:
+Create a new directory in `templates/` for your pack and add a `manifest.json` file:
 
 ```json
 {
@@ -205,7 +175,8 @@ Create a JSON file in `templates/starter-packs/` following this structure:
     "workflows": [
       { "name": "my-workflow", "required": false }
     ]
-  }
+  },
+  "hooks": []
 }
 ```
 
@@ -225,8 +196,9 @@ Create a JSON file in `templates/starter-packs/` following this structure:
 
 2. **Create the Definition**
    ```bash
-   # Create pack file
-   touch templates/starter-packs/my-pack.json
+   # Create pack directory and manifest
+   mkdir -p templates/my-pack
+   touch templates/my-pack/manifest.json
    ```
 
 3. **Define Components**
@@ -261,19 +233,15 @@ Create a JSON file in `templates/starter-packs/` following this structure:
    }
    ```
 
-4. **Test Your Pack**
+4. **Preview and Install Your Pack**
    ```bash
-   # Validate schema
-   zcc validate-pack my-pack
+   # List and preview
+   zcc packs list
+   zcc packs show my-pack
    
-   # Test installation
-   zcc init --pack my-pack --dry-run
+   # Install
+   zcc init --pack my-pack --force
    ```
-
-5. **Share Your Pack**
-   - Submit a PR to the main repository
-   - Or host in your own template repository
-   - Include documentation and examples
 
 ### Pack Dependencies
 
@@ -282,7 +250,7 @@ Packs can depend on other packs:
 ```json
 {
   "name": "advanced-frontend",
-  "dependencies": ["frontend-react"],
+  "dependencies": ["essentials"],
   "components": {
     "modes": [
       { "name": "performance-optimizer" },
@@ -316,25 +284,6 @@ Packs can set up project-specific settings:
 }
 ```
 
-### Hook Configuration
-
-Enable specific hooks for your pack:
-
-```json
-{
-  "hooks": [
-    {
-      "name": "git-context-loader",
-      "enabled": true,
-      "config": {
-        "includeStatus": true,
-        "includeRecentCommits": 3
-      }
-    }
-  ]
-}
-```
-
 ## Pack Schema Reference
 
 ### Required Fields
@@ -355,12 +304,12 @@ Enable specific hooks for your pack:
 {
   "tags": ["string"],                    // Tags for discovery
   "category": "frontend|backend|...",    // Primary category
-  "zccVersion": "string",    // Minimum required version
-  "configuration": {},                   // Default settings
-  "hooks": [],                          // Hook configurations  
-  "dependencies": ["string"],           // Pack dependencies
-  "compatibleWith": ["string"],         // Project types
-  "postInstall": {}                     // Post-installation actions
+  "zccVersion": "string",                // Minimum required version
+  "configuration": {},                    // Default settings
+  "hooks": [],                            // Hook configurations  
+  "dependencies": ["string"],            // Pack dependencies
+  "compatibleWith": ["string"],          // Project types
+  "postInstall": {}                       // Post-installation actions
 }
 ```
 
@@ -410,10 +359,10 @@ Enable specific hooks for your pack:
 **Pack Not Found**
 ```bash
 # List available packs
-zcc list --packs
+zcc packs list
 
 # Check pack name spelling
-zcc init --pack frontend-react  # ✓ Correct
+zcc init --pack essentials  # ✓ Correct
 zcc init --pack react-frontend  # ✗ Wrong
 ```
 
@@ -436,28 +385,20 @@ zcc init --pack new-pack --force
 **Schema Validation Errors**
 ```bash
 # Invalid pack definition
-# Solution: Validate against schema
-zcc validate-pack my-pack --verbose
+# Solution: Ensure your manifest.json matches templates/schema.json and referenced files exist
+cat templates/schema.json
 ```
 
-### Getting Help
-
-**Debug Mode**
+**Dry Run / Preview**
 ```bash
-# Get detailed installation logs
-zcc init --pack frontend-react --verbose
-```
-
-**Dry Run**
-```bash
-# See what would be installed without making changes
-zcc init --pack frontend-react --dry-run
+# Preview a pack before installing
+zcc packs show essentials
 ```
 
 **Manual Inspection**
 ```bash
-# View pack contents
-cat templates/starter-packs/frontend-react.json
+# View pack manifest
+cat templates/essentials/manifest.json
 
 # Check installed components
 ls .zcc/modes/
@@ -469,28 +410,27 @@ ls .zcc/workflows/
 **Multiple Environments**
 ```bash
 # Different packs for different environments
-zcc init --pack frontend-react    # Development
-zcc init --pack testing --force   # Add testing setup
+zcc init --pack essentials                 # Development
+zcc init --pack advanced-code-refactoring  # Add refactoring setup
 ```
 
 **Custom Overrides**
 ```bash
 # Install pack then customize
-zcc init --pack frontend-react
+zcc init --pack essentials
 zcc add mode my-custom-mode
 zcc config set defaultMode my-custom-mode
 ```
 
 **Pack Updates**
 ```bash
-# Update to newer pack version
-zcc update --pack frontend-react
+# Reinstall to update pack contents (may overwrite files)
+zcc init --pack essentials --force
 ```
 
 ## Next Steps
 
-- Explore [MODES.md](MODES.md) to understand AI personalities
-- Read [WORKFLOWS.md](WORKFLOWS.md) for automation patterns  
+- Read the [Component Guide](COMPONENT_GUIDE.md) to create modes and workflows
 - Check [HOOKS_GUIDE.md](HOOKS_GUIDE.md) for advanced automation
 - Join discussions about new pack ideas
 - Contribute your own pack definitions

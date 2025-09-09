@@ -46,8 +46,8 @@ This isn't just a marketing tagline—it's our north star for every design decis
 **zcc Application**:
 ```
 1. Built-in defaults (like zsh defaults)
-2. Global config ~/.zcc/config.json (like ~/.zshrc)
-3. Project config .zcc/config.json (like project .envrc)
+2. Global config ~/.zcc/config.yaml (like ~/.zshrc)
+3. Project config .zcc/config.yaml (like project .envrc)
 4. Environment variables (runtime overrides)
 ```
 
@@ -67,12 +67,12 @@ This isn't just a marketing tagline—it's our north star for every design decis
 
 **zcc Application**:
 
-| **zcc Hook** | **zsh Equivalent** | **Purpose** |
-|------------------|-------------------|-------------|
-| user-prompt-submit | preexec | Transform commands before execution |
-| project-overview | chpwd | Load context on project switch |
-| git-context-loader | precmd | Update context before prompts |
-| zcc-routing | command-not-found | Intelligent command routing |
+| **zcc Hook**       | **zsh Equivalent** | **Purpose**                         |
+| ------------------ | ------------------ | ----------------------------------- |
+| user-prompt-submit | preexec            | Transform commands before execution |
+| project-overview   | chpwd              | Load context on project switch      |
+| git-context-loader | precmd             | Update context before prompts       |
+| zcc-routing        | command-not-found  | Intelligent command routing         |
 
 ### 7. Community-Driven
 
@@ -169,7 +169,7 @@ Like zsh works great out-of-the-box:
 project-root/
 ├── CLAUDE.md                    # Router (like .zshenv - always loaded)
 └── .zcc/                    # Framework directory (like ~/.oh-my-zsh/)
-    ├── config.json              # Configuration (like .zshrc)
+    ├── config.yaml              # Configuration (like .zshrc)
     ├── modes/                   # AI personalities (like themes/)
     ├── workflows/               # Procedures (like functions/)
     ├── agents/                  # Specialized tools (like plugins/)
@@ -180,7 +180,7 @@ project-root/
 .claude/                         # Claude Code specific
     ├── agents/                  # Installed subagents
     ├── commands/                # Custom slash commands
-    └── settings.json           # Claude Code config
+    └── settings.local.json     # Claude Code config
 ```
 
 ### Component Loading Order
@@ -313,9 +313,9 @@ Work for beginners with defaults, power users with customization.
 
 ### Discovery Phase
 1. List available components (`zcc list`)
-2. Search for components (`zcc search`)
-3. Show component details (`zcc info`)
-4. Preview before installing (`zcc preview`)
+2. Discover packs (`zcc packs list`, `zcc packs show <name>`)
+3. Install pack during init (`zcc init -p <name>`)
+4. Uninstall pack (`zcc packs uninstall <name>`)
 
 ## The Ultimate Vision
 

@@ -8,7 +8,7 @@ This document describes the programmatic API for extending and integrating with 
 
 ### DirectoryManager
 
-Manages the `.zcc` directory structure.
+Manages the `.zcc` and `.claude` directory structure and essential scripts.
 
 ```typescript
 import { DirectoryManager } from 'zcc';
@@ -18,83 +18,98 @@ const manager = new DirectoryManager('/path/to/project');
 // Check if initialized
 const isInit = manager.isInitialized();
 
-// Initialize structure
+// Initialize structure (safe: does not delete existing data)
 await manager.initializeStructure();
 
-// Get paths
-const modesPath = manager.getModesPath();
-const workflowsPath = manager.getWorkflowsPath();
+// Ensure .zcc is in .gitignore
+await manager.ensureGitignore();
+
+// Resolve path to installed component
+const modePath = manager.getComponentPath('modes', 'architect');
 ```
 
 ### ComponentInstaller
 
-Handles component installation from templates.
+Installs modes, workflows, and agents from `templates/` into the project.
 
 ```typescript
 import { ComponentInstaller } from 'zcc';
 
 const installer = new ComponentInstaller('/path/to/project');
 
-// Install a component
-await installer.installComponent('mode', 'architect');
+// Install a component (overwrites only when force=true)
+await installer.installComponent('mode', 'architect', /* force */ false);
 
 // List installed components
-const installed = await installer.listInstalled();
+const installed = await installer.listInstalledComponents();
 ```
 
 ### TicketManager
 
-Manages the ticket-based state system.
+Manages markdown tickets in `.zcc/tickets/{next|in-progress|done}`.
 
 ```typescript
 import { TicketManager } from 'zcc';
 
-const tickets = new TicketManager('/path/to/project');
+const tm = new TicketManager('/path/to/project');
 
-// Create a ticket
-const ticketId = await tickets.createTicket({
-  title: 'Implement feature X',
-  description: 'Detailed description...',
-  priority: 'high'
-});
+// Create a ticket (returns file path)
+const path = await tm.create('implement-auth', { type: 'feature', priority: 'high' });
 
-// Update ticket status
-await tickets.updateTicket(ticketId, { status: 'in-progress' });
+// Move ticket between statuses
+await tm.move('implement-auth', 'in-progress');
+await tm.move('implement-auth', 'done');
 
 // List tickets
-const allTickets = await tickets.listTickets();
+const allTickets = await tm.list();
+
+// Delete a ticket
+await tm.delete('implement-auth');
 ```
 
 ### ConfigManager
 
-Handles configuration management.
+Manages YAML configuration with precedence: defaults → global (`~/.zcc/config.yaml`) → project (`.zcc/config.yaml`) → environment.
 
 ```typescript
 import { ConfigManager } from 'zcc';
 
-const config = new ConfigManager('/path/to/project');
+const cfg = new ConfigManager('/path/to/project');
 
 // Get configuration value
-const mode = await config.get('defaultMode');
+const mode = await cfg.get('defaultMode');
 
-// Set configuration value
-await config.set('defaultMode', 'engineer');
+// Set configuration value (project or global)
+await cfg.set('defaultMode', 'engineer');
+await cfg.set('ui.colorOutput', true, /* global */ true);
 
-// Get all configuration
-const allConfig = await config.getAll();
+// List merged configuration
+const merged = await cfg.list();
+
+// Validate config file and optionally fix
+const result = await cfg.validateConfigFile();
+if (!result.valid) {
+  await cfg.fixConfigFile();
+}
 ```
 
-### HookGenerator
+### HookManager
 
-Generates Claude Code hook infrastructure.
+Generates and manages Claude Code hook infrastructure.
 
 ```typescript
-import { HookGenerator } from 'zcc';
+import { HookManager } from 'zcc';
 
-const generator = new HookGenerator('/path/to/project');
+const hooks = new HookManager('/path/to/project');
 
-// Generate hook infrastructure
-await generator.generate();
+// Initialize (generates built-in routing hook and settings)
+await hooks.initialize();
+
+// Create a hook from a template
+await hooks.createHookFromTemplate('acronym-expander', { id: 'acronyms', enabled: true });
+
+// List available templates
+const templates = await hooks.listTemplates();
 ```
 
 ## Error Handling
@@ -102,26 +117,23 @@ await generator.generate();
 zcc provides custom error classes for better error handling:
 
 ```typescript
-import { 
-  MementoError,
+import {
+  ZccError,
   FileSystemError,
   ConfigurationError,
-  ComponentError,
-  NetworkError,
   ValidationError,
-  handleError 
+  handleError
 } from 'zcc';
 
 try {
   // Your code here
 } catch (error) {
-  if (error instanceof ComponentError) {
-    console.log(`Component error: ${error.component}`);
-    console.log(`Suggestion: ${error.suggestion}`);
+  if (error instanceof ConfigurationError) {
+    console.log(`Configuration error: ${error.message}`);
   }
   
   // Or use the built-in handler
-  handleError(error, verbose);
+  handleError(error, true);
 }
 ```
 
@@ -140,148 +152,45 @@ logger.setDebug(true);
 logger.info('Information message');
 logger.success('Operation completed');
 logger.warn('Warning message');
-logger.error('Error message', error);
+logger.error('Error message');
 logger.debug('Debug information');
-logger.verbose('Verbose details');
-
-// Progress indicators
-logger.progress('Processing');
-// ... do work ...
-logger.clearProgress();
-logger.success('Processing complete');
 ```
 
-## Plugin Development
+## Starter Packs API
 
-To create a zcc plugin:
+### StarterPackManager
 
-1. Import the necessary classes
-2. Use the API to interact with components
-3. Handle errors appropriately
-4. Follow the component structure guidelines
-
-Example plugin:
+Manages discovery, dependency resolution, installation, and uninstallation of starter packs.
 
 ```typescript
-import { 
-  DirectoryManager,
-  ComponentInstaller,
-  logger 
-} from 'zcc';
+import { StarterPackManager } from 'zcc';
 
-export class MyPlugin {
-  private dirManager: DirectoryManager;
-  private installer: ComponentInstaller;
-  
-  constructor(projectRoot: string) {
-    this.dirManager = new DirectoryManager(projectRoot);
-    this.installer = new ComponentInstaller(projectRoot);
-  }
-  
-  async install() {
-    if (!this.dirManager.isInitialized()) {
-      throw new Error('zcc not initialized');
-    }
-    
-    logger.info('Installing my plugin...');
-    
-    // Add custom components
-    await this.installer.installComponent('mode', 'my-custom-mode');
-    
-    logger.success('Plugin installed successfully');
-  }
-}
-```
+const packs = new StarterPackManager('/path/to/project');
 
-## Hook System API
+// List available packs
+const available = await packs.listPacks();
 
-### HookManager
+// Load a specific pack
+const pack = await packs.loadPack('essentials');
 
-Manages Claude Code hooks for automation and customization.
+// Resolve dependencies
+const deps = await packs.resolveDependencies('essentials');
 
-```typescript
-import { HookManager } from 'zcc';
+// Install a pack
+const result = await packs.installPack('essentials', { force: true });
 
-const hooks = new HookManager('/path/to/project');
+// Get installed packs
+const installed = await packs.getInstalledPacks();
 
-// Initialize hook system
-await hooks.initialize();
-
-// Create hook from template
-await hooks.createHookFromTemplate('acronym-expander', {
-  enabled: true
-});
-
-// List available templates
-const templates = await hooks.listTemplates();
-// Returns: ['git-context-loader', 'acronym-expander', 'project-overview']
-
-// Get all configured hooks
-const allHooks = hooks.getAllHooks();
-// Returns array of { event: HookEvent, hooks: HookConfig[] }
-
-// Add custom hook
-await hooks.addHook({
-  id: 'my-hook',
-  name: 'My Hook',
-  event: 'PostToolUse',
-  enabled: true,
-  command: './my-script.sh',
-  matcher: {
-    type: 'tool',
-    pattern: 'Write,Edit'
-  }
-});
-
-// Remove hook
-const removed = await hooks.removeHook('my-hook');
-```
-
-### AcronymManager
-
-Manages project-specific acronym expansions.
-
-```typescript
-import { AcronymManager } from 'zcc';
-
-const acronyms = new AcronymManager('/path/to/project');
-
-// Add acronym (case-insensitive by default)
-acronyms.add('api', 'Application Programming Interface');
-acronyms.add('k8s', 'Kubernetes');
-
-// Remove acronym
-const removed = acronyms.remove('api'); // returns true if removed
-
-// List all acronyms
-const all = acronyms.list();
-// Returns: { 'API': 'Application Programming Interface', 'K8S': 'Kubernetes' }
-
-// Clear all acronyms
-acronyms.clear();
-
-// Get current settings
-const settings = acronyms.getSettings();
-// Returns: { caseSensitive: false, wholeWordOnly: true }
-
-// Update settings
-acronyms.updateSettings({
-  caseSensitive: true,
-  wholeWordOnly: false
-});
+// Uninstall a pack
+await packs.uninstallPack('essentials');
 ```
 
 ## Events
 
-Future versions will support an event system for lifecycle hooks:
+Future versions may expose an event system for lifecycle hooks:
 
 ```typescript
 // Coming in future versions
-zcc.on('component:installed', (type, name) => {
-  console.log(`Component ${name} of type ${type} was installed`);
-});
-
-zcc.on('ticket:created', (ticket) => {
-  console.log(`New ticket created: ${ticket.title}`);
-});
+// zcc.on('component:installed', ...)
 ```
