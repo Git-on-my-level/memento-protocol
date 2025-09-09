@@ -47,7 +47,7 @@ export class PackInstaller {
    */
   async installPack(
     packStructure: PackStructure,
-    _source: IPackSource,
+    source: IPackSource,
     options: PackInstallOptions = {}
   ): Promise<PackInstallationResult> {
     const { manifest } = packStructure;
@@ -394,7 +394,7 @@ export class PackInstaller {
    */
   private async installScripts(
     packStructure: PackStructure,
-    _source: IPackSource,
+    source: IPackSource,
     errors: string[]
   ): Promise<void> {
     try {

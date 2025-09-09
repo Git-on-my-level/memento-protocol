@@ -1,6 +1,6 @@
 /**
  * TypeScript interfaces for Memento Protocol starter packs
- * These correspond to the JSON schema in templates/starter-packs/schema.json
+ * These correspond to the JSON schema in templates/schema.json
  */
 
 export interface PackComponent {

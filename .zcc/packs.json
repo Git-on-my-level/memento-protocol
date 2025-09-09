@@ -1,12 +1,12 @@
 {
   "packs": {
-    "advanced-code-refactoring": {
+    "essentials": {
       "version": "1.0.0",
-      "installedAt": "2025-09-09T09:43:39.702Z",
+      "installedAt": "2025-09-09T10:20:34.461Z",
       "source": {
         "name": "local",
         "type": "local",
-        "path": "/Users/dazheng/workspace/zcc/templates/starter-packs"
+        "path": "/Users/dazheng/workspace/zcc/templates"
       }
     }
   }

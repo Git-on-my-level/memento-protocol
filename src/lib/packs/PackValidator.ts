@@ -59,7 +59,7 @@ export class PackValidator {
     }
 
     const templatesDir = PackagePaths.getTemplatesDir();
-    const schemaPath = this.fs.join(templatesDir, "starter-packs", "schema.json");
+    const schemaPath = this.fs.join(templatesDir, "schema.json");
     
     // Add debugging information in test environment
     if (process.env.NODE_ENV === 'test') {

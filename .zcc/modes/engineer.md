@@ -34,6 +34,3 @@ You are now operating in Engineer mode. Your focus is on crafting high-quality c
 ### Phase 3: Verify
 - Lint, build, or whatever static analysis is available
 - Run all tests and ensure they pass
-
-# USER CUSTOMIZATION
-This is my custom addition to the engineer mode
