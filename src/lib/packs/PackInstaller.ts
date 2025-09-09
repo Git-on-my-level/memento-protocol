@@ -98,7 +98,7 @@ export class PackInstaller {
         
         // Configure hooks (independent of configuration section)
         if (manifest.hooks && manifest.hooks.length > 0) {
-          await this.configureHooks(manifest.hooks);
+          await this.configureHooks(manifest.hooks, packStructure);
         }
       }
 
@@ -605,20 +605,27 @@ export class PackInstaller {
   /**
    * Configure hooks specified in pack manifest
    */
-  private async configureHooks(packHooks: readonly PackHook[]): Promise<void> {
+  private async configureHooks(packHooks: readonly PackHook[], packStructure: PackStructure): Promise<void> {
     try {
       for (const hookConfig of packHooks) {
         logger.debug(`Configuring hook: ${hookConfig.name}`);
         
         if (hookConfig.enabled) {
-          // Try to create/enable the hook from template if it exists
           try {
+            // Copy hook files to templates/hooks temporarily for HookManager
+            await this.copyHookToTemplates(hookConfig.name, packStructure);
+            
+            // Create/enable the hook using HookManager
             await this.hookManager.createHookFromTemplate(hookConfig.name, {
               id: hookConfig.name,
               enabled: hookConfig.enabled,
               ...(hookConfig.config || {}),
             });
-            logger.debug(`Successfully configured hook: ${hookConfig.name}`);
+            
+            // Clean up temporary files from templates/hooks
+            await this.cleanupTemporaryHookFiles(hookConfig.name);
+            
+            logger.info(`✓ Created hook from template: ${hookConfig.name}`);
           } catch (error) {
             logger.warn(`Failed to configure hook '${hookConfig.name}': ${error}`);
             // Don't fail installation if hook configuration fails
@@ -628,6 +635,77 @@ export class PackInstaller {
     } catch (error) {
       logger.warn(`Error configuring pack hooks: ${error}`);
       // Don't fail installation if hook configuration fails
+    }
+  }
+
+  /**
+   * Copy hook files from pack to templates/hooks temporarily
+   */
+  private async copyHookToTemplates(hookName: string, packStructure: PackStructure): Promise<void> {
+    try {
+      const packHooksPath = this.fs.join(packStructure.path, 'hooks');
+      const templatesHooksPath = this.fs.join(this.projectRoot, 'templates', 'hooks');
+      
+      // Check if pack has hooks directory
+      if (!await this.fs.exists(packHooksPath)) {
+        throw new Error(`Pack '${packStructure.manifest.name}' has no hooks directory`);
+      }
+
+      // Ensure templates/hooks directory exists
+      await this.fs.mkdir(templatesHooksPath, { recursive: true });
+
+      // Copy hook definition (JSON file)
+      const definitionSourcePath = this.fs.join(packHooksPath, 'definitions', `${hookName}.json`);
+      if (await this.fs.exists(definitionSourcePath)) {
+        const definitionTargetPath = this.fs.join(templatesHooksPath, `${hookName}.json`);
+        await this.fs.copyFile(definitionSourcePath, definitionTargetPath);
+        logger.debug(`Copied hook definition to templates: ${hookName}.json`);
+      }
+
+      // Copy hook script (shell script)
+      const scriptSourcePath = this.fs.join(packHooksPath, 'scripts', `${hookName}.sh`);
+      if (await this.fs.exists(scriptSourcePath)) {
+        const scriptTargetPath = this.fs.join(templatesHooksPath, `${hookName}.sh`);
+        await this.fs.copyFile(scriptSourcePath, scriptTargetPath);
+        // Make it executable
+        await this.fs.chmod(scriptTargetPath, 0o755);
+        logger.debug(`Copied hook script to templates: ${hookName}.sh`);
+      }
+    } catch (error) {
+      throw new Error(`Failed to copy hook '${hookName}' to templates: ${error}`);
+    }
+  }
+
+  /**
+   * Clean up temporary hook files from templates/hooks
+   */
+  private async cleanupTemporaryHookFiles(hookName: string): Promise<void> {
+    try {
+      const templatesHooksPath = this.fs.join(this.projectRoot, 'templates', 'hooks');
+      
+      // Remove JSON definition
+      const definitionPath = this.fs.join(templatesHooksPath, `${hookName}.json`);
+      if (await this.fs.exists(definitionPath)) {
+        await this.fs.unlink(definitionPath);
+        logger.debug(`Cleaned up temporary hook definition: ${hookName}.json`);
+      }
+      
+      // Remove shell script
+      const scriptPath = this.fs.join(templatesHooksPath, `${hookName}.sh`);
+      if (await this.fs.exists(scriptPath)) {
+        await this.fs.unlink(scriptPath);
+        logger.debug(`Cleaned up temporary hook script: ${hookName}.sh`);
+      }
+      
+      // Remove templates/hooks directory if empty
+      const files = await this.fs.readdir(templatesHooksPath).catch(() => []);
+      if (files.length === 0) {
+        await this.fs.rmdir(templatesHooksPath).catch(() => {});
+        logger.debug(`Removed empty templates/hooks directory`);
+      }
+    } catch (error) {
+      logger.debug(`Failed to cleanup temporary hook files for '${hookName}': ${error}`);
+      // Don't fail if cleanup fails
     }
   }
 

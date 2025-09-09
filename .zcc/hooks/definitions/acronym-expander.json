@@ -1,0 +1,28 @@
+{
+  "version": "1.0.0",
+  "hooks": [
+    {
+      "id": "acronym-expander",
+      "name": "Acronym Expander",
+      "description": "Expands acronyms for modes and workflows based on configured mappings",
+      "event": "UserPromptSubmit",
+      "enabled": true,
+      "command": "./.zcc/hooks/scripts/acronym-expander.sh",
+      "continueOnError": true,
+      "priority": 90,
+      "requirements": {
+        "commands": [
+          "echo",
+          "jq",
+          "grep",
+          "sed",
+          "cat"
+        ],
+        "env": [],
+        "files": []
+      },
+      "expandModes": true,
+      "expandWorkflows": false
+    }
+  ]
+}
