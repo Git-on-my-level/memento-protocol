@@ -1,71 +1,62 @@
-# Publishing Guide
+# NPM Package Release Workflow
 
-## NPM Publishing Workflow
+This workflow publishes a new version of the npm package using automated scripts to minimize token usage.
 
-### Prerequisites
-- NPM account with publish permissions
-- Clean working directory
-- All tests passing
+## 1. Gather Release Context
 
-### Publishing Steps
-
-1. **Version Bump**
-   ```bash
-   npm version patch  # for bug fixes
-   npm version minor  # for new features
-   npm version major  # for breaking changes
-   ```
-
-2. **Pre-publish Checks**
-   ```bash
-   npm run test       # run all tests
-   npm run build      # build the project
-   npm pack          # test package creation
-   ```
-
-3. **Publish to NPM**
-   ```bash
-   npm publish
-   ```
-
-### Automated Publishing
-
-The package.json includes a `prepublishOnly` script that automatically:
-- Runs tests
-- Builds the project
-- Ensures dist/ directory exists
-
-### Package Contents
-
-The published package includes:
-- `dist/` - Built CLI and templates
-- `templates/` - Template files
-- `README.md`, `LICENSE`, `CHANGELOG.md`
-- `package.json`
-
-Excluded via `.npmignore`:
-- Source code (`src/`)
-- Tests (`**/__tests__/`, `**/*.test.*`)
-- Development files (`tsconfig.json`, `jest.config.js`)
-- Build artifacts (`coverage/`, `test-*`)
-
-### Installation Testing
-
-Test the published package:
+Run the prepare script to collect all release information:
 ```bash
-# Global installation
-npm install -g zcc
-
-# NPX usage
-npx zcc --help
-
-# Local development
-git clone repo && npm install && npm link
+scripts/npm/prepare-release-context.sh > /tmp/release-context.json
 ```
 
-### Troubleshooting
+This script will:
+- Verify we're on the main branch
+- Check for uncommitted changes (abort if any)
+- Collect version info and commit history
+- Output JSON with all context needed for decision making
 
-- **Build fails**: Check TypeScript compilation
-- **Tests fail**: Run `npm test` locally first
-- **Package size**: Check `.npmignore` excludes dev files
-- **CLI not found**: Verify `bin` field in package.json
+## 2. Determine Version Bump
+
+Based on the commits in the release context:
+- **patch** (0.0.x): Bug fixes, documentation, minor changes
+- **minor** (0.x.0): New features, enhancements, non-breaking changes  
+- **major** (x.0.0): Breaking changes (look for BREAKING CHANGE in commits)
+
+Update the version in `package.json` accordingly.
+
+## 3. Generate and Review Changelog
+
+Generate the changelog entry:
+```bash
+scripts/npm/generate-changelog-entry.js <new-version> /tmp/release-context.json > /tmp/changelog-entry.md
+```
+
+Review the generated entry and:
+- Add it to the top of the `CHANGELOG.md` file (after the header)
+- Enhance with additional context if needed
+- Ensure all significant changes are captured
+- Add the version link at the bottom of the file
+
+## 4. Run Validation
+
+Execute the prepublish validation:
+```bash
+npm run prepublishOnly
+```
+
+This runs tests and builds the package. If it fails, investigate and fix issues before proceeding.
+
+## 5. Commit, Tag, and Publish
+
+Run the automated release script:
+```bash
+scripts/npm/commit-tag-and-publish.sh v<new-version>
+```
+
+This script will:
+- Create a release commit
+- Tag the release
+- Publish to npm
+- Push commit and tags to GitHub
+
+The release is now complete! 🎉
