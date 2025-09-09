@@ -61,9 +61,9 @@ Examples:
   $ zcc list --installed       # Show installed components
 
 For Claude Code users:
-  Say "act as architect" to switch to architect mode
-  Say "execute review" to run the code review workflow
-  Say "create ticket X" to start persistent work
+  /mode architect            # Switch to architect mode
+  /review [target]           # Execute code review workflow
+  /ticket create "auth"      # Create a new ticket (or /ticket [name] to load)
 
 For more information, visit: https://github.com/git-on-my-level/zcc
 Documentation: https://github.com/git-on-my-level/zcc#readme`
@@ -73,16 +73,16 @@ Documentation: https://github.com/git-on-my-level/zcc#readme`
     const options = thisCommand.opts();
     const parentOptions = thisCommand.parent?.opts() || {};
     const allOptions = { ...parentOptions, ...options };
-    
+
     // Initialize CLI context with global options
     cliContext.initialize({
       verbose: allOptions.verbose || false,
       debug: allOptions.debug || false,
       nonInteractive: allOptions.yes || false,
       force: allOptions.force || false,
-      projectRoot: process.cwd()
+      projectRoot: process.cwd(),
     });
-    
+
     // Set logger options based on context
     if (cliContext.isVerbose()) {
       logger.setVerbose(true);

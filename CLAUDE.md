@@ -261,7 +261,7 @@ Tickets follow a lifecycle:
 4. For agents, ensure proper .claude/agents/ targeting
 
 ### Adding New Starter Packs
-1. Create pack definition in `templates/starter-packs/[pack-name].json`:
+1. Create a directory `templates/[pack-name]/` and add a `manifest.json`:
    ```json
    {
      "name": "pack-name",
@@ -273,13 +273,13 @@ Tickets follow a lifecycle:
        "modes": [{ "name": "mode-name", "required": true }],
        "workflows": [{ "name": "workflow-name", "required": false }],
        "agents": [{ "name": "agent-name", "required": false }]
-     }
+     },
+     "hooks": []
    }
    ```
-2. Validate against schema: `templates/starter-packs/schema.json`
-3. Test pack loading and installation
-4. Ensure all referenced components exist in templates
-5. Add to available packs documentation
+2. Validate fields against `templates/schema.json`
+3. Ensure referenced component files exist under `templates/`
+4. Preview with `zcc packs show <pack>` and install with `zcc init -p <pack>`
 
 ### Hook Development
 1. Create hook definition JSON in templates/hooks/
