@@ -32,7 +32,7 @@ export class PackRegistry {
    */
   private registerDefaultSources(): void {
     // Register built-in starter packs source
-    const starterPacksDir = this.fs.join(PackagePaths.getTemplatesDir(), "starter-packs");
+    const starterPacksDir = PackagePaths.getTemplatesDir();
     const localSource = new LocalPackSource(starterPacksDir, this.fs);
     this.sources.set('local', localSource);
     

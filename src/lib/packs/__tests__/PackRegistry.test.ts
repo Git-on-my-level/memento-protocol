@@ -62,16 +62,16 @@ describe("PackRegistry", () => {
     // Create test filesystem with built-in packs
     fs = await createTestFileSystem({
       // Default built-in packs location
-      '/test/templates/starter-packs/frontend-react/manifest.json': JSON.stringify(testPack1),
-      '/test/templates/starter-packs/frontend-react/modes/react-dev.md': '# React Dev Mode',
-      '/test/templates/starter-packs/frontend-react/workflows/component-gen.md': '# Component Generator',
+      '/test/templates/frontend-react/manifest.json': JSON.stringify(testPack1),
+      '/test/templates/frontend-react/modes/react-dev.md': '# React Dev Mode',
+      '/test/templates/frontend-react/workflows/component-gen.md': '# Component Generator',
       
-      '/test/templates/starter-packs/backend-node/manifest.json': JSON.stringify(testPack2),
-      '/test/templates/starter-packs/backend-node/modes/node-api.md': '# Node API Mode',
-      '/test/templates/starter-packs/backend-node/agents/api-generator.md': '# API Generator Agent',
+      '/test/templates/backend-node/manifest.json': JSON.stringify(testPack2),
+      '/test/templates/backend-node/modes/node-api.md': '# Node API Mode',
+      '/test/templates/backend-node/agents/api-generator.md': '# API Generator Agent',
       
-      '/test/templates/starter-packs/base-utils/manifest.json': JSON.stringify(basePack),
-      '/test/templates/starter-packs/base-utils/workflows/common-utils.md': '# Common Utils',
+      '/test/templates/base-utils/manifest.json': JSON.stringify(basePack),
+      '/test/templates/base-utils/workflows/common-utils.md': '# Common Utils',
     });
 
     registry = new PackRegistry(fs);
@@ -201,7 +201,7 @@ describe("PackRegistry", () => {
 
     it("should try all sources when no preference specified", async () => {
       // Remove the pack from local source
-      await fs.unlink('/test/templates/starter-packs/frontend-react/manifest.json');
+      await fs.unlink('/test/templates/frontend-react/manifest.json');
 
       // Add it to a custom source
       await fs.writeFile('/custom/frontend-react/manifest.json', JSON.stringify(testPack1));
@@ -257,9 +257,9 @@ describe("PackRegistry", () => {
         dependencies: ["non-existent-dep"]
       };
 
-      await fs.writeFile('/test/templates/starter-packs/pack-with-missing-dep/manifest.json', 
+      await fs.writeFile('/test/templates/pack-with-missing-dep/manifest.json', 
         JSON.stringify(packWithMissingDep));
-      await fs.mkdir('/test/templates/starter-packs/pack-with-missing-dep/components', { recursive: true });
+      await fs.mkdir('/test/templates/pack-with-missing-dep/components', { recursive: true });
 
       const result = await registry.resolveDependencies("pack-with-missing-dep");
 
@@ -285,14 +285,14 @@ describe("PackRegistry", () => {
         dependencies: ["pack-a"]
       };
 
-      await fs.writeFile('/test/templates/starter-packs/pack-a/manifest.json', JSON.stringify(packA));
-      await fs.mkdir('/test/templates/starter-packs/pack-a/components', { recursive: true });
+      await fs.writeFile('/test/templates/pack-a/manifest.json', JSON.stringify(packA));
+      await fs.mkdir('/test/templates/pack-a/components', { recursive: true });
       
-      await fs.writeFile('/test/templates/starter-packs/pack-b/manifest.json', JSON.stringify(packB));
-      await fs.mkdir('/test/templates/starter-packs/pack-b/components', { recursive: true });
+      await fs.writeFile('/test/templates/pack-b/manifest.json', JSON.stringify(packB));
+      await fs.mkdir('/test/templates/pack-b/components', { recursive: true });
       
-      await fs.writeFile('/test/templates/starter-packs/pack-c/manifest.json', JSON.stringify(packC));
-      await fs.mkdir('/test/templates/starter-packs/pack-c/components', { recursive: true });
+      await fs.writeFile('/test/templates/pack-c/manifest.json', JSON.stringify(packC));
+      await fs.mkdir('/test/templates/pack-c/components', { recursive: true });
 
       const result = await registry.resolveDependencies("pack-a");
 
@@ -312,11 +312,11 @@ describe("PackRegistry", () => {
         dependencies: ["pack-mid"]
       };
 
-      await fs.writeFile('/test/templates/starter-packs/pack-mid/manifest.json', JSON.stringify(packMid));
-      await fs.mkdir('/test/templates/starter-packs/pack-mid/components', { recursive: true });
+      await fs.writeFile('/test/templates/pack-mid/manifest.json', JSON.stringify(packMid));
+      await fs.mkdir('/test/templates/pack-mid/components', { recursive: true });
       
-      await fs.writeFile('/test/templates/starter-packs/pack-root/manifest.json', JSON.stringify(packRoot));
-      await fs.mkdir('/test/templates/starter-packs/pack-root/components', { recursive: true });
+      await fs.writeFile('/test/templates/pack-root/manifest.json', JSON.stringify(packRoot));
+      await fs.mkdir('/test/templates/pack-root/components', { recursive: true });
 
       const result = await registry.resolveDependencies("pack-root");
 
@@ -418,13 +418,13 @@ describe("PackRegistry", () => {
         dependencies: ["problematic-pack"]
       };
 
-      await fs.writeFile('/test/templates/starter-packs/problematic-pack/manifest.json', 
+      await fs.writeFile('/test/templates/problematic-pack/manifest.json', 
         JSON.stringify(problematicPack));
-      await fs.mkdir('/test/templates/starter-packs/problematic-pack/components', { recursive: true });
+      await fs.mkdir('/test/templates/problematic-pack/components', { recursive: true });
 
-      await fs.writeFile('/test/templates/starter-packs/circular-dep/manifest.json', 
+      await fs.writeFile('/test/templates/circular-dep/manifest.json', 
         JSON.stringify(circularPack));
-      await fs.mkdir('/test/templates/starter-packs/circular-dep/components', { recursive: true });
+      await fs.mkdir('/test/templates/circular-dep/components', { recursive: true });
 
       const result = await registry.validateDependencies("problematic-pack");
 

@@ -57,25 +57,25 @@ describe('StarterPackManager - Advanced Code Refactoring Pack', () => {
     // Create test filesystem with Advanced Code Refactoring pack structure
     fs = await createTestZccProject(projectRoot, {
       // Pack manifest
-      '/test/templates/starter-packs/advanced-code-refactoring/manifest.json': JSON.stringify(advancedCodeRefactoringManifest),
+      '/test/templates/advanced-code-refactoring/manifest.json': JSON.stringify(advancedCodeRefactoringManifest),
       
       // Components
-      '/test/templates/starter-packs/advanced-code-refactoring/components/agents/code-archaeologist.md': 
+      '/test/templates/advanced-code-refactoring/components/agents/code-archaeologist.md': 
         '---\nname: code-archaeologist\n---\n# Code Archaeologist Agent\n\nSpecialized in AST-based code analysis',
       
-      '/test/templates/starter-packs/advanced-code-refactoring/components/workflows/semantic-search.md': 
+      '/test/templates/advanced-code-refactoring/components/workflows/semantic-search.md': 
         '---\nname: semantic-search\n---\n# Semantic Search Workflow\n\nSearches code by semantic meaning',
       
-      '/test/templates/starter-packs/advanced-code-refactoring/components/workflows/safe-refactoring.md': 
+      '/test/templates/advanced-code-refactoring/components/workflows/safe-refactoring.md': 
         '---\nname: safe-refactoring\n---\n# Safe Refactoring Workflow\n\nRefactors code with safety checks',
       
-      '/test/templates/starter-packs/advanced-code-refactoring/components/modes/refactoring-specialist.md': 
+      '/test/templates/advanced-code-refactoring/components/modes/refactoring-specialist.md': 
         '---\nname: refactoring-specialist\n---\n# Refactoring Specialist Mode\n\nFocused on code refactoring tasks',
       
       // Commands
-      '/test/templates/starter-packs/advanced-code-refactoring/commands/ast.md': '# /ast Command\n\nAST analysis command',
-      '/test/templates/starter-packs/advanced-code-refactoring/commands/refactor.md': '# /refactor Command\n\nRefactoring command',
-      '/test/templates/starter-packs/advanced-code-refactoring/commands/semantic.md': '# /semantic Command\n\nSemantic search command',
+      '/test/templates/advanced-code-refactoring/commands/ast.md': '# /ast Command\n\nAST analysis command',
+      '/test/templates/advanced-code-refactoring/commands/refactor.md': '# /refactor Command\n\nRefactoring command',
+      '/test/templates/advanced-code-refactoring/commands/semantic.md': '# /semantic Command\n\nSemantic search command',
       
       // Hook templates
       '/test/templates/hooks/ast-grep-awareness.json': JSON.stringify({
@@ -90,7 +90,7 @@ describe('StarterPackManager - Advanced Code Refactoring Pack', () => {
       '/test/templates/hooks/ast-grep-awareness.sh': '#!/usr/bin/env bash\necho "AST-Grep awareness hook"\nexit 0',
       
       // Schema file - using the full schema structure from the actual file
-      '/test/templates/starter-packs/schema.json': JSON.stringify({
+      '/test/templates/schema.json': JSON.stringify({
         "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
         "properties": {

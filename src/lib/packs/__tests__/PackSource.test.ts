@@ -131,7 +131,7 @@ describe("LocalPackSource", () => {
 
       expect(pack.manifest).toEqual(validManifest);
       expect(pack.path).toBe(`${basePath}/test-pack`);
-      expect(pack.componentsPath).toBe(`${basePath}/test-pack/components`);
+      // componentsPath is no longer part of PackStructure
     });
 
     it("should load another valid pack with different structure", async () => {
@@ -153,12 +153,14 @@ describe("LocalPackSource", () => {
         .rejects.toThrow("Pack manifest not found for 'invalid-pack'");
     });
 
-    it("should throw error for pack without components directory", async () => {
-      // Create a pack with manifest but no components directory
+    it("should load pack without components directory (flattened structure)", async () => {
+      // In the new flattened structure, packs don't need a separate components directory
+      // Components are directly under pack root (modes/, workflows/, etc.)
       await fs.writeFile(`${basePath}/no-components/manifest.json`, JSON.stringify(validManifest));
 
-      await expect(packSource.loadPack("no-components"))
-        .rejects.toThrow("Components directory not found for pack 'no-components'");
+      const pack = await packSource.loadPack("no-components");
+      expect(pack.manifest.name).toBe("test-pack");
+      expect(pack.path).toBe(`${basePath}/no-components`);
     });
 
     it("should throw error for pack with invalid JSON manifest", async () => {

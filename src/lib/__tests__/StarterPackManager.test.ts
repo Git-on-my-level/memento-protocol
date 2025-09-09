@@ -28,8 +28,7 @@ describe("StarterPackManager", () => {
       tags: ["test"],
       category: "general"
     },
-    path: "/test/path",
-    componentsPath: "/test/path/components"
+    path: "/test/path"
   };
 
   beforeEach(async () => {
@@ -41,11 +40,11 @@ describe("StarterPackManager", () => {
     // Create test filesystem with project structure
     fs = await createTestZccProject(mockProjectRoot, {
       // Add sample pack templates (PackagePaths.getTemplatesDir() returns '/test/templates' in test env)
-      '/test/templates/starter-packs/test-pack/manifest.json': JSON.stringify(mockValidPack.manifest),
-      '/test/templates/starter-packs/test-pack/components/modes/engineer.md': '# Engineer Mode\n\nYou are a software engineer.',
-      '/test/templates/starter-packs/test-pack/components/workflows/review.md': '# Code Review Workflow\n\nReview code systematically.',
-      '/test/templates/starter-packs/test-pack/components/agents/claude-code-research.md': '# Research Agent\n\nSpecialized in research tasks.',
-      '/test/templates/starter-packs/schema.json': JSON.stringify({ 
+      '/test/templates/test-pack/manifest.json': JSON.stringify(mockValidPack.manifest),
+      '/test/templates/test-pack/components/modes/engineer.md': '# Engineer Mode\n\nYou are a software engineer.',
+      '/test/templates/test-pack/components/workflows/review.md': '# Code Review Workflow\n\nReview code systematically.',
+      '/test/templates/test-pack/components/agents/claude-code-research.md': '# Research Agent\n\nSpecialized in research tasks.',
+      '/test/templates/schema.json': JSON.stringify({ 
         type: 'object',
         properties: {
           name: { type: 'string', pattern: '^[a-z0-9-]+$' },
@@ -104,7 +103,7 @@ describe("StarterPackManager", () => {
     it("should return empty array when no packs available", async () => {
       // Create manager with filesystem that has no packs
       const emptyFs = await createTestZccProject(mockProjectRoot, {
-        '/test/templates/starter-packs/schema.json': JSON.stringify({ 
+        '/test/templates/schema.json': JSON.stringify({ 
           type: 'object',
           properties: {
             name: { type: 'string', pattern: '^[a-z0-9-]+$' },
@@ -977,8 +976,7 @@ describe("StarterPackManager", () => {
           },
           mementoProtocolVersion: ">=1.0.0"
         },
-        path: "/test/path/full-stack-pack",
-        componentsPath: "/test/path/full-stack-pack/components"
+        path: "/test/path/full-stack-pack"
       };
 
       jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(fullPack);
@@ -1029,8 +1027,7 @@ describe("StarterPackManager", () => {
             ]
           }
         },
-        path: "/test/path/partial-pack",
-        componentsPath: "/test/path/partial-pack/components"
+        path: "/test/path/partial-pack"
       };
 
       jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(partialPack);
@@ -1211,8 +1208,7 @@ describe("StarterPackManager", () => {
           },
           mementoProtocolVersion: ">=999.0.0"
         },
-        path: "/test/path/problematic-pack",
-        componentsPath: "/test/path/problematic-pack/components"
+        path: "/test/path/problematic-pack"
       };
 
       jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(problematicPack);
@@ -1245,8 +1241,7 @@ describe("StarterPackManager", () => {
             agents: []
           }
         },
-        path: "/test/path/empty-pack",
-        componentsPath: "/test/path/empty-pack/components"
+        path: "/test/path/empty-pack"
       };
 
       jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(emptyPack);
@@ -1285,8 +1280,7 @@ describe("StarterPackManager", () => {
             ]
           }
         },
-        path: "/test/path/invalid-names-pack",
-        componentsPath: "/test/path/invalid-names-pack/components"
+        path: "/test/path/invalid-names-pack"
       };
 
       jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(packWithInvalidNames);
