@@ -389,22 +389,22 @@ describe('StarterPackManager Integration', () => {
     // Create test filesystem with pack structure using the testing utility
     const fs = await createTestFileSystem({
       // Schema file required by PackValidator
-      '/test/templates/starter-packs/schema.json': schemaContent,
+      '/test/templates/schema.json': schemaContent,
       
       // Essentials pack in the expected location
-      '/test/templates/starter-packs/essentials/manifest.json': JSON.stringify(essentialsManifest, null, 2),
+      '/test/templates/essentials/manifest.json': JSON.stringify(essentialsManifest, null, 2),
       
       // Component templates inside the pack directory (new structure without components layer)
-      '/test/templates/starter-packs/essentials/modes/ai-debt-maintainer.md': '---\nname: ai-debt-maintainer\n---\n# AI Debt Maintainer Mode\n\nMode content here.',
-      '/test/templates/starter-packs/essentials/modes/architect.md': '---\nname: architect\n---\n# Architect Mode Template\n\nMode content here.',
-      '/test/templates/starter-packs/essentials/modes/autonomous-project-manager.md': '---\nname: autonomous-project-manager\n---\n# Autonomous Project Manager Mode\n\nMode content here.',
-      '/test/templates/starter-packs/essentials/modes/engineer.md': '---\nname: engineer\n---\n# Engineer Mode\n\nMode content here.',
-      '/test/templates/starter-packs/essentials/modes/reviewer.md': '---\nname: reviewer\n---\n# Reviewer Mode\n\nMode content here.',
+      '/test/templates/essentials/modes/ai-debt-maintainer.md': '---\nname: ai-debt-maintainer\n---\n# AI Debt Maintainer Mode\n\nMode content here.',
+      '/test/templates/essentials/modes/architect.md': '---\nname: architect\n---\n# Architect Mode Template\n\nMode content here.',
+      '/test/templates/essentials/modes/autonomous-project-manager.md': '---\nname: autonomous-project-manager\n---\n# Autonomous Project Manager Mode\n\nMode content here.',
+      '/test/templates/essentials/modes/engineer.md': '---\nname: engineer\n---\n# Engineer Mode\n\nMode content here.',
+      '/test/templates/essentials/modes/reviewer.md': '---\nname: reviewer\n---\n# Reviewer Mode\n\nMode content here.',
       
       // Component templates for workflows within the pack
-      '/test/templates/starter-packs/essentials/workflows/openmemory-setup.md': '---\nname: openmemory-setup\n---\n# OpenMemory Setup Workflow\n\nWorkflow content here.',
-      '/test/templates/starter-packs/essentials/workflows/review.md': '---\nname: review\n---\n# Review Workflow Template\n\nWorkflow content here.',
-      '/test/templates/starter-packs/essentials/workflows/summarize.md': '---\nname: summarize\n---\n# Summarize Workflow\n\nWorkflow content here.',
+      '/test/templates/essentials/workflows/openmemory-setup.md': '---\nname: openmemory-setup\n---\n# OpenMemory Setup Workflow\n\nWorkflow content here.',
+      '/test/templates/essentials/workflows/review.md': '---\nname: review\n---\n# Review Workflow Template\n\nWorkflow content here.',
+      '/test/templates/essentials/workflows/summarize.md': '---\nname: summarize\n---\n# Summarize Workflow\n\nWorkflow content here.',
     });
 
     return fs;
@@ -429,13 +429,13 @@ describe('StarterPackManager Integration', () => {
     };
     
     await mockFs.writeFile(
-      '/test/templates/starter-packs/frontend-react/manifest.json',
+      '/test/templates/frontend-react/manifest.json',
       JSON.stringify(frontendManifest, null, 2)
     );
 
     // Add react-developer mode template in pack's components directory
     await mockFs.writeFile(
-      '/test/templates/starter-packs/frontend-react/modes/react-developer.md',
+      '/test/templates/frontend-react/modes/react-developer.md',
       `---\nname: react-developer\n---\n# React Developer Mode\n\nReact-specific development mode.`
     );
   }
@@ -452,7 +452,7 @@ describe('StarterPackManager Integration', () => {
     };
     
     await mockFs.writeFile(
-      '/test/templates/starter-packs/pack-with-missing-dep/manifest.json',
+      '/test/templates/pack-with-missing-dep/manifest.json',
       JSON.stringify(manifest, null, 2)
     );
   }
@@ -460,7 +460,7 @@ describe('StarterPackManager Integration', () => {
   async function setupCircularDependencies(): Promise<void> {
     // Pack A depends on Pack B
     await mockFs.writeFile(
-      '/test/templates/starter-packs/pack-a/manifest.json',
+      '/test/templates/pack-a/manifest.json',
       JSON.stringify({
         "name": "pack-a",
         "version": "1.0.0",
@@ -473,11 +473,11 @@ describe('StarterPackManager Integration', () => {
     );
     
     // Create modes directory for pack-a (required for discovery)
-    await mockFs.writeFile('/test/templates/starter-packs/pack-a/modes/.gitkeep', '');
+    await mockFs.writeFile('/test/templates/pack-a/modes/.gitkeep', '');
 
     // Pack B depends on Pack A (circular!)
     await mockFs.writeFile(
-      '/test/templates/starter-packs/pack-b/manifest.json',
+      '/test/templates/pack-b/manifest.json',
       JSON.stringify({
         "name": "pack-b", 
         "version": "1.0.0",
@@ -490,13 +490,13 @@ describe('StarterPackManager Integration', () => {
     );
     
     // Create modes directory for pack-b (required for discovery)
-    await mockFs.writeFile('/test/templates/starter-packs/pack-b/modes/.gitkeep', '');
+    await mockFs.writeFile('/test/templates/pack-b/modes/.gitkeep', '');
   }
 
   async function setupComplexDependencyChain(): Promise<void> {
     // Pack B depends on essentials
     await mockFs.writeFile(
-      '/test/templates/starter-packs/pack-b/manifest.json',
+      '/test/templates/pack-b/manifest.json',
       JSON.stringify({
         "name": "pack-b",
         "version": "1.0.0",
@@ -509,11 +509,11 @@ describe('StarterPackManager Integration', () => {
     );
     
     // Create modes directory for pack-b
-    await mockFs.writeFile('/test/templates/starter-packs/pack-b/modes/.gitkeep', '');
+    await mockFs.writeFile('/test/templates/pack-b/modes/.gitkeep', '');
 
     // Pack C depends on Pack B (which depends on essentials)
     await mockFs.writeFile(
-      '/test/templates/starter-packs/pack-c/manifest.json',
+      '/test/templates/pack-c/manifest.json',
       JSON.stringify({
         "name": "pack-c",
         "version": "1.0.0", 
@@ -526,6 +526,6 @@ describe('StarterPackManager Integration', () => {
     );
     
     // Create modes directory for pack-c
-    await mockFs.writeFile('/test/templates/starter-packs/pack-c/modes/.gitkeep', '');
+    await mockFs.writeFile('/test/templates/pack-c/modes/.gitkeep', '');
   }
 });

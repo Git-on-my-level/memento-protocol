@@ -28,7 +28,7 @@ describe("PackInstaller", () => {
       tags: ["test"],
       category: "general"
     },
-    path: "/test/templates/starter-packs/test-pack"
+    path: "/test/templates/test-pack"
   };
 
   beforeEach(async () => {
@@ -37,13 +37,13 @@ describe("PackInstaller", () => {
     // Create test filesystem with pack structure
     fs = await createTestZccProject(mockProjectRoot, {
       // Pack templates
-      '/test/templates/starter-packs/test-pack/manifest.json': JSON.stringify(mockValidPack.manifest),
-      '/test/templates/starter-packs/test-pack/modes/engineer.md': '# Engineer Mode\n\nYou are a software engineer.',
-      '/test/templates/starter-packs/test-pack/workflows/review.md': '# Code Review Workflow\n\nReview code systematically.',
-      '/test/templates/starter-packs/test-pack/agents/claude-code-research.md': '# Research Agent\n\nSpecialized in research tasks.',
+      '/test/templates/test-pack/manifest.json': JSON.stringify(mockValidPack.manifest),
+      '/test/templates/test-pack/modes/engineer.md': '# Engineer Mode\n\nYou are a software engineer.',
+      '/test/templates/test-pack/workflows/review.md': '# Code Review Workflow\n\nReview code systematically.',
+      '/test/templates/test-pack/agents/claude-code-research.md': '# Research Agent\n\nSpecialized in research tasks.',
     });
 
-    packSource = new LocalPackSource("/test/templates/starter-packs", fs);
+    packSource = new LocalPackSource("/test/templates", fs);
     installer = new PackInstaller(mockProjectRoot, fs);
 
     // Mock DirectoryManager
@@ -232,7 +232,7 @@ describe("PackInstaller", () => {
 
     it("should handle pack uninstallation when manifest source is unavailable", async () => {
       // Remove the original pack template to simulate unavailable manifest
-      await fs.unlink('/test/templates/starter-packs/test-pack/manifest.json');
+      await fs.unlink('/test/templates/test-pack/manifest.json');
 
       const result = await installer.uninstallPack("test-pack");
 
@@ -248,10 +248,18 @@ describe("PackInstaller", () => {
 
     it("should use fallback scanning when both manifest snapshot and source are unavailable", async () => {
       // Remove both the manifest snapshot and the original source
-      await fs.unlink('/test/templates/starter-packs/test-pack/manifest.json');
+      await fs.unlink('/test/templates/test-pack/manifest.json');
       await fs.unlink(`${mockProjectRoot}/.zcc/packs/test-pack.manifest.json`);
+      
+      // Also remove the file registry to simulate a truly unavailable scenario
+      if (await fs.exists(`${mockProjectRoot}/.zcc/file-registry.json`)) {
+        await fs.unlink(`${mockProjectRoot}/.zcc/file-registry.json`);
+      }
+      
+      // Create a new installer instance to ensure FileRegistry is reloaded
+      const freshInstaller = new PackInstaller(mockProjectRoot, fs);
 
-      const result = await installer.uninstallPack("test-pack");
+      const result = await freshInstaller.uninstallPack("test-pack");
 
       // Should use fallback scanning approach
       expect(result.success).toBe(false); // False due to scanning mode error message
@@ -288,7 +296,7 @@ describe("PackInstaller", () => {
       expect(configBefore.defaultMode).toBe("engineer");
 
       // Update the pack source to include the config
-      await fs.writeFile('/test/templates/starter-packs/test-pack/manifest.json', JSON.stringify(packWithConfig.manifest));
+      await fs.writeFile('/test/templates/test-pack/manifest.json', JSON.stringify(packWithConfig.manifest));
 
       // Uninstall the pack
       const result = await installer.uninstallPack("test-pack");
@@ -401,7 +409,7 @@ describe("PackInstaller", () => {
       await installer.installPack(emptyPack, packSource);
 
       // Update the pack source to include empty pack manifest for uninstall
-      await fs.writeFile('/test/templates/starter-packs/empty-pack/manifest.json', JSON.stringify(emptyPack.manifest));
+      await fs.writeFile('/test/templates/empty-pack/manifest.json', JSON.stringify(emptyPack.manifest));
 
       const result = await installer.uninstallPack("empty-pack");
 

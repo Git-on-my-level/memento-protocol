@@ -28,7 +28,7 @@ describe("PackValidator", () => {
 
   const validPackStructure: PackStructure = {
     manifest: validManifest,
-    path: "/test/templates/starter-packs/test-pack"
+    path: "/test/templates/test-pack"
   };
 
   beforeEach(async () => {
@@ -37,7 +37,7 @@ describe("PackValidator", () => {
     // Create test filesystem with validation schema and pack components
     fs = await createTestFileSystem({
       // Validation schema
-      '/test/templates/starter-packs/schema.json': JSON.stringify({
+      '/test/templates/schema.json': JSON.stringify({
         type: 'object',
         properties: {
           name: { type: 'string', pattern: '^[a-z0-9-]+$' },
@@ -59,14 +59,14 @@ describe("PackValidator", () => {
       }),
       
       // Pack components for validation
-      '/test/templates/starter-packs/test-pack/manifest.json': JSON.stringify(validManifest),
-      '/test/templates/starter-packs/test-pack/modes/engineer.md': '# Engineer Mode\n\nYou are a software engineer focused on building reliable, maintainable code.',
-      '/test/templates/starter-packs/test-pack/workflows/review.md': '# Code Review Workflow\n\nFollow these steps for effective code reviews.',
-      '/test/templates/starter-packs/test-pack/agents/research.md': '# Research Agent\n\nSpecialized in gathering and analyzing information.'
+      '/test/templates/test-pack/manifest.json': JSON.stringify(validManifest),
+      '/test/templates/test-pack/modes/engineer.md': '# Engineer Mode\n\nYou are a software engineer focused on building reliable, maintainable code.',
+      '/test/templates/test-pack/workflows/review.md': '# Code Review Workflow\n\nFollow these steps for effective code reviews.',
+      '/test/templates/test-pack/agents/research.md': '# Research Agent\n\nSpecialized in gathering and analyzing information.'
     });
 
     validator = new PackValidator(fs);
-    packSource = new LocalPackSource("/test/templates/starter-packs", fs);
+    packSource = new LocalPackSource("/test/templates", fs);
   });
 
   describe("validateManifest", () => {
@@ -267,7 +267,7 @@ describe("PackValidator", () => {
     it("should accept valid pack paths", async () => {
       const validPath: PackStructure = {
         ...validPackStructure,
-        path: "/test/templates/starter-packs/my-pack"
+        path: "/test/templates/my-pack"
       };
 
       const result = await validator.validatePackStructure(validPath, packSource);
@@ -281,7 +281,7 @@ describe("PackValidator", () => {
     it("should detect suspicious content in markdown files", async () => {
       // Create a component with suspicious content
       await fs.writeFile(
-        '/test/templates/starter-packs/test-pack/modes/malicious.md',
+        '/test/templates/test-pack/modes/malicious.md',
         '# Malicious Mode\n\n<script>alert("XSS")</script>\n\nThis mode contains JavaScript.'
       );
 
@@ -306,7 +306,7 @@ describe("PackValidator", () => {
     it("should warn about empty component files", async () => {
       // Create an empty component file
       await fs.writeFile(
-        '/test/templates/starter-packs/test-pack/modes/empty.md',
+        '/test/templates/test-pack/modes/empty.md',
         ''
       );
 
@@ -331,7 +331,7 @@ describe("PackValidator", () => {
       // Create a very large component file
       const largeContent = "A".repeat(2 * 1024 * 1024); // 2MB
       await fs.writeFile(
-        '/test/templates/starter-packs/test-pack/modes/large.md',
+        '/test/templates/test-pack/modes/large.md',
         largeContent
       );
 
@@ -372,7 +372,7 @@ describe("PackValidator", () => {
 
       // Create a hook file with forbidden extension by overriding the expected .json
       await fs.writeFile(
-        '/test/templates/starter-packs/test-pack/hooks/suspicious.exe',
+        '/test/templates/test-pack/hooks/suspicious.exe',
         'malicious binary content'
       );
 
@@ -382,7 +382,7 @@ describe("PackValidator", () => {
       
       packSource.hasComponent = jest.fn().mockResolvedValue(true);
       packSource.getComponentPath = jest.fn().mockResolvedValue(
-        '/test/templates/starter-packs/test-pack/hooks/suspicious.exe'
+        '/test/templates/test-pack/hooks/suspicious.exe'
       );
 
       const result = await validator.validatePackStructure(suspiciousFilePack, packSource);
@@ -416,7 +416,7 @@ describe("PackValidator", () => {
 
     it("should handle invalid schema file", async () => {
       const fsWithInvalidSchema = await createTestFileSystem({
-        '/test/templates/starter-packs/schema.json': 'invalid json {'
+        '/test/templates/schema.json': 'invalid json {'
       });
       const validatorWithInvalidSchema = new PackValidator(fsWithInvalidSchema);
 

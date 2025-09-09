@@ -27,7 +27,7 @@ describe('PackInstaller Integration with FileRegistry', () => {
       version: '1.0.0',
       description: `Test pack ${name}`,
       author: 'test',
-      components: components || {
+      components: Object.keys(components).length > 0 ? components : {
         modes: [{ name: `${name}-mode`, required: true }],
         workflows: [{ name: `${name}-workflow`, required: true }],
       },
@@ -276,6 +276,12 @@ describe('PackInstaller Integration with FileRegistry', () => {
       // Corrupt the registry
       await fs.writeFile(`${projectRoot}/.zcc/file-registry.json`, 'invalid json{');
       
+      // Also remove backup to test true corruption recovery
+      const backupPath = `${projectRoot}/.zcc/file-registry.json.backup`;
+      if (await fs.exists(backupPath)) {
+        await fs.unlink(backupPath);
+      }
+      
       // Create new registry instance
       const newRegistry = new FileRegistry(projectRoot, fs);
       const data = await newRegistry.load();
@@ -365,7 +371,7 @@ describe('PackInstaller Integration with FileRegistry', () => {
       expect(await fs.exists(`${projectRoot}/.zcc/scripts/unique-script.sh`)).toBe(true);
       
       // Verify no artifacts from Pack A remain
-      const registryData = await registry.load();
+      const registryData = await registry.refresh();
       expect(registryData.packs['pack-a']).toBeUndefined();
       expect(registryData.packs['pack-c']).toBeDefined();
       
@@ -410,14 +416,13 @@ describe('PackInstaller Integration with FileRegistry', () => {
     it('should handle partial installation failure', async () => {
       const packA = createTestPack('pack-a');
       
-      // Mock writeFile to fail on second file
-      let callCount = 0;
-      const originalWriteFile = fs.writeFile.bind(fs);
-      fs.writeFile = jest.fn().mockImplementation(async (path: string, content: any, options?: any) => {
-        if (path.includes('.zcc/workflows') && ++callCount === 1) {
+      // Mock copyFile to fail on workflow file
+      const originalCopyFile = fs.copyFile.bind(fs);
+      fs.copyFile = jest.fn().mockImplementation(async (sourcePath: string, targetPath: string) => {
+        if (targetPath.includes('.zcc/workflows/')) {
           throw new Error('Write failed');
         }
-        return originalWriteFile(path, content, options);
+        return originalCopyFile(sourcePath, targetPath);
       });
       
       const result = await installer.installPack(packA, packSource);
@@ -430,7 +435,7 @@ describe('PackInstaller Integration with FileRegistry', () => {
       expect(modeInfo).toBeDefined();
       
       // Restore mock
-      fs.writeFile = originalWriteFile;
+      fs.copyFile = originalCopyFile;
     });
 
     it('should handle concurrent modification detection', async () => {
@@ -457,16 +462,24 @@ describe('PackInstaller Integration with FileRegistry', () => {
     it('should handle checksum calculation for large files', async () => {
       const largePack = createTestPack('large-pack');
       
+      // Create pack directory structure
+      await fs.writeFile('/packs/large-pack/manifest.json', JSON.stringify(largePack.manifest));
+      
       // Create a large file content (1MB)
       const largeContent = 'x'.repeat(1024 * 1024);
       await fs.writeFile('/packs/large-pack/modes/large-pack-mode.md', largeContent);
+      
+      // Also create the required workflow file
+      await fs.writeFile('/packs/large-pack/workflows/large-pack-workflow.md', '# Large Pack Workflow\nContent');
       
       const result = await installer.installPack(largePack, packSource);
       
       expect(result.success).toBe(true);
       
       // Verify checksum was calculated
-      const fileInfo = await registry.getFileInfo(`${projectRoot}/.zcc/modes/large-pack-mode.md`);
+      const fileInfo = await registry.refresh().then(() => 
+        registry.getFileInfo(`${projectRoot}/.zcc/modes/large-pack-mode.md`)
+      );
       expect(fileInfo?.checksum).toMatch(/^sha256:[a-f0-9]{64}$/);
     });
 

@@ -61,8 +61,7 @@ describe('Packs Command', () => {
         },
         compatibleWith: ['javascript', 'typescript', 'react']
       },
-      path: '/templates/starter-packs/frontend-react',
-      componentsPath: '/templates/starter-packs/frontend-react/components'
+      path: '/templates/frontend-react'
     },
     {
       manifest: {
@@ -83,8 +82,7 @@ describe('Packs Command', () => {
         },
         compatibleWith: ['node', 'python', 'go']
       },
-      path: '/templates/starter-packs/backend-api',
-      componentsPath: '/templates/starter-packs/backend-api/components'
+      path: '/templates/backend-api'
     },
     {
       manifest: {
@@ -104,8 +102,7 @@ describe('Packs Command', () => {
         },
         compatibleWith: ['generic']
       },
-      path: '/templates/starter-packs/essentials',
-      componentsPath: '/templates/starter-packs/essentials/components'
+      path: '/templates/essentials'
     }
   ];
 

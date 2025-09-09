@@ -37,6 +37,14 @@ export class FileRegistry {
   }
 
   /**
+   * Refresh the registry by clearing cache and reloading from disk
+   */
+  async refresh(): Promise<FileRegistryData> {
+    this.data = null;
+    return await this.load();
+  }
+
+  /**
    * Load the registry from disk
    */
   async load(): Promise<FileRegistryData> {
@@ -301,6 +309,30 @@ export class FileRegistry {
     const packFiles = data.packs[packName]?.files || [];
     for (const file of packFiles) {
       delete data.files[file];
+    }
+    
+    // Remove pack entry
+    delete data.packs[packName];
+    
+    await this.save();
+  }
+
+  /**
+   * Unregister a pack but preserve modified files
+   */
+  async unregisterPackPreservingModified(packName: string): Promise<void> {
+    const data = await this.load();
+    
+    // Remove only unmodified file entries for this pack
+    const packFiles = data.packs[packName]?.files || [];
+    for (const file of packFiles) {
+      const fileInfo = data.files[file];
+      if (fileInfo && !fileInfo.modified) {
+        delete data.files[file];
+      } else if (fileInfo && fileInfo.modified) {
+        // Keep modified file but mark it as no longer owned by any pack
+        fileInfo.pack = '';
+      }
     }
     
     // Remove pack entry

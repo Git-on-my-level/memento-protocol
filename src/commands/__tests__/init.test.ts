@@ -454,8 +454,7 @@ describe("Init Command", () => {
             workflows: [{ name: "review", required: true }]
           }
         },
-        path: "/path/to/pack",
-        componentsPath: "/path/to/pack/components"
+        path: "/path/to/pack"
       };
 
       mockStarterPackManager.loadPack.mockResolvedValue(mockPack);
@@ -551,8 +550,7 @@ describe("Init Command", () => {
             modes: [{ name: "engineer", required: true }]
           }
         },
-        path: "/path/to/pack",
-        componentsPath: "/path/to/pack/components"
+        path: "/path/to/pack"
       };
 
       mockDirManager.isInitialized.mockReturnValue(true); // Already initialized
@@ -614,8 +612,7 @@ describe("Init Command", () => {
               workflows: [{ name: 'component-creation', required: true }]
             }
           },
-          path: '/templates/starter-packs/frontend-react',
-          componentsPath: '/templates/starter-packs/frontend-react/components'
+          path: '/templates/frontend-react'
         },
         {
           manifest: {
@@ -628,8 +625,7 @@ describe("Init Command", () => {
               modes: [{ name: 'api-engineer', required: true }]
             }
           },
-          path: '/templates/starter-packs/backend-api',
-          componentsPath: '/templates/starter-packs/backend-api/components'
+          path: '/templates/backend-api'
         }
       ];
       
