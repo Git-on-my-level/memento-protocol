@@ -19,6 +19,7 @@ import { IPackSource } from "./PackSource";
 import { ToolDependencyChecker, ToolDependency } from "./ToolDependencyChecker";
 import { HookManager } from "../hooks/HookManager";
 import { isVerbose } from "../context";
+import { FileRegistry } from "./FileRegistry";
 
 export class PackInstaller {
   private directoryManager: DirectoryManager;
@@ -28,6 +29,7 @@ export class PackInstaller {
   private fs: FileSystemAdapter;
   private toolChecker: ToolDependencyChecker;
   private hookManager: HookManager;
+  private fileRegistry: FileRegistry;
 
   constructor(projectRoot: string, fs?: FileSystemAdapter) {
     this.fs = fs || new NodeFileSystemAdapter();
@@ -37,6 +39,7 @@ export class PackInstaller {
     this.claudeDir = this.fs.join(projectRoot, '.claude');
     this.toolChecker = new ToolDependencyChecker();
     this.hookManager = new HookManager(projectRoot, this.fs);
+    this.fileRegistry = new FileRegistry(projectRoot, this.fs);
   }
 
   /**
@@ -44,7 +47,7 @@ export class PackInstaller {
    */
   async installPack(
     packStructure: PackStructure,
-    source: IPackSource,
+    _source: IPackSource,
     options: PackInstallOptions = {}
   ): Promise<PackInstallationResult> {
     const { manifest } = packStructure;
@@ -82,6 +85,11 @@ export class PackInstaller {
       await this.installComponents('agents', manifest, source, installed, skipped, errors, options);
       await this.installComponents('hooks', manifest, source, installed, skipped, errors, options);
 
+      // Install scripts from the pack
+      if (!options.dryRun) {
+        await this.installScripts(packStructure, source, errors);
+      }
+
       // Install configuration and hooks
       if (!options.dryRun) {
         if (manifest.configuration) {
@@ -96,6 +104,10 @@ export class PackInstaller {
 
       // Update project pack manifest and save manifest snapshot
       if (!options.dryRun) {
+        // Register pack in FileRegistry
+        await this.fileRegistry.registerPack(manifest.name, manifest.version);
+        
+        // Keep old system for backwards compatibility
         await this.updateProjectManifest(manifest, source.getSourceInfo());
         await this.saveManifestSnapshot(manifest);
       }
@@ -134,21 +146,33 @@ export class PackInstaller {
   }
 
   /**
+   * Get installed packs
+   */
+  async getInstalledPacks(): Promise<Record<string, any>> {
+    const projectManifest = await this.loadProjectManifest();
+    return projectManifest.packs || {};
+  }
+
+  /**
    * Uninstall a starter pack from the project
    */
   async uninstallPack(packName: string): Promise<PackInstallationResult> {
     logger.info(`Uninstalling starter pack '${packName}'`);
 
-    const projectManifest = await this.loadProjectManifest();
-    const packInfo = projectManifest.packs[packName];
+    // Check if pack is registered
+    const packFiles = await this.fileRegistry.getPackFiles(packName);
     
-    if (!packInfo) {
-      return {
-        success: false,
-        installed: { modes: [], workflows: [], agents: [], hooks: [] },
-        skipped: { modes: [], workflows: [], agents: [], hooks: [] },
-        errors: [`Pack '${packName}' is not installed`],
-      };
+    if (packFiles.length === 0) {
+      // Check old project manifest for backwards compatibility
+      const projectManifest = await this.loadProjectManifest();
+      if (!projectManifest.packs[packName]) {
+        return {
+          success: false,
+          installed: { modes: [], workflows: [], agents: [], hooks: [] },
+          skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+          errors: [`Pack '${packName}' is not installed`],
+        };
+      }
     }
 
     // Track removal results
@@ -157,36 +181,49 @@ export class PackInstaller {
     const errors: string[] = [];
 
     try {
-      // Try to load the pack manifest snapshot first for precise removal
-      let packManifest: PackStructure['manifest'] | null = null;
-      
-      // First, check for saved manifest snapshot
-      packManifest = await this.loadManifestSnapshot(packName);
-      
-      // If no snapshot, try to reconstruct from original source as fallback
-      if (!packManifest) {
+      // Remove all files owned by this pack
+      for (const filePath of packFiles) {
         try {
-          packManifest = await this.reconstructPackManifest(packName, packInfo);
+          // Check if file has been modified
+          const isModified = await this.fileRegistry.isFileModified(filePath);
+          
+          if (isModified) {
+            logger.debug(`File '${filePath}' has been modified, skipping removal`);
+            const componentType = this.getComponentTypeFromPath(filePath);
+            const componentName = this.fs.basename(filePath).replace(/\.(md|json|sh)$/, '');
+            if (componentType) {
+              (skipped[componentType] as string[]).push(componentName);
+            }
+            continue;
+          }
+
+          // Safe to remove
+          if (await this.fs.exists(filePath)) {
+            await this.fs.unlink(filePath);
+            await this.fileRegistry.unregisterFile(filePath);
+            
+            const componentType = this.getComponentTypeFromPath(filePath);
+            const componentName = this.fs.basename(filePath).replace(/\.(md|json|sh)$/, '');
+            if (componentType) {
+              (removed[componentType] as string[]).push(componentName);
+            }
+            logger.debug(`Removed file: ${filePath}`);
+          }
         } catch (error) {
-          logger.debug(`Could not reconstruct pack manifest for '${packName}': ${error}`);
-          // Continue with file-based cleanup approach
+          errors.push(`Failed to remove file '${filePath}': ${error}`);
         }
       }
 
-      // Remove components by type
-      if (packManifest) {
-        // If we have the manifest, use it for precise removal
-        await this.removeComponentsFromManifest(packManifest, removed, skipped, errors);
-      } else {
-        // Fallback: scan and remove files that might belong to this pack
-        logger.debug(`Using fallback file-based removal for pack '${packName}'`);
-        await this.removeComponentsByScanning(packName, removed, skipped, errors);
-      }
+      // Clean up empty directories
+      await this.cleanupEmptyDirectories();
 
-      // Clean up pack-specific configuration
-      await this.cleanupPackConfiguration(packName, packManifest, errors);
+      // Unregister pack from FileRegistry
+      await this.fileRegistry.unregisterPack(packName);
 
-      // Remove manifest snapshot and update project manifest
+      // Clean up pack-specific configuration (for backwards compatibility)
+      await this.cleanupPackConfiguration(packName, null, errors);
+
+      // Remove manifest snapshot and update project manifest (for backwards compatibility)
       await this.removeManifestSnapshot(packName);
       await this.removeFromProjectManifest(packName);
 
@@ -280,17 +317,20 @@ export class PackInstaller {
       const sourcePath = await source.getComponentPath(packName, componentType, componentName);
       
       let targetPath: string;
+      const extension = componentType === 'hooks' ? '.json' : '.md';
+      
       if (componentType === 'agents') {
         // Agents go to .claude directory
-        targetPath = this.fs.join(this.claudeDir, 'agents', `${componentName}.md`);
+        targetPath = this.fs.join(this.claudeDir, 'agents', `${componentName}${extension}`);
       } else {
         // Other components go to .zcc directory
-        targetPath = this.fs.join(this.zccDir, componentType, `${componentName}.md`);
+        targetPath = this.fs.join(this.zccDir, componentType, `${componentName}${extension}`);
       }
 
-      // Check for conflicts
-      if (await this.fs.exists(targetPath) && !options.force) {
-        logger.debug(`Component '${componentName}' already exists, skipping`);
+      // Check if file is already registered to another pack
+      const existingInfo = await this.fileRegistry.getFileInfo(targetPath);
+      if (existingInfo && existingInfo.pack !== packName && !options.force) {
+        logger.debug(`Component '${componentName}' already owned by pack '${existingInfo.pack}', skipping`);
         return false;
       }
 
@@ -302,6 +342,9 @@ export class PackInstaller {
       // Copy the component file
       await this.fs.mkdir(this.fs.dirname(targetPath), { recursive: true });
       await this.fs.copyFile(sourcePath, targetPath);
+
+      // Register the file in the FileRegistry
+      await this.fileRegistry.registerFile(targetPath, packName, sourcePath);
 
       return true;
     } catch (error) {
@@ -344,6 +387,67 @@ export class PackInstaller {
     // Write updated config
     await this.fs.writeFile(configPath, JSON.stringify(mergedConfig, null, 2));
     logger.debug('Updated project configuration');
+  }
+
+  /**
+   * Install scripts from the pack
+   */
+  private async installScripts(
+    packStructure: PackStructure,
+    _source: IPackSource,
+    errors: string[]
+  ): Promise<void> {
+    try {
+      const scriptsSourcePath = this.fs.join(packStructure.path, 'scripts');
+      const scriptsTargetPath = this.fs.join(this.zccDir, 'scripts');
+
+      // Check if pack has scripts directory
+      if (!await this.fs.exists(scriptsSourcePath)) {
+        logger.debug(`Pack '${packStructure.manifest.name}' has no scripts directory`);
+        return;
+      }
+
+      // Ensure target scripts directory exists
+      await this.fs.mkdir(scriptsTargetPath, { recursive: true });
+
+      // Get list of scripts in the pack
+      const scripts = await this.fs.readdir(scriptsSourcePath);
+      
+      for (const script of scripts) {
+        const sourcePath = this.fs.join(scriptsSourcePath, script);
+        const targetPath = this.fs.join(scriptsTargetPath, script);
+        
+        try {
+          // Check if it's a file (not a directory)
+          const stats = await this.fs.stat(sourcePath);
+          if (!stats.isDirectory()) {
+            // Check for conflicts in FileRegistry
+            const existingInfo = await this.fileRegistry.getFileInfo(targetPath);
+            if (existingInfo && existingInfo.pack !== packStructure.manifest.name) {
+              errors.push(`Script '${script}' already owned by pack '${existingInfo.pack}'`);
+              continue;
+            }
+            
+            // Copy the script file
+            await this.fs.copyFile(sourcePath, targetPath);
+            
+            // Make it executable if it's a shell script
+            if (script.endsWith('.sh')) {
+              await this.fs.chmod(targetPath, 0o755);
+            }
+            
+            // Register in FileRegistry
+            await this.fileRegistry.registerFile(targetPath, packStructure.manifest.name, sourcePath);
+            
+            logger.debug(`Installed script: ${script}`);
+          }
+        } catch (error) {
+          errors.push(`Failed to install script '${script}': ${error}`);
+        }
+      }
+    } catch (error) {
+      errors.push(`Failed to install scripts: ${error}`);
+    }
   }
 
   /**
@@ -408,7 +512,9 @@ export class PackInstaller {
   private async checkConflicts(manifest: PackStructure['manifest']): Promise<string[]> {
     const conflicts: string[] = [];
     const componentTypes = ['modes', 'workflows', 'agents', 'hooks'] as const;
+    const allTargetPaths: string[] = [];
 
+    // Collect all target paths for this pack
     for (const componentType of componentTypes) {
       const components = manifest.components[componentType];
       if (!components) continue;
@@ -418,14 +524,20 @@ export class PackInstaller {
         
         if (componentType === 'agents') {
           targetPath = this.fs.join(this.claudeDir, 'agents', `${component.name}.md`);
+        } else if (componentType === 'hooks') {
+          targetPath = this.fs.join(this.zccDir, componentType, `${component.name}.json`);
         } else {
           targetPath = this.fs.join(this.zccDir, componentType, `${component.name}.md`);
         }
 
-        if (await this.fs.exists(targetPath)) {
-          conflicts.push(`${componentType.slice(0, -1)} '${component.name}' already exists`);
-        }
+        allTargetPaths.push(targetPath);
       }
+    }
+
+    // Check for conflicts using FileRegistry
+    const registryConflicts = await this.fileRegistry.checkConflicts(allTargetPaths);
+    for (const conflict of registryConflicts) {
+      conflicts.push(`File '${conflict.path}' already owned by pack '${conflict.existingPack}'`);
     }
 
     return conflicts;
@@ -587,162 +699,7 @@ export class PackInstaller {
     return toolDependencies;
   }
 
-  /**
-   * Attempt to reconstruct pack manifest from installed pack info
-   */
-  private async reconstructPackManifest(
-    packName: string, 
-    packInfo: ProjectPackManifest['packs'][string]
-  ): Promise<PackStructure['manifest'] | null> {
-    // Try to load the manifest from the original source if it's still available
-    // This is a best-effort approach
-    
-    if (packInfo.source.type === 'local') {
-      const localSource = packInfo.source as any;
-      if (localSource.path) {
-        const manifestPath = this.fs.join(localSource.path, packName, 'manifest.json');
-        if (await this.fs.exists(manifestPath)) {
-          const content = await this.fs.readFile(manifestPath, 'utf-8');
-          return JSON.parse(content as string);
-        }
-      }
-    }
 
-    return null;
-  }
-
-  /**
-   * Remove components based on pack manifest
-   */
-  private async removeComponentsFromManifest(
-    manifest: PackStructure['manifest'],
-    removed: PackInstallationResult['installed'],
-    skipped: PackInstallationResult['skipped'], 
-    errors: string[]
-  ): Promise<void> {
-    const componentTypes = ['modes', 'workflows', 'agents', 'hooks'] as const;
-
-    for (const componentType of componentTypes) {
-      const components = manifest.components[componentType];
-      if (!components || components.length === 0) {
-        continue;
-      }
-
-      logger.debug(`Removing ${components.length} ${componentType}`);
-
-      for (const component of components) {
-        try {
-          const success = await this.removeComponent(componentType, component.name);
-          if (success) {
-            (removed[componentType] as string[]).push(component.name);
-            logger.debug(`Removed ${componentType.slice(0, -1)} '${component.name}'`);
-          } else {
-            (skipped[componentType] as string[]).push(component.name);
-            logger.debug(`Skipped ${componentType.slice(0, -1)} '${component.name}' (not found)`);
-          }
-        } catch (error) {
-          errors.push(`Failed to remove ${componentType.slice(0, -1)} '${component.name}': ${error}`);
-        }
-      }
-    }
-  }
-
-  /**
-   * Remove components by scanning directories (fallback approach)
-   */
-  private async removeComponentsByScanning(
-    packName: string,
-    _removed: PackInstallationResult['installed'],
-    skipped: PackInstallationResult['skipped'],
-    errors: string[]
-  ): Promise<void> {
-    const componentTypes = ['modes', 'workflows', 'hooks'] as const;
-    
-    // For file-based removal, we'll look for files that might belong to the pack
-    // This is less precise but provides a fallback when manifest is unavailable
-    
-    for (const componentType of componentTypes) {
-      const componentDir = this.fs.join(this.zccDir, componentType);
-      
-      if (await this.fs.exists(componentDir)) {
-        try {
-          const files = await this.fs.readdir(componentDir);
-          
-          for (const file of files) {
-            if (file.endsWith('.md')) {
-              const componentName = file.replace('.md', '');
-              // Note: Without the original manifest, we can't know for sure
-              // which components belonged to which pack, so we skip automatic
-              // removal in scanning mode to avoid removing user-customized components
-              (skipped[componentType] as string[]).push(componentName);
-              logger.debug(`Skipped ${componentType.slice(0, -1)} '${componentName}' (scanning mode - manual verification required)`);
-            }
-          }
-        } catch (error) {
-          errors.push(`Failed to scan ${componentType} directory: ${error}`);
-        }
-      }
-    }
-
-    // Handle agents separately (they're in .claude directory)
-    const agentsDir = this.fs.join(this.claudeDir, 'agents');
-    if (await this.fs.exists(agentsDir)) {
-      try {
-        const files = await this.fs.readdir(agentsDir);
-        
-        for (const file of files) {
-          if (file.endsWith('.md')) {
-            const componentName = file.replace('.md', '');
-            (skipped.agents as string[]).push(componentName);
-            logger.debug(`Skipped agent '${componentName}' (scanning mode - manual verification required)`);
-          }
-        }
-      } catch (error) {
-        errors.push(`Failed to scan agents directory: ${error}`);
-      }
-    }
-
-    // Add a helpful error message for scanning mode
-    if (skipped.modes.length > 0 || skipped.workflows.length > 0 || skipped.agents.length > 0 || skipped.hooks.length > 0) {
-      errors.push(
-        `Pack manifest not available - automatic component removal disabled. ` +
-        `Please manually remove components that belonged to pack '${packName}' if needed.`
-      );
-    }
-  }
-
-  /**
-   * Remove a single component
-   */
-  private async removeComponent(
-    componentType: 'modes' | 'workflows' | 'agents' | 'hooks',
-    componentName: string
-  ): Promise<boolean> {
-    let targetPath: string;
-    
-    if (componentType === 'agents') {
-      // Agents are in .claude directory
-      targetPath = this.fs.join(this.claudeDir, 'agents', `${componentName}.md`);
-    } else {
-      // Other components are in .zcc directory
-      targetPath = this.fs.join(this.zccDir, componentType, `${componentName}.md`);
-    }
-
-    if (await this.fs.exists(targetPath)) {
-      try {
-        await this.fs.unlink(targetPath);
-        return true;
-      } catch (error) {
-        throw new ZccError(
-          `Failed to remove ${componentType.slice(0, -1)} '${componentName}'`,
-          'COMPONENT_REMOVAL_ERROR',
-          `Error: ${error}`
-        );
-      }
-    }
-
-    return false; // File didn't exist
-  }
 
   /**
    * Clean up pack-specific configuration
@@ -813,25 +770,6 @@ export class PackInstaller {
     }
   }
 
-  /**
-   * Load manifest snapshot for precise uninstall
-   */
-  private async loadManifestSnapshot(packName: string): Promise<PackStructure['manifest'] | null> {
-    try {
-      const snapshotPath = this.fs.join(this.zccDir, 'packs', `${packName}.manifest.json`);
-      
-      if (await this.fs.exists(snapshotPath)) {
-        const content = await this.fs.readFile(snapshotPath, 'utf-8');
-        const manifest = JSON.parse(content as string);
-        logger.debug(`Loaded manifest snapshot for pack '${packName}'`);
-        return manifest;
-      }
-    } catch (error) {
-      logger.debug(`Failed to load manifest snapshot for pack '${packName}': ${error}`);
-    }
-    
-    return null;
-  }
 
   /**
    * Remove manifest snapshot
@@ -874,6 +812,46 @@ export class PackInstaller {
     } catch (error) {
       logger.warn(`Error updating project manifest after removing pack '${packName}': ${error}`);
       throw error;
+    }
+  }
+
+  /**
+   * Get component type from file path
+   */
+  private getComponentTypeFromPath(filePath: string): 'modes' | 'workflows' | 'agents' | 'hooks' | null {
+    if (filePath.includes('/modes/')) return 'modes';
+    if (filePath.includes('/workflows/')) return 'workflows';
+    if (filePath.includes('/agents/')) return 'agents';
+    if (filePath.includes('/hooks/')) return 'hooks';
+    if (filePath.includes('/scripts/')) return null; // Scripts are not in the component types
+    return null;
+  }
+
+  /**
+   * Clean up empty directories after uninstall
+   */
+  private async cleanupEmptyDirectories(): Promise<void> {
+    const dirsToCheck = [
+      this.fs.join(this.zccDir, 'modes'),
+      this.fs.join(this.zccDir, 'workflows'),
+      this.fs.join(this.zccDir, 'agents'),
+      this.fs.join(this.zccDir, 'hooks'),
+      this.fs.join(this.zccDir, 'scripts'),
+      this.fs.join(this.claudeDir, 'agents'),
+    ];
+
+    for (const dir of dirsToCheck) {
+      try {
+        if (await this.fs.exists(dir)) {
+          const contents = await this.fs.readdir(dir);
+          if (contents.length === 0) {
+            await this.fs.rmdir(dir);
+            logger.debug(`Removed empty directory: ${dir}`);
+          }
+        }
+      } catch (error) {
+        logger.debug(`Could not clean up directory ${dir}: ${error}`);
+      }
     }
   }
 }

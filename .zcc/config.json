@@ -1,10 +1,16 @@
 {
-  "enableHooks": true,
-  "enableFuzzyMatching": true,
-  "ticketSystem": true,
-  "defaultMode": "autonomous-project-manager",
   "typescript": true,
   "testFramework": "jest",
   "stylingApproach": "tailwind",
-  "stateManagement": "context"
+  "stateManagement": "context",
+  "enableHooks": true,
+  "enableFuzzyMatching": true,
+  "ticketSystem": true,
+  "defaultMode": "refactoring-specialist",
+  "preferredTools": [
+    "ast-grep",
+    "ripgrep"
+  ],
+  "analysisDepth": "deep",
+  "safetyChecks": true
 }

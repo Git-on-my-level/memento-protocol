@@ -42,16 +42,16 @@ describe("LocalPackSource", () => {
     fs = await createTestFileSystem({
       // First pack
       [`${basePath}/test-pack/manifest.json`]: JSON.stringify(validManifest),
-      [`${basePath}/test-pack/components/modes/engineer.md`]: '# Engineer Mode\n\nYou are a software engineer.',
-      [`${basePath}/test-pack/components/workflows/review.md`]: '# Code Review Workflow\n\nReview code systematically.',
+      [`${basePath}/test-pack/modes/engineer.md`]: '# Engineer Mode\n\nYou are a software engineer.',
+      [`${basePath}/test-pack/workflows/review.md`]: '# Code Review Workflow\n\nReview code systematically.',
       
       // Second pack
       [`${basePath}/another-pack/manifest.json`]: JSON.stringify(anotherValidManifest),
-      [`${basePath}/another-pack/components/modes/architect.md`]: '# Architect Mode\n\nYou are a software architect.',
-      [`${basePath}/another-pack/components/agents/research.md`]: '# Research Agent\n\nSpecialized in research.',
+      [`${basePath}/another-pack/modes/architect.md`]: '# Architect Mode\n\nYou are a software architect.',
+      [`${basePath}/another-pack/agents/research.md`]: '# Research Agent\n\nSpecialized in research.',
       
       // Invalid pack (missing manifest)
-      [`${basePath}/invalid-pack/components/modes/broken.md`]: '# Broken Mode',
+      [`${basePath}/invalid-pack/modes/broken.md`]: '# Broken Mode',
       
       // Empty directory
       [`${basePath}/empty-pack/.gitkeep`]: '',
@@ -211,18 +211,18 @@ describe("LocalPackSource", () => {
   describe("getComponentPath", () => {
     it("should return correct paths for markdown components", async () => {
       const modePath = await packSource.getComponentPath("test-pack", "modes", "engineer");
-      expect(modePath).toBe(`${basePath}/test-pack/components/modes/engineer.md`);
+      expect(modePath).toBe(`${basePath}/test-pack/modes/engineer.md`);
 
       const workflowPath = await packSource.getComponentPath("test-pack", "workflows", "review");
-      expect(workflowPath).toBe(`${basePath}/test-pack/components/workflows/review.md`);
+      expect(workflowPath).toBe(`${basePath}/test-pack/workflows/review.md`);
 
       const agentPath = await packSource.getComponentPath("another-pack", "agents", "research");
-      expect(agentPath).toBe(`${basePath}/another-pack/components/agents/research.md`);
+      expect(agentPath).toBe(`${basePath}/another-pack/agents/research.md`);
     });
 
     it("should return correct paths for JSON hook components", async () => {
       const hookPath = await packSource.getComponentPath("test-pack", "hooks", "git-hook");
-      expect(hookPath).toBe(`${basePath}/test-pack/components/hooks/git-hook.json`);
+      expect(hookPath).toBe(`${basePath}/test-pack/hooks/git-hook.json`);
     });
 
     it("should throw error for non-existent packs", async () => {

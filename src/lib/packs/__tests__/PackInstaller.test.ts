@@ -28,8 +28,7 @@ describe("PackInstaller", () => {
       tags: ["test"],
       category: "general"
     },
-    path: "/test/templates/starter-packs/test-pack",
-    componentsPath: "/test/templates/starter-packs/test-pack/components"
+    path: "/test/templates/starter-packs/test-pack"
   };
 
   beforeEach(async () => {
@@ -39,9 +38,9 @@ describe("PackInstaller", () => {
     fs = await createTestZccProject(mockProjectRoot, {
       // Pack templates
       '/test/templates/starter-packs/test-pack/manifest.json': JSON.stringify(mockValidPack.manifest),
-      '/test/templates/starter-packs/test-pack/components/modes/engineer.md': '# Engineer Mode\n\nYou are a software engineer.',
-      '/test/templates/starter-packs/test-pack/components/workflows/review.md': '# Code Review Workflow\n\nReview code systematically.',
-      '/test/templates/starter-packs/test-pack/components/agents/claude-code-research.md': '# Research Agent\n\nSpecialized in research tasks.',
+      '/test/templates/starter-packs/test-pack/modes/engineer.md': '# Engineer Mode\n\nYou are a software engineer.',
+      '/test/templates/starter-packs/test-pack/workflows/review.md': '# Code Review Workflow\n\nReview code systematically.',
+      '/test/templates/starter-packs/test-pack/agents/claude-code-research.md': '# Research Agent\n\nSpecialized in research tasks.',
     });
 
     packSource = new LocalPackSource("/test/templates/starter-packs", fs);

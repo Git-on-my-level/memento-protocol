@@ -1,0 +1,57 @@
+{
+  "version": "1.0.0",
+  "files": {
+    "/Users/dazheng/workspace/zcc/.zcc/modes/engineer.md": {
+      "pack": "essentials",
+      "originalPath": "/Users/dazheng/workspace/zcc/templates/starter-packs/essentials/modes/engineer.md",
+      "checksum": "sha256:205c09e8f3d2fe440e2ff36ae0091aef52a460dcb4f4f5fe7c4542d03a328778",
+      "installedAt": "2025-09-09T09:42:54.081Z",
+      "modified": true
+    },
+    "/Users/dazheng/workspace/zcc/.zcc/modes/refactoring-specialist.md": {
+      "pack": "advanced-code-refactoring",
+      "originalPath": "/Users/dazheng/workspace/zcc/templates/starter-packs/advanced-code-refactoring/modes/refactoring-specialist.md",
+      "checksum": "sha256:76109c9a852bb9427c3eb2ce491c48cf08af395d2ad021b61ee54d4e78a8e848",
+      "installedAt": "2025-09-09T09:43:39.700Z",
+      "modified": false
+    },
+    "/Users/dazheng/workspace/zcc/.zcc/workflows/semantic-search.md": {
+      "pack": "advanced-code-refactoring",
+      "originalPath": "/Users/dazheng/workspace/zcc/templates/starter-packs/advanced-code-refactoring/workflows/semantic-search.md",
+      "checksum": "sha256:e9d3dfaa6e7e11606ea592f33b6c8b25b3f5eb8365237f7cddbc7c4be8d66cbd",
+      "installedAt": "2025-09-09T09:43:39.700Z",
+      "modified": false
+    },
+    "/Users/dazheng/workspace/zcc/.zcc/workflows/safe-refactoring.md": {
+      "pack": "advanced-code-refactoring",
+      "originalPath": "/Users/dazheng/workspace/zcc/templates/starter-packs/advanced-code-refactoring/workflows/safe-refactoring.md",
+      "checksum": "sha256:df39074c1ffc833e4f85ff3e32133a86821c38b0591b20c813cb95951b992975",
+      "installedAt": "2025-09-09T09:43:39.701Z",
+      "modified": false
+    },
+    "/Users/dazheng/workspace/zcc/.claude/agents/code-archaeologist.md": {
+      "pack": "advanced-code-refactoring",
+      "originalPath": "/Users/dazheng/workspace/zcc/templates/starter-packs/advanced-code-refactoring/agents/code-archaeologist.md",
+      "checksum": "sha256:0a8f615988ed6c5280bd1da31a494a865e91b470c12ad72aca2abcfb4b2b287f",
+      "installedAt": "2025-09-09T09:43:39.701Z",
+      "modified": false
+    }
+  },
+  "packs": {
+    "essentials": {
+      "version": "1.0.0",
+      "files": [
+        "/Users/dazheng/workspace/zcc/.zcc/modes/engineer.md"
+      ]
+    },
+    "advanced-code-refactoring": {
+      "version": "1.0.0",
+      "files": [
+        "/Users/dazheng/workspace/zcc/.zcc/modes/refactoring-specialist.md",
+        "/Users/dazheng/workspace/zcc/.zcc/workflows/semantic-search.md",
+        "/Users/dazheng/workspace/zcc/.zcc/workflows/safe-refactoring.md",
+        "/Users/dazheng/workspace/zcc/.claude/agents/code-archaeologist.md"
+      ]
+    }
+  }
+}

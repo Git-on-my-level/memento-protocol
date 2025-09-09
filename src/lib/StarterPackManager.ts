@@ -315,6 +315,14 @@ export class StarterPackManager {
   }
 
   /**
+   * Get installed packs
+   */
+  async getInstalledPacks(): Promise<Record<string, any>> {
+    await this.initialize();
+    return this.installer.getInstalledPacks();
+  }
+
+  /**
    * Uninstall a starter pack
    */
   async uninstallPack(packName: string): Promise<PackInstallationResult> {

@@ -394,17 +394,17 @@ describe('StarterPackManager Integration', () => {
       // Essentials pack in the expected location
       '/test/templates/starter-packs/essentials/manifest.json': JSON.stringify(essentialsManifest, null, 2),
       
-      // Component templates inside the pack's components directory (correct structure)
-      '/test/templates/starter-packs/essentials/components/modes/ai-debt-maintainer.md': '---\nname: ai-debt-maintainer\n---\n# AI Debt Maintainer Mode\n\nMode content here.',
-      '/test/templates/starter-packs/essentials/components/modes/architect.md': '---\nname: architect\n---\n# Architect Mode Template\n\nMode content here.',
-      '/test/templates/starter-packs/essentials/components/modes/autonomous-project-manager.md': '---\nname: autonomous-project-manager\n---\n# Autonomous Project Manager Mode\n\nMode content here.',
-      '/test/templates/starter-packs/essentials/components/modes/engineer.md': '---\nname: engineer\n---\n# Engineer Mode\n\nMode content here.',
-      '/test/templates/starter-packs/essentials/components/modes/reviewer.md': '---\nname: reviewer\n---\n# Reviewer Mode\n\nMode content here.',
+      // Component templates inside the pack directory (new structure without components layer)
+      '/test/templates/starter-packs/essentials/modes/ai-debt-maintainer.md': '---\nname: ai-debt-maintainer\n---\n# AI Debt Maintainer Mode\n\nMode content here.',
+      '/test/templates/starter-packs/essentials/modes/architect.md': '---\nname: architect\n---\n# Architect Mode Template\n\nMode content here.',
+      '/test/templates/starter-packs/essentials/modes/autonomous-project-manager.md': '---\nname: autonomous-project-manager\n---\n# Autonomous Project Manager Mode\n\nMode content here.',
+      '/test/templates/starter-packs/essentials/modes/engineer.md': '---\nname: engineer\n---\n# Engineer Mode\n\nMode content here.',
+      '/test/templates/starter-packs/essentials/modes/reviewer.md': '---\nname: reviewer\n---\n# Reviewer Mode\n\nMode content here.',
       
       // Component templates for workflows within the pack
-      '/test/templates/starter-packs/essentials/components/workflows/openmemory-setup.md': '---\nname: openmemory-setup\n---\n# OpenMemory Setup Workflow\n\nWorkflow content here.',
-      '/test/templates/starter-packs/essentials/components/workflows/review.md': '---\nname: review\n---\n# Review Workflow Template\n\nWorkflow content here.',
-      '/test/templates/starter-packs/essentials/components/workflows/summarize.md': '---\nname: summarize\n---\n# Summarize Workflow\n\nWorkflow content here.',
+      '/test/templates/starter-packs/essentials/workflows/openmemory-setup.md': '---\nname: openmemory-setup\n---\n# OpenMemory Setup Workflow\n\nWorkflow content here.',
+      '/test/templates/starter-packs/essentials/workflows/review.md': '---\nname: review\n---\n# Review Workflow Template\n\nWorkflow content here.',
+      '/test/templates/starter-packs/essentials/workflows/summarize.md': '---\nname: summarize\n---\n# Summarize Workflow\n\nWorkflow content here.',
     });
 
     return fs;
@@ -435,7 +435,7 @@ describe('StarterPackManager Integration', () => {
 
     // Add react-developer mode template in pack's components directory
     await mockFs.writeFile(
-      '/test/templates/starter-packs/frontend-react/components/modes/react-developer.md',
+      '/test/templates/starter-packs/frontend-react/modes/react-developer.md',
       `---\nname: react-developer\n---\n# React Developer Mode\n\nReact-specific development mode.`
     );
   }
@@ -472,8 +472,8 @@ describe('StarterPackManager Integration', () => {
       }, null, 2)
     );
     
-    // Create components directory for pack-a (required for discovery)
-    await mockFs.writeFile('/test/templates/starter-packs/pack-a/components/.gitkeep', '');
+    // Create modes directory for pack-a (required for discovery)
+    await mockFs.writeFile('/test/templates/starter-packs/pack-a/modes/.gitkeep', '');
 
     // Pack B depends on Pack A (circular!)
     await mockFs.writeFile(
@@ -489,8 +489,8 @@ describe('StarterPackManager Integration', () => {
       }, null, 2)
     );
     
-    // Create components directory for pack-b (required for discovery)
-    await mockFs.writeFile('/test/templates/starter-packs/pack-b/components/.gitkeep', '');
+    // Create modes directory for pack-b (required for discovery)
+    await mockFs.writeFile('/test/templates/starter-packs/pack-b/modes/.gitkeep', '');
   }
 
   async function setupComplexDependencyChain(): Promise<void> {
@@ -508,8 +508,8 @@ describe('StarterPackManager Integration', () => {
       }, null, 2)
     );
     
-    // Create components directory for pack-b
-    await mockFs.writeFile('/test/templates/starter-packs/pack-b/components/.gitkeep', '');
+    // Create modes directory for pack-b
+    await mockFs.writeFile('/test/templates/starter-packs/pack-b/modes/.gitkeep', '');
 
     // Pack C depends on Pack B (which depends on essentials)
     await mockFs.writeFile(
@@ -525,7 +525,7 @@ describe('StarterPackManager Integration', () => {
       }, null, 2)
     );
     
-    // Create components directory for pack-c
-    await mockFs.writeFile('/test/templates/starter-packs/pack-c/components/.gitkeep', '');
+    // Create modes directory for pack-c
+    await mockFs.writeFile('/test/templates/starter-packs/pack-c/modes/.gitkeep', '');
   }
 });
