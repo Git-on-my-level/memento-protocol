@@ -170,7 +170,7 @@ export const initCommand = new Command("init")
         // Generate hook infrastructure
         logger.space();
         logger.info("Generating Claude Code hook infrastructure...");
-        await hookManager.initialize();
+        await hookManager.initialize(forceFlag);
 
         // Generate custom commands
         logger.info("Generating Claude Code custom commands...");
@@ -298,7 +298,7 @@ export const initCommand = new Command("init")
       // Generate hook infrastructure
       logger.space();
       logger.info("Generating Claude Code hook infrastructure...");
-      await hookManager.initialize();
+      await hookManager.initialize(forceFlag);
 
       // Generate custom commands
       logger.info("Generating Claude Code custom commands...");
