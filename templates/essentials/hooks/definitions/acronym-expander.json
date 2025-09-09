@@ -1,0 +1,21 @@
+{
+  "id": "acronym-expander",
+  "name": "Acronym Expander",
+  "description": "Expands acronyms for modes and workflows based on configured mappings",
+  "event": "UserPromptSubmit",
+  "enabled": true,
+  "command": "${HOOK_SCRIPT}",
+  "continueOnError": true,
+  "priority": 90,
+  "requirements": {
+    "commands": [
+      "echo",
+      "jq",
+      "grep",
+      "sed",
+      "cat"
+    ],
+    "env": [],
+    "files": []
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "project-overview",
+  "name": "Project Overview",
+  "description": "Loads project overview including tickets status at session start",
+  "event": "SessionStart",
+  "enabled": true,
+  "command": "${HOOK_SCRIPT}",
+  "continueOnError": true,
+  "priority": 85,
+  "requirements": {
+    "commands": [
+      "echo",
+      "find",
+      "wc",
+      "tr",
+      "basename"
+    ],
+    "env": [],
+    "files": []
+  }
+}
