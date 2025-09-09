@@ -42,7 +42,7 @@ export class HookManager {
   /**
    * Initialize the hook system
    */
-  async initialize(): Promise<void> {
+  async initialize(force?: boolean): Promise<void> {
     // Ensure directories exist
     await this.ensureDirectories();
 
@@ -56,7 +56,7 @@ export class HookManager {
     await this.cleanupTimestampedHooks();
 
     // Generate Claude settings
-    await this.generateClaudeSettings();
+    await this.generateClaudeSettings(force);
 
     logger.success("Hook system initialized");
   }
@@ -142,7 +142,7 @@ export class HookManager {
   /**
    * Generate or update .claude/settings.local.json
    */
-  private async generateClaudeSettings(): Promise<void> {
+  private async generateClaudeSettings(force?: boolean): Promise<void> {
     // Ensure .claude directory exists
     await this.fs.mkdir(this.claudeDir, { recursive: true });
 
@@ -246,37 +246,51 @@ export class HookManager {
       hooksConfig[event].push(hookEntry);
     }
 
-    // Read existing settings and merge
+    // Read existing settings and merge (unless force is true)
     let existingSettings: any = {};
-    try {
-      const existingContent = await this.fs.readFile(settingsPath, "utf-8") as string;
-      existingSettings = JSON.parse(existingContent);
-    } catch {
-      // File doesn't exist or is invalid JSON, start fresh
-    }
+    let mergedHooks: any = {};
+    
+    if (!force) {
+      try {
+        const existingContent = await this.fs.readFile(settingsPath, "utf-8") as string;
+        existingSettings = JSON.parse(existingContent);
+        
+        // Merge hooks into existing settings, preserving existing hooks within the same event
+        const existingHooks = existingSettings.hooks || {};
+        mergedHooks = { ...existingHooks };
 
-    // Merge hooks into existing settings, preserving existing hooks within the same event
-    const existingHooks = existingSettings.hooks || {};
-    const mergedHooks = { ...existingHooks };
+        // For each event, merge hooks instead of replacing
+        for (const [event, newHooksList] of Object.entries(hooksConfig)) {
+          if (!mergedHooks[event]) {
+            mergedHooks[event] = [];
+          }
 
-    // For each event, merge hooks instead of replacing
-    for (const [event, newHooksList] of Object.entries(hooksConfig)) {
-      if (!mergedHooks[event]) {
-        mergedHooks[event] = [];
-      }
+          // Add new hooks that don't already exist
+          for (const newHook of newHooksList as any[]) {
+            const existingHook = mergedHooks[event].find(
+              (h: any) =>
+                h.matcher === newHook.matcher &&
+                h.hooks[0]?.command === newHook.hooks[0]?.command
+            );
 
-      // Add new hooks that don't already exist
-      for (const newHook of newHooksList as any[]) {
-        const existingHook = mergedHooks[event].find(
-          (h: any) =>
-            h.matcher === newHook.matcher &&
-            h.hooks[0]?.command === newHook.hooks[0]?.command
-        );
-
-        if (!existingHook) {
-          mergedHooks[event].push(newHook);
+            if (!existingHook) {
+              mergedHooks[event].push(newHook);
+            }
+          }
         }
+      } catch {
+        // File doesn't exist or is invalid JSON, start fresh
+        mergedHooks = hooksConfig;
       }
+    } else {
+      // Force mode: completely replace hooks section
+      try {
+        const existingContent = await this.fs.readFile(settingsPath, "utf-8") as string;
+        existingSettings = JSON.parse(existingContent);
+      } catch {
+        // File doesn't exist or is invalid JSON, start fresh
+      }
+      mergedHooks = hooksConfig;
     }
 
     // Generate permissions from command files
