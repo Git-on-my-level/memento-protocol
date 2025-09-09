@@ -69,18 +69,10 @@
   },
   "hooks": [
     {
-      "name": "acronym-expander",
+      "name": "project-overview",
       "enabled": true,
       "config": {
-        "expandModes": true,
-        "expandWorkflows": false
-      }
-    },
-    {
-      "name": "ast-grep-awareness",
-      "enabled": true,
-      "config": {
-        "autoDetect": true
+        "autoTrigger": true
       }
     },
     {
@@ -92,16 +84,25 @@
       }
     },
     {
-      "name": "project-overview",
+      "name": "zcc-routing",
       "enabled": true,
       "config": {
-        "autoTrigger": true
+        "fuzzyMatching": true,
+        "defaultMode": true
+      }
+    },
+    {
+      "name": "acronym-expander",
+      "enabled": true,
+      "config": {
+        "expandModes": true,
+        "expandWorkflows": false
       }
     }
   ],
   "compatibleWith": ["javascript", "typescript", "python", "java", "go", "rust", "generic"],
   "postInstall": {
-    "message": "Essential zcc setup complete! 🎉\n\nCore modes installed:\n- `/mode apm` (autonomous-project-manager) - Default project management mode\n- `/mode eng` (engineer) - Implementation and coding focus\n- `/mode arch` (architect) - System design and architecture\n- `/mode rev` (reviewer) - Code review and quality assurance\n- `/mode debt` (ai-debt-maintainer) - Technical debt management\n\nCore workflows:\n- `/review [target]` - Execute code review workflow\n- `/summarize [target]` - Summarize code or documentation\n- `/openmemory` - Set up OpenMemory integration\n\nAll essential hooks are enabled for enhanced Claude Code experience.",
+    "message": "Essential zcc setup complete! 🎉\n\nCore modes installed:\n- `/mode apm` (autonomous-project-manager) - Default project management mode\n- `/mode eng` (engineer) - Implementation and coding focus\n- `/mode arch` (architect) - System design and architecture\n- `/mode rev` (reviewer) - Code review and quality assurance\n- `/mode debt` (ai-debt-maintainer) - Technical debt management\n\nCore workflows:\n- `/review [target]` - Execute code review workflow\n- `/summarize [target]` - Summarize code or documentation\n- `/openmemory` - Set up OpenMemory integration\n\nActive hooks:\n- Project Overview: Shows ticket status on session start\n- Git Context: Provides git status on each prompt\n- ZCC Routing: Smart mode/workflow/ticket routing with fuzzy matching\n- Acronym Expander: Expands common acronyms (apm→autonomous-project-manager)\n\nAll essential hooks are enabled for enhanced Claude Code experience.",
     "commands": [
       "zcc config set defaultMode autonomous-project-manager"
     ]

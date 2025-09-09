@@ -5,84 +5,84 @@
       "pack": "essentials",
       "originalPath": "/Users/dazheng/workspace/zcc/templates/essentials/modes/ai-debt-maintainer.md",
       "checksum": "sha256:e15eed78ee9ec5469b3cbf1a6681c0a15745fd907d67ccf8b0ff3052844ef893",
-      "installedAt": "2025-09-09T10:20:34.454Z",
+      "installedAt": "2025-09-09T11:50:33.659Z",
       "modified": false
     },
     "/Users/dazheng/workspace/zcc/.zcc/modes/architect.md": {
       "pack": "essentials",
       "originalPath": "/Users/dazheng/workspace/zcc/templates/essentials/modes/architect.md",
       "checksum": "sha256:8c3c73bd95a94be94f5ad1a979cb6a9e5228157e38eb9c87d7947aeb4b8900a0",
-      "installedAt": "2025-09-09T10:20:34.455Z",
+      "installedAt": "2025-09-09T11:50:33.661Z",
       "modified": false
     },
     "/Users/dazheng/workspace/zcc/.zcc/modes/autonomous-project-manager.md": {
       "pack": "essentials",
       "originalPath": "/Users/dazheng/workspace/zcc/templates/essentials/modes/autonomous-project-manager.md",
       "checksum": "sha256:58e7c444f4789d4fe4dabfea2f8e867df1995840c65964f45d1d049d94c0d6e3",
-      "installedAt": "2025-09-09T10:20:34.456Z",
+      "installedAt": "2025-09-09T11:50:33.662Z",
       "modified": false
     },
     "/Users/dazheng/workspace/zcc/.zcc/modes/engineer.md": {
       "pack": "essentials",
       "originalPath": "/Users/dazheng/workspace/zcc/templates/essentials/modes/engineer.md",
       "checksum": "sha256:205c09e8f3d2fe440e2ff36ae0091aef52a460dcb4f4f5fe7c4542d03a328778",
-      "installedAt": "2025-09-09T10:20:34.456Z",
+      "installedAt": "2025-09-09T11:50:33.662Z",
       "modified": false
     },
     "/Users/dazheng/workspace/zcc/.zcc/modes/reviewer.md": {
       "pack": "essentials",
       "originalPath": "/Users/dazheng/workspace/zcc/templates/essentials/modes/reviewer.md",
       "checksum": "sha256:1e3d11692d976e83d68efb5a217fa15218b1465286636acbd1bda56be3393e09",
-      "installedAt": "2025-09-09T10:20:34.457Z",
+      "installedAt": "2025-09-09T11:50:33.663Z",
       "modified": false
     },
     "/Users/dazheng/workspace/zcc/.zcc/workflows/openmemory-setup.md": {
       "pack": "essentials",
       "originalPath": "/Users/dazheng/workspace/zcc/templates/essentials/workflows/openmemory-setup.md",
       "checksum": "sha256:8535506735be98732c5bc2629bd8d95e75d967882faea67dc8077b9a2b08492f",
-      "installedAt": "2025-09-09T10:20:34.457Z",
+      "installedAt": "2025-09-09T11:50:33.663Z",
       "modified": false
     },
     "/Users/dazheng/workspace/zcc/.zcc/workflows/review.md": {
       "pack": "essentials",
       "originalPath": "/Users/dazheng/workspace/zcc/templates/essentials/workflows/review.md",
       "checksum": "sha256:10aef6bec9786b3c2c9952e9d46724ee3740c904ff30861c318b7ba7e4e30f63",
-      "installedAt": "2025-09-09T10:20:34.458Z",
+      "installedAt": "2025-09-09T11:50:33.664Z",
       "modified": false
     },
     "/Users/dazheng/workspace/zcc/.zcc/workflows/summarize.md": {
       "pack": "essentials",
       "originalPath": "/Users/dazheng/workspace/zcc/templates/essentials/workflows/summarize.md",
       "checksum": "sha256:8536dbb40dcc7ef1d16396d1d213653bcbadf7c74ad099c7b16442e98c523522",
-      "installedAt": "2025-09-09T10:20:34.458Z",
+      "installedAt": "2025-09-09T11:50:33.664Z",
       "modified": false
     },
     "/Users/dazheng/workspace/zcc/.zcc/scripts/list-modes.sh": {
       "pack": "essentials",
       "originalPath": "/Users/dazheng/workspace/zcc/templates/essentials/scripts/list-modes.sh",
       "checksum": "sha256:8ed605a7439aef6276b5cbd91b84a42a94e7fb58906f4616ae6a64b3ef0fa22c",
-      "installedAt": "2025-09-09T10:20:34.459Z",
+      "installedAt": "2025-09-09T11:50:33.665Z",
       "modified": false
     },
     "/Users/dazheng/workspace/zcc/.zcc/scripts/mode-switch.sh": {
       "pack": "essentials",
       "originalPath": "/Users/dazheng/workspace/zcc/templates/essentials/scripts/mode-switch.sh",
       "checksum": "sha256:e2c7af06e4b749470e1578af79fa71ce4b99f5b9fdd01b74d0f0663890933340",
-      "installedAt": "2025-09-09T10:20:34.459Z",
+      "installedAt": "2025-09-09T11:50:33.665Z",
       "modified": false
     },
     "/Users/dazheng/workspace/zcc/.zcc/scripts/record-session.sh": {
       "pack": "essentials",
       "originalPath": "/Users/dazheng/workspace/zcc/templates/essentials/scripts/record-session.sh",
       "checksum": "sha256:23916bff0e574a2c3523c5b8a10c85e89a2e4d7512c1f333ff5e1474c1da83ee",
-      "installedAt": "2025-09-09T10:20:34.460Z",
+      "installedAt": "2025-09-09T11:50:33.666Z",
       "modified": false
     },
     "/Users/dazheng/workspace/zcc/.zcc/scripts/ticket-context.sh": {
       "pack": "essentials",
       "originalPath": "/Users/dazheng/workspace/zcc/templates/essentials/scripts/ticket-context.sh",
       "checksum": "sha256:e6de0ce6a74d976a13b55d3a612328b74c15f6490bf01403164cee0381bf5dcf",
-      "installedAt": "2025-09-09T10:20:34.460Z",
+      "installedAt": "2025-09-09T11:50:33.666Z",
       "modified": false
     }
   },

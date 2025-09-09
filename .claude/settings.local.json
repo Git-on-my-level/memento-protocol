@@ -12,7 +12,12 @@
       "Bash(git push:*)",
       "Bash(git tag:*)",
       "Bash(gtimeout 15 npm run dev init -- --force --quick)",
+      "Bash(head -20)",
+      "Bash(head:CLAUDE.md:*)",
+      "Bash(ls -1)",
       "Bash(ls:*)",
+      "Bash(ls:.zcc/modes/:*)",
+      "Bash(ls:.zcc/workflows/:*)",
       "Bash(mkdir:*)",
       "Bash(mv:*)",
       "Bash(node:*)",
@@ -24,9 +29,15 @@
       "Bash(npm run:*)",
       "Bash(npm test:*)",
       "Bash(npx tsx:*)",
+      "Bash(npx zcc ticket list):*",
       "Bash(npx zcc ticket:*)",
+      "Bash(npx zcc)",
       "Bash(rm:*)",
       "Bash(scripts/npm/commit-tag-and-publish.sh:*)",
+      "Bash(sh .zcc/scripts/mode-switch.sh)",
+      "Bash(sh .zcc/scripts/mode-switch.sh:*)",
+      "Bash(sh .zcc/scripts/ticket-context.sh)",
+      "Bash(sh .zcc/scripts/ticket-context.sh:*)",
       "Bash(timeout 15 npm run dev init -- --force --quick)",
       "WebFetch(domain:docs.anthropic.com)"
     ],
@@ -40,6 +51,38 @@
           {
             "type": "command",
             "command": "./.zcc/hooks/scripts/zcc-routing.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.zcc/hooks/scripts/git-context-loader.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.zcc/hooks/scripts/acronym-expander.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.zcc/hooks/scripts/project-overview.sh",
             "timeout": 30
           }
         ]
