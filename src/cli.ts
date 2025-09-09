@@ -18,7 +18,16 @@ import { handleError } from "./lib/errors";
 import { cliContext } from "./lib/context";
 
 // Version will be injected during build
-const version = process.env.VERSION || "0.1.0";
+// In dev mode, read from package.json
+let version = process.env.VERSION;
+if (!version) {
+  try {
+    const packageJson = require("../package.json");
+    version = packageJson.version;
+  } catch {
+    version = "0.1.0"; // Fallback if package.json can't be read
+  }
+}
 
 const program = new Command();
 
