@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-09-09
+
+### Added
+- Implement critical testing and UX improvements
+- Implement clean pack-based installation system (#101)
+- Add comprehensive non-interactive mode support (#94) (#98)
+- Add configuration schema validation command (#95) (#99)
+- improve ticket move command UX with positional arguments (#87)
+- Complete template creation helpers with validate command (#75)
+
+### Fixed
+- resolve component discovery bugs (#86) (#96)
+- Remove duplicate memento.md command (#81) (#90)
+- prevent duplicate :* suffix in permission patterns (#88)
+- prevent duplicate hook registration in HookRegistry (#85)
+- update safe dependencies (@types/node, typescript) (#73)
+
+### Documentation
+- add comprehensive getting started and troubleshooting guides (#89)
+
+### Changed
+- Clean up and update docs (#118)
+- Restore all previous hook functionality to essentials pack (#117)
+- Flatten templates directory and remove legacy artifacts (#116)
+- Implement FileRegistry for pack isolation and conflict detection (#115)
+- Fix test suite regressions and improve test robustness (#113)
+- Improve ticket template quality (#91)
+- Fix path traversal vulnerability in ticket creation (#97)
+- Standardize CLI command naming (#92)
+- Harden starter pack system against critical vulnerabilities (#74)
+- update hook commands in settings.local.json for consistency
+- Fix custom command permissions for /mode and /ticket (#71)
+- Fix Node.js DEP0190 deprecation warning in spawn calls (#72)
+- remove project detection and add agent selection to init (#70)
+
+### Chore
+- update package name to z-claude-code and update documentation
+
 ## [1.0.0] - 2025-09-05
 
 ### Added
@@ -206,3 +244,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.1]: https://github.com/git-on-my-level/zcc/releases/tag/v0.2.1
 [0.2.0]: https://github.com/git-on-my-level/zcc/releases/tag/v0.2.0
 [0.1.0]: https://github.com/git-on-my-level/zcc/releases/tag/v0.1.0
+[1.1.0]: https://github.com/git-on-my-level/zcc/releases/tag/v1.1.0
