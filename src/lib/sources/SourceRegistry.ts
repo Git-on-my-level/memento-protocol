@@ -2,6 +2,7 @@ import { IPackSource, LocalPackSource } from '../packs/PackSource';
 import { GitHubPackSource } from './GitHubPackSource';
 import { FileSystemAdapter } from '../adapters/FileSystemAdapter';
 import { NodeFileSystemAdapter } from '../adapters/NodeFileSystemAdapter';
+import { PackagePaths } from '../packagePaths';
 
 export interface SourceConfig {
   id: string;
@@ -63,7 +64,7 @@ export class SourceRegistry {
           enabled: true,
           priority: 1,
           config: {
-            path: this.fs.join(this.projectRoot, 'templates'),
+            path: PackagePaths.getTemplatesDir(),
           },
         },
       ],
