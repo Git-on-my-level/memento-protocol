@@ -1,6 +1,5 @@
 import { IPackSource, LocalPackSource } from '../packs/PackSource';
 import { GitHubPackSource } from './GitHubPackSource';
-import { RemotePackSource } from './RemotePackSource';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 
@@ -84,7 +83,8 @@ export class SourceRegistry {
       sources: Array.from(this.sourceConfigs.values()),
       defaultSource: this.defaultSourceId,
     };
-    
+
+    await fs.mkdir(path.dirname(this.configPath), { recursive: true });
     await fs.writeFile(
       this.configPath,
       JSON.stringify(config, null, 2)
@@ -154,9 +154,11 @@ export class SourceRegistry {
       throw new Error(`Failed to create source ${config.id}`);
     }
     
-    // Test that the source works
+    // Test that the source works if listPacks is available
     try {
-      await source.listPacks();
+      if (typeof (source as any).listPacks === 'function') {
+        await (source as any).listPacks();
+      }
     } catch (error: any) {
       throw new Error(`Source ${config.id} is not accessible: ${error.message}`);
     }
@@ -244,8 +246,10 @@ export class SourceRegistry {
 
   async listAllPacks(): Promise<Map<string, string[]>> {
     const packsBySource = new Map<string, string[]>();
-    
-    for (const [id, source] of this.sources) {
+
+    for (const id of this.sources.keys()) {
+      const source = this.getSource(id);
+      if (!source) continue;
       try {
         const packs = await source.listPacks();
         packsBySource.set(id, packs);
@@ -254,13 +258,13 @@ export class SourceRegistry {
         packsBySource.set(id, []);
       }
     }
-    
+
     return packsBySource;
   }
 
   async findPack(packName: string): Promise<{ source: IPackSource; sourceId: string } | null> {
     // First check default source
-    const defaultSource = this.sources.get(this.defaultSourceId);
+    const defaultSource = this.getSource(this.defaultSourceId);
     if (defaultSource && await defaultSource.hasPack(packName)) {
       return { source: defaultSource, sourceId: this.defaultSourceId };
     }
@@ -271,7 +275,7 @@ export class SourceRegistry {
       .sort((a, b) => a[1].priority - b[1].priority);
 
     for (const [id, _] of sortedSources) {
-      const source = this.sources.get(id);
+      const source = this.getSource(id);
       if (source && await source.hasPack(packName)) {
         return { source, sourceId: id };
       }

@@ -321,7 +321,60 @@ export class StarterPackManager {
           continue;
         }
 
-        // All dependencies satisfied, install the pack
+        // All dependencies satisfied, validate trust for external packs
+        const packInfo = await this.sourceRegistry.findPack(currentPack);
+        if (packInfo && packInfo.sourceId !== 'local') {
+          const sourceValidation = await this.trustManager.validateSource(packInfo.source);
+          if (!sourceValidation.valid) {
+            logger.warn(`Source validation failed for '${currentPack}': ${sourceValidation.errors.join(', ')}`);
+            failedPacks.add(currentPack);
+            if (currentPack === rootPackName) {
+              return {
+                success: false,
+                installed: { modes: [], workflows: [], agents: [], hooks: [] },
+                skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+                errors: sourceValidation.errors,
+              };
+            }
+            continue;
+          }
+
+          const pack = await packInfo.source.loadPack(currentPack);
+          const packValidation = await this.trustManager.validatePack(pack, packInfo.source);
+
+          if (packValidation.requiresConsent && !options.force) {
+            console.log(chalk.yellow('\nSecurity Warning:'));
+            packValidation.warnings.forEach(warning => {
+              console.log(chalk.yellow(`  • ${warning}`));
+            });
+
+            const { proceed } = await inquirer.prompt([
+              {
+                type: 'confirm',
+                name: 'proceed',
+                message: `Install pack '${currentPack}' from untrusted source '${packInfo.sourceId}'?`,
+                default: false,
+              },
+            ]);
+
+            if (!proceed) {
+              failedPacks.add(currentPack);
+              if (currentPack === rootPackName) {
+                return {
+                  success: false,
+                  installed: { modes: [], workflows: [], agents: [], hooks: [] },
+                  skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+                  errors: ['Installation cancelled by user'],
+                };
+              }
+              continue;
+            }
+          }
+
+          await this.trustManager.recordInstallation(packInfo.source, pack, true);
+        }
+
+        // After trust validation, install the pack
         const installResult = await this.installPackDirect(currentPack, options);
         
         if (installResult.success) {

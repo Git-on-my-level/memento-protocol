@@ -1,10 +1,8 @@
 import { IPackSource } from '../packs/PackSource';
-import { PackStructure } from '../types/packs';
+import { PackStructure, LocalPackSource as LocalPackSourceInterface } from '../types/packs';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
-import fetch from 'node-fetch';
-import { LocalPackSourceInterface } from '../packs/LocalPackSource';
 
 export interface RemotePackSourceConfig {
   baseUrl: string;

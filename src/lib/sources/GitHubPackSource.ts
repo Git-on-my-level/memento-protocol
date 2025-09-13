@@ -1,5 +1,5 @@
 import { RemotePackSource, RemotePackMetadata, RemotePackSourceConfig } from './RemotePackSource';
-import * as path from 'path';
+import { PackStructure } from '../types/packs';
 
 export interface GitHubPackSourceConfig extends Omit<RemotePackSourceConfig, 'baseUrl'> {
   owner: string;
@@ -132,7 +132,7 @@ export class GitHubPackSource extends RemotePackSource {
     }
   }
 
-  async fetchPackContent(metadata: RemotePackMetadata): Promise<Buffer> {
+  async fetchPackContent(_metadata: RemotePackMetadata): Promise<Buffer> {
     try {
       // Use GitHub's tarball API to download the entire repository
       const archiveUrl = `${this.config.baseUrl}/tarball/${this.branch}`;

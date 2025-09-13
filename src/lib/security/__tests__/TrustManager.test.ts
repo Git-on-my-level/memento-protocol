@@ -88,7 +88,7 @@ describe('TrustManager', () => {
         getSourceInfo: () => ({
           name: 'github-unknown',
           path: 'https://github.com/unknown/repo',
-          type: 'local',
+          type: 'github',
           trustLevel: 'untrusted',
         } as any),
         loadPack: jest.fn(),
@@ -191,7 +191,7 @@ describe('TrustManager', () => {
         manifest: {
           ...mockPack.manifest,
           hooks: [
-            { name: 'test-hook', trigger: 'pre-install' },
+            { name: 'test-hook', enabled: true },
           ],
         },
       };

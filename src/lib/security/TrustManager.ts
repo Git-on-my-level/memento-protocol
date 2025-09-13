@@ -155,8 +155,9 @@ export class TrustManager {
       return result;
     }
 
-    // Check source type
-    if (sourceInfo.type === 'remote') {
+    // Check source type (treat any non-local source as remote)
+    const sourceType = (sourceInfo as any).type;
+    if (sourceType && sourceType !== 'local') {
       // Validate domain if it's a URL
       const domain = this.extractDomain(sourceInfo.path);
       if (domain) {
