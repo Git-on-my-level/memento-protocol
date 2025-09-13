@@ -1,0 +1,26 @@
+{
+  "name": "codex-delegation",
+  "version": "1.0.0",
+  "description": "Enables delegation to OpenAI Codex for specialized coding tasks with GPT-5 best practices",
+  "author": "zcc",
+  "category": "ai-ml",
+  "components": {
+    "modes": [],
+    "workflows": [],
+    "agents": [
+      {
+        "name": "codex-assistant",
+        "required": true
+      }
+    ]
+  },
+  "hooks": [
+    {
+      "type": "session_start",
+      "name": "codex-knowledge-loader",
+      "path": "hooks/scripts/codex-knowledge-loader.sh",
+      "enabled": true,
+      "required": true
+    }
+  ]
+}

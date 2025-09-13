@@ -1,0 +1,18 @@
+{
+  "id": "codex-knowledge-loader",
+  "name": "Codex Knowledge Loader",
+  "description": "Injects Codex and GPT-5 knowledge at session start",
+  "event": "SessionStart",
+  "enabled": true,
+  "command": "${HOOK_SCRIPT}",
+  "continueOnError": true,
+  "priority": 90,
+  "requirements": {
+    "commands": [
+      "echo",
+      "cat"
+    ],
+    "env": [],
+    "files": []
+  }
+}
