@@ -63,7 +63,7 @@ Documentation: https://github.com/git-on-my-level/zcc#readme`
       verbose: allOptions.verbose || false,
       debug: allOptions.debug || false,
       nonInteractive: allOptions.yes || false,
-      force: allOptions.force || false,
+      force: allOptions.force, // Don't default to false, let context handle it
       projectRoot: process.cwd(),
     });
 
