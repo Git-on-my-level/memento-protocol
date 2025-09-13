@@ -195,7 +195,7 @@ export class LocalPackSource implements IPackSource {
         componentType,
         `${componentName}.${extension}`
       );
-      
+
       return await this.fs.exists(componentPath);
     } catch {
       return false;

@@ -1,0 +1,60 @@
+{
+  "name": "debugging",
+  "version": "1.0.0",
+  "description": "Systematic debugging pack with structured problem-solving workflows and comprehensive debugging strategies",
+  "author": "awesome-zcc-community",
+  "tags": [
+    "debugging",
+    "troubleshooting",
+    "problem-solving",
+    "error-analysis",
+    "performance",
+    "systematic-approach",
+    "bug-fixing"
+  ],
+  "category": "development",
+  "mementoProtocolVersion": "1.0.0",
+  "components": {
+    "modes": [],
+    "workflows": [
+      {
+        "name": "systematic-debugging",
+        "required": true
+      }
+    ],
+    "agents": []
+  },
+  "configuration": {
+    "defaultMode": null,
+    "customCommands": {
+      "debug": {
+        "description": "Execute systematic debugging workflow",
+        "template": "/workflow systematic-debugging [issue] - Structured approach to identifying and fixing bugs"
+      }
+    },
+    "projectSettings": {
+      "enableHooks": false,
+      "enableFuzzyMatching": true,
+      "ticketSystem": false
+    }
+  },
+  "hooks": [],
+  "compatibleWith": [
+    "javascript",
+    "typescript",
+    "python",
+    "java",
+    "go",
+    "rust",
+    "php",
+    "ruby",
+    "c",
+    "cpp",
+    "csharp",
+    "generic"
+  ],
+  "postInstall": {
+    "message": "Debugging pack installed! 🔍\n\nWorkflow available:\n- `/debug [issue]` - Systematic debugging approach with:\n  • Problem identification and reproduction\n  • Root cause analysis\n  • Hypothesis formation and testing\n  • Solution implementation and validation\n\nFeatures:\n- Structured debugging methodology\n- Error pattern recognition\n- Performance issue identification\n- Log analysis strategies\n- Testing and validation approaches\n\nSolve complex bugs efficiently with proven debugging techniques!",
+    "commands": []
+  }
+}

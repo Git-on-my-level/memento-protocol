@@ -1,0 +1,27 @@
+{
+  "sources": [
+    {
+      "id": "local",
+      "type": "local",
+      "enabled": true,
+      "priority": 1,
+      "config": {
+        "path": "/Users/dazheng/workspace/zcc/templates"
+      }
+    },
+    {
+      "id": "awesome-zcc",
+      "type": "github",
+      "enabled": true,
+      "priority": 10,
+      "config": {
+        "owner": "Git-on-my-level",
+        "repo": "awesome-zcc",
+        "branch": "main",
+        "directory": "packs",
+        "trustLevel": "untrusted"
+      }
+    }
+  ],
+  "defaultSource": "local"
+}

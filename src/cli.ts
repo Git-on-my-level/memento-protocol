@@ -6,6 +6,8 @@ import { hookCommand } from "./commands/hook";
 import { acronymCommand } from "./commands/acronym";
 import { doctorCommand } from "./commands/doctor";
 import { packCommand } from "./commands/pack";
+import { sourceCommand } from "./commands/source";
+import { searchCommand } from "./commands/search";
 import { logger } from "./lib/logger";
 import { handleError } from "./lib/errors";
 import { cliContext } from "./lib/context";
@@ -85,6 +87,8 @@ program.addCommand(hookCommand);
 program.addCommand(acronymCommand);
 program.addCommand(doctorCommand);
 program.addCommand(packCommand);
+program.addCommand(sourceCommand);
+program.addCommand(searchCommand);
 
 // Global error handling
 process.on("unhandledRejection", (error) => {

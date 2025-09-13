@@ -2,11 +2,26 @@
   "packs": {
     "essentials": {
       "version": "1.0.0",
-      "installedAt": "2025-09-09T11:50:33.816Z",
+      "installedAt": "2025-09-13T06:17:44.722Z",
       "source": {
         "name": "local",
         "type": "local",
         "path": "/Users/dazheng/workspace/zcc/templates"
+      }
+    },
+    "debugging": {
+      "version": "1.0.0",
+      "installedAt": "2025-09-13T14:37:01.686Z",
+      "source": {
+        "name": "awesome-zcc",
+        "path": "https://api.github.com/repos/Git-on-my-level/awesome-zcc",
+        "description": "GitHub repository: Git-on-my-level/awesome-zcc",
+        "type": "github",
+        "trustLevel": "untrusted",
+        "owner": "Git-on-my-level",
+        "repo": "awesome-zcc",
+        "branch": "main",
+        "directory": "packs"
       }
     }
   }

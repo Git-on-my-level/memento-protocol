@@ -13,6 +13,10 @@ import { PackInstaller } from "./packs/PackInstaller";
 import { IPackSource } from "./packs/PackSource";
 import { FileSystemAdapter } from "./adapters/FileSystemAdapter";
 import { NodeFileSystemAdapter } from "./adapters/NodeFileSystemAdapter";
+import { SourceRegistry } from "./sources/SourceRegistry";
+import { TrustManager } from "./security/TrustManager";
+import inquirer from 'inquirer';
+import * as chalk from 'chalk';
 
 /**
  * Clean StarterPackManager that orchestrates pack operations using specialized components
@@ -23,21 +27,41 @@ export class StarterPackManager {
   private validator: PackValidator;
   private installer: PackInstaller;
   private fs: FileSystemAdapter;
+  private sourceRegistry: SourceRegistry;
+  private trustManager: TrustManager;
+  private initialized: boolean = false;
 
   constructor(projectRoot: string, fs?: FileSystemAdapter) {
     this.fs = fs || new NodeFileSystemAdapter();
     this.registry = new PackRegistry(this.fs);
     this.validator = new PackValidator(this.fs);
     this.installer = new PackInstaller(projectRoot, this.fs);
+    this.sourceRegistry = new SourceRegistry(projectRoot);
+    this.trustManager = new TrustManager(projectRoot);
   }
 
   /**
    * Initialize the manager components
    */
   private async initialize(): Promise<void> {
+    if (this.initialized) {
+      return;
+    }
+
     await this.validator.initialize();
-    logger.debug('StarterPackManager initialized');
+    await this.sourceRegistry.initialize();
+    await this.trustManager.initialize();
+
+    // Register external sources with the pack registry
+    const externalSources = this.sourceRegistry.getAllSources();
+    for (const [id, source] of externalSources) {
+      this.registry.registerSource(id, source);
+    }
+
+    this.initialized = true;
+    logger.debug('StarterPackManager initialized with external sources');
   }
+
 
   /**
    * List all available starter packs
@@ -109,10 +133,61 @@ export class StarterPackManager {
     await this.initialize();
 
     try {
+      // Check if pack is from an external source
+      const packInfo = await this.sourceRegistry.findPack(packName);
+
+      if (packInfo && packInfo.sourceId !== 'local') {
+        // Validate the external source
+        const source = packInfo.source;
+        const sourceValidation = await this.trustManager.validateSource(source);
+
+        if (!sourceValidation.valid) {
+          logger.error(`Source validation failed: ${sourceValidation.errors.join(', ')}`);
+          return {
+            success: false,
+            installed: { modes: [], workflows: [], agents: [], hooks: [] },
+            skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+            errors: sourceValidation.errors,
+          };
+        }
+
+        // Load the pack for security validation
+        const pack = await source.loadPack(packName);
+        const packValidation = await this.trustManager.validatePack(pack, source);
+
+        if (packValidation.requiresConsent && !options.force) {
+          console.log(chalk.yellow('\nSecurity Warning:'));
+          packValidation.warnings.forEach(warning => {
+            console.log(chalk.yellow(`  • ${warning}`));
+          });
+
+          const { proceed } = await inquirer.prompt([
+            {
+              type: 'confirm',
+              name: 'proceed',
+              message: `Install pack '${packName}' from untrusted source '${packInfo.sourceId}'?`,
+              default: false,
+            },
+          ]);
+
+          if (!proceed) {
+            return {
+              success: false,
+              installed: { modes: [], workflows: [], agents: [], hooks: [] },
+              skipped: { modes: [], workflows: [], agents: [], hooks: [] },
+              errors: ['Installation cancelled by user'],
+            };
+          }
+        }
+
+        // Record the installation for audit
+        await this.trustManager.recordInstallation(source, pack, true);
+      }
+
       return await this.installPackWithQueue(packName, options);
     } catch (error) {
       logger.error(`Failed to install pack '${packName}': ${error}`);
-      
+
       return {
         success: false,
         installed: { modes: [], workflows: [], agents: [], hooks: [] },
@@ -135,12 +210,17 @@ export class StarterPackManager {
     try {
       logger.debug(`Installing pack '${packName}' directly (no dependencies)`);
       
-      // Load the pack
-      const packStructure = await this.registry.loadPack(packName);
-      const source = this.registry.getDefaultSource(); // Get default local source
+      // Find the source that has the pack
+      const packSourceResult = await this.registry.findPackSource(packName);
+      if (!packSourceResult) {
+        throw new Error(`Pack '${packName}' not found in any source`);
+      }
 
-      // Validate the pack
-      const validation = await this.validator.validatePackStructure(packStructure, source);
+      // Load the pack from the correct source
+      const packStructure = await packSourceResult.source.loadPack(packName);
+
+      // Validate the pack using the correct source
+      const validation = await this.validator.validatePackStructure(packStructure, packSourceResult.source);
       if (!validation.valid) {
         logger.warn(`Pack '${packName}' failed validation: ${validation.errors.join(', ')}`);
         return {
@@ -152,7 +232,7 @@ export class StarterPackManager {
       }
 
       // Install the pack itself (no dependency processing)
-      return this.installer.installPack(packStructure, source, options);
+      return this.installer.installPack(packStructure, packSourceResult.source, options);
 
     } catch (error) {
       logger.error(`Failed to install pack '${packName}' directly: ${error}`);
