@@ -160,7 +160,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed upsert command failing on uninitialized projects - now automatically initializes .zcc directory structure
-- Fixed ComponentInstaller tests to properly mock DirectoryManager.isInitialized method
 
 ## [0.3.0] - 2025-07-20
 

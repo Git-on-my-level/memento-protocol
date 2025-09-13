@@ -4,8 +4,8 @@ import { logger } from '../lib/logger';
 import chalk from 'chalk';
 import { PackStructure } from '../lib/types/packs';
 
-export const packsCommand = new Command('packs')
-  .description('Discover and explore starter packs')
+export const packCommand = new Command('pack')
+  .description('Manage starter packs')
   .addCommand(
     new Command('list')
       .description('List all available starter packs')
@@ -60,7 +60,7 @@ export const packsCommand = new Command('packs')
           if (!exists) {
             logger.error(`Starter pack '${name}' not found.`);
             logger.info('');
-            logger.info('Run "zcc packs list" to see available packs.');
+            logger.info('Run "zcc pack list" to see available packs.');
             process.exitCode = 1;
             return;
           }
@@ -70,6 +70,52 @@ export const packsCommand = new Command('packs')
           
         } catch (error) {
           logger.error('Failed to show starter pack details:', error);
+          process.exitCode = 1;
+        }
+      })
+  )
+  .addCommand(
+    new Command('install')
+      .argument('[name]', 'Pack name to install')
+      .description('Install a starter pack')
+      .option('-f, --force', 'Force installation even if components exist')
+      .action(async (name: string | undefined, options) => {
+        try {
+          const starterPackManager = new StarterPackManager(process.cwd());
+          let packName = name;
+          if (!packName) {
+            const packs = await starterPackManager.listPacks();
+            if (packs.length === 0) {
+              logger.info('No starter packs available.');
+              return;
+            }
+            const inquirer = await import('inquirer');
+            const answer = await inquirer.default.prompt([
+              {
+                type: 'list',
+                name: 'pack',
+                message: 'Select a pack to install',
+                choices: packs.map(p => ({ name: p.manifest.name, value: p.manifest.name })),
+              },
+            ]);
+            packName = answer.pack;
+          }
+
+          logger.info(`Installing starter pack '${packName}'...`);
+          const result = await starterPackManager.installPack(packName, { force: options.force });
+
+          if (result.success) {
+            logger.info(chalk.green(`✓ Successfully installed starter pack '${packName}'`));
+            if (result.postInstallMessage) {
+              logger.info('');
+              logger.info(result.postInstallMessage);
+            }
+          } else {
+            logger.error(result.errors.join('\n'));
+            process.exitCode = 1;
+          }
+        } catch (error) {
+          logger.error('Failed to install starter pack:', error);
           process.exitCode = 1;
         }
       })
@@ -171,6 +217,46 @@ export const packsCommand = new Command('packs')
           process.exitCode = 1;
         }
       })
+  )
+  .addCommand(
+    new Command('update')
+      .argument('[name]', 'Pack name to update')
+      .description('Update installed starter packs')
+      .option('-c, --check', 'Check for available updates without installing')
+      .action(async (name: string | undefined, options) => {
+        try {
+          const starterPackManager = new StarterPackManager(process.cwd());
+          const installed = await starterPackManager.getInstalledPacks();
+          const targets = name ? [name] : Object.keys(installed);
+
+          if (options.check) {
+            if (targets.length === 0) {
+              logger.info('No packs installed.');
+            } else {
+              logger.info('Installed packs:');
+              for (const p of targets) {
+                logger.info(`  ${p}`);
+              }
+              logger.info('Run without --check to update.');
+            }
+            return;
+          }
+
+          for (const p of targets) {
+            logger.info(`Updating starter pack '${p}'...`);
+            const result = await starterPackManager.installPack(p, { force: true });
+            if (result.success) {
+              logger.info(chalk.green(`✓ Updated starter pack '${p}'`));
+            } else {
+              logger.error(`Failed to update pack '${p}': ${result.errors.join(', ')}`);
+              process.exitCode = 1;
+            }
+          }
+        } catch (error) {
+          logger.error('Failed to update starter packs:', error);
+          process.exitCode = 1;
+        }
+      })
   );
 
 /**
@@ -198,8 +284,8 @@ async function showPacksSummary(packs: PackStructure[]): Promise<void> {
     logger.info('');
   }
   
-  logger.info(chalk.dim('Run "zcc packs show <name>" for detailed information about a pack.'));
-  logger.info(chalk.dim('Run "zcc init -p <name>" to install a pack.'));
+  logger.info(chalk.dim('Run "zcc pack show <name>" for detailed information about a pack.'));
+  logger.info(chalk.dim('Run "zcc pack install <name>" to install a pack.'));
 }
 
 /**
@@ -245,8 +331,8 @@ async function showPacksDetailed(packs: PackStructure[]): Promise<void> {
   
   if (packs.length > 0) {
     logger.info('');
-    logger.info(chalk.dim('Run "zcc packs show <name>" for detailed information about a pack.'));
-    logger.info(chalk.dim('Run "zcc init -p <name>" to install a pack.'));
+    logger.info(chalk.dim('Run "zcc pack show <name>" for detailed information about a pack.'));
+    logger.info(chalk.dim('Run "zcc pack install <name>" to install a pack.'));
   }
 }
 
@@ -354,7 +440,7 @@ async function showPackDetails(pack: PackStructure): Promise<void> {
   }
   
   logger.info('');
-  logger.info(chalk.dim(`To install this pack: zcc init -p ${manifest.name}`));
+  logger.info(chalk.dim(`To install this pack: zcc pack install ${manifest.name}`));
 }
 
 /**

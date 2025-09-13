@@ -105,29 +105,6 @@ zcc init --force --pack essentials
 
 ---
 
-## Component Issues
-
-### Mode/Workflow not found
-**Error**: `Mode 'custom-mode' not found`
-
-**Solutions**:
-1. List available: `zcc list`
-2. Check installation: `zcc list --installed`
-3. Add component: `zcc add mode <name>`
-4. Check fuzzy matching: `zcc add mode eng` (for engineer)
-
----
-
-### Duplicate components in listings
-**Problem**: Same component appears multiple times
-
-**Solutions**:
-1. Check for duplicates: `ls .zcc/modes/`
-2. Remove duplicates manually
-3. Reinitialize: `zcc init --force`
-
----
-
 ## Ticket Management Issues
 
 ### Ticket move requires --to flag
@@ -164,7 +141,7 @@ zcc ticket finish "name"
 
 **Solutions**:
 1. Use a specific pack: `zcc init --pack essentials`
-2. Skip optional components initially
+2. Skip optional packs initially
 3. Check network connectivity for template downloads
 4. Use local cache if available
 
@@ -212,8 +189,7 @@ which zcc
 npm list -g z-claude-code
 
 # Check project state
-zcc list --installed
-zcc validate
+zcc pack list --installed
 ls -la .claude .zcc
 
 # Check logs (if verbose mode)

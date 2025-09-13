@@ -46,42 +46,12 @@ export class ValidationError extends ZccError {
   }
 }
 
-export class ComponentNotFoundError extends ZccError {
-  constructor(componentType: string, componentName: string, availableComponents?: string[]) {
-    const validTypesMsg = ['mode', 'workflow', 'agent', 'script', 'hook', 'command', 'template'].includes(componentType)
-      ? ''
-      : ` Valid component types are: mode, workflow, agent, script, hook, command, template.`;
-    
-    const suggestion = availableComponents && availableComponents.length > 0
-      ? `Available ${componentType}s: ${availableComponents.slice(0, 5).join(', ')}${availableComponents.length > 5 ? '...' : ''}.\nTry: zcc list --type ${componentType}`
-      : `Try: zcc list --type ${componentType} to see available components`;
-
-    super(
-      `${componentType.charAt(0).toUpperCase() + componentType.slice(1)} '${componentName}' not found.${validTypesMsg}`,
-      "COMPONENT_NOT_FOUND",
-      suggestion
-    );
-    this.name = "ComponentNotFoundError";
-  }
-}
-
-export class InvalidComponentTypeError extends ZccError {
-  constructor(providedType: string, validTypes: string[] = ['mode', 'workflow', 'agent', 'script', 'hook', 'command', 'template']) {
-    super(
-      `Invalid component type: '${providedType}'`,
-      "INVALID_COMPONENT_TYPE",
-      `Valid types are: ${validTypes.join(', ')}. Example: zcc add mode <name>`
-    );
-    this.name = "InvalidComponentTypeError";
-  }
-}
-
 export class InvalidScopeError extends ZccError {
   constructor(providedScope: string, validScopes: string[] = ['builtin', 'global', 'project']) {
     super(
       `Invalid scope: '${providedScope}'`,
       "INVALID_SCOPE",
-      `Valid scopes are: ${validScopes.join(', ')}. Example: zcc add mode <name> --source builtin`
+      `Valid scopes are: ${validScopes.join(', ')}`
     );
     this.name = "InvalidScopeError";
   }
@@ -106,27 +76,10 @@ export class TicketError extends ZccError {
   }
 }
 
-export class ComponentInstallError extends ZccError {
-  constructor(componentType: string, componentName: string, reason: string, suggestion?: string) {
-    const defaultSuggestion = reason.includes('already exists')
-      ? `Use --force to overwrite: zcc add ${componentType} ${componentName} --force`
-      : reason.includes('permission')
-      ? `Check file permissions or run with appropriate privileges`
-      : `Try: zcc list --type ${componentType} to verify the component exists`;
-
-    super(
-      `Failed to install ${componentType} '${componentName}': ${reason}`,
-      "COMPONENT_INSTALL_ERROR",
-      suggestion || defaultSuggestion
-    );
-    this.name = "ComponentInstallError";
-  }
-}
-
 export class PackError extends ZccError {
   constructor(packName: string, operation: string, reason: string, suggestion?: string) {
     const defaultSuggestion = operation === 'install' && reason.includes('not found')
-      ? `Check available packs with: zcc list --type pack`
+      ? `Check available packs with: zcc pack list`
       : operation === 'install' && reason.includes('conflict')
       ? `Use --force to overwrite existing components`
       : operation === 'validate' && reason.includes('schema')
@@ -139,17 +92,6 @@ export class PackError extends ZccError {
       suggestion || defaultSuggestion
     );
     this.name = "PackError";
-  }
-}
-
-export class DependencyError extends ZccError {
-  constructor(component: string, missingDependencies: string[]) {
-    super(
-      `Component '${component}' has missing dependencies: ${missingDependencies.join(', ')}`,
-      "DEPENDENCY_ERROR",
-      `Install missing dependencies first: ${missingDependencies.map(dep => `zcc add mode ${dep}`).join(', ')}`
-    );
-    this.name = "DependencyError";
   }
 }
 

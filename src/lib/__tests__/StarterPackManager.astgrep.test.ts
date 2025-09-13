@@ -11,7 +11,6 @@ import * as path from 'path';
 // Mock dependencies that don't need filesystem
 jest.mock('../logger');
 jest.mock('../directoryManager');
-jest.mock('../componentInstaller');
 
 describe('StarterPackManager - Advanced Code Refactoring Pack', () => {
   let manager: StarterPackManager;
@@ -123,13 +122,7 @@ describe('StarterPackManager - Advanced Code Refactoring Pack', () => {
     const mockDirectoryManager = require("../directoryManager").DirectoryManager;
     mockDirectoryManager.prototype.initializeStructure = jest.fn().mockResolvedValue(undefined);
     mockDirectoryManager.prototype.ensureProjectRoot = jest.fn().mockReturnValue(undefined);
-    
-    // Mock ComponentInstaller
-    const mockComponentInstaller = require("../componentInstaller").ComponentInstaller;
-    mockComponentInstaller.prototype.installMode = jest.fn().mockResolvedValue({ success: true });
-    mockComponentInstaller.prototype.installWorkflow = jest.fn().mockResolvedValue({ success: true });
-    mockComponentInstaller.prototype.installAgent = jest.fn().mockResolvedValue({ success: true });
-    
+
     manager = new StarterPackManager(projectRoot, fs);
   });
 

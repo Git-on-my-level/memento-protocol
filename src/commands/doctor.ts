@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import { ConfigManager } from '../lib/configManager';
+import { StarterPackManager } from '../lib/StarterPackManager';
 import { ZccCore } from '../lib/ZccCore';
 import { logger } from '../lib/logger';
 import * as fs from 'fs';
@@ -51,7 +52,7 @@ async function runDiagnostics(autoFix: boolean): Promise<void> {
   results.push(await checkFilePermissions());
   results.push(await checkClaudeCodeIntegration());
   results.push(await checkHooksStatus());
-  results.push(await checkComponentAvailability());
+  results.push(await checkPackAvailability());
   
   // Display results
   displayDiagnosticResults(results);
@@ -407,13 +408,6 @@ async function checkHooksStatus(): Promise<DiagnosticResult> {
       details.push(`${hooks.length} hooks available`);
     }
     
-    // Check builtin components
-    if (!status.builtin.available) {
-      issues.push('Built-in templates not available');
-    } else {
-      details.push(`${status.builtin.components} built-in components available`);
-    }
-    
     if (issues.length > 0) {
       return {
         name: 'Hooks Status',
@@ -441,52 +435,35 @@ async function checkHooksStatus(): Promise<DiagnosticResult> {
 }
 
 /**
- * Check component availability
+ * Check pack availability
  */
-async function checkComponentAvailability(): Promise<DiagnosticResult> {
+async function checkPackAvailability(): Promise<DiagnosticResult> {
   try {
-    const zccCore = new ZccCore(process.cwd());
-    const status = await zccCore.getStatus();
-    
-    const details = [
-      `Built-in components: ${status.builtin.components}`,
-      `Global components: ${status.global.components}`,
-      `Project components: ${status.project.components}`,
-      `Total unique components: ${status.uniqueComponents}`
-    ];
-    
-    if (status.uniqueComponents === 0) {
+    const spm = new StarterPackManager(process.cwd());
+    const installed = await spm.getInstalledPacks();
+    const packNames = Object.keys(installed);
+
+    if (packNames.length === 0) {
       return {
-        name: 'Component Availability',
-        status: 'fail',
-        message: 'No components available',
-        suggestion: 'Run "zcc init" to install default components',
-        details
-      };
-    }
-    
-    if (status.uniqueComponents < 5) {
-      return {
-        name: 'Component Availability',
+        name: 'Pack Availability',
         status: 'warn',
-        message: 'Limited components available',
-        suggestion: 'Run "zcc init --pack [pack-name]" to install more components',
-        details
+        message: 'No packs installed',
+        suggestion: 'Run "zcc pack install <name>" to install a pack',
       };
     }
-    
+
     return {
-      name: 'Component Availability',
+      name: 'Pack Availability',
       status: 'pass',
-      message: `${status.uniqueComponents} components available`,
-      details
+      message: `${packNames.length} pack${packNames.length === 1 ? '' : 's'} installed`,
+      details: packNames.map(p => `- ${p}`),
     };
   } catch (error: any) {
     return {
-      name: 'Component Availability',
+      name: 'Pack Availability',
       status: 'warn',
-      message: 'Cannot check component availability',
-      details: [error.message]
+      message: 'Cannot check pack availability',
+      details: [error.message],
     };
   }
 }
@@ -571,10 +548,7 @@ async function attemptSpecificFix(result: DiagnosticResult): Promise<void> {
       
     case 'Project Configuration':
       if (result.message.includes('not initialized')) {
-        // Initialize project
-        const { UpsertManager } = await import('../lib/upsertManager');
-        const upsertManager = new UpsertManager(process.cwd());
-        await upsertManager.upsert();
+        throw new Error('Project not initialized. Run "zcc init --pack <name>" first.');
       } else if (result.message.includes('validation errors')) {
         // Fix validation errors
         await configManager.fixConfigFile(false);

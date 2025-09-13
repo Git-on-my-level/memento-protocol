@@ -1,18 +1,11 @@
 import { Command } from "commander";
 import { initCommand } from "./commands/init";
-import { addCommand } from "./commands/add";
-import { listCommand } from "./commands/list";
 import { ticketCommand } from "./commands/ticket";
 import { configCommand } from "./commands/config";
-import { createUpdateCommand } from "./commands/update";
-import { upsertCommand } from "./commands/upsert";
 import { hookCommand } from "./commands/hook";
 import { acronymCommand } from "./commands/acronym";
-import { createCommand } from "./commands/create";
-import { editCommand } from "./commands/edit";
-import { validateCommand } from "./commands/validate";
 import { doctorCommand } from "./commands/doctor";
-import { packsCommand } from "./commands/packs";
+import { packCommand } from "./commands/pack";
 import { logger } from "./lib/logger";
 import { handleError } from "./lib/errors";
 import { cliContext } from "./lib/context";
@@ -44,26 +37,15 @@ program
     "after",
     `
 Examples:
-  $ zcc                        # Initialize or update zcc (equivalent to 'upsert')
-  $ zcc init                   # Initialize zcc in current project
-  $ zcc init --global          # Initialize global ~/.zcc configuration
-  $ zcc update                 # Update existing components from templates
-  $ zcc add mode architect     # Add the architect mode
-  $ zcc add workflow review    # Add the code review workflow
-  $ zcc create mode my-custom  # Create a new custom mode interactively
-  $ zcc create workflow --from review custom-review  # Clone review workflow
-  $ zcc edit mode my-custom    # Edit a component in your editor
-  $ zcc validate               # Validate all components
-  $ zcc validate mode          # Validate all modes
+  $ zcc init --pack webapp     # Initialize project with a starter pack
+  $ zcc pack install webapp    # Install the webapp pack
+  $ zcc pack list              # Show available packs
+  $ zcc pack uninstall webapp  # Remove a pack
+  $ zcc pack update            # Update installed packs
   $ zcc doctor                 # Run diagnostic checks
   $ zcc doctor --fix           # Run diagnostics and attempt fixes
   $ zcc ticket create "auth"   # Create a ticket for authentication work
-  $ zcc list --installed       # Show installed components
-
-For Claude Code users:
-  /mode architect            # Switch to architect mode
-  /review [target]           # Execute code review workflow
-  /ticket create "auth"      # Create a new ticket (or /ticket [name] to load)
+  $ zcc pack list --installed  # Show installed packs
 
 For more information, visit: https://github.com/git-on-my-level/zcc
 Documentation: https://github.com/git-on-my-level/zcc#readme`
@@ -97,19 +79,12 @@ Documentation: https://github.com/git-on-my-level/zcc#readme`
 
 // Register commands
 program.addCommand(initCommand);
-program.addCommand(addCommand);
-program.addCommand(listCommand);
 program.addCommand(ticketCommand);
 program.addCommand(configCommand);
-program.addCommand(createUpdateCommand());
-program.addCommand(upsertCommand);
 program.addCommand(hookCommand);
 program.addCommand(acronymCommand);
-program.addCommand(createCommand);
-program.addCommand(editCommand);
-program.addCommand(validateCommand);
 program.addCommand(doctorCommand);
-program.addCommand(packsCommand);
+program.addCommand(packCommand);
 
 // Global error handling
 process.on("unhandledRejection", (error) => {
@@ -120,22 +95,9 @@ process.on("uncaughtException", (error) => {
   handleError(error, cliContext.isVerbose());
 });
 
-// Check if no command is provided before parsing
 const args = process.argv.slice(2);
 if (args.length === 0) {
-  // No command provided, run upsert
-  (async () => {
-    try {
-      const upsertManager = new (
-        await import("./lib/upsertManager")
-      ).UpsertManager(process.cwd());
-      await upsertManager.upsert();
-    } catch (error: any) {
-      logger.error(`Upsert failed: ${error.message}`);
-      process.exitCode = 1;
-    }
-  })();
+  program.outputHelp();
 } else {
-  // Parse command line arguments normally
   program.parse(process.argv);
 }
