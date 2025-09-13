@@ -144,7 +144,7 @@ export class LocalPackSource implements IPackSource {
         const packName = entry;
         const packPath = this.fs.join(this.basePath, packName);
         const manifestPath = this.fs.join(this.basePath, packName, 'manifest.json');
-        
+
         // Check if it's a directory and has a manifest
         if (await this.fs.exists(packPath)) {
           const stats = await this.fs.stat(packPath);

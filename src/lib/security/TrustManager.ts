@@ -1,5 +1,5 @@
-import { promises as fs } from 'fs';
-import * as path from 'path';
+import { FileSystemAdapter } from '../adapters/FileSystemAdapter';
+import { NodeFileSystemAdapter } from '../adapters/NodeFileSystemAdapter';
 import * as crypto from 'crypto';
 import { IPackSource } from '../packs/PackSource';
 import { PackStructure } from '../types/packs';
@@ -42,10 +42,10 @@ export class TrustManager {
   private records: TrustRecord[] = [];
   private trustedSources: Map<string, TrustedSourceConfig> = new Map();
 
-  constructor(private projectRoot: string) {
-    this.trustPolicyPath = path.join(projectRoot, '.zcc', 'security', 'trust-policy.json');
-    this.trustRecordsPath = path.join(projectRoot, '.zcc', 'security', 'trust-records.json');
-    this.trustedSourcesPath = path.join(projectRoot, '.zcc', 'security', 'trusted-sources.json');
+  constructor(private projectRoot: string, private fs: FileSystemAdapter = new NodeFileSystemAdapter()) {
+    this.trustPolicyPath = this.fs.join(projectRoot, '.zcc', 'security', 'trust-policy.json');
+    this.trustRecordsPath = this.fs.join(projectRoot, '.zcc', 'security', 'trust-records.json');
+    this.trustedSourcesPath = this.fs.join(projectRoot, '.zcc', 'security', 'trusted-sources.json');
     
     // Default trust policy
     this.policy = {
@@ -68,14 +68,14 @@ export class TrustManager {
   }
 
   private async ensureSecurityDirectory(): Promise<void> {
-    const securityDir = path.join(this.projectRoot, '.zcc', 'security');
-    await fs.mkdir(securityDir, { recursive: true });
+    const securityDir = this.fs.join(this.projectRoot, '.zcc', 'security');
+    await this.fs.mkdir(securityDir, { recursive: true });
   }
 
   private async loadPolicy(): Promise<void> {
     try {
       if (await this.fileExists(this.trustPolicyPath)) {
-        const content = await fs.readFile(this.trustPolicyPath, 'utf-8');
+        const content = await this.fs.readFile(this.trustPolicyPath, 'utf-8') as string;
         this.policy = { ...this.policy, ...JSON.parse(content) };
       } else {
         await this.savePolicy();
@@ -86,7 +86,7 @@ export class TrustManager {
   }
 
   private async savePolicy(): Promise<void> {
-    await fs.writeFile(
+    await this.fs.writeFile(
       this.trustPolicyPath,
       JSON.stringify(this.policy, null, 2)
     );
@@ -95,7 +95,7 @@ export class TrustManager {
   private async loadRecords(): Promise<void> {
     try {
       if (await this.fileExists(this.trustRecordsPath)) {
-        const content = await fs.readFile(this.trustRecordsPath, 'utf-8');
+        const content = await this.fs.readFile(this.trustRecordsPath, 'utf-8') as string;
         this.records = JSON.parse(content);
       }
     } catch (error) {
@@ -105,7 +105,7 @@ export class TrustManager {
   }
 
   private async saveRecords(): Promise<void> {
-    await fs.writeFile(
+    await this.fs.writeFile(
       this.trustRecordsPath,
       JSON.stringify(this.records, null, 2)
     );
@@ -114,7 +114,7 @@ export class TrustManager {
   private async loadTrustedSources(): Promise<void> {
     try {
       if (await this.fileExists(this.trustedSourcesPath)) {
-        const content = await fs.readFile(this.trustedSourcesPath, 'utf-8');
+        const content = await this.fs.readFile(this.trustedSourcesPath, 'utf-8') as string;
         const sources = JSON.parse(content);
         this.trustedSources = new Map(Object.entries(sources));
       } else {
@@ -132,7 +132,7 @@ export class TrustManager {
 
   private async saveTrustedSources(): Promise<void> {
     const sources = Object.fromEntries(this.trustedSources);
-    await fs.writeFile(
+    await this.fs.writeFile(
       this.trustedSourcesPath,
       JSON.stringify(sources, null, 2)
     );
@@ -325,8 +325,7 @@ export class TrustManager {
 
   private async fileExists(filePath: string): Promise<boolean> {
     try {
-      await fs.access(filePath);
-      return true;
+      return await this.fs.exists(filePath);
     } catch {
       return false;
     }

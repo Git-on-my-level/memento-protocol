@@ -40,9 +40,9 @@ describe("StarterPackManager", () => {
     fs = await createTestZccProject(mockProjectRoot, {
       // Add sample pack templates (PackagePaths.getTemplatesDir() returns '/test/templates' in test env)
       '/test/templates/test-pack/manifest.json': JSON.stringify(mockValidPack.manifest),
-      '/test/templates/test-pack/components/modes/engineer.md': '# Engineer Mode\n\nYou are a software engineer.',
-      '/test/templates/test-pack/components/workflows/review.md': '# Code Review Workflow\n\nReview code systematically.',
-      '/test/templates/test-pack/components/agents/claude-code-research.md': '# Research Agent\n\nSpecialized in research tasks.',
+      '/test/templates/test-pack/modes/engineer.md': '# Engineer Mode\n\nYou are a software engineer.',
+      '/test/templates/test-pack/workflows/review.md': '# Code Review Workflow\n\nReview code systematically.',
+      '/test/templates/test-pack/agents/claude-code-research.md': '# Research Agent\n\nSpecialized in research tasks.',
       '/test/templates/schema.json': JSON.stringify({ 
         type: 'object',
         properties: {

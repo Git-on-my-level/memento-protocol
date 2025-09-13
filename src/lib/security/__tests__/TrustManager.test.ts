@@ -1,37 +1,27 @@
 import { TrustManager } from '../TrustManager';
-import { promises as fs } from 'fs';
-import * as path from 'path';
+import { MemoryFileSystemAdapter } from '../../adapters/MemoryFileSystemAdapter';
+import { createTestZccProject } from '../../testing';
 import { IPackSource } from '../../packs/PackSource';
 import { PackStructure } from '../../types/packs';
 
-jest.mock('fs', () => ({
-  promises: {
-    access: jest.fn(),
-    readFile: jest.fn(),
-    writeFile: jest.fn(),
-    mkdir: jest.fn(),
-  },
-}));
-
 describe('TrustManager', () => {
   let trustManager: TrustManager;
+  let fs: MemoryFileSystemAdapter;
   const mockProjectRoot = '/test/project';
-  const mockFs = fs as jest.Mocked<typeof fs>;
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    trustManager = new TrustManager(mockProjectRoot);
+  beforeEach(async () => {
+    // Create test filesystem with project structure
+    fs = await createTestZccProject(mockProjectRoot, {});
+    trustManager = new TrustManager(mockProjectRoot, fs);
   });
 
   describe('initialization', () => {
     it('should create security directory', async () => {
-      mockFs.access.mockRejectedValue(new Error('Not found'));
       await trustManager.initialize();
 
-      expect(mockFs.mkdir).toHaveBeenCalledWith(
-        path.join(mockProjectRoot, '.zcc', 'security'),
-        { recursive: true }
-      );
+      // Verify that security directory was created
+      const securityDirExists = await fs.exists(fs.join(mockProjectRoot, '.zcc', 'security'));
+      expect(securityDirExists).toBe(true);
     });
 
     it('should load existing trust policy', async () => {
@@ -40,12 +30,17 @@ describe('TrustManager', () => {
         requireUserConsent: false,
       };
 
-      mockFs.access.mockResolvedValue(undefined);
-      mockFs.readFile.mockResolvedValue(JSON.stringify(mockPolicy));
+      // Pre-populate the trust policy file
+      await fs.mkdir(fs.join(mockProjectRoot, '.zcc', 'security'), { recursive: true });
+      await fs.writeFile(
+        fs.join(mockProjectRoot, '.zcc', 'security', 'trust-policy.json'),
+        JSON.stringify(mockPolicy)
+      );
 
       await trustManager.initialize();
-      const policy = trustManager.getPolicy();
 
+      // Verify policy was loaded (can check through behavior rather than direct access)
+      const policy = trustManager.getPolicy();
       expect(policy.allowUntrustedSources).toBe(true);
       expect(policy.requireUserConsent).toBe(false);
     });
@@ -53,7 +48,6 @@ describe('TrustManager', () => {
 
   describe('source validation', () => {
     beforeEach(async () => {
-      mockFs.access.mockRejectedValue(new Error('Not found'));
       await trustManager.initialize();
     });
 
@@ -138,7 +132,6 @@ describe('TrustManager', () => {
     let mockPack: PackStructure;
 
     beforeEach(async () => {
-      mockFs.access.mockRejectedValue(new Error('Not found'));
       await trustManager.initialize();
 
       mockSource = {
@@ -226,7 +219,6 @@ describe('TrustManager', () => {
 
   describe('audit trail', () => {
     beforeEach(async () => {
-      mockFs.access.mockRejectedValue(new Error('Not found'));
       await trustManager.initialize();
     });
 

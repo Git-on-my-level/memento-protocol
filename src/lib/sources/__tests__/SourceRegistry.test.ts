@@ -1,24 +1,16 @@
 import { SourceRegistry } from '../SourceRegistry';
-import { promises as fs } from 'fs';
-import * as path from 'path';
-
-jest.mock('fs', () => ({
-  promises: {
-    access: jest.fn(),
-    readFile: jest.fn(),
-    writeFile: jest.fn(),
-    mkdir: jest.fn(),
-  },
-}));
+import { MemoryFileSystemAdapter } from '../../adapters/MemoryFileSystemAdapter';
+import { createTestZccProject } from '../../testing';
 
 describe('SourceRegistry', () => {
   let registry: SourceRegistry;
+  let fs: MemoryFileSystemAdapter;
   const mockProjectRoot = '/test/project';
-  const mockFs = fs as jest.Mocked<typeof fs>;
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    registry = new SourceRegistry(mockProjectRoot);
+  beforeEach(async () => {
+    // Create test filesystem with project structure
+    fs = await createTestZccProject(mockProjectRoot, {});
+    registry = new SourceRegistry(mockProjectRoot, fs);
   });
 
   describe('initialization', () => {
@@ -46,32 +38,38 @@ describe('SourceRegistry', () => {
         defaultSource: 'local',
       };
 
-      mockFs.access.mockResolvedValue(undefined);
-      mockFs.readFile.mockResolvedValue(JSON.stringify(mockConfig));
+      // Pre-populate the filesystem with the config file
+      await fs.writeFile(
+        fs.join(mockProjectRoot, '.zcc', 'sources.json'),
+        JSON.stringify(mockConfig)
+      );
 
       await registry.initialize();
 
-      expect(mockFs.readFile).toHaveBeenCalledWith(
-        path.join(mockProjectRoot, '.zcc', 'sources.json'),
-        'utf-8'
-      );
+      // Just verify that the configuration was loaded (no direct filesystem expectations)
+      const sources = registry.getAllSourceConfigs();
+      expect(sources).toHaveLength(2);
+      expect(sources.find(s => s.id === 'local')).toBeDefined();
+      expect(sources.find(s => s.id === 'github-test')).toBeDefined();
     });
 
     it('should create default configuration if none exists', async () => {
-      mockFs.access.mockRejectedValue(new Error('File not found'));
-
+      // No pre-existing config file, should create default
       await registry.initialize();
 
-      expect(mockFs.writeFile).toHaveBeenCalledWith(
-        path.join(mockProjectRoot, '.zcc', 'sources.json'),
-        expect.stringContaining('"id": "local"')
-      );
+      // Verify that default config was created
+      const configExists = await fs.exists(fs.join(mockProjectRoot, '.zcc', 'sources.json'));
+      expect(configExists).toBe(true);
+
+      const sources = registry.getAllSourceConfigs();
+      expect(sources).toHaveLength(1);
+      expect(sources[0].id).toBe('local');
     });
   });
 
   describe('source management', () => {
     beforeEach(async () => {
-      mockFs.access.mockRejectedValue(new Error('File not found'));
+      // Initialize with default configuration (no existing config file)
       await registry.initialize();
     });
 
@@ -169,7 +167,7 @@ describe('SourceRegistry', () => {
 
   describe('pack discovery', () => {
     beforeEach(async () => {
-      mockFs.access.mockRejectedValue(new Error('File not found'));
+      // Initialize with default configuration
       await registry.initialize();
     });
 

@@ -1,7 +1,7 @@
 import { IPackSource, LocalPackSource } from '../packs/PackSource';
 import { GitHubPackSource } from './GitHubPackSource';
-import { promises as fs } from 'fs';
-import * as path from 'path';
+import { FileSystemAdapter } from '../adapters/FileSystemAdapter';
+import { NodeFileSystemAdapter } from '../adapters/NodeFileSystemAdapter';
 
 export interface SourceConfig {
   id: string;
@@ -22,8 +22,8 @@ export class SourceRegistry {
   private configPath: string;
   private defaultSourceId: string = 'local';
 
-  constructor(private projectRoot: string) {
-    this.configPath = path.join(projectRoot, '.zcc', 'sources.json');
+  constructor(private projectRoot: string, private fs: FileSystemAdapter = new NodeFileSystemAdapter()) {
+    this.configPath = this.fs.join(projectRoot, '.zcc', 'sources.json');
   }
 
   async initialize(): Promise<void> {
@@ -34,13 +34,13 @@ export class SourceRegistry {
   private async loadConfiguration(): Promise<void> {
     try {
       if (await this.fileExists(this.configPath)) {
-        const content = await fs.readFile(this.configPath, 'utf-8');
+        const content = await this.fs.readFile(this.configPath, 'utf-8') as string;
         const config: SourceRegistryConfig = JSON.parse(content);
-        
+
         for (const sourceConfig of config.sources) {
           this.sourceConfigs.set(sourceConfig.id, sourceConfig);
         }
-        
+
         if (config.defaultSource) {
           this.defaultSourceId = config.defaultSource;
         }
@@ -63,17 +63,17 @@ export class SourceRegistry {
           enabled: true,
           priority: 1,
           config: {
-            path: path.join(this.projectRoot, 'templates'),
+            path: this.fs.join(this.projectRoot, 'templates'),
           },
         },
       ],
       defaultSource: 'local',
     };
-    
+
     for (const sourceConfig of defaultConfig.sources) {
       this.sourceConfigs.set(sourceConfig.id, sourceConfig);
     }
-    
+
     this.defaultSourceId = defaultConfig.defaultSource || 'local';
     await this.saveConfiguration();
   }
@@ -84,8 +84,8 @@ export class SourceRegistry {
       defaultSource: this.defaultSourceId,
     };
 
-    await fs.mkdir(path.dirname(this.configPath), { recursive: true });
-    await fs.writeFile(
+    await this.fs.mkdir(this.fs.dirname(this.configPath), { recursive: true });
+    await this.fs.writeFile(
       this.configPath,
       JSON.stringify(config, null, 2)
     );
@@ -112,7 +112,7 @@ export class SourceRegistry {
     switch (config.type) {
       case 'local':
         return new LocalPackSource(
-          config.config.path || path.join(this.projectRoot, 'templates')
+          config.config.path || this.fs.join(this.projectRoot, 'templates')
         );
       
       case 'github':
@@ -298,8 +298,7 @@ export class SourceRegistry {
 
   private async fileExists(filePath: string): Promise<boolean> {
     try {
-      await fs.access(filePath);
-      return true;
+      return await this.fs.exists(filePath);
     } catch {
       return false;
     }

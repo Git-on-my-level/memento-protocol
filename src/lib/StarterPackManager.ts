@@ -36,8 +36,8 @@ export class StarterPackManager {
     this.registry = new PackRegistry(this.fs);
     this.validator = new PackValidator(this.fs);
     this.installer = new PackInstaller(projectRoot, this.fs);
-    this.sourceRegistry = new SourceRegistry(projectRoot);
-    this.trustManager = new TrustManager(projectRoot);
+    this.sourceRegistry = new SourceRegistry(projectRoot, this.fs);
+    this.trustManager = new TrustManager(projectRoot, this.fs);
   }
 
   /**
@@ -53,9 +53,15 @@ export class StarterPackManager {
     await this.trustManager.initialize();
 
     // Register external sources with the pack registry
+    // Only add sources that don't already exist to avoid overriding the default local source
     const externalSources = this.sourceRegistry.getAllSources();
     for (const [id, source] of externalSources) {
-      this.registry.registerSource(id, source);
+      if (!this.registry.getSource(id)) {
+        this.registry.registerSource(id, source);
+        logger.debug(`Registered external source: ${id}`);
+      } else {
+        logger.debug(`Skipped registering external source '${id}' - already exists`);
+      }
     }
 
     this.initialized = true;
