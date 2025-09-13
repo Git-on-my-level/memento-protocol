@@ -1,4 +1,4 @@
-import { logger } from '../logger';
+import { logger, configureChalk } from '../logger';
 import { ZccError } from '../errors';
 
 describe('logger', () => {
@@ -161,8 +161,36 @@ describe('logger', () => {
     it('should clear progress line when TTY', () => {
       process.stdout.isTTY = true;
       logger.clearProgress();
-      
+
       expect(stdoutWriteSpy).toHaveBeenCalledWith('\r\x1b[K');
+    });
+  });
+
+  describe('color configuration', () => {
+    const ORIGINAL_ENV = process.env;
+
+    beforeEach(() => {
+      process.env = { ...ORIGINAL_ENV };
+      logger.setNoColor(false);
+    });
+
+    afterEach(() => {
+      process.env = ORIGINAL_ENV;
+      logger.setNoColor(false);
+      configureChalk();
+    });
+
+    it('should disable colors when NO_COLOR is set', () => {
+      process.env.NO_COLOR = '1';
+      const chalkInstance = configureChalk();
+      expect(chalkInstance.level).toBe(0);
+    });
+
+    it('should respect FORCE_COLOR even in CI', () => {
+      process.env.CI = '1';
+      process.env.FORCE_COLOR = '1';
+      const chalkInstance = configureChalk();
+      expect(chalkInstance.level).toBe(1);
     });
   });
 
