@@ -3,6 +3,7 @@ import { StarterPackManager } from '../lib/StarterPackManager';
 import { logger } from '../lib/logger';
 import chalk from 'chalk';
 import { PackStructure } from '../lib/types/packs';
+import { isForce } from '../lib/context';
 
 export const packCommand = new Command('pack')
   .description('Manage starter packs')
@@ -102,7 +103,8 @@ export const packCommand = new Command('pack')
           }
 
           logger.info(`Installing starter pack '${packName}'...`);
-          const result = await starterPackManager.installPack(packName, { force: options.force });
+          const forceFlag = options.force || isForce();
+          const result = await starterPackManager.installPack(packName, { force: forceFlag });
 
           if (result.success) {
             logger.info(chalk.green(`✓ Successfully installed starter pack '${packName}'`));

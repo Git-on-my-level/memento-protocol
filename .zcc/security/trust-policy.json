@@ -1,0 +1,19 @@
+{
+  "allowUntrustedSources": false,
+  "requireUserConsent": true,
+  "auditInstallations": true,
+  "maxPackSize": 10485760,
+  "allowedDomains": [
+    "github.com",
+    "gitlab.com"
+  ],
+  "blockedDomains": [],
+  "trustedAuthors": [
+    "zcc",
+    "zcc-community"
+  ],
+  "trustedSources": [
+    "local",
+    "zcc-official"
+  ]
+}

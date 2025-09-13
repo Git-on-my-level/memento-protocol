@@ -1,0 +1,51 @@
+{
+  "name": "essentials",
+  "version": "1.0.0",
+  "description": "Essential awesome-zcc pack with core modes for general development and technical writing",
+  "author": "awesome-zcc-community",
+  "tags": [
+    "core",
+    "essentials",
+    "writing",
+    "documentation",
+    "technical-writing",
+    "general",
+    "starter"
+  ],
+  "category": "general",
+  "mementoProtocolVersion": "1.0.0",
+  "components": {
+    "modes": [
+      {
+        "name": "technical-writer",
+        "required": true
+      }
+    ],
+    "workflows": [],
+    "agents": []
+  },
+  "configuration": {
+    "defaultMode": "technical-writer",
+    "customCommands": {
+      "writer": {
+        "description": "Switch to technical writer mode",
+        "template": "/mode technical-writer - Expert technical writing and documentation"
+      }
+    },
+    "projectSettings": {
+      "enableHooks": false,
+      "enableFuzzyMatching": true,
+      "ticketSystem": false
+    }
+  },
+  "hooks": [],
+  "compatibleWith": [
+    "markdown",
+    "documentation",
+    "generic"
+  ],
+  "postInstall": {
+    "message": "Essentials pack installed! 📝\n\nMode available:\n- `/mode technical-writer` - Expert technical writing and documentation\n\nFeatures:\n- Clear, accessible technical documentation\n- API documentation expertise\n- User guide creation\n- Technical blog writing\n- Documentation strategy\n- Style guide compliance\n\nCreate compelling, clear technical content that helps users succeed!",
+    "commands": []
+  }
+}

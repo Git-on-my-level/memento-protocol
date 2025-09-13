@@ -1,0 +1,49 @@
+{
+  "name": "frontend-react",
+  "version": "1.0.0",
+  "description": "Complete React frontend development pack with modern patterns, performance optimization, and component architecture best practices",
+  "author": "awesome-zcc-community",
+  "tags": [
+    "react",
+    "frontend",
+    "components",
+    "hooks",
+    "performance",
+    "typescript",
+    "ui",
+    "javascript"
+  ],
+  "category": "frontend",
+  "mementoProtocolVersion": "1.0.0",
+  "components": {
+    "modes": [],
+    "workflows": [],
+    "agents": [
+      {
+        "name": "react-specialist",
+        "required": true
+      }
+    ]
+  },
+  "configuration": {
+    "defaultMode": null,
+    "customCommands": {},
+    "projectSettings": {
+      "enableHooks": false,
+      "enableFuzzyMatching": true,
+      "ticketSystem": false
+    }
+  },
+  "hooks": [],
+  "compatibleWith": [
+    "javascript",
+    "typescript",
+    "react",
+    "jsx",
+    "tsx"
+  ],
+  "postInstall": {
+    "message": "Frontend React pack installed! 🚀\n\nReact specialist agent available:\n- Expert guidance on modern React patterns\n- Component architecture best practices\n- Performance optimization strategies\n- TypeScript integration\n- Testing approaches\n\nThis pack provides comprehensive React development expertise for building scalable, maintainable frontend applications.",
+    "commands": []
+  }
+}

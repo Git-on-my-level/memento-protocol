@@ -1,0 +1,58 @@
+{
+  "name": "full-stack",
+  "version": "1.0.0",
+  "description": "Comprehensive full-stack development pack covering frontend, backend, databases, and DevOps with modern best practices",
+  "author": "awesome-zcc-community",
+  "tags": [
+    "full-stack",
+    "frontend",
+    "backend",
+    "web-development",
+    "api",
+    "database",
+    "devops",
+    "architecture"
+  ],
+  "category": "development",
+  "mementoProtocolVersion": "1.0.0",
+  "components": {
+    "modes": [
+      {
+        "name": "full-stack-developer",
+        "required": true
+      }
+    ],
+    "workflows": [],
+    "agents": []
+  },
+  "configuration": {
+    "defaultMode": "full-stack-developer",
+    "customCommands": {
+      "fullstack": {
+        "description": "Switch to full-stack developer mode",
+        "template": "/mode full-stack-developer - Comprehensive full-stack development expertise"
+      }
+    },
+    "projectSettings": {
+      "enableHooks": true,
+      "enableFuzzyMatching": true,
+      "ticketSystem": true
+    }
+  },
+  "hooks": [],
+  "compatibleWith": [
+    "javascript",
+    "typescript",
+    "python",
+    "java",
+    "go",
+    "rust",
+    "php",
+    "ruby",
+    "generic"
+  ],
+  "postInstall": {
+    "message": "Full-Stack Development pack installed! 🌟\n\nMode available:\n- `/mode full-stack-developer` - Comprehensive full-stack expertise across frontend, backend, databases, and DevOps\n\nThis mode provides:\n- Modern framework expertise (React, Vue, Angular, etc.)\n- Backend development (Node.js, Python, Go, Java, etc.)\n- Database design and optimization\n- API design and implementation\n- DevOps and deployment strategies\n- Security best practices\n- Performance optimization\n\nStart building scalable, maintainable applications with expert guidance across the entire tech stack!",
+    "commands": []
+  }
+}

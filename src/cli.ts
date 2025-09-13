@@ -6,6 +6,8 @@ import { hookCommand } from "./commands/hook";
 import { acronymCommand } from "./commands/acronym";
 import { doctorCommand } from "./commands/doctor";
 import { packCommand } from "./commands/pack";
+import { sourceCommand } from "./commands/source";
+import { searchCommand } from "./commands/search";
 import { logger } from "./lib/logger";
 import { handleError } from "./lib/errors";
 import { cliContext } from "./lib/context";
@@ -61,7 +63,7 @@ Documentation: https://github.com/git-on-my-level/zcc#readme`
       verbose: allOptions.verbose || false,
       debug: allOptions.debug || false,
       nonInteractive: allOptions.yes || false,
-      force: allOptions.force || false,
+      force: allOptions.force, // Don't default to false, let context handle it
       projectRoot: process.cwd(),
     });
 
@@ -85,6 +87,8 @@ program.addCommand(hookCommand);
 program.addCommand(acronymCommand);
 program.addCommand(doctorCommand);
 program.addCommand(packCommand);
+program.addCommand(sourceCommand);
+program.addCommand(searchCommand);
 
 // Global error handling
 process.on("unhandledRejection", (error) => {

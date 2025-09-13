@@ -170,6 +170,28 @@ export class PackRegistry {
   }
 
   /**
+   * Find which source has a specific pack
+   */
+  async findPackSource(packName: string): Promise<{ source: IPackSource; sourceName: string } | null> {
+    const sourcesToTry = Array.from(this.sources.entries());
+
+    for (const [sourceName, source] of sourcesToTry) {
+      try {
+        logger.debug(`Checking if source '${sourceName}' has pack '${packName}'`);
+        if (await source.hasPack(packName)) {
+          logger.debug(`Found pack '${packName}' in source '${sourceName}'`);
+          return { source, sourceName };
+        }
+      } catch (error) {
+        logger.debug(`Error checking pack '${packName}' in source '${sourceName}': ${error}`);
+      }
+    }
+
+    logger.debug(`Pack '${packName}' not found in any source`);
+    return null;
+  }
+
+  /**
    * Resolve pack dependencies in installation order using iterative approach to prevent stack overflow
    */
   async resolveDependencies(packName: string): Promise<PackDependencyResult> {

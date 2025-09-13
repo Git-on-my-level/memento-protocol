@@ -56,7 +56,9 @@
         "mobile",
         "ai-ml",
         "data",
-        "general"
+        "general",
+        "development",
+        "quality"
       ]
     },
     "mementoProtocolVersion": {
@@ -97,7 +99,7 @@
       "description": "Default configuration settings for the pack",
       "properties": {
         "defaultMode": {
-          "type": "string",
+          "type": ["string", "null"],
           "description": "Default mode to activate after installation"
         },
         "customCommands": {
@@ -174,6 +176,15 @@
           "rust",
           "php",
           "ruby",
+          "c",
+          "cpp",
+          "csharp",
+          "swift",
+          "kotlin",
+          "dart",
+          "scala",
+          "clojure",
+          "haskell",
           "generic"
         ]
       },

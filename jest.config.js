@@ -22,6 +22,7 @@ module.exports = {
   coverageReporters: ['text', 'lcov', 'html'],
   moduleNameMapper: {
     '^inquirer$': '<rootDir>/src/__mocks__/inquirer.ts',
-    '^execa$': '<rootDir>/src/__mocks__/execa.ts'
+    '^execa$': '<rootDir>/src/__mocks__/execa.ts',
+    '^tar$': '<rootDir>/src/__mocks__/tar.ts'
   },
 };

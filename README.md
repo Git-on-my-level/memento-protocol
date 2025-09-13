@@ -47,6 +47,7 @@ npx zcc init
 | ------------------ | -------------------------------------------------- | ------------------ |
 | **AI Modes**       | Switch personalities (architect/engineer/reviewer) | Themes             |
 | **Tickets**        | Persistent task tracking across sessions           | tmux sessions      |
+| **External Packs** | Install community packs from GitHub                | oh-my-zsh plugins  |
 | **Fuzzy Matching** | `/mode eng` → finds `engineer`                     | Smart completions  |
 | **Hooks**          | Auto-load context, expand acronyms                 | precmd/preexec     |
 | **Workflows**      | Reusable procedures (review, deploy, audit)        | Functions          |
@@ -125,6 +126,21 @@ npx zcc init --pack frontend-react
 - **backend-api** - RESTful API development
 - **fullstack** - End-to-end development combining frontend and backend capabilities
 
+### Community Packs 🎉 NEW!
+
+Install packs from external sources like GitHub:
+
+```bash
+# Add a community pack source
+zcc source add awesome-packs --type github --owner community --repo zcc-packs
+
+# Search and install packs
+zcc search react
+zcc add pack react-toolkit
+```
+
+[Learn more about external packs →](docs/external-packs.md)
+
 *Just like oh-my-zsh themes transform your terminal experience, starter packs transform Claude Code for your project type.*
 
 ## Daily Workflow
@@ -165,11 +181,9 @@ npx zcc init --pack frontend-react
 - 🪝 [Hooks Guide](docs/HOOKS_GUIDE.md) - Event-driven automation
 
 ### Advanced Topics
+- 🌍 [External Packs](docs/external-packs.md) - Install community packs from GitHub
 - 📖 [API Reference](docs/API.md) - Programmatic usage
 - 🛠️ [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
-
-### Coming Soon
-- 🌐 Community Packs - Share and discover
 
 ## Examples
 

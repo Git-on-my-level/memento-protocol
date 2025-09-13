@@ -1,0 +1,61 @@
+{
+  "name": "code-quality",
+  "version": "1.0.0",
+  "description": "Comprehensive code quality and review pack with systematic PR reviews, testing strategies, and quality assurance workflows",
+  "author": "awesome-zcc-community",
+  "tags": [
+    "code-review",
+    "quality-assurance",
+    "testing",
+    "security",
+    "performance",
+    "best-practices",
+    "pr-review",
+    "maintainability"
+  ],
+  "category": "quality",
+  "mementoProtocolVersion": "1.0.0",
+  "components": {
+    "modes": [],
+    "workflows": [
+      {
+        "name": "comprehensive-pr-review",
+        "required": true
+      }
+    ],
+    "agents": []
+  },
+  "configuration": {
+    "defaultMode": null,
+    "customCommands": {
+      "review": {
+        "description": "Execute comprehensive PR review workflow",
+        "template": "/workflow comprehensive-pr-review [pr_url] - Multi-pass code review with security, performance, and quality analysis"
+      }
+    },
+    "projectSettings": {
+      "enableHooks": false,
+      "enableFuzzyMatching": true,
+      "ticketSystem": false
+    }
+  },
+  "hooks": [],
+  "compatibleWith": [
+    "javascript",
+    "typescript",
+    "python",
+    "java",
+    "go",
+    "rust",
+    "php",
+    "ruby",
+    "c",
+    "cpp",
+    "csharp",
+    "generic"
+  ],
+  "postInstall": {
+    "message": "Code Quality pack installed! ✅\n\nWorkflow available:\n- `/review [pr_url]` - Comprehensive multi-pass PR review covering:\n  • Architecture & design analysis\n  • Implementation correctness\n  • Code quality & maintainability\n  • Security & performance review\n\nFeatures:\n- Structured 4-pass review methodology\n- Security vulnerability detection\n- Performance bottleneck identification\n- Maintainability assessment\n- Detailed feedback templates\n- Risk-based prioritization\n\nEnsure high-quality, secure, and maintainable code with systematic review processes!",
+    "commands": []
+  }
+}

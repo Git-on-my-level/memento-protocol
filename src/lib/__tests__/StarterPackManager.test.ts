@@ -12,6 +12,7 @@ describe("StarterPackManager", () => {
   let manager: StarterPackManager;
   let fs: MemoryFileSystemAdapter;
   const mockProjectRoot = "/test/project";
+  let loadPackMock: jest.Mock;
 
   const mockValidPack: PackStructure = {
     manifest: {
@@ -37,13 +38,14 @@ describe("StarterPackManager", () => {
     PackagePaths.reset();
     
     // Create test filesystem with project structure
+    const templatesDir = PackagePaths.getTemplatesDir();
     fs = await createTestZccProject(mockProjectRoot, {
-      // Add sample pack templates (PackagePaths.getTemplatesDir() returns '/test/templates' in test env)
-      '/test/templates/test-pack/manifest.json': JSON.stringify(mockValidPack.manifest),
-      '/test/templates/test-pack/components/modes/engineer.md': '# Engineer Mode\n\nYou are a software engineer.',
-      '/test/templates/test-pack/components/workflows/review.md': '# Code Review Workflow\n\nReview code systematically.',
-      '/test/templates/test-pack/components/agents/claude-code-research.md': '# Research Agent\n\nSpecialized in research tasks.',
-      '/test/templates/schema.json': JSON.stringify({ 
+      // Add sample pack templates in the shared templates directory used by PackagePaths
+      [`${templatesDir}/test-pack/manifest.json`]: JSON.stringify(mockValidPack.manifest),
+      [`${templatesDir}/test-pack/modes/engineer.md`]: '# Engineer Mode\n\nYou are a software engineer.',
+      [`${templatesDir}/test-pack/workflows/review.md`]: '# Code Review Workflow\n\nReview code systematically.',
+      [`${templatesDir}/test-pack/agents/claude-code-research.md`]: '# Research Agent\n\nSpecialized in research tasks.',
+      [`${templatesDir}/schema.json`]: JSON.stringify({
         type: 'object',
         properties: {
           name: { type: 'string', pattern: '^[a-z0-9-]+$' },
@@ -186,19 +188,32 @@ describe("StarterPackManager", () => {
 
   describe("installPack", () => {
     beforeEach(() => {
-      // Mock the registry methods
-      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(mockValidPack);
+      // Allow tests to customize returned pack
+      loadPackMock = jest.fn(async () => mockValidPack);
+
+      jest.spyOn(manager['registry'], 'findPackSource').mockImplementation(async () => ({
+        source: {
+          loadPack: loadPackMock,
+          hasPack: async () => true,
+          listPacks: async () => [mockValidPack.manifest.name],
+          getSourceInfo: () => ({ id: 'local', type: 'local', path: '/test/templates' }),
+          getComponentPath: async () => '',
+          hasComponent: async () => true,
+        } as any,
+        sourceName: 'local',
+      }));
+
       jest.spyOn(manager['registry'], 'resolveDependencies').mockResolvedValue({
         resolved: [],
         missing: [],
-        circular: []
+        circular: [],
       });
 
       // Mock the validator
       jest.spyOn(manager['validator'], 'validatePackStructure').mockResolvedValue({
         valid: true,
         errors: [],
-        warnings: []
+        warnings: [],
       });
 
       // Mock the installer
@@ -208,10 +223,10 @@ describe("StarterPackManager", () => {
           modes: ["engineer"],
           workflows: ["review"],
           agents: ["claude-code-research"],
-          hooks: []
+          hooks: [],
         },
         skipped: { modes: [], workflows: [], agents: [], hooks: [] },
-        errors: []
+        errors: [],
       });
     });
 
@@ -260,7 +275,7 @@ describe("StarterPackManager", () => {
         }
       };
 
-      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(packWithPostInstall);
+      loadPackMock.mockResolvedValue(packWithPostInstall);
       jest.spyOn(manager['installer'], 'installPack').mockResolvedValue({
         success: true,
         installed: { modes: [], workflows: [], agents: [], hooks: [] },
@@ -287,7 +302,7 @@ describe("StarterPackManager", () => {
         }
       };
 
-      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(packWithOptionalComponents);
+      loadPackMock.mockResolvedValue(packWithOptionalComponents);
       jest.spyOn(manager['installer'], 'installPack').mockResolvedValue({
         success: true,
         installed: {
@@ -327,7 +342,7 @@ describe("StarterPackManager", () => {
         }
       };
 
-      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(packWithMissingRequired);
+      loadPackMock.mockResolvedValue(packWithMissingRequired);
       jest.spyOn(manager['installer'], 'installPack').mockResolvedValue({
         success: false,
         installed: { modes: [], workflows: [], agents: [], hooks: [] },
@@ -384,7 +399,7 @@ describe("StarterPackManager", () => {
       };
 
       // Mock registry methods
-      jest.spyOn(manager['registry'], 'loadPack').mockImplementation(async (name: string) => {
+      loadPackMock.mockImplementation(async (name: string) => {
         if (name === 'dependent-pack') return dependentPack;
         if (name === 'base-pack') return basePack;
         return mockValidPack;
@@ -434,7 +449,7 @@ describe("StarterPackManager", () => {
       const packE = createChainPack("pack-e");
 
       // Mock registry methods
-      jest.spyOn(manager['registry'], 'loadPack').mockImplementation(async (name: string) => {
+      loadPackMock.mockImplementation(async (name: string) => {
         switch (name) {
           case 'pack-a': return packA;
           case 'pack-b': return packB;
@@ -484,7 +499,7 @@ describe("StarterPackManager", () => {
         }
       };
 
-      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(unstablePack);
+      loadPackMock.mockResolvedValue(unstablePack);
       jest.spyOn(manager['registry'], 'resolveDependencies').mockResolvedValue({
         resolved: [],
         missing: [],
@@ -527,7 +542,7 @@ describe("StarterPackManager", () => {
         }
       };
 
-      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(alwaysFailPack);
+      loadPackMock.mockResolvedValue(alwaysFailPack);
       jest.spyOn(manager['registry'], 'resolveDependencies').mockResolvedValue({
         resolved: [],
         missing: [],
@@ -562,7 +577,7 @@ describe("StarterPackManager", () => {
         }
       };
 
-      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(exceptionPack);
+      loadPackMock.mockResolvedValue(exceptionPack);
       jest.spyOn(manager['registry'], 'resolveDependencies').mockResolvedValue({
         resolved: [],
         missing: [],
@@ -601,7 +616,7 @@ describe("StarterPackManager", () => {
         }
       };
 
-      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(packA);
+      loadPackMock.mockResolvedValue(packA);
       jest.spyOn(manager['registry'], 'resolveDependencies').mockResolvedValue({
         resolved: [],
         missing: [],
@@ -635,7 +650,7 @@ describe("StarterPackManager", () => {
         }
       };
 
-      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(packWithConfig);
+      loadPackMock.mockResolvedValue(packWithConfig);
 
       const result = await manager.installPack("pack-with-config");
 
@@ -673,7 +688,7 @@ describe("StarterPackManager", () => {
         }
       };
 
-      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(packWithMetadata);
+      loadPackMock.mockResolvedValue(packWithMetadata);
 
       const result = await manager.installPack("pack-with-metadata");
 
@@ -687,7 +702,19 @@ describe("StarterPackManager", () => {
   describe("installPackDirect", () => {
     beforeEach(() => {
       // Mock the registry and validator for direct installation tests
-      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(mockValidPack);
+      loadPackMock.mockResolvedValue(mockValidPack);
+      jest.spyOn(manager['registry'], 'findPackSource').mockImplementation(async () => ({
+        source: {
+          loadPack: loadPackMock,
+          hasPack: async () => true,
+          listPacks: async () => [mockValidPack.manifest.name],
+          getSourceInfo: () => ({ id: 'local', type: 'local', path: '/test/templates' }),
+          getComponentPath: async () => '',
+          hasComponent: async () => true,
+        } as any,
+        sourceName: 'local',
+      }));
+
       jest.spyOn(manager['registry'], 'resolveDependencies').mockResolvedValue({
         resolved: [],
         missing: [],
@@ -756,7 +783,7 @@ describe("StarterPackManager", () => {
     });
 
     it("should handle exceptions in direct installation", async () => {
-      jest.spyOn(manager['registry'], 'loadPack').mockRejectedValue(new Error("Load failed"));
+      loadPackMock.mockRejectedValue(new Error("Load failed"));
 
       const result = await manager.installPackDirect("exception-pack");
 
@@ -774,6 +801,19 @@ describe("StarterPackManager", () => {
         errors: [],
         warnings: []
       });
+
+      loadPackMock = jest.fn(async () => mockValidPack);
+      jest.spyOn(manager['registry'], 'findPackSource').mockImplementation(async () => ({
+        source: {
+          loadPack: loadPackMock,
+          hasPack: async () => true,
+          listPacks: async () => [],
+          getSourceInfo: () => ({ id: 'local', type: 'local', path: '/test/templates' }),
+          getComponentPath: async () => '',
+          hasComponent: async () => true,
+        } as any,
+        sourceName: 'local',
+      }));
     });
 
     it("should handle very large dependency graphs efficiently", async () => {
@@ -798,7 +838,7 @@ describe("StarterPackManager", () => {
       };
 
       // Mock registry methods for all packs
-      jest.spyOn(manager['registry'], 'loadPack').mockImplementation(async (name: string) => {
+      loadPackMock.mockImplementation(async (name: string) => {
         const index = packNames.indexOf(name);
         return index >= 0 ? createLargePack(index) : mockValidPack;
       });
@@ -858,7 +898,7 @@ describe("StarterPackManager", () => {
         }
       };
 
-      jest.spyOn(manager['registry'], 'loadPack').mockImplementation(async (name: string) => {
+      loadPackMock.mockImplementation(async (name: string) => {
         if (name === 'success-pack') return successPack;
         if (name === 'dependent-pack') return dependentPack;
         return mockValidPack;
@@ -900,7 +940,7 @@ describe("StarterPackManager", () => {
         }
       };
 
-      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(loopPack);
+      loadPackMock.mockResolvedValue(loopPack);
       jest.spyOn(manager['registry'], 'resolveDependencies').mockResolvedValue({
         resolved: [],
         missing: [],
@@ -918,8 +958,21 @@ describe("StarterPackManager", () => {
     beforeEach(() => {
       // Reset all mocks for integration tests
       jest.clearAllMocks();
-      
+
       // Setup default mocks
+      loadPackMock = jest.fn(async () => mockValidPack);
+      jest.spyOn(manager['registry'], 'findPackSource').mockImplementation(async () => ({
+        source: {
+          loadPack: loadPackMock,
+          hasPack: async () => true,
+          listPacks: async () => [],
+          getSourceInfo: () => ({ id: 'local', type: 'local', path: '/test/templates' }),
+          getComponentPath: async () => '',
+          hasComponent: async () => true,
+        } as any,
+        sourceName: 'local',
+      }));
+
       jest.spyOn(manager['registry'], 'resolveDependencies').mockResolvedValue({
         resolved: [],
         missing: [],
@@ -972,7 +1025,7 @@ describe("StarterPackManager", () => {
         path: "/test/path/full-stack-pack"
       };
 
-      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(fullPack);
+      loadPackMock.mockResolvedValue(fullPack);
       jest.spyOn(manager['installer'], 'installPack').mockResolvedValue({
         success: true,
         installed: {
@@ -1023,7 +1076,7 @@ describe("StarterPackManager", () => {
         path: "/test/path/partial-pack"
       };
 
-      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(partialPack);
+      loadPackMock.mockResolvedValue(partialPack);
       jest.spyOn(manager['installer'], 'installPack').mockResolvedValue({
         success: true,
         installed: {
@@ -1088,7 +1141,7 @@ describe("StarterPackManager", () => {
         }
       };
 
-      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(packWithVersion);
+      loadPackMock.mockResolvedValue(packWithVersion);
       jest.spyOn(manager['validator'], 'validatePackStructure').mockResolvedValue({
         valid: false,
         errors: ["Version compatibility error: requires >=2.0.0, current is 1.0.0"],
@@ -1112,7 +1165,7 @@ describe("StarterPackManager", () => {
         components: "invalid" // Should be object
       };
 
-      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(invalidSchemaPack as any);
+      loadPackMock.mockResolvedValue(invalidSchemaPack as any);
       jest.spyOn(manager['validator'], 'validatePackStructure').mockResolvedValue({
         valid: false,
         errors: [
@@ -1135,7 +1188,7 @@ describe("StarterPackManager", () => {
 
     it("should handle concurrent pack operations", async () => {
       // Mock the registry to return different packs
-      jest.spyOn(manager['registry'], 'loadPack').mockImplementation(async (name: string) => {
+      loadPackMock.mockImplementation(async (name: string) => {
         if (name === "concurrent-pack-1") return { ...mockValidPack, manifest: { ...mockValidPack.manifest, name: "concurrent-pack-1" } };
         if (name === "concurrent-pack-2") return { ...mockValidPack, manifest: { ...mockValidPack.manifest, name: "concurrent-pack-2" } };
         return mockValidPack;
@@ -1204,7 +1257,7 @@ describe("StarterPackManager", () => {
         path: "/test/path/problematic-pack"
       };
 
-      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(problematicPack);
+      loadPackMock.mockResolvedValue(problematicPack);
       jest.spyOn(manager['registry'], 'resolveDependencies').mockResolvedValue({
         resolved: [],
         missing: ["non-existent-dependency"],
@@ -1237,7 +1290,7 @@ describe("StarterPackManager", () => {
         path: "/test/path/empty-pack"
       };
 
-      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(emptyPack);
+      loadPackMock.mockResolvedValue(emptyPack);
       jest.spyOn(manager['installer'], 'installPack').mockResolvedValue({
         success: true,
         installed: { modes: [], workflows: [], agents: [], hooks: [] },
@@ -1276,7 +1329,7 @@ describe("StarterPackManager", () => {
         path: "/test/path/invalid-names-pack"
       };
 
-      jest.spyOn(manager['registry'], 'loadPack').mockResolvedValue(packWithInvalidNames);
+      loadPackMock.mockResolvedValue(packWithInvalidNames);
       jest.spyOn(manager['validator'], 'validatePackStructure').mockResolvedValue({
         valid: false,
         errors: ['Invalid component name: mode-with-spaces and/slashes', 'Invalid component name: mode@with#symbols'],
