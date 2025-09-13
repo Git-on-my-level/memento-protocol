@@ -132,7 +132,6 @@ export const initCommand = new Command("init")
       const hookManager = new HookManager(projectRoot);
       const commandGenerator = new CommandGenerator(projectRoot);
       const starterPackManager = new StarterPackManager(projectRoot);
-      // const componentInstaller = new ComponentInstaller(projectRoot); // Not used in pack-based setup
 
       // Check if already initialized
       if (dirManager.isInitialized() && !forceFlag) {

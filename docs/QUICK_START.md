@@ -76,7 +76,7 @@ zcc ticket list
 ### 4. Check Your Setup (30 seconds)
 ```bash
 # See what's installed
-zcc list --installed
+zcc pack list --installed
 
 # Check project status in Claude Code
 /zcc
@@ -101,23 +101,19 @@ Claude: [Performs thorough security-focused review]
 
 ### Essential CLI Commands
 ```bash
-# Component Management
-zcc add mode <name>           # Add a mode
-zcc add workflow <name>       # Add a workflow
-zcc add agent <name>         # Add an agent
-zcc list --installed         # Show installed components
-zcc packs list               # Show available starter packs
-zcc packs show <name>        # Show pack details
+# Pack Management
+zcc pack install <name>      # Install a starter pack
+zcc pack uninstall <name>    # Remove a starter pack
+zcc pack list               # Show available packs
+zcc pack list --installed   # Show installed packs
+zcc pack show <name>        # Show pack details
+zcc pack update             # Update installed packs
 
 # Ticket Management
-zcc ticket create <name>     # Create new ticket
-zcc ticket start <name>      # Move to in-progress
-zcc ticket finish <name>     # Move to done
-zcc ticket list             # Show all tickets
-
-# Maintenance
-zcc update                  # Update components
-zcc validate                # Check component health
+zcc ticket create <name>    # Create new ticket
+zcc ticket start <name>     # Move to in-progress
+zcc ticket finish <name>    # Move to done
+zcc ticket list            # Show all tickets
 ```
 
 ### Claude Code Commands
@@ -143,10 +139,9 @@ zcc validate                # Check component health
 
 ## Next Steps
 
-- 📦 Try a [Starter Pack](STARTER_PACKS.md) for your project type
 - 🎨 [Create custom modes](CUSTOM_MODES.md) for your team
 - 🪝 Set up [Hooks](HOOKS_GUIDE.md) for automation
-- 🤝 [Contribute](../CONTRIBUTING.md) your own components
+- 🤝 [Contribute](../CONTRIBUTING.md) your own packs
 
 ## Getting Help
 

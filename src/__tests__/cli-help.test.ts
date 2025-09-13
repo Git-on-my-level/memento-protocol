@@ -20,33 +20,22 @@ const getHelpOutput = (command: string): { stdout: string; stderr: string; exitC
         "after",
         `
 Examples:
-  $ zcc                        # Initialize or update zcc (equivalent to 'upsert')
-  $ zcc init                   # Initialize zcc in current project
-  $ zcc init --global          # Initialize global ~/.zcc configuration
-  $ zcc update                 # Update existing components from templates
-  $ zcc add mode architect     # Add the architect mode
-  $ zcc add workflow review    # Add the code review workflow
-  $ zcc create mode my-custom  # Create a new custom mode interactively
-  $ zcc create workflow --from review custom-review  # Clone review workflow
-  $ zcc edit mode my-custom    # Edit a component in your editor
-  $ zcc validate               # Validate all components
-  $ zcc validate mode          # Validate all modes
+  $ zcc init --pack webapp     # Initialize project with a starter pack
+  $ zcc pack install webapp    # Install the webapp pack
+  $ zcc pack list              # Show available packs
+  $ zcc pack uninstall webapp  # Remove a pack
+  $ zcc pack update            # Update installed packs
   $ zcc doctor                 # Run diagnostic checks
   $ zcc doctor --fix           # Run diagnostics and attempt fixes
   $ zcc ticket create "auth"   # Create a ticket for authentication work
-  $ zcc list --installed       # Show installed components
-
-For Claude Code users:
-  Say "act as architect" to switch to architect mode
-  Say "execute review" to run the code review workflow
-  Say "create ticket X" to start persistent work
+  $ zcc pack list --installed  # Show installed packs
 
 For more information, visit: https://github.com/git-on-my-level/zcc
 Documentation: https://github.com/git-on-my-level/zcc#readme`
       );
 
     // Add mock subcommands that match the real CLI structure
-    const subcommands = ['init', 'list', 'add', 'ticket', 'config', 'update'];
+    const subcommands = ['init', 'pack', 'ticket', 'config'];
     
     subcommands.forEach(name => {
       const subcommand = new Command(name)
@@ -68,26 +57,15 @@ Documentation: https://github.com/git-on-my-level/zcc#readme`
         helpOutput += `
 
 Examples:
-  $ zcc                        # Initialize or update zcc (equivalent to 'upsert')
-  $ zcc init                   # Initialize zcc in current project
-  $ zcc init --global          # Initialize global ~/.zcc configuration
-  $ zcc update                 # Update existing components from templates
-  $ zcc add mode architect     # Add the architect mode
-  $ zcc add workflow review    # Add the code review workflow
-  $ zcc create mode my-custom  # Create a new custom mode interactively
-  $ zcc create workflow --from review custom-review  # Clone review workflow
-  $ zcc edit mode my-custom    # Edit a component in your editor
-  $ zcc validate               # Validate all components
-  $ zcc validate mode          # Validate all modes
+  $ zcc init --pack webapp     # Initialize project with a starter pack
+  $ zcc pack install webapp    # Install the webapp pack
+  $ zcc pack list              # Show available packs
+  $ zcc pack uninstall webapp  # Remove a pack
+  $ zcc pack update            # Update installed packs
   $ zcc doctor                 # Run diagnostic checks
   $ zcc doctor --fix           # Run diagnostics and attempt fixes
   $ zcc ticket create "auth"   # Create a ticket for authentication work
-  $ zcc list --installed       # Show installed components
-
-For Claude Code users:
-  Say "act as architect" to switch to architect mode
-  Say "execute review" to run the code review workflow
-  Say "create ticket X" to start persistent work
+  $ zcc pack list --installed  # Show installed packs
 
 For more information, visit: https://github.com/git-on-my-level/zcc
 Documentation: https://github.com/git-on-my-level/zcc#readme`;
@@ -139,7 +117,7 @@ const runCLIHelp = async (args: string[]): Promise<{ stdout: string; stderr: str
 };
 
 describe('CLI Help Handling', () => {
-  const subcommands = ['init', 'list', 'add', 'ticket', 'config', 'update'];
+  const subcommands = ['init', 'pack', 'ticket', 'config'];
   
   describe.each(subcommands)('command: %s', (command) => {
     it('should show help with --help flag instead of executing command', async () => {

@@ -28,21 +28,6 @@ await manager.ensureGitignore();
 const modePath = manager.getComponentPath('modes', 'architect');
 ```
 
-### ComponentInstaller
-
-Installs modes, workflows, and agents from `templates/` into the project.
-
-```typescript
-import { ComponentInstaller } from 'zcc';
-
-const installer = new ComponentInstaller('/path/to/project');
-
-// Install a component (overwrites only when force=true)
-await installer.installComponent('mode', 'architect', /* force */ false);
-
-// List installed components
-const installed = await installer.listInstalledComponents();
-```
 
 ### TicketManager
 
@@ -109,7 +94,41 @@ await hooks.initialize();
 await hooks.createHookFromTemplate('acronym-expander', { id: 'acronyms', enabled: true });
 
 // List available templates
-const templates = await hooks.listTemplates();
+  const templates = await hooks.listTemplates();
+  ```
+
+### StarterPackManager
+
+Manages discovery, installation, and removal of starter packs.
+
+```typescript
+import { StarterPackManager } from 'zcc';
+
+const packs = new StarterPackManager('/path/to/project');
+
+// List available packs
+const available = await packs.listPacks();
+
+// Install a pack
+await packs.installPack('essentials');
+
+// Show installed packs
+const installed = await packs.getInstalledPacks();
+
+// Uninstall a pack
+await packs.uninstallPack('essentials');
+```
+
+### PackInstaller
+
+Lower-level utility for installing packs from loaded manifests.
+
+```typescript
+import { PackInstaller } from 'zcc';
+
+const installer = new PackInstaller('/path/to/project');
+// Assuming packStructure and source are obtained elsewhere
+// await installer.installPack(packStructure, source, { force: true });
 ```
 
 ## Error Handling
@@ -154,43 +173,4 @@ logger.success('Operation completed');
 logger.warn('Warning message');
 logger.error('Error message');
 logger.debug('Debug information');
-```
-
-## Starter Packs API
-
-### StarterPackManager
-
-Manages discovery, dependency resolution, installation, and uninstallation of starter packs.
-
-```typescript
-import { StarterPackManager } from 'zcc';
-
-const packs = new StarterPackManager('/path/to/project');
-
-// List available packs
-const available = await packs.listPacks();
-
-// Load a specific pack
-const pack = await packs.loadPack('essentials');
-
-// Resolve dependencies
-const deps = await packs.resolveDependencies('essentials');
-
-// Install a pack
-const result = await packs.installPack('essentials', { force: true });
-
-// Get installed packs
-const installed = await packs.getInstalledPacks();
-
-// Uninstall a pack
-await packs.uninstallPack('essentials');
-```
-
-## Events
-
-Future versions may expose an event system for lifecycle hooks:
-
-```typescript
-// Coming in future versions
-// zcc.on('component:installed', ...)
 ```

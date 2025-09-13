@@ -12,11 +12,10 @@ This isn't just a marketing tagline—it's our north star for every design decis
 
 **zsh Principle**: zsh doesn't replace bash; it enhances it. Bash scripts still work, but you get so much more.
 
-**zcc Application**: 
+**zcc Application**:
 - Claude Code continues to work exactly as before
 - We add layers of functionality on top
 - Users can adopt features gradually
-- Complete backwards compatibility
 
 ### 2. Themes Change Everything
 
@@ -79,7 +78,7 @@ This isn't just a marketing tagline—it's our north star for every design decis
 **zsh Principle**: oh-my-zsh's success comes from community contributions.
 
 **zcc Application**:
-- Templates for easy component creation
+- Templates for building pack components
 - Shareable configurations
 - Future: Community hub for modes/workflows
 - Future: oh-my-zcc starter packs
@@ -144,21 +143,21 @@ When adding new features, ask:
 
 Users should be able to:
 1. Start with basic installation
-2. Add components as needed
+2. Add packs as needed
 3. Customize gradually
 4. Share configurations
 
 ### 3. Discoverability
 
 Like `zsh<TAB>` shows all zsh commands:
-- `memento list` shows available components
+- `zcc pack list` shows available starter packs
 - `/mode<TAB>` should show available modes (future)
 - Clear, predictable naming
 
 ### 4. Sensible Defaults
 
 Like zsh works great out-of-the-box:
-- Recommended components on first install
+- Recommended packs on first install
 - Smart project detection
 - Automatic mode selection based on context
 
@@ -212,7 +211,7 @@ Like zsh's autoload:
 - 📦 Starter packs (theme bundles)
 - 🔧 .zccrc global config
 - 🌍 Community repository
-- 📚 Component marketplace
+- 📚 Pack marketplace
 
 ### Phase 3: Power Tools
 - 🎨 Visual configurator (like zsh config tools)
@@ -301,27 +300,27 @@ Work for beginners with defaults, power users with customization.
 
 ### Setup Phase
 1. Initialize `.zcc/` directory structure (like ~/.oh-my-zsh/)
-2. Install selected modes and workflows (like choosing plugins)
+2. Install selected packs (like choosing plugin bundles)
 3. Configure hooks and integrations (like enabling features)
 4. Generate CLAUDE.md router (like updating .zshrc)
 
 ### Maintenance Phase
-1. Add/remove components (`zcc add/remove`)
-2. Update from templates (`zcc update`)
+1. Install/remove packs (`zcc pack install/uninstall`)
+2. Update packs (`zcc pack update`)
 3. Validate integrity (`zcc doctor`)
 4. Manage tickets (`zcc ticket`)
 
 ### Discovery Phase
-1. List available components (`zcc list`)
-2. Discover packs (`zcc packs list`, `zcc packs show <name>`)
+1. List available packs (`zcc pack list`)
+2. Show pack details (`zcc pack show <name>`)
 3. Install pack during init (`zcc init -p <name>`)
-4. Uninstall pack (`zcc packs uninstall <name>`)
+4. Uninstall pack (`zcc pack uninstall <name>`)
 
 ## The Ultimate Vision
 
 **zcc becomes to Claude Code what oh-my-zsh became to zsh:**
 - The default enhancement everyone installs
-- A thriving ecosystem of components
+- A thriving ecosystem of packs
 - Community-driven development
 - The obvious choice for serious users
 
@@ -331,7 +330,7 @@ When someone starts using Claude Code, installing zcc should feel as natural and
 
 ### Token Efficiency
 - CLAUDE.md remains minimal (< 200 lines)
-- Components loaded on-demand
+- Pack components loaded on-demand
 - Smart caching of frequently used components
 
 ### State Management
@@ -340,7 +339,7 @@ When someone starts using Claude Code, installing zcc should feel as natural and
 - Clean separation of concerns
 
 ### Extensibility
-- Plugin API for third-party components
+- Plugin API for third-party packs
 - Theme inheritance system
 - Hook priority system
 

@@ -162,16 +162,14 @@ npx zcc init --pack frontend-react
 
 ### Essential Guides
 - 🚀 [Quick Start Guide](docs/QUICK_START.md) - Get running in 5 minutes
-- 📦 [Starter Packs Guide](docs/STARTER_PACKS.md) - Ready-to-use bundles for different project types
 - 🪝 [Hooks Guide](docs/HOOKS_GUIDE.md) - Event-driven automation
-- 🧩 [Component Guide](docs/COMPONENT_GUIDE.md) - Creating modes, workflows, and agents
 
 ### Advanced Topics
 - 📖 [API Reference](docs/API.md) - Programmatic usage
 - 🛠️ [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
 
 ### Coming Soon
-- 🌐 Community Components - Share and discover
+- 🌐 Community Packs - Share and discover
 
 ## Examples
 

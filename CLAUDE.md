@@ -38,9 +38,9 @@ When making changes to zcc:
    # Example: npm run dev list
    ```
 
-3. **After changing component discovery**: Verify components are found
+3. **After changing pack discovery**: Verify packs are found
    ```bash
-   npm run dev list  # Should show all available components
+   npm run dev pack list  # Should show all available packs
    ```
 
 4. **Template Frontmatter Format**: All templates are self-describing
@@ -127,21 +127,18 @@ zcc is the "zsh for Claude Code" - a meta-framework that transforms Claude Code 
 src/
 ├── cli.ts                 # Main entry point, command registration
 ├── commands/              # CLI command implementations
-│   ├── init.ts           # Initialize/update zcc
-│   ├── add.ts            # Add modes/workflows/agents
-│   ├── list.ts           # List available/installed components
+│   ├── init.ts           # Initialize zcc
+│   ├── pack.ts           # Pack management (install/list/show/uninstall/update)
 │   ├── ticket.ts         # Ticket management (create/move/resolve)
 │   ├── config.ts         # Configuration management
-│   ├── update.ts         # Update components
-│   └── upsert.ts         # Combined init/update logic
+│   ├── hook.ts           # Hook management
+│   └── acronym.ts        # Acronym expansions
 └── lib/                  # Core functionality
-    ├── configManager.ts  # Config hierarchy (default->global->project->env)
-    ├── ticketManager.ts  # Ticket lifecycle management
-    ├── componentInstaller.ts # Install modes/workflows/agents
-    ├── commandGenerator.ts # Generate Claude Code custom commands
-    ├── projectDetector.ts # Detect project language/framework
-    ├── upsertManager.ts  # Smart init/update logic
-    └── hooks/            # Hook system implementation
+     ├── configManager.ts  # Config hierarchy (default->global->project->env)
+     ├── ticketManager.ts  # Ticket lifecycle management
+     ├── commandGenerator.ts # Generate Claude Code custom commands
+     ├── projectDetector.ts # Detect project language/framework
+     └── hooks/            # Hook system implementation
         ├── HookManager.ts # Main hook orchestrator
         ├── HookRegistry.ts # Hook registration system
         └── builtin/      # Built-in hooks (routing, security, etc.)
@@ -217,7 +214,7 @@ The build uses esbuild (scripts/build.js) to:
 - Claude Code subagents for specialized tasks (like zsh plugins add specific capabilities)
 - Installed to .claude/agents/ directory (like plugins in ~/.oh-my-zsh/plugins/)
 - Example: claude-code-research agent (like the 'git' plugin in oh-my-zsh)
-- Added via `zcc add agent [name]` (like adding plugins to .zshrc)
+- Added via `zcc pack install <name>`
 
 #### Hooks (Event Functions)
 - Claude Code integration points for automated behavior (like zsh hook functions)
