@@ -8,22 +8,27 @@ let colorsDisabled = false;
 
 // Color detection logic
 function shouldDisableColors(): boolean {
-  // Check NO_COLOR environment variable (https://no-color.org)
-  if (process.env.NO_COLOR) {
+  // Explicit configuration always wins
+  if (colorsDisabled || process.env.NO_COLOR) {
     return true;
   }
-  
+
+  // Allow overriding automatic detection
+  if (process.env.FORCE_COLOR) {
+    return false;
+  }
+
   // Check CI environment
   if (process.env.CI) {
     return true;
   }
-  
+
   // Check if running in a TTY
   if (!process.stdout.isTTY) {
     return true;
   }
-  
-  return colorsDisabled;
+
+  return false;
 }
 
 // ANSI color codes for better terminal output
